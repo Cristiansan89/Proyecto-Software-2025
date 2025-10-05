@@ -1,0 +1,27 @@
+USE Comedor;
+
+DELIMITER //
+
+CREATE FUNCTION UUID_TO_BIN(s CHAR(36))
+RETURNS BINARY(16)
+DETERMINISTIC
+BEGIN
+    RETURN UNHEX(REPLACE(s, '-', ''));
+END //
+
+CREATE FUNCTION BIN_TO_UUID(b BINARY(16))
+RETURNS CHAR(36)
+DETERMINISTIC
+BEGIN
+    DECLARE hex CHAR(32);
+    SET hex = HEX(b);
+    RETURN LOWER(CONCAT(
+        SUBSTR(hex, 1, 8), '-',
+        SUBSTR(hex, 9, 4), '-',
+        SUBSTR(hex, 13, 4), '-',
+        SUBSTR(hex, 17, 4), '-',
+        SUBSTR(hex, 21)
+    ));
+END //
+
+DELIMITER ;
