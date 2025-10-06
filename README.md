@@ -53,21 +53,21 @@ El sistema cuenta con 15+ tablas relacionales que gestionan:
 ├── server/
 │   ├── models/          # Modelos de datos
 │   ├── controllers/     # Lógica de negocio
-│   ├── routes/          # Rutas de la API
 │   ├── middleware/      # Middlewares de autenticación
-│   └── sql/            # Scripts de base de datos
+│   ├── models/          # Modelos de datos
+│   ├── routes/          # Rutas de la API
+│   ├── schemas/         # Validaciones de los datos (nivel de aplicación)
+│   └── sql/             # Scripts de base de datos
 └── README.md
 ```
 
 ## 👥 Roles del Sistema
 
-- PARA LA PRUUEBA DE BD (por ahora en un futuro se cambian)
+- _PARA LA PRUEBA DE BD (en la carga de los datos iniciales se agregan más de un rol, en un futuro se cambiaran para el caso real que sigue abajo ⬇️⬇️⬇️)_
 
-- **Administrador**: Acceso completo al sistema
-- **Cocinero**: Gestión de recetas y consumos
-- **Encargado de Inventario**: Control de stock y pedidos
-- **Docente**: Consulta de menús y reportes básicos
-- **Supervisor**: Supervisión general y reportes avanzados
+- **Administrador**: Acceso completo al sistema, Gestiona el registro de Alumnos, Docentes, Grados, Insumos, Proveedores, Usuarios, Seguridad, Auditoría.
+- **Cocinera**: Gestión de Asistencias, Consumos, Inventarios, Pedidos, Planificación de Menús, Recetas, Reportes.
+- **Docente**: Registra Asistencia del Alumno.
 
 ## 🔒 Seguridad
 
