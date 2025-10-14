@@ -154,6 +154,19 @@ CREATE TABLE Lineas_Pedido (
   FOREIGN KEY (id_insumo) REFERENCES Insumos (id_insumo) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
+-- Tabla de Asociación Proveedor_Insumos (N:M)
+CREATE TABLE Proveedor_Insumos (
+  id_proveedor BINARY(16) NOT NULL,
+  id_insumo BINARY(16) NOT NULL,
+  
+  -- Campos adicionales opcionales para gestión de compras
+  calificacion ENUM('Excelente', 'Aceptable', 'Poco Eficiente') NOT NULL, 
+  
+  PRIMARY KEY (id_proveedor, id_insumo),
+  FOREIGN KEY (id_proveedor) REFERENCES Proveedores (id_proveedor) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (id_insumo) REFERENCES Insumos (id_insumo) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE = InnoDB;
+
 -- -----------------------------------------------------
 -- 4. FLUJO OPERACIONAL (CONSUMO)
 -- -----------------------------------------------------
