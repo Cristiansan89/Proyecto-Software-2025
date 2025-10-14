@@ -20,6 +20,7 @@ import { createRegistroAsistenciaRouter } from './routes/registrosasistencias.js
 import { createRolPermisoRouter } from './routes/rolpermisos.js'
 import { createUsuarioRouter } from './routes/usuarios.js'
 import { createConsumoRouter } from './routes/consumos.js'
+import { proveedorInsumosRouter } from './routes/proveedorinsumos.js'
 
 export const createApp = ({
     usuarioModel,
@@ -71,6 +72,7 @@ export const createApp = ({
     app.use('/recetas', createRecetaRouter({ recetaModel }))
     app.use('/registros-asistencias', createRegistroAsistenciaRouter({ registroAsistenciaModel }))
     app.use('/rol-permisos', createRolPermisoRouter({ rolPermisoModel }))
+    app.use('/proveedorinsumos', proveedorInsumosRouter)
 
     const PORT = process.env.PORT ?? 3000
 
