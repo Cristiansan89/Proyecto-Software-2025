@@ -9,8 +9,10 @@ import { MovimientoInventarioModel } from './models/movimientoinventario.js'
 import { ParametroSistemaModel } from './models/parametrosistema.js'
 import { PedidoModel } from './models/pedido.js'
 import { PermisoModel } from './models/permiso.js'
+import { PersonaModel } from './models/persona.js'
 import { PlanificacionMenuModel } from './models/planificacionmenu.js'
 import { ProveedorModel } from './models/proveedor.js'
+import { ProveedorInsumoModel } from './models/proveedorinsumo.js'
 import { RecetaModel } from './models/receta.js'
 import { RegistroAsistenciaModel } from './models/registroasistencia.js'
 import { RolModel } from './models/rol.js'
@@ -31,8 +33,10 @@ const app = createApp({
     parametroSistemaModel: ParametroSistemaModel,
     pedidoModel: PedidoModel,
     permisoModel: PermisoModel,
+    personaModel: PersonaModel,
     planificacionMenuModel: PlanificacionMenuModel,
     proveedorModel: ProveedorModel,
+    proveedorInsumoModel: ProveedorInsumoModel,
     recetaModel: RecetaModel,
     registroAsistenciaModel: RegistroAsistenciaModel,
     rolPermisoModel: RolPermisoModel,

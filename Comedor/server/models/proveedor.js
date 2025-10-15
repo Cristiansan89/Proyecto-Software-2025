@@ -128,4 +128,30 @@ export class ProveedorModel {
             throw new Error('Error al actualizar el proveedor')
         }
     }
+
+    static async getProveedoresWithInsumos() {
+        const [rows] = await connection.query(
+            `SELECT 
+                p.id_proveedor as idProveedor,
+                p.razonSocial,
+                p.direccion,
+                p.telefono,
+                p.estado,
+                GROUP_CONCAT(i.nombreInsumo) as insumos
+             FROM Proveedores p
+             LEFT JOIN ProveedorInsumo pi ON p.id_proveedor = pi.id_proveedor
+             LEFT JOIN Insumos i ON pi.id_insumo = i.id_insumo
+             GROUP BY p.id_proveedor
+             ORDER BY p.razonSocial;`
+        )
+
+        return rows.map(row => ({
+            idProveedor: row.idProveedor,
+            razonSocial: row.razonSocial,
+            direccion: row.direccion,
+            telefono: row.telefono,
+            estado: row.estado,
+            insumos: row.insumos ? row.insumos.split(',') : []
+        }))
+    }
 }
