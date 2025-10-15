@@ -70,7 +70,7 @@ const datosEjemplo = [
     }
 ];
 
-const ListaPersonas = () => {
+const ListaPersonas = ({ onNavigate }) => {
     const [personas, setPersonas] = useState([]);
     const [filteredPersonas, setFilteredPersonas] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -81,6 +81,8 @@ const ListaPersonas = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
     const [loading, setLoading] = useState(false);
+    const [filterTipo, setFilterTipo] = useState('');
+    const [filterEstado, setFilterEstado] = useState('');
 
     useEffect(() => {
         // Simular carga de datos
@@ -92,22 +94,34 @@ const ListaPersonas = () => {
         }, 1000);
     }, []);
 
-    // Filtrar personas por búsqueda
+    // Búsqueda y filtros
     useEffect(() => {
-        if (searchQuery.trim() === '') {
-            setFilteredPersonas(personas);
-        } else {
-            const filtered = personas.filter(persona =>
+        let filtered = personas;
+
+        // Filtro por búsqueda de texto
+        if (searchQuery.trim()) {
+            filtered = filtered.filter(persona =>
                 persona.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 persona.apellido.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 persona.numeroDocumento.includes(searchQuery) ||
                 persona.tipoPersona.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (persona.grado && persona.grado.toLowerCase().includes(searchQuery.toLowerCase()))
             );
-            setFilteredPersonas(filtered);
         }
+
+        // Filtro por tipo de persona
+        if (filterTipo) {
+            filtered = filtered.filter(persona => persona.tipoPersona === filterTipo);
+        }
+
+        // Filtro por estado
+        if (filterEstado) {
+            filtered = filtered.filter(persona => persona.estado === filterEstado);
+        }
+
+        setFilteredPersonas(filtered);
         setCurrentPage(1);
-    }, [searchQuery, personas]);
+    }, [searchQuery, personas, filterTipo, filterEstado]);
 
     // Paginación
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -117,6 +131,20 @@ const ListaPersonas = () => {
 
     const handleSearch = (e) => {
         setSearchQuery(e.target.value);
+    };
+
+    const handleFilterTipo = (e) => {
+        setFilterTipo(e.target.value);
+    };
+
+    const handleFilterEstado = (e) => {
+        setFilterEstado(e.target.value);
+    };
+
+    const clearFilters = () => {
+        setSearchQuery('');
+        setFilterTipo('');
+        setFilterEstado('');
     };
 
     const handleSelectPersona = (personaId) => {
@@ -177,7 +205,7 @@ const ListaPersonas = () => {
     };
 
     return (
-        <AdminLayout>
+        <AdminLayout onNavigate={onNavigate}>
             <div className="personas-container">
                 {/* Header */}
                 <div className="page-header">
@@ -210,17 +238,36 @@ const ListaPersonas = () => {
                     </div>
 
                     <div className="filter-actions">
-                        <select className="filter-select">
+                        <select
+                            className="filter-select"
+                            value={filterTipo}
+                            onChange={handleFilterTipo}
+                        >
                             <option value="">Todos los tipos</option>
                             <option value="Alumno">Alumno</option>
                             <option value="Docente">Docente</option>
                         </select>
 
-                        <select className="filter-select">
+                        <select
+                            className="filter-select"
+                            value={filterEstado}
+                            onChange={handleFilterEstado}
+                        >
                             <option value="">Todos los estados</option>
-                            <option value="activo">Activo</option>
-                            <option value="inactivo">Inactivo</option>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
                         </select>
+
+                        {(searchQuery || filterTipo || filterEstado) && (
+                            <button
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={clearFilters}
+                                title="Limpiar filtros"
+                            >
+                                <i className="fas fa-times"></i>
+                                Limpiar
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -241,6 +288,16 @@ const ListaPersonas = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Indicador de resultados */}
+                <div className="results-info">
+                    <span className="results-count">
+                        Mostrando {filteredPersonas.length} de {personas.length} persona(s)
+                        {(searchQuery || filterTipo || filterEstado) && (
+                            <span className="filter-indicator"> (filtrado)</span>
+                        )}
+                    </span>
+                </div>
 
                 {/* Tabla */}
                 <div className="table-container">

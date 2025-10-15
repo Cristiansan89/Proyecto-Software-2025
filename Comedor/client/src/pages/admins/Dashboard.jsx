@@ -1,8 +1,8 @@
 import AdminLayout from '../../layouts/AdminLayout';
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ onNavigate }) => {
     return (
-        <AdminLayout>
+        <AdminLayout onNavigate={onNavigate}>
             <div className="dashboard-container">
                 <div className="dashboard-header">
                     <h2>Panel de Administración</h2>

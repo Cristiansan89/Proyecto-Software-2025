@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-const Sidebar = ({ collapsed, onToggle }) => {
-    const [activeSection, setActiveSection] = useState('dashboard');
+const Sidebar = ({ collapsed, onToggle, onNavigate }) => {
+    const [activeSection, setActiveSection] = useState('usuarios');
 
     const menuItems = [
         {
@@ -83,8 +83,9 @@ const Sidebar = ({ collapsed, onToggle }) => {
 
     const handleItemClick = (item) => {
         setActiveSection(item.id);
-        // Aquí iría la navegación con React Router
-        console.log('Navigating to:', item.path);
+        if (onNavigate) {
+            onNavigate(item.id);
+        }
     };
 
     return (
@@ -123,7 +124,18 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                         className="submenu-item"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            console.log('Navigating to:', subItem.path);
+                                            if (onNavigate) {
+                                                // Mapear rutas específicas a páginas
+                                                if (subItem.id === 'lista-personas') {
+                                                    onNavigate('personas');
+                                                } else if (subItem.id === 'grados') {
+                                                    onNavigate('grados');
+                                                } else if (subItem.id === 'lista-usuarios' || subItem.id === 'crear-usuario') {
+                                                    onNavigate('usuarios');
+                                                } else {
+                                                    console.log('Navigating to:', subItem.path);
+                                                }
+                                            }
                                         }}
                                     >
                                         <span>{subItem.label}</span>

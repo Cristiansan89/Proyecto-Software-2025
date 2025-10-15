@@ -28,7 +28,7 @@ const Navbar = ({ onToggleSidebar }) => {
                         </div>
                         <div className="user-info">
                             <span className="user-name">Admin</span>
-                            <i className="fas fa-chevron-down"></i>
+                            <i className="fas fa-chevron"></i>
                         </div>
                     </div>
 

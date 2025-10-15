@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 
-const AdminLayout = ({ children }) => {
+const AdminLayout = ({ children, onNavigate }) => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     const toggleSidebar = () => {
@@ -11,7 +11,11 @@ const AdminLayout = ({ children }) => {
 
     return (
         <div className="admin-layout">
-            <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+            <Sidebar
+                collapsed={sidebarCollapsed}
+                onToggle={toggleSidebar}
+                onNavigate={onNavigate}
+            />
             <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
                 <Navbar onToggleSidebar={toggleSidebar} />
                 <main className="content-area">
