@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
 import PersonaForm from '../../components/PersonaForm';
 
 // Datos de ejemplo - en producción vendría de la API
@@ -70,7 +69,7 @@ const datosEjemplo = [
     }
 ];
 
-const ListaPersonas = ({ onNavigate }) => {
+const ListaPersonas = () => {
     const [personas, setPersonas] = useState([]);
     const [filteredPersonas, setFilteredPersonas] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -174,10 +173,20 @@ const ListaPersonas = ({ onNavigate }) => {
         setSelectedPersona(null);
     };
 
-    const handleSavePersona = (personaData) => {
+    const handleSavePersona = (personaData, usuarioData = null) => {
         if (modalMode === 'create') {
             // Agregar nueva persona
             setPersonas(prev => [...prev, personaData]);
+
+            // Si se creó un usuario también, mostrar mensaje de éxito
+            if (usuarioData) {
+                alert(`✅ Persona creada exitosamente!\n\n` +
+                    `👤 Persona: ${personaData.nombre} ${personaData.apellido}\n` +
+                    `👨‍🏫 Usuario: ${usuarioData.nombreUsuario}\n` +
+                    `📧 Email: ${usuarioData.email}\n` +
+                    `🔑 Rol: ${usuarioData.rol}\n\n` +
+                    `El docente ya puede acceder al sistema con su cuenta de usuario.`);
+            }
         } else if (modalMode === 'edit') {
             // Actualizar persona existente
             setPersonas(prev => prev.map(p =>
@@ -205,276 +214,280 @@ const ListaPersonas = ({ onNavigate }) => {
     };
 
     return (
-        <AdminLayout onNavigate={onNavigate}>
-            <div className="personas-container">
-                {/* Header */}
-                <div className="page-header">
-                    <div className="header-content">
-                        <h2>Lista de Personas</h2>
-                        <p>Gestión de personas registradas en el sistema</p>
-                    </div>
-                    <div className="header-actions">
+        <div>
+            {/* Header */}
+            <div className="page-header">
+                <div className="header-content">
+                    <h1 className="page-title">
+                        <i className="fas fa-users me-2"></i>
+                        Gestión de Personas
+                    </h1>
+                    <p>Gestión de personas registradas en el sistema</p>
+                </div>
+                <div className="header-actions">
+                    <button
+                        className="btn btn-primary-new"
+                        onClick={() => openModal('create')}
+                    >
+                        <i className="fas fa-plus"></i>
+                        Nueva Persona
+                    </button>
+                </div>
+            </div>
+
+            {/* Filtros y búsqueda */}
+            <div className="filters-section">
+                <div className="search-bar">
+                    <i className="fas fa-search"></i>
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre, apellido, documento o tipo..."
+                        value={searchQuery}
+                        onChange={handleSearch}
+                        className="search-input"
+                    />
+                </div>
+
+                <div className="filter-actions">
+                    <select
+                        className="filter-select"
+                        value={filterTipo}
+                        onChange={handleFilterTipo}
+                    >
+                        <option value="">Todos los tipos</option>
+                        <option value="Alumno">Alumno</option>
+                        <option value="Docente">Docente</option>
+                    </select>
+
+                    <select
+                        className="filter-select"
+                        value={filterEstado}
+                        onChange={handleFilterEstado}
+                    >
+                        <option value="">Todos los estados</option>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+
+                    {(searchQuery || filterTipo || filterEstado) && (
                         <button
-                            className="btn btn-primary"
-                            onClick={() => openModal('create')}
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={clearFilters}
+                            title="Limpiar filtros"
                         >
-                            <i className="fas fa-plus"></i>
-                            Nueva Persona
+                            <i className="fas fa-times"></i>
+                            Limpiar
                         </button>
-                    </div>
-                </div>
-
-                {/* Filtros y búsqueda */}
-                <div className="filters-section">
-                    <div className="search-bar">
-                        <i className="fas fa-search"></i>
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre, apellido, documento o tipo..."
-                            value={searchQuery}
-                            onChange={handleSearch}
-                            className="search-input"
-                        />
-                    </div>
-
-                    <div className="filter-actions">
-                        <select
-                            className="filter-select"
-                            value={filterTipo}
-                            onChange={handleFilterTipo}
-                        >
-                            <option value="">Todos los tipos</option>
-                            <option value="Alumno">Alumno</option>
-                            <option value="Docente">Docente</option>
-                        </select>
-
-                        <select
-                            className="filter-select"
-                            value={filterEstado}
-                            onChange={handleFilterEstado}
-                        >
-                            <option value="">Todos los estados</option>
-                            <option value="Activo">Activo</option>
-                            <option value="Inactivo">Inactivo</option>
-                        </select>
-
-                        {(searchQuery || filterTipo || filterEstado) && (
-                            <button
-                                className="btn btn-outline-secondary btn-sm"
-                                onClick={clearFilters}
-                                title="Limpiar filtros"
-                            >
-                                <i className="fas fa-times"></i>
-                                Limpiar
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Acciones en lote */}
-                {selectedPersonas.length > 0 && (
-                    <div className="bulk-actions">
-                        <span className="selected-count">
-                            {selectedPersonas.length} persona(s) seleccionada(s)
-                        </span>
-                        <div className="bulk-buttons">
-                            <button
-                                className="btn btn-danger btn-sm"
-                                onClick={handleBulkDelete}
-                            >
-                                <i className="fas fa-trash"></i>
-                                Eliminar seleccionadas
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Indicador de resultados */}
-                <div className="results-info">
-                    <span className="results-count">
-                        Mostrando {filteredPersonas.length} de {personas.length} persona(s)
-                        {(searchQuery || filterTipo || filterEstado) && (
-                            <span className="filter-indicator"> (filtrado)</span>
-                        )}
-                    </span>
-                </div>
-
-                {/* Tabla */}
-                <div className="table-container">
-                    {loading ? (
-                        <div className="loading-spinner">
-                            <i className="fas fa-spinner fa-spin"></i>
-                            <p>Cargando personas...</p>
-                        </div>
-                    ) : (
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>
-                                        <input
-                                            type="checkbox"
-                                            onChange={handleSelectAll}
-                                            checked={selectedPersonas.length === currentPersonas.length && currentPersonas.length > 0}
-                                        />
-                                    </th>
-                                    <th>Nombre Completo</th>
-                                    <th>Documento</th>
-                                    <th>Tipo</th>
-                                    <th>Teléfono</th>
-                                    <th>Estado</th>
-                                    <th>Fecha Registro</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentPersonas.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="8" className="no-data">
-                                            <i className="fas fa-users"></i>
-                                            <p>No se encontraron personas</p>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    currentPersonas.map((persona) => (
-                                        <tr key={persona.id}>
-                                            <td>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedPersonas.includes(persona.id)}
-                                                    onChange={() => handleSelectPersona(persona.id)}
-                                                />
-                                            </td>
-                                            <td>
-                                                <div className="user-info">
-                                                    <div className="user-avatar">
-                                                        <i className="fas fa-user"></i>
-                                                    </div>
-                                                    <div>
-                                                        <strong>{persona.nombre} {persona.apellido}</strong>
-                                                        <small>{persona.email}</small>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="document-badge">
-                                                    {persona.tipoDocumento}: {persona.numeroDocumento}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span className={`type-badge ${persona.tipoPersona === 'Docente' ? 'teacher' : 'student'}`}>
-                                                    {persona.tipoPersona}
-                                                    {persona.grado && (
-                                                        <small className="grade-info"> - {persona.grado}</small>
-                                                    )}
-                                                </span>
-                                            </td>
-                                            <td>{persona.telefono}</td>
-                                            <td>
-                                                <span className={`status-badge ${persona.estado.toLowerCase()}`}>
-                                                    {persona.estado}
-                                                </span>
-                                            </td>
-                                            <td>{new Date(persona.fechaRegistro).toLocaleDateString()}</td>
-                                            <td>
-                                                <div className="action-buttons">
-                                                    <button
-                                                        className="btn-action btn-view"
-                                                        onClick={() => openModal('view', persona)}
-                                                        title="Ver detalles"
-                                                    >
-                                                        <i className="fas fa-eye"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-edit"
-                                                        onClick={() => openModal('edit', persona)}
-                                                        title="Editar"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-delete"
-                                                        onClick={() => handleDelete(persona.id)}
-                                                        title="Eliminar"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
                     )}
                 </div>
+            </div>
 
-                {/* Paginación */}
-                {totalPages > 1 && (
-                    <div className="pagination">
+            {/* Acciones en lote */}
+            {selectedPersonas.length > 0 && (
+                <div className="bulk-actions">
+                    <span className="selected-count">
+                        {selectedPersonas.length} persona(s) seleccionada(s)
+                    </span>
+                    <div className="bulk-buttons">
                         <button
-                            className="pagination-btn"
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
+                            className="btn btn-danger btn-sm"
+                            onClick={handleBulkDelete}
                         >
-                            <i className="fas fa-chevron-left"></i>
-                        </button>
-
-                        <div className="pagination-info">
-                            Página {currentPage} de {totalPages} ({filteredPersonas.length} registros)
-                        </div>
-
-                        <button
-                            className="pagination-btn"
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            <i className="fas fa-chevron-right"></i>
+                            <i className="fas fa-trash"></i>
+                            Eliminar seleccionadas
                         </button>
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* Modal para Persona */}
-                {showModal && (
-                    <div className="modal-overlay" onClick={closeModal}>
-                        <div className="modal-content persona-modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>
-                                    {modalMode === 'create' && (
-                                        <>
-                                            <i className="fas fa-user-plus me-2"></i>
-                                            Nueva Persona
-                                        </>
-                                    )}
-                                    {modalMode === 'edit' && (
-                                        <>
-                                            <i className="fas fa-user-edit me-2"></i>
-                                            Editar Persona
-                                        </>
-                                    )}
-                                    {modalMode === 'view' && (
-                                        <>
-                                            <i className="fas fa-user me-2"></i>
-                                            Detalles de Persona
-                                        </>
-                                    )}
-                                </h3>
-                                <button className="modal-close" onClick={closeModal}>
-                                    <i className="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <PersonaForm
-                                    persona={selectedPersona}
-                                    mode={modalMode}
-                                    onSave={handleSavePersona}
-                                    onCancel={closeModal}
-                                />
-                            </div>
-                        </div>
+            {/* Indicador de resultados */}
+            <div className="results-info">
+                <span className="results-count">
+                    Mostrando {filteredPersonas.length} de {personas.length} persona(s)
+                    {(searchQuery || filterTipo || filterEstado) && (
+                        <span className="filter-indicator"> (filtrado)</span>
+                    )}
+                </span>
+            </div>
+
+            {/* Tabla */}
+            <div className="table-container">
+                {loading ? (
+                    <div className="loading-spinner">
+                        <i className="fas fa-spinner fa-spin"></i>
+                        <p>Cargando personas...</p>
                     </div>
+                ) : (
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input
+                                        type="checkbox"
+                                        onChange={handleSelectAll}
+                                        checked={selectedPersonas.length === currentPersonas.length && currentPersonas.length > 0}
+                                    />
+                                </th>
+                                <th>Nombre Completo</th>
+                                <th>Documento</th>
+                                <th>Tipo</th>
+                                <th>Grado</th>
+                                <th>Teléfono</th>
+                                <th>Estado</th>
+                                <th>Fecha Registro</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentPersonas.length === 0 ? (
+                                <tr>
+                                    <td colSpan="8" className="no-data">
+                                        <i className="fas fa-users"></i>
+                                        <p>No se encontraron personas</p>
+                                    </td>
+                                </tr>
+                            ) : (
+                                currentPersonas.map((persona) => (
+                                    <tr key={persona.id}>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedPersonas.includes(persona.id)}
+                                                onChange={() => handleSelectPersona(persona.id)}
+                                            />
+                                        </td>
+                                        <td>
+                                            <div className="user-info">
+                                                <div className="user-avatar">
+                                                    <i className="fas fa-user"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{persona.nombre} {persona.apellido}</strong>
+                                                    <small>{persona.email}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {persona.numeroDocumento}
+                                        </td>
+                                        <td>
+                                            <span className={`type-badge ${persona.tipoPersona === 'Docente' ? 'teacher' : 'student'}`}>
+                                                {persona.tipoPersona}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`type-badge ${persona.tipoPersona === 'Docente' ? 'teacher' : 'student'}`}>
+                                                {persona.grado && (
+                                                    <small className="grade-info">{persona.grado}</small>
+                                                )}
+                                            </span>
+                                        </td>
+                                        <td>{persona.telefono}</td>
+                                        <td>
+                                            <span className={`status-badge ${persona.estado.toLowerCase()}`}>
+                                                {persona.estado}
+                                            </span>
+                                        </td>
+                                        <td>{new Date(persona.fechaRegistro).toLocaleDateString()}</td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button
+                                                    className="btn-action btn-view"
+                                                    onClick={() => openModal('view', persona)}
+                                                    title="Ver detalles"
+                                                >
+                                                    <i className="fas fa-eye"></i>
+                                                </button>
+                                                <button
+                                                    className="btn-action btn-edit"
+                                                    onClick={() => openModal('edit', persona)}
+                                                    title="Editar"
+                                                >
+                                                    <i className="fas fa-edit"></i>
+                                                </button>
+                                                <button
+                                                    className="btn-action btn-delete"
+                                                    onClick={() => handleDelete(persona.id)}
+                                                    title="Eliminar"
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 )}
             </div>
-        </AdminLayout>
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+                <div className="pagination">
+                    <button
+                        className="pagination-btn"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        <i className="fas fa-chevron-left"></i>
+                    </button>
+
+                    <div className="pagination-info">
+                        Página {currentPage} de {totalPages} ({filteredPersonas.length} registros)
+                    </div>
+
+                    <button
+                        className="pagination-btn"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                        <i className="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            )}
+
+            {/* Modal para Persona */}
+            {showModal && (
+                <div className="modal-overlay" onClick={closeModal}>
+                    <div className="modal-content persona-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>
+                                {modalMode === 'create' && (
+                                    <>
+                                        <i className="fas fa-user-plus me-2"></i>
+                                        Nueva Persona
+                                    </>
+                                )}
+                                {modalMode === 'edit' && (
+                                    <>
+                                        <i className="fas fa-user-edit me-2"></i>
+                                        Editar Persona
+                                    </>
+                                )}
+                                {modalMode === 'view' && (
+                                    <>
+                                        <i className="fas fa-user me-2"></i>
+                                        Detalles de Persona
+                                    </>
+                                )}
+                            </h3>
+                            <button className="modal-close" onClick={closeModal}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <PersonaForm
+                                persona={selectedPersona}
+                                mode={modalMode}
+                                onSave={handleSavePersona}
+                                onCancel={closeModal}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 

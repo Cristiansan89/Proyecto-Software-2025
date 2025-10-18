@@ -74,9 +74,9 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
             <form onSubmit={handleSubmit}>
                 <div className="form-sections">
                     {/* Información del Grado */}
-                    <div className="form-section">
+                    <div >
                         <h4 className="section-title">
-                            <i className="fas fa-graduation-cap"></i>
+                            <i className="fas fa-graduation-cap me-2"></i>
                             Información del Grado
                         </h4>
 
@@ -125,11 +125,11 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
                 <div className="form-actions mt-3">
                     <button
                         type="button"
-                        className="btn btn-danger me-2"
+                        className="btn btn-secondary me-2"
                         onClick={onCancel}
                         disabled={loading}
                     >
-                        <i className="fas fa-ban"></i>
+                        <i className="fas fa-times"></i>
                         {isViewMode ? 'Cerrar' : 'Cancelar'}
                     </button>
 
@@ -146,7 +146,7 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
                                 </>
                             ) : (
                                 <>
-                                    <i className="fas fa-save me-2"></i>
+                                    <i className="fas fa-save"></i>
                                     {isCreateMode ? 'Crear Grado' : 'Actualizar Grado'}
                                 </>
                             )}

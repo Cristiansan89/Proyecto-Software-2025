@@ -5,6 +5,26 @@
   height: 100%;
 }
 
+/* Estilos para tarjetas hover */
+.hover-card {
+  transition: all 0.3s ease;
+  border: 1px solid #dee2e6;
+}
+
+.hover-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-color: #007bff;
+}
+
+.hover-card .card-body {
+  transition: all 0.3s ease;
+}
+
+.hover-card:hover .card-body {
+  background-color: #f8f9fa;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

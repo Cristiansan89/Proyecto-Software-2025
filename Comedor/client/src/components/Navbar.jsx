@@ -1,6 +1,6 @@
-const Navbar = ({ onToggleSidebar }) => {
+const Navbar = ({ onToggleSidebar, sidebarCollapsed }) => {
     return (
-        <nav className="admin-navbar">
+        <nav className={`admin-navbar ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <div className="navbar-left">
                 <button
                     className="sidebar-toggle-btn"
@@ -8,7 +8,7 @@ const Navbar = ({ onToggleSidebar }) => {
                 >
                     <i className="fas fa-bars"></i>
                 </button>
-                <h1 className="page-title">Dashboard</h1>
+
             </div>
 
             <div className="navbar-right">

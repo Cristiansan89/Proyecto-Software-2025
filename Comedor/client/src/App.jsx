@@ -4,12 +4,16 @@ import AdminDashboard from './pages/admins/Dashboard'
 import ListaPersonas from './pages/admins/ListaPersonas'
 import ListaGrados from './pages/admins/ListaGrados'
 import ListaUsuarios from './pages/admins/ListaUsuarios'
+import GestionRolesPermisos from './pages/admins/GestionRolesPermisos'
+import ListaInsumos from './pages/admins/ListaInsumos'
+import ListaProveedores from './pages/admins/ListaProveedores'
+import AdminLayout from './layouts/AdminLayout'
 import './App.css'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userRole, setUserRole] = useState(null)
-  const [currentPage, setCurrentPage] = useState('usuarios') // 'login', 'dashboard', 'personas', 'grados', 'usuarios'
+  const [currentPage, setCurrentPage] = useState('dashboard') // 'login', 'dashboard', 'personas', 'grados', 'usuarios', 'roles', 'insumos', 'proveedores'
 
   // Evitar warning del linter - userRole se usará para control de acceso
   console.log('User role:', userRole);
@@ -37,22 +41,40 @@ function App() {
     )
   }
 
+  // Renderizar el contenido de la página (sin layout)
+  const renderPageContent = () => {
+    switch (currentPage) {
+      case 'dashboard':
+        return <AdminDashboard />
+      case 'personas':
+        return <ListaPersonas />
+      case 'grados':
+        return <ListaGrados />
+      case 'usuarios':
+        return <ListaUsuarios />
+      case 'roles':
+        return <GestionRolesPermisos />
+      case 'insumos':
+        return <ListaInsumos />
+      case 'proveedores':
+        return <ListaProveedores />
+      default:
+        return <AdminDashboard />
+    }
+  }
+
   // Renderizar según la página actual
   const renderCurrentPage = () => {
-    switch (currentPage) {
-      case 'login':
-        return <Login onLoginSuccess={handleLoginSuccess} />
-      case 'dashboard':
-        return <AdminDashboard onNavigate={handleNavigation} />
-      case 'personas':
-        return <ListaPersonas onNavigate={handleNavigation} />
-      case 'grados':
-        return <ListaGrados onNavigate={handleNavigation} />
-      case 'usuarios':
-        return <ListaUsuarios onNavigate={handleNavigation} />
-      default:
-        return <ListaPersonas onNavigate={handleNavigation} />
+    if (currentPage === 'login') {
+      return <Login onLoginSuccess={handleLoginSuccess} />
     }
+
+    // Para todas las demás páginas, usar AdminLayout
+    return (
+      <AdminLayout onNavigate={handleNavigation} currentPage={currentPage}>
+        {renderPageContent()}
+      </AdminLayout>
+    )
   }
 
   return (

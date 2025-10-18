@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
 import UsuarioForm from '../../components/usuarios/UsuarioForm';
 
 // Lista de roles disponibles
@@ -64,7 +63,7 @@ const usuariosEjemplo = [
     }
 ];
 
-const ListaUsuarios = ({ onNavigate }) => {
+const ListaUsuarios = () => {
     const [usuarios, setUsuarios] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -225,48 +224,33 @@ const ListaUsuarios = ({ onNavigate }) => {
 
     if (loading) {
         return (
-            <AdminLayout onNavigate={onNavigate}>
-                <div className="loading-container">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Cargando...</span>
-                    </div>
-                    <p>Cargando usuarios...</p>
+            <div className="loading-container">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Cargando...</span>
                 </div>
-            </AdminLayout>
+                <p>Cargando usuarios...</p>
+            </div>
         );
     }
 
     return (
-        <AdminLayout onNavigate={onNavigate}>
-            <div className="usuarios-container">
+        <div>
+            <div>
                 {/* Header */}
                 <div className="page-header">
                     <div className="header-content">
-                        <div className="title-section">
-                            <h1 className="page-title">
-                                <i className="fas fa-users me-3"></i>
-                                Gestión de Usuarios
-                            </h1>
-                            <p className="page-subtitle">
-                                Administre los usuarios del sistema
-                            </p>
-                        </div>
-                        <div className="header-stats">
-                            <div className="stat-card-users">
-                                <div className="stat-number">{usuarios.length}</div>
-                                <div className="stat-label">Total Usuarios</div>
-                            </div>
-                            <div className="stat-card-users">
-                                <div className="stat-number">
-                                    {usuarios.filter(u => u.estado === 'Activo').length}
-                                </div>
-                                <div className="stat-label">Activos</div>
-                            </div>
-                        </div>
+                        <h1 className="page-title">
+                            <i className="fas fa-users me-2"></i>
+                            Gestión de Usuarios
+                        </h1>
+                        <p className="page-subtitle">
+                            Administre los usuarios del sistema
+                        </p>
+
                     </div>
                     <div className="header-actions">
                         <button
-                            className="btn btn-primary"
+                            className="btn btn-primary-new"
                             onClick={() => openModal('create')}
                         >
                             <i className="fas fa-plus me-2"></i>
@@ -274,7 +258,20 @@ const ListaUsuarios = ({ onNavigate }) => {
                         </button>
                     </div>
                 </div>
-
+                <div className="page-header">
+                    <div className="header-stats">
+                        <div className="stat-card-users">
+                            <div className="stat-number-users">{usuarios.length}</div>
+                            <div className="stat-label-users">Total Usuarios</div>
+                        </div>
+                        <div className="stat-card-users">
+                            <div className="stat-number-users">
+                                {usuarios.filter(u => u.estado === 'Activo').length}
+                            </div>
+                            <div className="stat-label-users">Activos</div>
+                        </div>
+                    </div>
+                </div>
                 {/* Controles de búsqueda y filtros */}
                 <div className="search-filters">
                     <div className="search-bar">
@@ -377,16 +374,15 @@ const ListaUsuarios = ({ onNavigate }) => {
                                         </td>
                                         <td>
                                             <div className="user-info">
-                                                <i className="fas fa-user me-2 text-primary"></i>
+                                                <i className="fas fa-user text-primary"></i>
                                                 <strong>{usuario.nombreUsuario}</strong>
                                             </div>
                                         </td>
                                         <td>
-                                            <i className="fas fa-envelope me-2 text-muted"></i>
                                             {usuario.email}
                                         </td>
                                         <td>
-                                            <i className="fas fa-phone me-2 text-muted"></i>
+
                                             {usuario.telefono}
                                         </td>
                                         <td>
@@ -395,10 +391,10 @@ const ListaUsuarios = ({ onNavigate }) => {
                                             </span>
                                         </td>
                                         <td>
-                                            <span className={`status-badge status-${usuario.estado.toLowerCase()}`}>
-                                                <i className={`fas ${usuario.estado === 'Activo' ? 'fa-check-circle' : 'fa-times-circle'} me-1`}></i>
+                                            <span className={`status-badge ${usuario.estado.toLowerCase()}`}>
                                                 {usuario.estado}
                                             </span>
+
                                         </td>
                                         <td>{new Date(usuario.fechaRegistro).toLocaleDateString()}</td>
                                         <td>
@@ -412,7 +408,7 @@ const ListaUsuarios = ({ onNavigate }) => {
                                                         <div className="fecha-exacta">
                                                             <i className="fas fa-calendar-alt me-1 text-muted"></i>
                                                             {new Date(usuario.ultimoAcceso).toLocaleDateString()}
-                                                            <span className="ms-2">
+                                                            <span>
                                                                 <i className="fas fa-clock me-1 text-muted"></i>
                                                                 {new Date(usuario.ultimoAcceso).toLocaleTimeString([],
                                                                     { hour: '2-digit', minute: '2-digit' })}
@@ -513,11 +509,9 @@ const ListaUsuarios = ({ onNavigate }) => {
                                         {modalMode === 'create' ? 'Crear Usuario' :
                                             modalMode === 'edit' ? 'Editar Usuario' : 'Ver Usuario'}
                                     </h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close"
-                                        onClick={closeModal}
-                                    ></button>
+                                    <button className="modal-close" onClick={closeModal}>
+                                        <i className="fas fa-times"></i>
+                                    </button>
                                 </div>
                                 <div className="modal-body">
                                     {modalMode === 'view' ? (
@@ -589,7 +583,7 @@ const ListaUsuarios = ({ onNavigate }) => {
                     </div>
                 )}
             </div>
-        </AdminLayout>
+        </div>
     );
 };
 

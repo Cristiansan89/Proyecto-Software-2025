@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import AdminLayout from '../../layouts/AdminLayout';
 import GradoForm from '../../components/GradoForm';
 
 // Datos de ejemplo - en producción vendría de la API
@@ -48,7 +47,7 @@ const datosEjemplo = [
     }
 ];
 
-const ListaGrados = ({ onNavigate }) => {
+const ListaGrados = () => {
     const [grados, setGrados] = useState([]);
     const [filteredGrados, setFilteredGrados] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -177,250 +176,249 @@ const ListaGrados = ({ onNavigate }) => {
     };
 
     return (
-        <AdminLayout onNavigate={onNavigate}>
-            <div className="page-content">
-                <div className="page-header">
-                    <div className="header-left">
-                        <h1 className="page-title">
-                            <i className="fas fa-graduation-cap"></i>
-                            Gestión de Grados
-                        </h1>
-                        <p className="page-subtitle">
-                            Administra los grados académicos del centro educativo
-                        </p>
-                    </div>
-                    <div className="header-actions">
+        <div className="page-content">
+            <div className="page-header">
+                <div className="header-left">
+                    <h1 className="page-title">
+                        <i className="fas fa-graduation-cap me-2"></i>
+                        Gestión de Grados
+                    </h1>
+                    <p>
+                        Administra los grados académicos del centro educativo
+                    </p>
+
+                </div>
+
+                <div className="header-actions">
+                    <button
+                        className="btn btn-primary-new"
+                        onClick={() => openModal('create')}
+                    >
+                        <i className="fas fa-plus"></i>
+                        Nuevo Grado
+                    </button>
+                </div>
+            </div>
+
+            {/* Controles de búsqueda y filtros */}
+            <div className="search-filters">
+                <div className="search-bar">
+                    <i className="fas fa-search search-icon"></i>
+                    <input
+                        type="text"
+                        className="search-input"
+                        placeholder="Buscar por nombre del grado..."
+                        value={searchQuery}
+                        onChange={handleSearch}
+                    />
+                </div>
+
+                <div className="filter-actions">
+                    <select
+                        className="filter-select"
+                        value={filterEstado}
+                        onChange={handleFilterEstado}
+                    >
+                        <option value="">Todos los estados</option>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+
+                    {(searchQuery || filterEstado) && (
                         <button
-                            className="btn btn-primary"
-                            onClick={() => openModal('create')}
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={clearFilters}
+                            title="Limpiar filtros"
                         >
-                            <i className="fas fa-plus"></i>
-                            Nuevo Grado
+                            <i className="fas fa-times"></i>
+                            Limpiar
                         </button>
-                    </div>
-                </div>
-
-                {/* Controles de búsqueda y filtros */}
-                <div className="search-filters">
-                    <div className="search-bar">
-                        <i className="fas fa-search search-icon"></i>
-                        <input
-                            type="text"
-                            className="search-input"
-                            placeholder="Buscar por nombre del grado..."
-                            value={searchQuery}
-                            onChange={handleSearch}
-                        />
-                    </div>
-
-                    <div className="filter-actions">
-                        <select
-                            className="filter-select"
-                            value={filterEstado}
-                            onChange={handleFilterEstado}
-                        >
-                            <option value="">Todos los estados</option>
-                            <option value="Activo">Activo</option>
-                            <option value="Inactivo">Inactivo</option>
-                        </select>
-
-                        {(searchQuery || filterEstado) && (
-                            <button
-                                className="btn btn-outline-secondary btn-sm"
-                                onClick={clearFilters}
-                                title="Limpiar filtros"
-                            >
-                                <i className="fas fa-times"></i>
-                                Limpiar
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Acciones en lote */}
-                {selectedGrados.length > 0 && (
-                    <div className="bulk-actions">
-                        <span className="selected-count">
-                            {selectedGrados.length} grado(s) seleccionado(s)
-                        </span>
-                        <div className="bulk-buttons">
-                            <button
-                                className="btn btn-danger btn-sm"
-                                onClick={handleBulkDelete}
-                            >
-                                <i className="fas fa-trash"></i>
-                                Eliminar Seleccionados
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Indicador de resultados */}
-                <div className="results-info">
-                    <span className="results-count">
-                        Mostrando {filteredGrados.length} de {grados.length} grado(s)
-                        {(searchQuery || filterEstado) && (
-                            <span className="filter-indicator"> (filtrado)</span>
-                        )}
-                    </span>
-                </div>
-
-                {/* Tabla */}
-                <div className="table-container">
-                    {loading ? (
-                        <div className="loading-spinner">
-                            <i className="fas fa-spinner fa-spin"></i>
-                            <p>Cargando grados...</p>
-                        </div>
-                    ) : (
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedGrados.length === currentGrados.length && currentGrados.length > 0}
-                                            onChange={handleSelectAll}
-                                        />
-                                    </th>
-                                    <th>Nombre del Grado</th>
-                                    <th>Estado</th>
-                                    <th>Fecha Registro</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentGrados.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="5" className="empty-state">
-                                            <i className="fas fa-graduation-cap"></i>
-                                            <p>No se encontraron grados</p>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    currentGrados.map(grado => (
-                                        <tr key={grado.id}>
-                                            <td>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedGrados.includes(grado.id)}
-                                                    onChange={() => handleSelectGrado(grado.id)}
-                                                />
-                                            </td>
-                                            <td>
-                                                <div className="grado-name">
-                                                    <i className="fas fa-graduation-cap"></i>
-                                                    <strong>{grado.nombreGrado}</strong>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className={`status-badge ${grado.estado === 'Activo' ? 'active' : 'inactive'}`}>
-                                                    {grado.estado}
-                                                </span>
-                                            </td>
-                                            <td>{grado.fechaRegistro}</td>
-                                            <td>
-                                                <div className="table-actions">
-                                                    <button
-                                                        className="btn-action btn-view"
-                                                        onClick={() => openModal('view', grado)}
-                                                        title="Ver detalles"
-                                                    >
-                                                        <i className="fas fa-eye"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-edit"
-                                                        onClick={() => openModal('edit', grado)}
-                                                        title="Editar"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-delete"
-                                                        onClick={() => handleDelete(grado.id)}
-                                                        title="Eliminar"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
                     )}
                 </div>
+            </div>
 
-                {/* Paginación */}
-                {totalPages > 1 && (
-                    <div className="pagination">
+            {/* Acciones en lote */}
+            {selectedGrados.length > 0 && (
+                <div className="bulk-actions">
+                    <span className="selected-count">
+                        {selectedGrados.length} grado(s) seleccionado(s)
+                    </span>
+                    <div className="bulk-buttons">
                         <button
-                            className="pagination-btn"
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
+                            className="btn btn-danger btn-sm"
+                            onClick={handleBulkDelete}
                         >
-                            <i className="fas fa-chevron-left"></i>
-                            Anterior
-                        </button>
-
-                        <div className="pagination-info">
-                            Página {currentPage} de {totalPages}
-                        </div>
-
-                        <button
-                            className="pagination-btn"
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                        >
-                            Siguiente
-                            <i className="fas fa-chevron-right"></i>
+                            <i className="fas fa-trash"></i>
+                            Eliminar Seleccionados
                         </button>
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* Modal para Grado */}
-                {showModal && (
-                    <div className="modal-overlay" onClick={closeModal}>
-                        <div className="modal-content grado-modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>
-                                    {modalMode === 'create' && (
-                                        <>
-                                            <i className="fas fa-plus me-2"></i>
-                                            Nuevo Grado
-                                        </>
-                                    )}
-                                    {modalMode === 'edit' && (
-                                        <>
-                                            <i className="fas fa-edit me-2"></i>
-                                            Editar Grado
-                                        </>
-                                    )}
-                                    {modalMode === 'view' && (
-                                        <>
-                                            <i className="fas fa-graduation-cap me-2"></i>
-                                            Detalles del Grado
-                                        </>
-                                    )}
-                                </h3>
-                                <button className="modal-close" onClick={closeModal}>
-                                    <i className="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <GradoForm
-                                    grado={selectedGrado}
-                                    mode={modalMode}
-                                    onSave={handleSaveGrado}
-                                    onCancel={closeModal}
-                                />
-                            </div>
-                        </div>
+            {/* Indicador de resultados */}
+            <div className="results-info">
+                <span className="results-count">
+                    Mostrando {filteredGrados.length} de {grados.length} grado(s)
+                    {(searchQuery || filterEstado) && (
+                        <span className="filter-indicator"> (filtrado)</span>
+                    )}
+                </span>
+            </div>
+
+            {/* Tabla */}
+            <div className="table-container">
+                {loading ? (
+                    <div className="loading-spinner">
+                        <i className="fas fa-spinner fa-spin"></i>
+                        <p>Cargando grados...</p>
                     </div>
+                ) : (
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedGrados.length === currentGrados.length && currentGrados.length > 0}
+                                        onChange={handleSelectAll}
+                                    />
+                                </th>
+                                <th>Nobre del Grado</th>
+                                <th>Estado</th>
+                                <th>Fecha Registro</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentGrados.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="empty-state">
+                                        <i className="fas fa-graduation-cap"></i>
+                                        <p>No se encontraron grados</p>
+                                    </td>
+                                </tr>
+                            ) : (
+                                currentGrados.map(grado => (
+                                    <tr key={grado.id}>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedGrados.includes(grado.id)}
+                                                onChange={() => handleSelectGrado(grado.id)}
+                                            />
+                                        </td>
+                                        <td>
+                                            <div className="grado-name">
+                                                <i className="fas fa-graduation-cap"></i>
+                                                <strong>{grado.nombreGrado}</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+
+                                            <span className={`status-badge ${grado.estado.toLowerCase()}`}>{grado.estado}</span>
+                                        </td>
+                                        <td>{grado.fechaRegistro}</td>
+                                        <td>
+                                            <div className="table-actions">
+                                                <button
+                                                    className="btn-action btn-view"
+                                                    onClick={() => openModal('view', grado)}
+                                                    title="Ver detalles"
+                                                >
+                                                    <i className="fas fa-eye"></i>
+                                                </button>
+                                                <button
+                                                    className="btn-action btn-edit"
+                                                    onClick={() => openModal('edit', grado)}
+                                                    title="Editar"
+                                                >
+                                                    <i className="fas fa-edit"></i>
+                                                </button>
+                                                <button
+                                                    className="btn-action btn-delete"
+                                                    onClick={() => handleDelete(grado.id)}
+                                                    title="Eliminar"
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 )}
             </div>
-        </AdminLayout>
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+                <div className="pagination">
+                    <button
+                        className="pagination-btn"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
+                        <i className="fas fa-chevron-left"></i>
+                        Anterior
+                    </button>
+
+                    <div className="pagination-info">
+                        Página {currentPage} de {totalPages}
+                    </div>
+
+                    <button
+                        className="pagination-btn"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
+                        Siguiente
+                        <i className="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            )}
+
+            {/* Modal para Grado */}
+            {showModal && (
+                <div className="modal-overlay" onClick={closeModal}>
+                    <div className="modal-content grado-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>
+                                {modalMode === 'create' && (
+                                    <>
+                                        <i className="fas fa-plus me-2"></i>
+                                        Nuevo Grado
+                                    </>
+                                )}
+                                {modalMode === 'edit' && (
+                                    <>
+                                        <i className="fas fa-edit me-2"></i>
+                                        Editar Grado
+                                    </>
+                                )}
+                                {modalMode === 'view' && (
+                                    <>
+                                        <i className="fas fa-graduation-cap me-2"></i>
+                                        Detalles del Grado
+                                    </>
+                                )}
+                            </h3>
+                            <button className="modal-close" onClick={closeModal}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <GradoForm
+                                grado={selectedGrado}
+                                mode={modalMode}
+                                onSave={handleSaveGrado}
+                                onCancel={closeModal}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 
