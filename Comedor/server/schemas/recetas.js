@@ -1,21 +1,27 @@
 import z from 'zod'
 
+// UUID validation regex
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 const recetaSchema = z.object({
-    nombrePlato: z.string({
-        required_error: 'El nombre del plato es requerido',
-        invalid_type_error: 'El nombre del plato debe ser un texto'
-    }).min(1).max(100),
-    descripcion: z.string({
-        invalid_type_error: 'La descripción debe ser un texto'
-    }).max(255).nullable(),
-    tiempoPreparacion: z.number({
-        required_error: 'El tiempo de preparación es requerido',
-        invalid_type_error: 'El tiempo de preparación debe ser un número'
-    }).int().positive(),
-    porciones: z.number({
-        required_error: 'El número de porciones es requerido',
-        invalid_type_error: 'El número de porciones debe ser un número'
-    }).int().positive()
+    id_servicio: z.string({
+        required_error: 'El ID del servicio es requerido',
+        invalid_type_error: 'El ID del servicio debe ser un texto'
+    }).regex(uuidRegex, 'El ID del servicio debe ser un UUID válido'),
+    nombreReceta: z.string({
+        required_error: 'El nombre de la receta es requerido',
+        invalid_type_error: 'El nombre de la receta debe ser un texto'
+    }).min(1, 'El nombre de la receta no puede estar vacío').max(100, 'El nombre de la receta no puede tener más de 100 caracteres'),
+    instrucciones: z.string({
+        required_error: 'Las instrucciones son requeridas',
+        invalid_type_error: 'Las instrucciones deben ser texto'
+    }).min(10, 'Las instrucciones deben tener al menos 10 caracteres'),
+    unidadSalida: z.enum(['Porcion', 'Litro', 'Kilogramo', 'Unidad'], {
+        invalid_type_error: 'Unidad de salida inválida'
+    }).default('Porcion'),
+    estado: z.enum(['Activo', 'Inactivo'], {
+        invalid_type_error: 'Estado inválido'
+    }).default('Activo')
 })
 
 export function validateReceta(input) {

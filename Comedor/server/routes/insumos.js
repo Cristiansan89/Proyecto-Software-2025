@@ -11,5 +11,11 @@ export const createInsumoRouter = ({ insumoModel }) => {
     insumosRouter.delete('/:id', insumoController.delete)
     insumosRouter.patch('/:id', insumoController.update)
 
+    // Endpoints especializados
+    insumosRouter.get('/activos/list', insumoController.getActivos)
+    insumosRouter.get('/search/by-nombre', insumoController.searchByNombre)
+    insumosRouter.get('/categoria/:categoria', insumoController.getByCategoria)
+    insumosRouter.patch('/:id/estado', insumoController.cambiarEstado)
+
     return insumosRouter
 }

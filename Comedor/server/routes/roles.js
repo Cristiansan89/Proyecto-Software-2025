@@ -11,5 +11,11 @@ export const createRolRouter = ({ rolModel }) => {
     rolesRouter.delete('/:id', rolController.delete)
     rolesRouter.patch('/:id', rolController.update)
 
+    // Endpoints especializados
+    rolesRouter.get('/activos/list', rolController.getActivos)
+    rolesRouter.get('/search/by-nombre', rolController.searchByNombre)
+    rolesRouter.get('/:id/permisos', rolController.getConPermisos)
+    rolesRouter.patch('/:id/estado', rolController.cambiarEstado)
+
     return rolesRouter
 }

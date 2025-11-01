@@ -1,21 +1,24 @@
 import { connection } from './db.js'
 
 export class PersonaModel {
-    static async getAll({ idGrado }) {
-        if (idGrado) {
+    static async getAll({ nombreRol }) {
+        if (nombreRol) {
             const [personas] = await connection.query(
                 `SELECT 
-                    p.id_persona as idPersona, 
-                    p.id_usuario as idUsuario,
+                    p.id_persona as idPersona,
+                    p.nombreRol,
                     p.nombre, 
-                    p.apellido, 
-                    p.id_grado as idGrado, 
-                    p.tipoPersona, 
+                    p.apellido,
+                    p.dni,
+                    p.fechaNacimiento,
+                    p.genero,
+                    p.fechaAlta,
+                    p.fechaModificacion,
                     p.estado
                 FROM Personas p
-                JOIN Grados g ON p.id_grado = g.id_grado
-                WHERE g.id_grado = ?;`,
-                [idGrado]
+                WHERE p.nombreRol = ?
+                ORDER BY p.apellido, p.nombre;`,
+                [nombreRol]
             )
             return personas
         }
@@ -23,13 +26,17 @@ export class PersonaModel {
         const [personas] = await connection.query(
             `SELECT 
                 id_persona as idPersona,
-                id_usuario as idUsuario,
+                nombreRol,
                 nombre, 
-                apellido, 
-                id_grado as idGrado,
-                tipoPersona, 
+                apellido,
+                dni,
+                fechaNacimiento,
+                genero,
+                fechaAlta,
+                fechaModificacion,
                 estado
-            FROM Personas;`
+            FROM Personas
+            ORDER BY apellido, nombre;`
         )
         return personas
     }
@@ -38,11 +45,14 @@ export class PersonaModel {
         const [personas] = await connection.query(
             `SELECT 
                 id_persona as idPersona,
-                id_usuario as idUsuario,
+                nombreRol,
                 nombre, 
-                apellido, 
-                id_grado as idGrado,
-                tipoPersona, 
+                apellido,
+                dni,
+                fechaNacimiento,
+                genero,
+                fechaAlta,
+                fechaModificacion,
                 estado
             FROM Personas
             WHERE id_persona = ?;`,
@@ -54,38 +64,34 @@ export class PersonaModel {
 
     static async create({ input }) {
         const {
-            idUsuario,
+            nombreRol,
             nombre,
             apellido,
-            idGrado,
-            tipoPersona,
+            dni,
+            fechaNacimiento,
+            genero = 'Otros',
             estado = 'Activo'
         } = input
 
         try {
-            await connection.query(
+            const [result] = await connection.query(
                 `INSERT INTO Personas (
-                    id_persona, 
-                    id_usuario, 
+                    nombreRol, 
                     nombre, 
                     apellido, 
-                    id_grado, 
-                    tipoPersona, 
+                    dni,
+                    fechaNacimiento,
+                    genero,
                     estado
-                ) VALUES (UUID(), ?, ?, ?, ?, ?, ?);`,
-                [idUsuario, nombre, apellido, idGrado, tipoPersona, estado]
+                ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+                [nombreRol, nombre, apellido, dni, fechaNacimiento, genero, estado]
             )
 
-            const [newPersona] = await connection.query(
-                `SELECT id_persona as idPersona 
-                 FROM Personas 
-                 WHERE nombre = ? AND apellido = ? 
-                 ORDER BY id_persona DESC LIMIT 1;`,
-                [nombre, apellido]
-            )
-
-            return this.getById({ id: newPersona[0].idPersona })
+            return this.getById({ id: result.insertId })
         } catch (error) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new Error('El DNI ya existe')
+            }
             throw new Error('Error al crear la persona')
         }
     }
@@ -105,29 +111,65 @@ export class PersonaModel {
 
     static async update({ id, input }) {
         const {
-            idUsuario,
+            nombreRol,
             nombre,
             apellido,
-            idGrado,
-            tipoPersona,
+            dni,
+            fechaNacimiento,
+            genero,
             estado
         } = input
 
         try {
+            const updates = []
+            const values = []
+
+            if (nombreRol) {
+                updates.push('nombreRol = ?')
+                values.push(nombreRol)
+            }
+            if (nombre) {
+                updates.push('nombre = ?')
+                values.push(nombre)
+            }
+            if (apellido) {
+                updates.push('apellido = ?')
+                values.push(apellido)
+            }
+            if (dni) {
+                updates.push('dni = ?')
+                values.push(dni)
+            }
+            if (fechaNacimiento) {
+                updates.push('fechaNacimiento = ?')
+                values.push(fechaNacimiento)
+            }
+            if (genero) {
+                updates.push('genero = ?')
+                values.push(genero)
+            }
+            if (estado) {
+                updates.push('estado = ?')
+                values.push(estado)
+            }
+
+            if (updates.length === 0) return this.getById({ id })
+
+            updates.push('fechaModificacion = NOW()')
+            values.push(id)
+
             await connection.query(
                 `UPDATE Personas
-                 SET id_usuario = ?,
-                 nombre = ?, 
-                 apellido = ?, 
-                 id_grado = ?,
-                 tipoPersona = ?, 
-                 estado = ?
+                 SET ${updates.join(', ')}
                  WHERE id_persona = ?;`,
-                [idUsuario, nombre, apellido, idGrado, tipoPersona, estado, id]
+                values
             )
 
             return this.getById({ id })
         } catch (error) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new Error('El DNI ya existe')
+            }
             throw new Error('Error al actualizar la persona')
         }
     }

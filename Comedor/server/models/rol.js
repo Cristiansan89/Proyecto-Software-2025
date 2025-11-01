@@ -6,7 +6,9 @@ export class RolModel {
             `SELECT 
                 id_rol as idRol,
                 nombreRol,
-                descripcion
+                descripcionRol,
+                habilitaCuentaUsuario,
+                estado
              FROM Roles
              ORDER BY nombreRol;`
         )
@@ -18,7 +20,9 @@ export class RolModel {
             `SELECT 
                 id_rol as idRol,
                 nombreRol,
-                descripcion
+                descripcionRol,
+                habilitaCuentaUsuario,
+                estado
              FROM Roles
              WHERE id_rol = ?;`,
             [id]
@@ -30,25 +34,19 @@ export class RolModel {
     static async create({ input }) {
         const {
             nombreRol,
-            descripcion
+            descripcionRol,
+            habilitaCuentaUsuario = 'No',
+            estado = 'Activo'
         } = input
 
         try {
-            await connection.query(
-                `INSERT INTO Roles (id_rol, nombreRol, descripcion)
-                 VALUES (UUID(), ?, ?);`,
-                [nombreRol, descripcion]
+            const [result] = await connection.query(
+                `INSERT INTO Roles (nombreRol, descripcionRol, habilitaCuentaUsuario, estado)
+                 VALUES (?, ?, ?, ?);`,
+                [nombreRol, descripcionRol, habilitaCuentaUsuario, estado]
             )
 
-            const [newRol] = await connection.query(
-                `SELECT id_rol as idRol 
-                 FROM Roles 
-                 WHERE nombreRol = ?
-                 ORDER BY id_rol DESC LIMIT 1;`,
-                [nombreRol]
-            )
-
-            return this.getById({ id: newRol[0].idRol })
+            return this.getById({ id: result.insertId })
         } catch (error) {
             if (error.code === 'ER_DUP_ENTRY') {
                 throw new Error('Ya existe un rol con este nombre')
@@ -73,15 +71,40 @@ export class RolModel {
     static async update({ id, input }) {
         const {
             nombreRol,
-            descripcion
+            descripcionRol,
+            habilitaCuentaUsuario,
+            estado
         } = input
 
         try {
+            const updates = []
+            const values = []
+
+            if (nombreRol) {
+                updates.push('nombreRol = ?')
+                values.push(nombreRol)
+            }
+            if (descripcionRol) {
+                updates.push('descripcionRol = ?')
+                values.push(descripcionRol)
+            }
+            if (habilitaCuentaUsuario) {
+                updates.push('habilitaCuentaUsuario = ?')
+                values.push(habilitaCuentaUsuario)
+            }
+            if (estado) {
+                updates.push('estado = ?')
+                values.push(estado)
+            }
+
+            if (updates.length === 0) return this.getById({ id })
+
+            values.push(id)
             await connection.query(
                 `UPDATE Roles
-                 SET nombreRol = ?, descripcion = ?
+                 SET ${updates.join(', ')}
                  WHERE id_rol = ?;`,
-                [nombreRol, descripcion, id]
+                values
             )
 
             return this.getById({ id })

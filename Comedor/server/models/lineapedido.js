@@ -2,92 +2,102 @@ import { connection } from './db.js'
 
 export class LineaPedidoModel {
     static async getAll() {
-        const [lineas] = await connection.query(
-            `SELECT 
-                lp.id_linea as idLinea,
-                lp.id_pedido as idPedido,
-                lp.id_insumo as idInsumo,
-                i.nombreInsumo,
-                i.unidadDeMedida,
-                lp.cantidadSolicitada,
-                lp.cantidadRecibida
-             FROM Lineas_Pedido lp
-             JOIN Insumos i ON lp.id_insumo = i.id_insumo
-             ORDER BY lp.id_pedido;`
-        )
-        return lineas
+        try {
+            const [lineas] = await connection.query(
+                `SELECT 
+                    dp.id_detallePedido,
+                    BIN_TO_UUID(dp.id_pedido) as id_pedido,
+                    BIN_TO_UUID(dp.id_proveedor) as id_proveedor,
+                    dp.id_insumo,
+                    i.nombre as nombreInsumo,
+                    i.unidadMedida,
+                    dp.cantidadSolicitada,
+                    pr.razonSocial as nombreProveedor
+                 FROM DetallePedido dp
+                 JOIN Insumos i ON dp.id_insumo = i.id_insumo
+                 JOIN Proveedores pr ON dp.id_proveedor = pr.id_proveedor
+                 ORDER BY dp.id_pedido;`
+            )
+            return lineas
+        } catch (error) {
+            console.error('Error al obtener detalles de pedidos:', error)
+            throw new Error('Error al obtener detalles de pedidos')
+        }
     }
 
     static async getById({ id }) {
-        const [lineas] = await connection.query(
-            `SELECT 
-                lp.id_linea as idLinea,
-                lp.id_pedido as idPedido,
-                lp.id_insumo as idInsumo,
-                i.nombreInsumo,
-                i.unidadDeMedida,
-                lp.cantidadSolicitada,
-                lp.cantidadRecibida
-             FROM Lineas_Pedido lp
-             JOIN Insumos i ON lp.id_insumo = i.id_insumo
-             WHERE lp.id_linea = ?;`,
-            [id]
-        )
-        if (lineas.length === 0) return null
-        return lineas[0]
+        try {
+            const [lineas] = await connection.query(
+                `SELECT 
+                    dp.id_detallePedido,
+                    BIN_TO_UUID(dp.id_pedido) as id_pedido,
+                    BIN_TO_UUID(dp.id_proveedor) as id_proveedor,
+                    dp.id_insumo,
+                    i.nombre as nombreInsumo,
+                    i.unidadMedida,
+                    dp.cantidadSolicitada,
+                    pr.razonSocial as nombreProveedor
+                 FROM DetallePedido dp
+                 JOIN Insumos i ON dp.id_insumo = i.id_insumo
+                 JOIN Proveedores pr ON dp.id_proveedor = pr.id_proveedor
+                 WHERE dp.id_detallePedido = ?;`,
+                [id]
+            )
+            if (lineas.length === 0) return null
+            return lineas[0]
+        } catch (error) {
+            console.error('Error al obtener detalle de pedido:', error)
+            throw new Error('Error al obtener detalle de pedido')
+        }
     }
 
     static async create({ input }) {
         const {
-            idPedido,
-            idInsumo,
-            cantidadSolicitada,
-            cantidadRecibida = null
+            id_pedido,
+            id_proveedor,
+            id_insumo,
+            cantidadSolicitada
         } = input
 
         try {
-            await connection.query(
-                `INSERT INTO Lineas_Pedido (
-                    id_linea, 
+            const [result] = await connection.query(
+                `INSERT INTO DetallePedido (
                     id_pedido, 
+                    id_proveedor,
                     id_insumo, 
-                    cantidadSolicitada, 
-                    cantidadRecibida
-                ) VALUES (UUID(), ?, ?, ?, ?);`,
-                [idPedido, idInsumo, cantidadSolicitada, cantidadRecibida]
+                    cantidadSolicitada
+                ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?);`,
+                [id_pedido, id_proveedor, id_insumo, cantidadSolicitada]
             )
 
-            const [newLinea] = await connection.query(
-                `SELECT id_linea as idLinea 
-                 FROM Lineas_Pedido 
-                 WHERE id_pedido = ? AND id_insumo = ? 
-                 ORDER BY id_linea DESC LIMIT 1;`,
-                [idPedido, idInsumo]
-            )
+            const newId = result.insertId
 
-            return this.getById({ id: newLinea[0].idLinea })
+            return this.getById({ id: newId })
         } catch (error) {
-            throw new Error('Error al crear la línea de pedido')
+            console.error('Error al crear el detalle de pedido:', error)
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new Error('Este insumo ya existe en el pedido para este proveedor')
+            }
+            throw new Error('Error al crear el detalle de pedido')
         }
     }
 
     static async delete({ id }) {
         try {
             await connection.query(
-                `DELETE FROM Lineas_Pedido
-                 WHERE id_linea = ?;`,
+                `DELETE FROM DetallePedido WHERE id_detallePedido = ?;`,
                 [id]
             )
             return true
         } catch (error) {
+            console.error('Error al eliminar detalle de pedido:', error)
             return false
         }
     }
 
     static async update({ id, input }) {
         const {
-            cantidadSolicitada,
-            cantidadRecibida
+            cantidadSolicitada
         } = input
 
         try {
@@ -98,43 +108,124 @@ export class LineaPedidoModel {
                 updates.push('cantidadSolicitada = ?')
                 values.push(cantidadSolicitada)
             }
-            if (cantidadRecibida !== undefined) {
-                updates.push('cantidadRecibida = ?')
-                values.push(cantidadRecibida)
-            }
 
             if (updates.length === 0) return this.getById({ id })
 
             values.push(id)
             await connection.query(
-                `UPDATE Lineas_Pedido
+                `UPDATE DetallePedido
                  SET ${updates.join(', ')}
-                 WHERE id_linea = ?;`,
+                 WHERE id_detallePedido = ?;`,
                 values
             )
 
             return this.getById({ id })
         } catch (error) {
-            throw new Error('Error al actualizar la línea de pedido')
+            console.error('Error al actualizar el detalle de pedido:', error)
+            throw new Error('Error al actualizar el detalle de pedido')
         }
     }
 
-    static async getByPedido({ idPedido }) {
-        const [lineas] = await connection.query(
-            `SELECT 
-                lp.id_linea as idLinea,
-                lp.id_pedido as idPedido,
-                lp.id_insumo as idInsumo,
-                i.nombreInsumo,
-                i.unidadDeMedida,
-                lp.cantidadSolicitada,
-                lp.cantidadRecibida
-             FROM Lineas_Pedido lp
-             JOIN Insumos i ON lp.id_insumo = i.id_insumo
-             WHERE lp.id_pedido = ?
-             ORDER BY i.nombreInsumo;`,
-            [idPedido]
-        )
-        return lineas
+    static async getByPedido({ id_pedido }) {
+        try {
+            const [lineas] = await connection.query(
+                `SELECT 
+                    dp.id_detallePedido,
+                    BIN_TO_UUID(dp.id_pedido) as id_pedido,
+                    BIN_TO_UUID(dp.id_proveedor) as id_proveedor,
+                    dp.id_insumo,
+                    i.nombre as nombreInsumo,
+                    i.unidadMedida,
+                    dp.cantidadSolicitada,
+                    pr.razonSocial as nombreProveedor
+                 FROM DetallePedido dp
+                 JOIN Insumos i ON dp.id_insumo = i.id_insumo
+                 JOIN Proveedores pr ON dp.id_proveedor = pr.id_proveedor
+                 WHERE dp.id_pedido = UUID_TO_BIN(?)
+                 ORDER BY pr.razonSocial, i.nombre;`,
+                [id_pedido]
+            )
+            return lineas
+        } catch (error) {
+            console.error('Error al obtener detalles por pedido:', error)
+            throw new Error('Error al obtener detalles por pedido')
+        }
+    }
+
+    // Método para obtener detalles por proveedor
+    static async getByProveedor({ id_proveedor }) {
+        try {
+            const [lineas] = await connection.query(
+                `SELECT 
+                    dp.id_detallePedido,
+                    BIN_TO_UUID(dp.id_pedido) as id_pedido,
+                    BIN_TO_UUID(dp.id_proveedor) as id_proveedor,
+                    dp.id_insumo,
+                    i.nombre as nombreInsumo,
+                    i.unidadMedida,
+                    dp.cantidadSolicitada,
+                    pr.razonSocial as nombreProveedor
+                 FROM DetallePedido dp
+                 JOIN Insumos i ON dp.id_insumo = i.id_insumo
+                 JOIN Proveedores pr ON dp.id_proveedor = pr.id_proveedor
+                 WHERE dp.id_proveedor = UUID_TO_BIN(?)
+                 ORDER BY dp.id_pedido, i.nombre;`,
+                [id_proveedor]
+            )
+            return lineas
+        } catch (error) {
+            console.error('Error al obtener detalles por proveedor:', error)
+            throw new Error('Error al obtener detalles por proveedor')
+        }
+    }
+
+    // Método para calcular el total de un pedido por proveedor
+    static async getTotalPedidoProveedor({ id_pedido, id_proveedor }) {
+        try {
+            const [total] = await connection.query(
+                `SELECT 
+                    BIN_TO_UUID(dp.id_pedido) as id_pedido,
+                    BIN_TO_UUID(dp.id_proveedor) as id_proveedor,
+                    pr.razonSocial as nombreProveedor,
+                    COUNT(dp.id_detallePedido) as totalItems,
+                    SUM(dp.cantidadSolicitada * COALESCE(pi.precio, 0)) as montoTotal
+                 FROM DetallePedido dp
+                 JOIN Proveedores pr ON dp.id_proveedor = pr.id_proveedor
+                 LEFT JOIN ProveedorInsumo pi ON dp.id_proveedor = pi.id_proveedor AND dp.id_insumo = pi.id_insumo
+                 WHERE dp.id_pedido = UUID_TO_BIN(?) AND dp.id_proveedor = UUID_TO_BIN(?)
+                 GROUP BY dp.id_pedido, dp.id_proveedor, pr.razonSocial;`,
+                [id_pedido, id_proveedor]
+            )
+
+            if (total.length === 0) return null
+            return total[0]
+        } catch (error) {
+            console.error('Error al calcular total del pedido por proveedor:', error)
+            throw new Error('Error al calcular total del pedido por proveedor')
+        }
+    }
+
+    // Método para obtener resumen de un pedido agrupado por proveedor
+    static async getResumenPedido({ id_pedido }) {
+        try {
+            const [resumen] = await connection.query(
+                `SELECT 
+                    BIN_TO_UUID(dp.id_proveedor) as id_proveedor,
+                    pr.razonSocial as nombreProveedor,
+                    COUNT(dp.id_detallePedido) as totalItems,
+                    SUM(dp.cantidadSolicitada * COALESCE(pi.precio, 0)) as montoTotal
+                 FROM DetallePedido dp
+                 JOIN Proveedores pr ON dp.id_proveedor = pr.id_proveedor
+                 LEFT JOIN ProveedorInsumo pi ON dp.id_proveedor = pi.id_proveedor AND dp.id_insumo = pi.id_insumo
+                 WHERE dp.id_pedido = UUID_TO_BIN(?)
+                 GROUP BY dp.id_proveedor, pr.razonSocial
+                 ORDER BY pr.razonSocial;`,
+                [id_pedido]
+            )
+            return resumen
+        } catch (error) {
+            console.error('Error al obtener resumen del pedido:', error)
+            throw new Error('Error al obtener resumen del pedido')
+        }
     }
 }

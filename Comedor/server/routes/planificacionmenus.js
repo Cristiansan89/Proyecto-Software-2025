@@ -11,5 +11,11 @@ export const createPlanificacionMenuRouter = ({ planificacionMenuModel }) => {
     planificacionMenusRouter.delete('/:id', planificacionMenuController.delete)
     planificacionMenusRouter.patch('/:id', planificacionMenuController.update)
 
+    // Endpoints especializados
+    planificacionMenusRouter.get('/fecha/:fecha', planificacionMenuController.getByFecha)
+    planificacionMenusRouter.get('/servicio/:id_servicio', planificacionMenuController.getByServicio)
+    planificacionMenusRouter.get('/rango-fechas/reporte', planificacionMenuController.getByRangoFechas)
+    planificacionMenusRouter.get('/menu-del-dia/:fecha/:id_servicio', planificacionMenuController.getMenuDelDia)
+
     return planificacionMenusRouter
 }

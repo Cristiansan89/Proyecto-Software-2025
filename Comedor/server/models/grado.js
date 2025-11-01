@@ -4,12 +4,16 @@ export class GradoModel {
     static async getAll() {
         const [grados] = await connection.query(
             `SELECT 
-                id_grado as idGrado,
-                nombreGrado,
-                turno,
-                cantidadAlumnos
-             FROM Grados
-             ORDER BY nombreGrado, turno;`
+                g.id_grado as idGrado,
+                g.id_turno as idTurno,
+                g.nombreGrado,
+                g.estado,
+                t.nombre as turno,
+                t.horaInicio,
+                t.horaFin
+             FROM Grados g
+             JOIN Turnos t ON g.id_turno = t.id_turno
+             ORDER BY g.nombreGrado, t.nombre;`
         )
         return grados
     }
@@ -17,12 +21,16 @@ export class GradoModel {
     static async getById({ id }) {
         const [grados] = await connection.query(
             `SELECT 
-                id_grado as idGrado,
-                nombreGrado,
-                turno,
-                cantidadAlumnos
-             FROM Grados
-             WHERE id_grado = ?;`,
+                g.id_grado as idGrado,
+                g.id_turno as idTurno,
+                g.nombreGrado,
+                g.estado,
+                t.nombre as turno,
+                t.horaInicio,
+                t.horaFin
+             FROM Grados g
+             JOIN Turnos t ON g.id_turno = t.id_turno
+             WHERE g.id_grado = ?;`,
             [id]
         )
         if (grados.length === 0) return null
@@ -31,30 +39,22 @@ export class GradoModel {
 
     static async create({ input }) {
         const {
+            idTurno,
             nombreGrado,
-            turno,
-            cantidadAlumnos
+            estado = 'Activo'
         } = input
 
         try {
-            await connection.query(
-                `INSERT INTO Grados (id_grado, nombreGrado, turno, cantidadAlumnos)
-                 VALUES (UUID(), ?, ?, ?);`,
-                [nombreGrado, turno, cantidadAlumnos]
+            const [result] = await connection.query(
+                `INSERT INTO Grados (id_turno, nombreGrado, estado)
+                 VALUES (?, ?, ?);`,
+                [idTurno, nombreGrado, estado]
             )
 
-            const [newGrado] = await connection.query(
-                `SELECT id_grado as idGrado 
-                 FROM Grados 
-                 WHERE nombreGrado = ? AND turno = ? 
-                 ORDER BY id_grado DESC LIMIT 1;`,
-                [nombreGrado, turno]
-            )
-
-            return this.getById({ id: newGrado[0].idGrado })
+            return this.getById({ id: result.insertId })
         } catch (error) {
             if (error.code === 'ER_DUP_ENTRY') {
-                throw new Error('Ya existe un grado con ese nombre y turno')
+                throw new Error('Ya existe un grado con ese nombre')
             }
             throw new Error('Error al crear el grado')
         }
@@ -75,27 +75,58 @@ export class GradoModel {
 
     static async update({ id, input }) {
         const {
+            idTurno,
             nombreGrado,
-            turno,
-            cantidadAlumnos
+            estado
         } = input
 
         try {
+            const updates = []
+            const values = []
+
+            if (idTurno) {
+                updates.push('id_turno = ?')
+                values.push(idTurno)
+            }
+            if (nombreGrado) {
+                updates.push('nombreGrado = ?')
+                values.push(nombreGrado)
+            }
+            if (estado) {
+                updates.push('estado = ?')
+                values.push(estado)
+            }
+
+            if (updates.length === 0) return this.getById({ id })
+
+            values.push(id)
             await connection.query(
                 `UPDATE Grados
-                 SET nombreGrado = ?,
-                     turno = ?,
-                     cantidadAlumnos = ?
+                 SET ${updates.join(', ')}
                  WHERE id_grado = ?;`,
-                [nombreGrado, turno, cantidadAlumnos, id]
+                values
             )
 
             return this.getById({ id })
         } catch (error) {
             if (error.code === 'ER_DUP_ENTRY') {
-                throw new Error('Ya existe un grado con ese nombre y turno')
+                throw new Error('Ya existe un grado con ese nombre')
             }
             throw new Error('Error al actualizar el grado')
         }
+    }
+
+    static async getByTurno({ idTurno }) {
+        const [grados] = await connection.query(
+            `SELECT 
+                g.id_grado as idGrado,
+                g.nombreGrado,
+                g.estado
+             FROM Grados g
+             WHERE g.id_turno = ? AND g.estado = 'Activo'
+             ORDER BY g.nombreGrado;`,
+            [idTurno]
+        )
+        return grados
     }
 }

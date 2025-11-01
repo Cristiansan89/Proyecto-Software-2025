@@ -11,5 +11,10 @@ export const createPedidoRouter = ({ pedidoModel }) => {
     pedidosRouter.delete('/:id', pedidoController.delete)
     pedidosRouter.patch('/:id', pedidoController.update)
 
+    // Endpoints especializados
+    pedidosRouter.get('/estado/:estado', pedidoController.getByEstado)
+    pedidosRouter.get('/proveedor/:id_proveedor', pedidoController.getByProveedor)
+    pedidosRouter.patch('/:id/estado', pedidoController.cambiarEstado)
+
     return pedidosRouter
 }

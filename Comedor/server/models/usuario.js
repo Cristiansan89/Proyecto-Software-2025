@@ -5,16 +5,19 @@ export class UsuarioModel {
     static async getAll() {
         const [usuarios] = await connection.query(
             `SELECT 
-                u.id_usuario as idUsuario,
-                u.id_rol as idRol,
-                r.nombreRol,
+                BIN_TO_UUID(u.id_usuario) as idUsuario,
+                u.id_persona as idPersona,
+                p.nombre,
+                p.apellido,
+                p.nombreRol,
                 u.nombreUsuario,
                 u.mail,
                 u.telefono,
+                u.fechaAlta,
                 u.fechaUltimaActividad,
                 u.estado
              FROM Usuarios u
-             JOIN Roles r ON u.id_rol = r.id_rol
+             JOIN Personas p ON u.id_persona = p.id_persona
              ORDER BY u.nombreUsuario;`
         )
         return usuarios
@@ -23,17 +26,20 @@ export class UsuarioModel {
     static async getById({ id }) {
         const [usuarios] = await connection.query(
             `SELECT 
-                u.id_usuario as idUsuario,
-                u.id_rol as idRol,
-                r.nombreRol,
+                BIN_TO_UUID(u.id_usuario) as idUsuario,
+                u.id_persona as idPersona,
+                p.nombre,
+                p.apellido,
+                p.nombreRol,
                 u.nombreUsuario,
                 u.mail,
                 u.telefono,
+                u.fechaAlta,
                 u.fechaUltimaActividad,
                 u.estado
              FROM Usuarios u
-             JOIN Roles r ON u.id_rol = r.id_rol
-             WHERE u.id_usuario = ?;`,
+             JOIN Personas p ON u.id_persona = p.id_persona
+             WHERE u.id_usuario = UUID_TO_BIN(?);`,
             [id]
         )
         if (usuarios.length === 0) return null
@@ -43,17 +49,20 @@ export class UsuarioModel {
     static async getByUsername(nombreUsuario) {
         const [usuarios] = await connection.query(
             `SELECT 
-                u.id_usuario as idUsuario,
-                u.id_rol as idRol,
-                r.nombreRol,
+                BIN_TO_UUID(u.id_usuario) as idUsuario,
+                u.id_persona as idPersona,
+                p.nombre,
+                p.apellido,
+                p.nombreRol,
                 u.nombreUsuario,
-                u.contrasena,
+                u.contrasenia as contrasena,
                 u.mail,
                 u.telefono,
+                u.fechaAlta,
                 u.fechaUltimaActividad,
                 u.estado
              FROM Usuarios u
-             JOIN Roles r ON u.id_rol = r.id_rol
+             JOIN Personas p ON u.id_persona = p.id_persona
              WHERE u.nombreUsuario = ?;`,
             [nombreUsuario]
         )
@@ -63,7 +72,7 @@ export class UsuarioModel {
 
     static async create({ input }) {
         const {
-            idRol,
+            idPersona,
             nombreUsuario,
             contrasena,
             mail,
@@ -76,19 +85,18 @@ export class UsuarioModel {
         try {
             await connection.query(
                 `INSERT INTO Usuarios (
-                    id_usuario, 
-                    id_rol, 
+                    id_persona, 
                     nombreUsuario, 
-                    contrasena, 
+                    contrasenia, 
                     mail, 
                     telefono, 
                     estado
-                ) VALUES (UUID(), ?, ?, ?, ?, ?, ?);`,
-                [idRol, nombreUsuario, hashedPassword, mail, telefono, estado]
+                ) VALUES (?, ?, ?, ?, ?, ?);`,
+                [idPersona, nombreUsuario, hashedPassword, mail, telefono, estado]
             )
 
             const [newUser] = await connection.query(
-                `SELECT id_usuario as idUsuario 
+                `SELECT BIN_TO_UUID(id_usuario) as idUsuario 
                  FROM Usuarios 
                  WHERE nombreUsuario = ?;`,
                 [nombreUsuario]
@@ -107,7 +115,7 @@ export class UsuarioModel {
         try {
             await connection.query(
                 `DELETE FROM Usuarios
-                 WHERE id_usuario = ?;`,
+                 WHERE id_usuario = UUID_TO_BIN(?);`,
                 [id]
             )
             return true
@@ -118,7 +126,7 @@ export class UsuarioModel {
 
     static async update({ id, input }) {
         const {
-            idRol,
+            idPersona,
             nombreUsuario,
             contrasena,
             mail,
@@ -130,9 +138,9 @@ export class UsuarioModel {
             const updates = []
             const values = []
 
-            if (idRol) {
-                updates.push('id_rol = ?')
-                values.push(idRol)
+            if (idPersona) {
+                updates.push('id_persona = ?')
+                values.push(idPersona)
             }
             if (nombreUsuario) {
                 updates.push('nombreUsuario = ?')
@@ -140,7 +148,7 @@ export class UsuarioModel {
             }
             if (contrasena) {
                 const hashedPassword = await bcrypt.hash(contrasena, 10)
-                updates.push('contrasena = ?')
+                updates.push('contrasenia = ?')
                 values.push(hashedPassword)
             }
             if (mail !== undefined) {
@@ -162,7 +170,7 @@ export class UsuarioModel {
             await connection.query(
                 `UPDATE Usuarios
                  SET ${updates.join(', ')}
-                 WHERE id_usuario = ?;`,
+                 WHERE id_usuario = UUID_TO_BIN(?);`,
                 values
             )
 
@@ -180,7 +188,7 @@ export class UsuarioModel {
             await connection.query(
                 `UPDATE Usuarios
                  SET fechaUltimaActividad = NOW()
-                 WHERE id_usuario = ?;`,
+                 WHERE id_usuario = UUID_TO_BIN(?);`,
                 [id]
             )
             return true

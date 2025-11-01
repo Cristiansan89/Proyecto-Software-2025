@@ -4,14 +4,22 @@ export class InsumoModel {
     static async getAll() {
         const [insumos] = await connection.query(
             `SELECT 
-                id_insumo as idInsumo,
-                nombreInsumo,
-                unidadDeMedida,
-                descripcion,
-                stockMinimo,
-                stockActual
-             FROM Insumos
-             ORDER BY nombreInsumo;`
+                i.id_insumo as idInsumo,
+                i.nombreInsumo,
+                i.descripcion,
+                i.unidadMedida,
+                i.categoria,
+                i.stockMinimo,
+                i.fecha,
+                i.estado,
+                COALESCE(inv.cantidadActual, 0) as stockActual,
+                inv.nivelMinimoAlerta,
+                inv.stockMaximo,
+                inv.fechaUltimaActualizacion,
+                inv.estado as estadoInventario
+             FROM Insumos i
+             LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
+             ORDER BY i.nombreInsumo;`
         )
         return insumos
     }
@@ -19,14 +27,22 @@ export class InsumoModel {
     static async getById({ id }) {
         const [insumos] = await connection.query(
             `SELECT 
-                id_insumo as idInsumo,
-                nombreInsumo,
-                unidadDeMedida,
-                descripcion,
-                stockMinimo,
-                stockActual
-             FROM Insumos
-             WHERE id_insumo = ?;`,
+                i.id_insumo as idInsumo,
+                i.nombreInsumo,
+                i.descripcion,
+                i.unidadMedida,
+                i.categoria,
+                i.stockMinimo,
+                i.fecha,
+                i.estado,
+                COALESCE(inv.cantidadActual, 0) as stockActual,
+                inv.nivelMinimoAlerta,
+                inv.stockMaximo,
+                inv.fechaUltimaActualizacion,
+                inv.estado as estadoInventario
+             FROM Insumos i
+             LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
+             WHERE i.id_insumo = ?;`,
             [id]
         )
         if (insumos.length === 0) return null
@@ -36,34 +52,45 @@ export class InsumoModel {
     static async create({ input }) {
         const {
             nombreInsumo,
-            unidadDeMedida,
             descripcion,
-            stockMinimo = 0,
-            stockActual = 0
+            unidadMedida,
+            categoria = 'Otros',
+            stockMinimo = 0.00,
+            estado = 'Activo',
+            // Campos para inventario inicial
+            cantidadActual = 0.000,
+            nivelMinimoAlerta = 0.000,
+            stockMaximo = 999.999
         } = input
 
         try {
-            await connection.query(
+            // Crear el insumo
+            const [result] = await connection.query(
                 `INSERT INTO Insumos (
-                    id_insumo, 
                     nombreInsumo, 
-                    unidadDeMedida, 
                     descripcion,
+                    unidadMedida, 
+                    categoria,
                     stockMinimo,
-                    stockActual
-                ) VALUES (UUID(), ?, ?, ?, ?, ?);`,
-                [nombreInsumo, unidadDeMedida, descripcion, stockMinimo, stockActual]
+                    estado
+                ) VALUES (?, ?, ?, ?, ?, ?);`,
+                [nombreInsumo, descripcion, unidadMedida, categoria, stockMinimo, estado]
             )
 
-            const [newInsumo] = await connection.query(
-                `SELECT id_insumo as idInsumo 
-                 FROM Insumos 
-                 WHERE nombreInsumo = ? 
-                 ORDER BY id_insumo DESC LIMIT 1;`,
-                [nombreInsumo]
+            const insumoId = result.insertId
+
+            // Crear el registro en inventario
+            await connection.query(
+                `INSERT INTO Inventarios (
+                    id_insumo,
+                    cantidadActual,
+                    nivelMinimoAlerta,
+                    stockMaximo
+                ) VALUES (?, ?, ?, ?);`,
+                [insumoId, cantidadActual, nivelMinimoAlerta, stockMaximo]
             )
 
-            return this.getById({ id: newInsumo[0].idInsumo })
+            return this.getById({ id: insumoId })
         } catch (error) {
             if (error.code === 'ER_DUP_ENTRY') {
                 throw new Error('Ya existe un insumo con ese nombre')
@@ -74,6 +101,14 @@ export class InsumoModel {
 
     static async delete({ id }) {
         try {
+            // Eliminar primero del inventario (por la restricción de FK)
+            await connection.query(
+                `DELETE FROM Inventarios
+                 WHERE id_insumo = ?;`,
+                [id]
+            )
+
+            // Luego eliminar el insumo
             await connection.query(
                 `DELETE FROM Insumos
                  WHERE id_insumo = ?;`,
@@ -88,46 +123,85 @@ export class InsumoModel {
     static async update({ id, input }) {
         const {
             nombreInsumo,
-            unidadDeMedida,
             descripcion,
+            unidadMedida,
+            categoria,
             stockMinimo,
-            stockActual
+            estado,
+            // Campos para inventario
+            cantidadActual,
+            nivelMinimoAlerta,
+            stockMaximo
         } = input
 
         try {
-            const updates = []
-            const values = []
+            // Actualizar datos del insumo
+            const insumoUpdates = []
+            const insumoValues = []
 
             if (nombreInsumo) {
-                updates.push('nombreInsumo = ?')
-                values.push(nombreInsumo)
-            }
-            if (unidadDeMedida) {
-                updates.push('unidadDeMedida = ?')
-                values.push(unidadDeMedida)
+                insumoUpdates.push('nombreInsumo = ?')
+                insumoValues.push(nombreInsumo)
             }
             if (descripcion !== undefined) {
-                updates.push('descripcion = ?')
-                values.push(descripcion)
+                insumoUpdates.push('descripcion = ?')
+                insumoValues.push(descripcion)
+            }
+            if (unidadMedida) {
+                insumoUpdates.push('unidadMedida = ?')
+                insumoValues.push(unidadMedida)
+            }
+            if (categoria) {
+                insumoUpdates.push('categoria = ?')
+                insumoValues.push(categoria)
             }
             if (stockMinimo !== undefined) {
-                updates.push('stockMinimo = ?')
-                values.push(stockMinimo)
+                insumoUpdates.push('stockMinimo = ?')
+                insumoValues.push(stockMinimo)
             }
-            if (stockActual !== undefined) {
-                updates.push('stockActual = ?')
-                values.push(stockActual)
+            if (estado) {
+                insumoUpdates.push('estado = ?')
+                insumoValues.push(estado)
             }
 
-            if (updates.length === 0) return this.getById({ id })
+            if (insumoUpdates.length > 0) {
+                insumoValues.push(id)
+                await connection.query(
+                    `UPDATE Insumos
+                     SET ${insumoUpdates.join(', ')}
+                     WHERE id_insumo = ?;`,
+                    insumoValues
+                )
+            }
 
-            values.push(id)
-            await connection.query(
-                `UPDATE Insumos
-                 SET ${updates.join(', ')}
-                 WHERE id_insumo = ?;`,
-                values
-            )
+            // Actualizar datos del inventario
+            const inventarioUpdates = []
+            const inventarioValues = []
+
+            if (cantidadActual !== undefined) {
+                inventarioUpdates.push('cantidadActual = ?')
+                inventarioValues.push(cantidadActual)
+            }
+            if (nivelMinimoAlerta !== undefined) {
+                inventarioUpdates.push('nivelMinimoAlerta = ?')
+                inventarioValues.push(nivelMinimoAlerta)
+            }
+            if (stockMaximo !== undefined) {
+                inventarioUpdates.push('stockMaximo = ?')
+                inventarioValues.push(stockMaximo)
+            }
+
+            if (inventarioUpdates.length > 0) {
+                inventarioUpdates.push('fechaUltimaActualizacion = NOW()')
+                inventarioValues.push(id)
+
+                await connection.query(
+                    `UPDATE Inventarios
+                     SET ${inventarioUpdates.join(', ')}
+                     WHERE id_insumo = ?;`,
+                    inventarioValues
+                )
+            }
 
             return this.getById({ id })
         } catch (error) {
@@ -141,8 +215,9 @@ export class InsumoModel {
     static async updateStock({ id, cantidad }) {
         try {
             await connection.query(
-                `UPDATE Insumos
-                 SET stockActual = stockActual + ?
+                `UPDATE Inventarios
+                 SET cantidadActual = cantidadActual + ?,
+                     fechaUltimaActualizacion = NOW()
                  WHERE id_insumo = ?;`,
                 [cantidad, id]
             )
@@ -151,5 +226,43 @@ export class InsumoModel {
         } catch (error) {
             throw new Error('Error al actualizar el stock')
         }
+    }
+
+    static async getByCategoria({ categoria }) {
+        const [insumos] = await connection.query(
+            `SELECT 
+                i.id_insumo as idInsumo,
+                i.nombreInsumo,
+                i.descripcion,
+                i.unidadMedida,
+                i.categoria,
+                i.stockMinimo,
+                i.estado,
+                COALESCE(inv.cantidadActual, 0) as stockActual
+             FROM Insumos i
+             LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
+             WHERE i.categoria = ? AND i.estado = 'Activo'
+             ORDER BY i.nombreInsumo;`,
+            [categoria]
+        )
+        return insumos
+    }
+
+    static async getBajoStock() {
+        const [insumos] = await connection.query(
+            `SELECT 
+                i.id_insumo as idInsumo,
+                i.nombreInsumo,
+                i.categoria,
+                i.unidadMedida,
+                inv.cantidadActual as stockActual,
+                inv.nivelMinimoAlerta
+             FROM Insumos i
+             JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
+             WHERE inv.cantidadActual <= inv.nivelMinimoAlerta 
+                AND i.estado = 'Activo'
+             ORDER BY (inv.cantidadActual / inv.nivelMinimoAlerta) ASC;`
+        )
+        return insumos
     }
 }

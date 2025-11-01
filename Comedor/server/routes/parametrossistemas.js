@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { ParametroSistemaController } from '../controllers/parametrossistemas.js'
+import { ParametroSistemaController } from '../controllers/pedidos.js'
 
 export const createParametroSistemaRouter = ({ parametroSistemaModel }) => {
     const parametrosSistemasRouter = Router()
@@ -10,6 +10,10 @@ export const createParametroSistemaRouter = ({ parametroSistemaModel }) => {
     parametrosSistemasRouter.post('/', parametroSistemaController.create)
     parametrosSistemasRouter.delete('/:id', parametroSistemaController.delete)
     parametrosSistemasRouter.patch('/:id', parametroSistemaController.update)
+
+    // Endpoints especializados
+    parametrosSistemasRouter.get('/clave/:clave', parametroSistemaController.getByClave)
+    parametrosSistemasRouter.patch('/clave/:clave', parametroSistemaController.updateByClave)
 
     return parametrosSistemasRouter
 }

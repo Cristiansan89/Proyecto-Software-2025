@@ -1,130 +1,135 @@
-import { ProveedorInsumoModel } from '../models/proveedorinsumo.js'
 import { validateProveedorInsumo, validatePartialProveedorInsumo } from '../schemas/proveedorinsumo.js'
 
 export class ProveedorInsumoController {
-    static async getAll(req, res) {
+    constructor({ proveedorInsumoModel }) {
+        this.proveedorInsumoModel = proveedorInsumoModel
+    }
+
+    getAll = async (req, res) => {
         try {
-            const relaciones = await ProveedorInsumoModel.getAll()
-            res.json(relaciones)
+            const proveedorInsumos = await this.proveedorInsumoModel.getAll()
+            res.json(proveedorInsumos)
         } catch (error) {
             console.error('Error al obtener relaciones proveedor-insumo:', error)
-            res.status(500).json({ error: 'Error interno del servidor' })
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
 
-    static async getById(req, res) {
+    getById = async (req, res) => {
         try {
-            const { idProveedor, idInsumo } = req.params
-            const relacion = await ProveedorInsumoModel.getById({ idProveedor, idInsumo })
+            const { id } = req.params
+            const proveedorInsumo = await this.proveedorInsumoModel.getById({ id })
 
-            if (!relacion) {
-                return res.status(404).json({ error: 'Relación no encontrada' })
-            }
-
-            res.json(relacion)
+            if (proveedorInsumo) return res.json(proveedorInsumo)
+            res.status(404).json({ message: 'Relación proveedor-insumo no encontrada' })
         } catch (error) {
-            console.error('Error al obtener relación:', error)
-            res.status(500).json({ error: 'Error interno del servidor' })
+            console.error('Error al obtener relación proveedor-insumo:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
-
-    static async create(req, res) {
+    create = async (req, res) => {
         try {
             const result = validateProveedorInsumo(req.body)
 
             if (!result.success) {
                 return res.status(400).json({
-                    error: 'Datos de entrada inválidos',
-                    details: result.error.issues
+                    message: 'Datos de entrada inválidos',
+                    errors: result.error.errors.map(err => ({
+                        field: err.path.join('.'),
+                        message: err.message
+                    }))
                 })
             }
 
-            const nuevaRelacion = await ProveedorInsumoModel.create({ input: result.data })
-            res.status(201).json(nuevaRelacion)
+            const newProveedorInsumo = await this.proveedorInsumoModel.create({ input: result.data })
+            res.status(201).json(newProveedorInsumo)
         } catch (error) {
-            console.error('Error al crear relación:', error)
+            console.error('Error al crear relación proveedor-insumo:', error)
             if (error.message.includes('ya existe')) {
-                return res.status(409).json({ error: error.message })
+                return res.status(409).json({ message: error.message })
             }
-            res.status(500).json({ error: 'Error interno del servidor' })
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
 
-    static async delete(req, res) {
+    delete = async (req, res) => {
         try {
-            const { idProveedor, idInsumo } = req.params
-            const resultado = await ProveedorInsumoModel.delete({ idProveedor, idInsumo })
+            const { id } = req.params
+            const deleted = await this.proveedorInsumoModel.delete({ id })
 
-            if (!resultado) {
-                return res.status(404).json({ error: 'Relación no encontrada' })
+            if (!deleted) {
+                return res.status(404).json({ message: 'Relación proveedor-insumo no encontrada' })
             }
 
-            res.json({ message: 'Relación eliminada correctamente' })
+            return res.json({ message: 'Relación proveedor-insumo eliminada correctamente' })
         } catch (error) {
-            console.error('Error al eliminar relación:', error)
-            res.status(500).json({ error: 'Error interno del servidor' })
+            console.error('Error al eliminar relación proveedor-insumo:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
 
-    static async update(req, res) {
+    update = async (req, res) => {
         try {
-            const { idProveedor, idInsumo } = req.params
             const result = validatePartialProveedorInsumo(req.body)
 
             if (!result.success) {
                 return res.status(400).json({
-                    error: 'Datos de entrada inválidos',
-                    details: result.error.issues
+                    message: 'Datos de entrada inválidos',
+                    errors: result.error.errors.map(err => ({
+                        field: err.path.join('.'),
+                        message: err.message
+                    }))
                 })
             }
 
-            const relacionActualizada = await ProveedorInsumoModel.update({
-                idProveedor,
-                idInsumo,
-                input: result.data
-            })
+            const { id } = req.params
+            const updatedProveedorInsumo = await this.proveedorInsumoModel.update({ id, input: result.data })
 
-            if (!relacionActualizada) {
-                return res.status(404).json({ error: 'Relación no encontrada' })
+            if (!updatedProveedorInsumo) {
+                return res.status(404).json({ message: 'Relación proveedor-insumo no encontrada' })
             }
 
-            res.json(relacionActualizada)
+            return res.json(updatedProveedorInsumo)
         } catch (error) {
-            console.error('Error al actualizar relación:', error)
-            res.status(500).json({ error: 'Error interno del servidor' })
+            console.error('Error al actualizar relación proveedor-insumo:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
 
-    static async getByProveedor(req, res) {
+    // Obtener insumos por proveedor
+    getInsumosByProveedor = async (req, res) => {
         try {
-            const { idProveedor } = req.params
-            const insumos = await ProveedorInsumoModel.getByProveedor({ idProveedor })
+            const { id_proveedor } = req.params
+            const insumos = await this.proveedorInsumoModel.getInsumosByProveedor({ id_proveedor })
             res.json(insumos)
         } catch (error) {
-            console.error('Error al obtener insumos del proveedor:', error)
-            res.status(500).json({ error: 'Error interno del servidor' })
+            console.error('Error al obtener insumos por proveedor:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
 
-    static async getByInsumo(req, res) {
+    // Obtener proveedores por insumo
+    getProveedoresByInsumo = async (req, res) => {
         try {
-            const { idInsumo } = req.params
-            const proveedores = await ProveedorInsumoModel.getByInsumo({ idInsumo })
+            const { id_insumo } = req.params
+            const proveedores = await this.proveedorInsumoModel.getProveedoresByInsumo({ id_insumo })
             res.json(proveedores)
         } catch (error) {
-            console.error('Error al obtener proveedores del insumo:', error)
-            res.status(500).json({ error: 'Error interno del servidor' })
+            console.error('Error al obtener proveedores por insumo:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
 
-    static async getBestProviders(req, res) {
+    // Obtener mejor proveedor por insumo (menor precio)
+    getMejorProveedorByInsumo = async (req, res) => {
         try {
-            const { idInsumo } = req.params
-            const mejoresProveedores = await ProveedorInsumoModel.getBestProviders({ idInsumo })
-            res.json(mejoresProveedores)
+            const { id_insumo } = req.params
+            const proveedor = await this.proveedorInsumoModel.getMejorProveedorByInsumo({ id_insumo })
+            if (proveedor) return res.json(proveedor)
+            res.status(404).json({ message: 'No se encontraron proveedores para este insumo' })
         } catch (error) {
-            console.error('Error al obtener mejores proveedores:', error)
-            res.status(500).json({ error: 'Error interno del servidor' })
+            console.error('Error al obtener mejor proveedor por insumo:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
 }

@@ -11,5 +11,10 @@ export const createGradoRouter = ({ gradoModel }) => {
     gradosRouter.delete('/:id', gradoController.delete)
     gradosRouter.patch('/:id', gradoController.update)
 
+    // Endpoints especializados
+    gradosRouter.get('/activos/list', gradoController.getActivos)
+    gradosRouter.get('/search/by-nombre', gradoController.searchByNombre)
+    gradosRouter.patch('/:id/estado', gradoController.cambiarEstado)
+
     return gradosRouter
 }

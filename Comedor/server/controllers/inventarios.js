@@ -10,59 +10,188 @@ export class InventarioController {
 
     // Obtiene todos los Inventarios
     getAll = async (req, res) => {
-        const inventarios = await this.inventarioModel.getAll()
-        res.json(inventarios)
+        try {
+            const inventarios = await this.inventarioModel.getAll()
+            res.json(inventarios)
+        } catch (error) {
+            console.error('Error al obtener inventarios:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
     }
 
     // Obtiene un Inventario por su ID
     getById = async (req, res) => {
-        const { id } = req.params
-        const inventario = await this.inventarioModel.getById({ id })
-        if (inventario) return res.json(inventario)
-        // Si no existe, responde con 404
-        res.status(404).json({ message: 'El ID del Inventario no funciona' })
-
+        try {
+            const { id } = req.params
+            const inventario = await this.inventarioModel.getById({ id })
+            if (inventario) return res.json(inventario)
+            res.status(404).json({ message: 'Inventario no encontrado' })
+        } catch (error) {
+            console.error('Error al obtener inventario:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
     }
 
     // Crea un nuevo Inventario después de validar los datos recibidos
     create = async (req, res) => {
-        const result = validateInventario(req.body)
+        try {
+            const result = validateInventario(req.body)
 
-        // Si la validación falla, responde con error 400
-        if (!result.success) {
-            return res.status(400).json({ error: JSON.parse(result.error.message) })
+            if (!result.success) {
+                return res.status(400).json({
+                    message: 'Datos de entrada inválidos',
+                    errors: result.error.errors.map(err => ({
+                        field: err.path.join('.'),
+                        message: err.message
+                    }))
+                })
+            }
+
+            const newInventario = await this.inventarioModel.create({ input: result.data })
+            res.status(201).json(newInventario)
+        } catch (error) {
+            console.error('Error al crear inventario:', error)
+            if (error.message.includes('ya existe')) {
+                return res.status(409).json({ message: error.message })
+            }
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
-
-        // Crea el nuevo Inventario y responde con el objeto creado
-        const newInventario = await this.inventarioModel.create({ input: result.data })
-        res.status(201).json(newInventario)
     }
 
     // Elimina un Inventario por su ID
     delete = async (req, res) => {
-        const { id } = req.params
-        const deleted = await this.inventarioModel.delete({ id })
+        try {
+            const { id } = req.params
+            const deleted = await this.inventarioModel.delete({ id })
 
-        // Si no se encuentra el Inventario, responde con 404
-        if (!deleted) {
-            return res.status(404).json({ message: 'El ID del Inventario no funciona' })
+            if (!deleted) {
+                return res.status(404).json({ message: 'Inventario no encontrado' })
+            }
+            return res.json({ message: 'Inventario eliminado correctamente' })
+        } catch (error) {
+            console.error('Error al eliminar inventario:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
-        // Si se elimina correctamente, responde con mensaje de éxito
-        return res.json({ message: 'Inventario eliminado correctamente' })
     }
 
     // Actualiza un Inventario parcialmente después de validar los datos recibidos
     update = async (req, res) => {
-        const result = validatePartialInventario(req.body)
+        try {
+            const result = validatePartialInventario(req.body)
 
-        // Si la validación falla, responde con error 400
-        if (!result.success) {
-            return res.status(400).json({ error: JSON.parse(result.error.message) })
+            if (!result.success) {
+                return res.status(400).json({
+                    message: 'Datos de entrada inválidos',
+                    errors: result.error.errors.map(err => ({
+                        field: err.path.join('.'),
+                        message: err.message
+                    }))
+                })
+            }
+
+            const { id } = req.params
+            const updatedInventario = await this.inventarioModel.update({ id, input: result.data })
+
+            if (!updatedInventario) {
+                return res.status(404).json({ message: 'Inventario no encontrado' })
+            }
+
+            res.json(updatedInventario)
+        } catch (error) {
+            console.error('Error al actualizar inventario:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
+    }
 
-        const { id } = req.params
-        // Actualiza el Inventario y responde con el objeto actualizado
-        const updatedInventario = await this.inventarioModel.update({ id, input: result.data })
-        res.json(updatedInventario)
+    // Obtener inventarios con stock bajo
+    getStockBajo = async (req, res) => {
+        try {
+            const inventarios = await this.inventarioModel.getInventariosStockBajo()
+            res.json(inventarios)
+        } catch (error) {
+            console.error('Error al obtener inventarios con stock bajo:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Obtener inventarios por ubicación
+    getByUbicacion = async (req, res) => {
+        try {
+            const { ubicacion } = req.params
+            const inventarios = await this.inventarioModel.getInventariosByUbicacion({ ubicacion })
+            res.json(inventarios)
+        } catch (error) {
+            console.error('Error al obtener inventarios por ubicación:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Actualizar stock
+    updateStock = async (req, res) => {
+        try {
+            const { id } = req.params
+            const { cantidadActual } = req.body
+
+            if (typeof cantidadActual !== 'number' || cantidadActual < 0) {
+                return res.status(400).json({ message: 'La cantidad actual debe ser un número no negativo' })
+            }
+
+            const updatedInventario = await this.inventarioModel.updateStock({ id, cantidadActual })
+
+            if (!updatedInventario) {
+                return res.status(404).json({ message: 'Inventario no encontrado' })
+            }
+
+            res.json({ message: 'Stock actualizado correctamente', inventario: updatedInventario })
+        } catch (error) {
+            console.error('Error al actualizar stock:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Obtener inventario por insumo
+    getByInsumo = async (req, res) => {
+        try {
+            const { id_insumo } = req.params
+            const inventario = await this.inventarioModel.getByInsumo({ id_insumo })
+            res.json(inventario)
+        } catch (error) {
+            console.error('Error al obtener inventario por insumo:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Ajustar stock
+    ajustarStock = async (req, res) => {
+        try {
+            const { id } = req.params
+            const { cantidadAjuste, motivo } = req.body
+
+            if (typeof cantidadAjuste !== 'number') {
+                return res.status(400).json({ message: 'La cantidad de ajuste debe ser un número' })
+            }
+
+            const result = await this.inventarioModel.ajustarStock({ id, cantidadAjuste, motivo })
+
+            if (!result) {
+                return res.status(404).json({ message: 'Inventario no encontrado' })
+            }
+
+            res.json(result)
+        } catch (error) {
+            console.error('Error al ajustar stock:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Obtener estadísticas del inventario
+    getEstadisticas = async (req, res) => {
+        try {
+            const estadisticas = await this.inventarioModel.getEstadisticas()
+            res.json(estadisticas)
+        } catch (error) {
+            console.error('Error al obtener estadísticas del inventario:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
     }
 }

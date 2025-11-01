@@ -11,5 +11,12 @@ export const createPersonaRouter = ({ personaModel }) => {
     personasRouter.delete('/:id', personaController.delete)
     personasRouter.patch('/:id', personaController.update)
 
+    // Endpoints especializados
+    personasRouter.get('/activas/list', personaController.getActivas)
+    personasRouter.get('/search/by-nombre', personaController.searchByNombre)
+    personasRouter.get('/grado/:id_grado', personaController.getByGrado)
+    personasRouter.get('/servicio/:id_servicio', personaController.getByServicio)
+    personasRouter.patch('/:id/estado', personaController.cambiarEstado)
+
     return personasRouter
 }

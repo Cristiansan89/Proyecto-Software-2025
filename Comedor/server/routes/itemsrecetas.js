@@ -11,5 +11,10 @@ export const createItemRecetaRouter = ({ itemRecetaModel }) => {
     itemsRecetasRouter.delete('/:id', itemRecetaController.delete)
     itemsRecetasRouter.patch('/:id', itemRecetaController.update)
 
+    // Endpoints especializados
+    itemsRecetasRouter.get('/receta/:id_receta', itemRecetaController.getByReceta)
+    itemsRecetasRouter.get('/insumo/:id_insumo', itemRecetaController.getByInsumo)
+    itemsRecetasRouter.get('/receta/:id_receta/costo-total', itemRecetaController.getCostoTotalReceta)
+
     return itemsRecetasRouter
 }

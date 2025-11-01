@@ -13,14 +13,19 @@ import { createMovimientoInventarioRouter } from './routes/movimientosinventario
 import { createParametroSistemaRouter } from './routes/parametrossistemas.js'
 import { createPedidoRouter } from './routes/pedidos.js'
 import { createPermisoRouter } from './routes/permisos.js'
+import { createPersonaRouter } from './routes/personas.js'
 import { createPlanificacionMenuRouter } from './routes/planificacionmenus.js'
 import { createProveedorRouter } from './routes/proveedores.js'
 import { createRecetaRouter } from './routes/recetas.js'
 import { createRegistroAsistenciaRouter } from './routes/registrosasistencias.js'
 import { createRolPermisoRouter } from './routes/rolpermisos.js'
+import { createServicioRouter } from './routes/servicios.js'
+import { createTurnoRouter } from './routes/turnos.js'
 import { createUsuarioRouter } from './routes/usuarios.js'
 import { createConsumoRouter } from './routes/consumos.js'
-import { proveedorInsumosRouter } from './routes/proveedorinsumos.js'
+import { createProveedorInsumoRouter } from './routes/proveedorinsumos.js'
+
+
 
 export const createApp = ({
     usuarioModel,
@@ -35,11 +40,15 @@ export const createApp = ({
     parametroSistemaModel,
     pedidoModel,
     permisoModel,
+    personaModel,
     planificacionMenuModel,
     proveedorModel,
+    proveedorInsumoModel,
     recetaModel,
     registroAsistenciaModel,
-    rolPermisoModel
+    rolPermisoModel,
+    servicioModel,
+    turnoModel
 }) => {
     const app = express()
 
@@ -67,18 +76,15 @@ export const createApp = ({
     app.use('/parametros-sistemas', createParametroSistemaRouter({ parametroSistemaModel }))
     app.use('/pedidos', createPedidoRouter({ pedidoModel }))
     app.use('/permisos', createPermisoRouter({ permisoModel }))
+    app.use('/personas', createPersonaRouter({ personaModel }))
     app.use('/planificacion-menus', createPlanificacionMenuRouter({ planificacionMenuModel }))
     app.use('/proveedores', createProveedorRouter({ proveedorModel }))
     app.use('/recetas', createRecetaRouter({ recetaModel }))
     app.use('/registros-asistencias', createRegistroAsistenciaRouter({ registroAsistenciaModel }))
     app.use('/rol-permisos', createRolPermisoRouter({ rolPermisoModel }))
-    app.use('/proveedorinsumos', proveedorInsumosRouter)
-
-    const PORT = process.env.PORT ?? 3000
-
-    app.listen(PORT, () => {
-        console.log(`El Servidor esta corriendo en el puerto http://localhost:${PORT}`)
-    })
+    app.use('/servicios', createServicioRouter({ servicioModel }))
+    app.use('/turnos', createTurnoRouter({ turnoModel }))
+    app.use('/proveedor-insumos', createProveedorInsumoRouter({ proveedorInsumoModel }))
 
     return app
 }

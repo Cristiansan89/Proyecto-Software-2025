@@ -17,6 +17,8 @@ import { RecetaModel } from './models/receta.js'
 import { RegistroAsistenciaModel } from './models/registroasistencia.js'
 import { RolModel } from './models/rol.js'
 import { RolPermisoModel } from './models/rolpermiso.js'
+import { ServicioModel } from './models/servicio.js'
+import { TurnoModel } from './models/turno.js'
 import { UsuarioModel } from './models/usuario.js'
 
 const PORT = process.env.PORT ?? 3000
@@ -40,6 +42,8 @@ const app = createApp({
     recetaModel: RecetaModel,
     registroAsistenciaModel: RegistroAsistenciaModel,
     rolPermisoModel: RolPermisoModel,
+    servicioModel: ServicioModel,
+    turnoModel: TurnoModel,
     usuarioModel: UsuarioModel
 })
 

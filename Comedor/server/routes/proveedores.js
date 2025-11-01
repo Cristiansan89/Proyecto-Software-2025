@@ -11,5 +11,10 @@ export const createProveedorRouter = ({ proveedorModel }) => {
     proveedoresRouter.delete('/:id', proveedorController.delete)
     proveedoresRouter.patch('/:id', proveedorController.update)
 
+    // Endpoints especializados
+    proveedoresRouter.get('/activos/list', proveedorController.getActivos)
+    proveedoresRouter.get('/search/by-nombre', proveedorController.searchByName)
+    proveedoresRouter.patch('/:id/estado', proveedorController.cambiarEstado)
+
     return proveedoresRouter
 }

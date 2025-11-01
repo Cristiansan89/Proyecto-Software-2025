@@ -1,29 +1,20 @@
 import { Router } from 'express'
 import { ProveedorInsumoController } from '../controllers/proveedorinsumo.js'
-import { verifyToken, authorize } from '../middleware/auth.js'
 
-export const proveedorInsumosRouter = Router()
+export const createProveedorInsumoRouter = ({ proveedorInsumoModel }) => {
+    const proveedorInsumosRouter = Router()
+    const proveedorInsumoController = new ProveedorInsumoController({ proveedorInsumoModel })
 
-// Obtener todas las relaciones proveedor-insumo
-proveedorInsumosRouter.get('/', verifyToken, authorize(['VER_REPORTES']), ProveedorInsumoController.getAll)
+    proveedorInsumosRouter.get('/', proveedorInsumoController.getAll)
+    proveedorInsumosRouter.get('/:id', proveedorInsumoController.getById)
+    proveedorInsumosRouter.post('/', proveedorInsumoController.create)
+    proveedorInsumosRouter.delete('/:id', proveedorInsumoController.delete)
+    proveedorInsumosRouter.patch('/:id', proveedorInsumoController.update)
 
-// Obtener relación específica por IDs
-proveedorInsumosRouter.get('/:idProveedor/:idInsumo', verifyToken, authorize(['VER_REPORTES']), ProveedorInsumoController.getById)
+    // Endpoints especializados
+    proveedorInsumosRouter.get('/proveedor/:id_proveedor/insumos', proveedorInsumoController.getInsumosByProveedor)
+    proveedorInsumosRouter.get('/insumo/:id_insumo/proveedores', proveedorInsumoController.getProveedoresByInsumo)
+    proveedorInsumosRouter.get('/insumo/:id_insumo/mejor-proveedor', proveedorInsumoController.getMejorProveedorByInsumo)
 
-// Crear nueva relación proveedor-insumo
-proveedorInsumosRouter.post('/', verifyToken, authorize(['GESTIONAR_INVENTARIO']), ProveedorInsumoController.create)
-
-// Actualizar relación proveedor-insumo
-proveedorInsumosRouter.patch('/:idProveedor/:idInsumo', verifyToken, authorize(['GESTIONAR_INVENTARIO']), ProveedorInsumoController.update)
-
-// Eliminar relación proveedor-insumo
-proveedorInsumosRouter.delete('/:idProveedor/:idInsumo', verifyToken, authorize(['GESTIONAR_INVENTARIO']), ProveedorInsumoController.delete)
-
-// Obtener insumos de un proveedor
-proveedorInsumosRouter.get('/proveedor/:idProveedor', verifyToken, authorize(['VER_REPORTES']), ProveedorInsumoController.getByProveedor)
-
-// Obtener proveedores de un insumo
-proveedorInsumosRouter.get('/insumo/:idInsumo', verifyToken, authorize(['VER_REPORTES']), ProveedorInsumoController.getByInsumo)
-
-// Obtener mejores proveedores para un insumo
-proveedorInsumosRouter.get('/insumo/:idInsumo/mejores', verifyToken, authorize(['GESTIONAR_INVENTARIO']), ProveedorInsumoController.getBestProviders)
+    return proveedorInsumosRouter
+}

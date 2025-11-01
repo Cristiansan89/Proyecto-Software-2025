@@ -11,5 +11,10 @@ export const createLineaPedidoRouter = ({ lineaPedidoModel }) => {
     lineasPedidosRouter.delete('/:id', lineaPedidoController.delete)
     lineasPedidosRouter.patch('/:id', lineaPedidoController.update)
 
+    // Endpoints especializados
+    lineasPedidosRouter.get('/pedido/:id_pedido', lineaPedidoController.getByPedido)
+    lineasPedidosRouter.get('/pedido/:id_pedido/total', lineaPedidoController.getTotalPedido)
+    lineasPedidosRouter.get('/insumo/:id_insumo', lineaPedidoController.getByInsumo)
+
     return lineasPedidosRouter
 }

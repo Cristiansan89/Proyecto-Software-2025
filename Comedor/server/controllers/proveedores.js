@@ -10,59 +10,161 @@ export class ProveedorController {
 
     // Obtiene todos los Proveedores
     getAll = async (req, res) => {
-        const proveedores = await this.proveedorModel.getAll()
-        res.json(proveedores)
+        try {
+            const proveedores = await this.proveedorModel.getAll()
+            res.json(proveedores)
+        } catch (error) {
+            console.error('Error al obtener proveedores:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
     }
 
     // Obtiene un Proveedor por su ID
     getById = async (req, res) => {
-        const { id } = req.params
-        const proveedor = await this.proveedorModel.getById({ id })
-        if (proveedor) return res.json(proveedor)
-        // Si no existe, responde con 404
-        res.status(404).json({ message: 'El ID del Proveedor no funciona' })
-
+        try {
+            const { id } = req.params
+            const proveedor = await this.proveedorModel.getById({ id })
+            if (proveedor) return res.json(proveedor)
+            res.status(404).json({ message: 'Proveedor no encontrado' })
+        } catch (error) {
+            console.error('Error al obtener proveedor:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
     }
 
     // Crea un nuevo Proveedor después de validar los datos recibidos
     create = async (req, res) => {
-        const result = validateProveedor(req.body)
+        try {
+            const result = validateProveedor(req.body)
 
-        // Si la validación falla, responde con error 400
-        if (!result.success) {
-            return res.status(400).json({ error: JSON.parse(result.error.message) })
+            if (!result.success) {
+                return res.status(400).json({
+                    message: 'Datos de entrada inválidos',
+                    errors: result.error.errors.map(err => ({
+                        field: err.path.join('.'),
+                        message: err.message
+                    }))
+                })
+            }
+
+            const newProveedor = await this.proveedorModel.create({ input: result.data })
+            res.status(201).json(newProveedor)
+        } catch (error) {
+            console.error('Error al crear proveedor:', error)
+            if (error.message.includes('ya existe') || error.message.includes('RUC')) {
+                return res.status(409).json({ message: error.message })
+            }
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
-
-        // Crea el nuevo Proveedor y responde con el objeto creado
-        const newProveedor = await this.proveedorModel.create({ input: result.data })
-        res.status(201).json(newProveedor)
     }
 
     // Elimina un Proveedor por su ID
     delete = async (req, res) => {
-        const { id } = req.params
-        const deleted = await this.proveedorModel.delete({ id })
+        try {
+            const { id } = req.params
+            const deleted = await this.proveedorModel.delete({ id })
 
-        // Si no se encuentra el Proveedor, responde con 404
-        if (!deleted) {
-            return res.status(404).json({ message: 'El ID del Proveedor no funciona' })
+            if (!deleted) {
+                return res.status(404).json({ message: 'Proveedor no encontrado' })
+            }
+            return res.json({ message: 'Proveedor eliminado correctamente' })
+        } catch (error) {
+            console.error('Error al eliminar proveedor:', error)
+            if (error.message.includes('referencia') || error.message.includes('usado')) {
+                return res.status(409).json({ message: 'No se puede eliminar el proveedor porque está en uso' })
+            }
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
-        // Si se elimina correctamente, responde con mensaje de éxito
-        return res.json({ message: 'Proveedor eliminado correctamente' })
     }
 
     // Actualiza un Proveedor parcialmente después de validar los datos recibidos
     update = async (req, res) => {
-        const result = validatePartialProveedor(req.body)
+        try {
+            const result = validatePartialProveedor(req.body)
 
-        // Si la validación falla, responde con error 400
-        if (!result.success) {
-            return res.status(400).json({ error: JSON.parse(result.error.message) })
+            if (!result.success) {
+                return res.status(400).json({
+                    message: 'Datos de entrada inválidos',
+                    errors: result.error.errors.map(err => ({
+                        field: err.path.join('.'),
+                        message: err.message
+                    }))
+                })
+            }
+
+            const { id } = req.params
+            const updatedProveedor = await this.proveedorModel.update({ id, input: result.data })
+
+            if (!updatedProveedor) {
+                return res.status(404).json({ message: 'Proveedor no encontrado' })
+            }
+
+            res.json(updatedProveedor)
+        } catch (error) {
+            console.error('Error al actualizar proveedor:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
         }
+    }
 
-        const { id } = req.params
-        // Actualiza el Proveedor y responde con el objeto actualizado
-        const updatedProveedor = await this.proveedorModel.update({ id, input: result.data })
-        res.json(updatedProveedor)
+    // Obtener proveedores activos
+    getActivos = async (req, res) => {
+        try {
+            const proveedores = await this.proveedorModel.getProveedoresActivos()
+            res.json(proveedores)
+        } catch (error) {
+            console.error('Error al obtener proveedores activos:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Buscar proveedores por RUC
+    getByRuc = async (req, res) => {
+        try {
+            const { ruc } = req.params
+            const proveedor = await this.proveedorModel.getProveedorByRuc({ ruc })
+            if (proveedor) return res.json(proveedor)
+            res.status(404).json({ message: 'Proveedor no encontrado' })
+        } catch (error) {
+            console.error('Error al buscar proveedor por RUC:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Buscar proveedores por nombre
+    searchByName = async (req, res) => {
+        try {
+            const { nombre } = req.query
+            if (!nombre) {
+                return res.status(400).json({ message: 'El parámetro nombre es requerido' })
+            }
+            const proveedores = await this.proveedorModel.searchProveedoresByName({ nombre })
+            res.json(proveedores)
+        } catch (error) {
+            console.error('Error al buscar proveedor por nombre:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Cambiar estado del proveedor
+    cambiarEstado = async (req, res) => {
+        try {
+            const { id } = req.params
+            const { estado } = req.body
+
+            if (estado === undefined) {
+                return res.status(400).json({ message: 'El estado es requerido' })
+            }
+
+            const updated = await this.proveedorModel.cambiarEstado({ id, estado })
+
+            if (!updated) {
+                return res.status(404).json({ message: 'Proveedor no encontrado' })
+            }
+
+            res.json(updated)
+        } catch (error) {
+            console.error('Error al cambiar estado del proveedor:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
     }
 }

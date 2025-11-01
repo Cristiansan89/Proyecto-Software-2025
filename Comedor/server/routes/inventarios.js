@@ -11,5 +11,11 @@ export const createInventarioRouter = ({ inventarioModel }) => {
     inventariosRouter.delete('/:id', inventarioController.delete)
     inventariosRouter.patch('/:id', inventarioController.update)
 
+    // Endpoints especializados
+    inventariosRouter.get('/stock-bajo/list', inventarioController.getStockBajo)
+    inventariosRouter.get('/insumo/:id_insumo', inventarioController.getByInsumo)
+    inventariosRouter.patch('/:id/ajustar-stock', inventarioController.ajustarStock)
+    inventariosRouter.get('/estadisticas/resumen', inventarioController.getEstadisticas)
+
     return inventariosRouter
 }

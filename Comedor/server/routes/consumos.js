@@ -11,5 +11,11 @@ export const createConsumoRouter = ({ consumoModel }) => {
     consumosRouter.delete('/:id', consumoController.delete)
     consumosRouter.patch('/:id', consumoController.update)
 
+    // Endpoints especializados
+    consumosRouter.get('/fecha/:fecha', consumoController.getByFecha)
+    consumosRouter.get('/persona/:id_persona', consumoController.getByPersona)
+    consumosRouter.get('/servicio/:id_servicio/fecha/:fecha', consumoController.getByServicioFecha)
+    consumosRouter.get('/estadisticas/reporte', consumoController.getEstadisticas)
+
     return consumosRouter
 }
