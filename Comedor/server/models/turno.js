@@ -61,14 +61,20 @@ export class TurnoModel {
 
     static async delete({ id }) {
         try {
-            await connection.query(
+            console.log('TurnoModel: Ejecutando DELETE para ID:', id)
+            const [result] = await connection.query(
                 `DELETE FROM Turnos
                  WHERE id_turno = ?;`,
                 [id]
             )
-            return true
+            console.log('TurnoModel: Resultado de DELETE:', result)
+            console.log('TurnoModel: Filas afectadas:', result.affectedRows)
+
+            // Verificar si se eliminó alguna fila
+            return result.affectedRows > 0
         } catch (error) {
-            return false
+            console.error('TurnoModel: Error en DELETE:', error)
+            throw error
         }
     }
 

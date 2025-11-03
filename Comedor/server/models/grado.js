@@ -39,54 +39,71 @@ export class GradoModel {
 
     static async create({ input }) {
         const {
+            id_turno,
             idTurno,
             nombreGrado,
             estado = 'Activo'
         } = input
 
+        // Usar id_turno si está presente, sino usar idTurno para compatibilidad
+        const turnoId = id_turno || idTurno;
+
         try {
+            console.log('GradoModel: Creando grado con datos:', { turnoId, nombreGrado, estado });
             const [result] = await connection.query(
                 `INSERT INTO Grados (id_turno, nombreGrado, estado)
                  VALUES (?, ?, ?);`,
-                [idTurno, nombreGrado, estado]
+                [turnoId, nombreGrado, estado]
             )
 
+            console.log('GradoModel: Grado insertado con ID:', result.insertId);
             return this.getById({ id: result.insertId })
         } catch (error) {
+            console.error('GradoModel: Error al crear grado:', error);
             if (error.code === 'ER_DUP_ENTRY') {
                 throw new Error('Ya existe un grado con ese nombre')
             }
-            throw new Error('Error al crear el grado')
+            throw new Error('Error al crear el grado: ' + error.message)
         }
     }
 
     static async delete({ id }) {
         try {
-            await connection.query(
+            console.log('GradoModel: Ejecutando DELETE para ID:', id)
+            const [result] = await connection.query(
                 `DELETE FROM Grados
                  WHERE id_grado = ?;`,
                 [id]
             )
-            return true
+            console.log('GradoModel: Resultado de DELETE:', result)
+            console.log('GradoModel: Filas afectadas:', result.affectedRows)
+
+            // Verificar si se eliminó alguna fila
+            return result.affectedRows > 0
         } catch (error) {
-            return false
+            console.error('GradoModel: Error en DELETE:', error)
+            throw error
         }
     }
 
     static async update({ id, input }) {
         const {
+            id_turno,
             idTurno,
             nombreGrado,
             estado
         } = input
 
+        // Usar id_turno si está presente, sino usar idTurno para compatibilidad
+        const turnoId = id_turno || idTurno;
+
         try {
             const updates = []
             const values = []
 
-            if (idTurno) {
+            if (turnoId) {
                 updates.push('id_turno = ?')
-                values.push(idTurno)
+                values.push(turnoId)
             }
             if (nombreGrado) {
                 updates.push('nombreGrado = ?')

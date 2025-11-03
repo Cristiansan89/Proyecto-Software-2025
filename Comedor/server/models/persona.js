@@ -1,7 +1,7 @@
 import { connection } from './db.js'
 
 export class PersonaModel {
-    static async getAll({ nombreRol }) {
+    static async getAll({ nombreRol } = {}) {
         if (nombreRol) {
             const [personas] = await connection.query(
                 `SELECT 

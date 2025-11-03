@@ -1,13 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import gradoService from '../services/gradoService';
+import turnoService from '../services/turnoService';
 
 const GradoForm = ({ grado, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
         nombreGrado: grado?.nombreGrado || '',
+        idTurno: grado?.idTurno || '',
         estado: grado?.estado || 'Activo'
     });
 
+    const [turnos, setTurnos] = useState([]);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
+    const [loadingTurnos, setLoadingTurnos] = useState(true);
+
+    // Cargar turnos al montar el componente
+    useEffect(() => {
+        const loadTurnos = async () => {
+            try {
+                const turnosData = await turnoService.getActivos();
+                setTurnos(turnosData);
+            } catch (error) {
+                console.error('Error al cargar turnos:', error);
+            } finally {
+                setLoadingTurnos(false);
+            }
+        };
+
+        loadTurnos();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -35,6 +56,10 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
             newErrors.nombreGrado = 'El nombre debe tener al menos 2 caracteres';
         }
 
+        if (!formData.idTurno) {
+            newErrors.idTurno = 'Debe seleccionar un turno';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -49,18 +74,30 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
         setLoading(true);
 
         try {
-            // Simular llamada a API
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            let savedGrado;
 
-            const gradoToSave = {
-                ...formData,
-                id: grado?.id || Date.now(), // En producción vendría del backend
-                fechaRegistro: grado?.fechaRegistro || new Date().toISOString().split('T')[0]
-            };
+            if (mode === 'create') {
+                savedGrado = await gradoService.create(formData);
+            } else {
+                savedGrado = await gradoService.update(grado.idGrado, formData);
+            }
 
-            onSave(gradoToSave);
+            onSave(savedGrado);
         } catch (error) {
             console.error('Error al guardar grado:', error);
+
+            // Mostrar errores específicos
+            if (error.response?.data?.errors) {
+                const apiErrors = {};
+                error.response.data.errors.forEach(err => {
+                    apiErrors[err.field] = err.message;
+                });
+                setErrors(apiErrors);
+            } else if (error.response?.data?.message) {
+                alert(`Error: ${error.response.data.message}`);
+            } else {
+                alert('Error al guardar el grado. Por favor, intente nuevamente.');
+            }
         } finally {
             setLoading(false);
         }
@@ -96,6 +133,37 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
                             />
                             {errors.nombreGrado && (
                                 <div className="invalid-feedback">{errors.nombreGrado}</div>
+                            )}
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="idTurno" className="form-label required mt-3">
+                                Turno
+                            </label>
+                            {loadingTurnos ? (
+                                <div className="form-control">
+                                    <i className="fas fa-spinner fa-spin me-2"></i>
+                                    Cargando turnos...
+                                </div>
+                            ) : (
+                                <select
+                                    id="idTurno"
+                                    name="idTurno"
+                                    className={`form-control ${errors.idTurno ? 'is-invalid' : ''}`}
+                                    value={formData.idTurno}
+                                    onChange={handleInputChange}
+                                    disabled={isViewMode}
+                                >
+                                    <option value="">Seleccionar turno...</option>
+                                    {turnos.map(turno => (
+                                        <option key={turno.idTurno} value={turno.idTurno}>
+                                            {turno.nombre} ({turno.horaInicio} - {turno.horaFin})
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                            {errors.idTurno && (
+                                <div className="invalid-feedback">{errors.idTurno}</div>
                             )}
                         </div>
 

@@ -35,12 +35,15 @@ export class PermisoController {
     // Crea un nuevo Permiso después de validar los datos recibidos
     create = async (req, res) => {
         try {
+            console.log('PermisoController: Datos recibidos:', req.body)
             const result = validatePermiso(req.body)
+            console.log('PermisoController: Resultado de validación:', result)
 
             if (!result.success) {
+                console.log('PermisoController: Errores de validación:', result.error.issues)
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))
@@ -62,17 +65,26 @@ export class PermisoController {
     delete = async (req, res) => {
         try {
             const { id } = req.params
-            const deleted = await this.permisoModel.delete({ id })
-
-            if (!deleted) {
-                return res.status(404).json({ message: 'Permiso no encontrado' })
-            }
+            await this.permisoModel.delete({ id })
             return res.json({ message: 'Permiso eliminado correctamente' })
         } catch (error) {
             console.error('Error al eliminar permiso:', error)
-            if (error.message.includes('referencia') || error.message.includes('usado')) {
-                return res.status(409).json({ message: 'No se puede eliminar el permiso porque está en uso' })
+
+            // Manejar errores específicos
+            if (error.message.includes('asignado a') || error.message.includes('referencia')) {
+                return res.status(409).json({
+                    message: error.message,
+                    code: 'FOREIGN_KEY_CONSTRAINT'
+                })
             }
+
+            if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+                return res.status(409).json({
+                    message: 'No se puede eliminar el permiso porque está asignado a uno o más roles. Primero debe eliminar las asignaciones.',
+                    code: 'FOREIGN_KEY_CONSTRAINT'
+                })
+            }
+
             res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
@@ -85,7 +97,7 @@ export class PermisoController {
             if (!result.success) {
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))
@@ -109,7 +121,7 @@ export class PermisoController {
     // Obtener permisos activos
     getActivos = async (req, res) => {
         try {
-            const permisos = await this.permisoModel.getPermisosActivos()
+            const permisos = await this.permisoModel.getActivos()
             res.json(permisos)
         } catch (error) {
             console.error('Error al obtener permisos activos:', error)
@@ -129,17 +141,17 @@ export class PermisoController {
         }
     }
 
-    // Buscar permisos por nombre
-    searchByNombre = async (req, res) => {
+    // Buscar permisos por texto
+    searchByTexto = async (req, res) => {
         try {
-            const { nombre } = req.query
-            if (!nombre) {
-                return res.status(400).json({ message: 'El parámetro nombre es requerido' })
+            const { texto } = req.query
+            if (!texto) {
+                return res.status(400).json({ message: 'El parámetro texto es requerido' })
             }
-            const permisos = await this.permisoModel.searchByNombre({ nombre })
+            const permisos = await this.permisoModel.buscarPorTexto({ texto })
             res.json(permisos)
         } catch (error) {
-            console.error('Error al buscar permisos por nombre:', error)
+            console.error('Error al buscar permisos por texto:', error)
             res.status(500).json({ message: 'Error interno del servidor' })
         }
     }

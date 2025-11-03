@@ -1,33 +1,59 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const PermisoForm = ({ permiso, onSave, onCancel }) => {
+const PermisoForm = ({ permiso, onSave, onCancel, mode = 'create' }) => {
     const [formData, setFormData] = useState({
-        nombrePermiso: permiso?.nombrePermiso || ''
+        nombrePermiso: '',
+        descripcionPermiso: '',
+        modulo: 'Sin Módulo',
+        accion: 'Sin Acción',
+        estado: 'Activo'
     });
 
     const [errors, setErrors] = useState({});
 
-    // Sugerencias de permisos comunes
-    const sugerenciasPermisos = [
-        'crear_usuarios',
-        'editar_usuarios',
-        'eliminar_usuarios',
-        'ver_usuarios',
-        'crear_personas',
-        'editar_personas',
-        'eliminar_personas',
-        'ver_personas',
-        'gestionar_inventario',
-        'ver_inventario',
-        'planificar_menus',
-        'ver_menus',
-        'crear_reportes',
-        'ver_reportes',
-        'gestionar_asistencias',
-        'ver_asistencias',
-        'configurar_sistema',
-        'ver_dashboard'
+    // Opciones para los selectores - basadas en la base de datos
+    const accionesDisponibles = [
+        { value: 'Sin Acción', label: 'Sin Acción' },
+        { value: 'Registrar', label: 'Registrar' },
+        { value: 'Modificar', label: 'Modificar' },
+        { value: 'Eliminar', label: 'Eliminar' },
+        { value: 'Buscar', label: 'Buscar' },
+        { value: 'Consultar', label: 'Consultar' },
+        { value: 'Exportar', label: 'Exportar' }
     ];
+
+    const modulosDisponibles = [
+        { value: 'Sin Módulo', label: 'Sin Módulo' },
+        { value: 'Asistencias', label: 'Asistencias' },
+        { value: 'Auditoria', label: 'Auditoría' },
+        { value: 'Consumos', label: 'Consumos' },
+        { value: 'Insumos', label: 'Insumos' },
+        { value: 'Inventarios', label: 'Inventarios' },
+        { value: 'Parámetros', label: 'Parámetros' },
+        { value: 'Pedidos', label: 'Pedidos' },
+        { value: 'Permisos', label: 'Permisos' },
+        { value: 'Personas', label: 'Personas' },
+        { value: 'Planificación de Menús', label: 'Planificación de Menús' },
+        { value: 'Proveedores', label: 'Proveedores' },
+        { value: 'Recetas', label: 'Recetas' },
+        { value: 'Reportes', label: 'Reportes' },
+        { value: 'Roles', label: 'Roles' },
+        { value: 'Seguridad', label: 'Seguridad' },
+        { value: 'Turnos', label: 'Turnos' },
+        { value: 'Usuarios', label: 'Usuarios' }
+    ];
+
+    useEffect(() => {
+        if (permiso && mode !== 'create') {
+            setFormData({
+                nombrePermiso: permiso.nombrePermiso || '',
+                descripcionPermiso: permiso.descripcionPermiso || '',
+                modulo: permiso.modulo || 'Sin Módulo',
+                accion: permiso.accion || 'Sin Acción',
+                estado: permiso.estado || 'Activo'
+            });
+        }
+    }, [permiso, mode]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -36,11 +62,11 @@ const PermisoForm = ({ permiso, onSave, onCancel }) => {
             [name]: value
         }));
 
-        // Limpiar error del campo cuando el usuario empiece a escribir
+        // Limpiar error del campo si existía
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
-                [name]: null
+                [name]: ''
             }));
         }
     };
@@ -50,96 +76,192 @@ const PermisoForm = ({ permiso, onSave, onCancel }) => {
 
         if (!formData.nombrePermiso.trim()) {
             newErrors.nombrePermiso = 'El nombre del permiso es requerido';
-        } else if (formData.nombrePermiso.trim().length < 3) {
-            newErrors.nombrePermiso = 'El nombre del permiso debe tener al menos 3 caracteres';
-        } else if (!/^[a-z0-9_]+$/.test(formData.nombrePermiso.trim())) {
-            newErrors.nombrePermiso = 'El nombre del permiso solo puede contener letras minúsculas, números y guiones bajos';
+        } else if (formData.nombrePermiso.length > 100) {
+            newErrors.nombrePermiso = 'El nombre del permiso no puede tener más de 100 caracteres';
         }
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        if (!formData.descripcionPermiso.trim()) {
+            newErrors.descripcionPermiso = 'La descripción del permiso es requerida';
+        } else if (formData.descripcionPermiso.length > 100) {
+            newErrors.descripcionPermiso = 'La descripción del permiso no puede tener más de 100 caracteres';
+        }
+
+        if (!formData.modulo.trim() || formData.modulo === 'Sin Módulo') {
+            newErrors.modulo = 'Debe seleccionar un módulo específico';
+        }
+
+        if (!formData.accion.trim() || formData.accion === 'Sin Acción') {
+            newErrors.accion = 'Debe seleccionar una acción específica';
+        }
+
+        return newErrors;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (validateForm()) {
-            onSave(formData);
+
+        const formErrors = validateForm();
+        if (Object.keys(formErrors).length > 0) {
+            setErrors(formErrors);
+            return;
+        }
+
+        try {
+            const dataToSend = {
+                ...formData,
+                idPermiso: permiso?.idPermiso || permiso?.id_permiso // Incluir ID solo si estamos editando
+            };
+
+            await onSave(dataToSend);
+        } catch (error) {
+            console.error('Error al guardar permiso:', error);
         }
     };
 
-    const handleSugerenciaClick = (sugerencia) => {
-        setFormData(prev => ({
-            ...prev,
-            nombrePermiso: sugerencia
-        }));
-        if (errors.nombrePermiso) {
-            setErrors(prev => ({
-                ...prev,
-                nombrePermiso: null
-            }));
-        }
-    };
+    const isReadOnly = mode === 'view';
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div className="mb-2">
-                <label htmlFor="nombrePermiso" className="form-label mt-2">
-                    Nombre del Permiso <span className="text-danger">*</span>
-                </label>
-                <input
-                    type="text"
-                    id="nombrePermiso"
-                    name="nombrePermiso"
-                    className={`form-control ${errors.nombrePermiso ? 'is-invalid' : ''}`}
-                    value={formData.nombrePermiso}
-                    onChange={handleChange}
-                    placeholder="Ej: crear_usuarios, editar_reportes, gestionar_inventario"
-                />
-                {errors.nombrePermiso && (
-                    <div className="invalid-feedback">
-                        {errors.nombrePermiso}
+        <form onSubmit={handleSubmit} className="permiso-form">
+            <div className="form-grid">
+                <div className="form-group">
+                    <label htmlFor="nombrePermiso" className="form-label">
+                        Nombre del Permiso *
+                    </label>
+                    <input
+                        type="text"
+                        id="nombrePermiso"
+                        name="nombrePermiso"
+                        value={formData.nombrePermiso}
+                        onChange={handleChange}
+                        className={`form-control ${errors.nombrePermiso ? 'error' : ''}`}
+                        placeholder="Ingrese el nombre del permiso"
+                        maxLength={100}
+                        readOnly={isReadOnly}
+                        required
+                    />
+                    {errors.nombrePermiso && (
+                        <span className="error-message">{errors.nombrePermiso}</span>
+                    )}
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="descripcionPermiso" className="form-label">
+                        Descripción del Permiso *
+                    </label>
+                    <textarea
+                        id="descripcionPermiso"
+                        name="descripcionPermiso"
+                        value={formData.descripcionPermiso}
+                        onChange={handleChange}
+                        className={`form-control ${errors.descripcionPermiso ? 'error' : ''}`}
+                        placeholder="Ingrese la descripción del permiso..."
+                        rows={3}
+                        maxLength={100}
+                        readOnly={isReadOnly}
+                        required
+                    />
+                    {errors.descripcionPermiso && (
+                        <span className="error-message">{errors.descripcionPermiso}</span>
+                    )}
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="modulo" className="form-label">
+                        Módulo del Sistema *
+                    </label>
+                    <select
+                        id="modulo"
+                        name="modulo"
+                        value={formData.modulo}
+                        onChange={handleChange}
+                        className={`form-select ${errors.modulo ? 'error' : ''}`}
+                        disabled={isReadOnly}
+                        required
+                    >
+                        {modulosDisponibles.map(modulo => (
+                            <option key={modulo.value} value={modulo.value}>
+                                {modulo.label}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.modulo && (
+                        <span className="error-message">{errors.modulo}</span>
+                    )}
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="accion" className="form-label">
+                        Acción *
+                    </label>
+                    <select
+                        id="accion"
+                        name="accion"
+                        value={formData.accion}
+                        onChange={handleChange}
+                        className={`form-select ${errors.accion ? 'error' : ''}`}
+                        disabled={isReadOnly}
+                        required
+                    >
+                        {accionesDisponibles.map(accion => (
+                            <option key={accion.value} value={accion.value}>
+                                {accion.label}
+                            </option>
+                        ))}
+                    </select>
+                    {errors.accion && (
+                        <span className="error-message">{errors.accion}</span>
+                    )}
+                </div>
+
+                {mode !== 'create' && (
+                    <div className="form-group">
+                        <label htmlFor="estado" className="form-label">
+                            Estado
+                        </label>
+                        <select
+                            id="estado"
+                            name="estado"
+                            value={formData.estado}
+                            onChange={handleChange}
+                            className="form-select"
+                            disabled={isReadOnly}
+                        >
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
                     </div>
                 )}
-                <div className="form-text">
-                    Use solo letras minúsculas, números y guiones bajos.
-                    Ej: crear_usuarios, ver_reportes
-                </div>
             </div>
 
-            {/* Sugerencias de permisos */}
-            <div className="mb-2">
-                <label className="form-label">Sugerencias de permisos comunes:</label>
-                <div className="sugerencias-grid">
-                    {sugerenciasPermisos.map(sugerencia => (
-                        <button
-                            key={sugerencia}
-                            type="button"
-                            className="btn btn-outline-info btn-sm"
-                            onClick={() => handleSugerenciaClick(sugerencia)}
-                            disabled={formData.nombrePermiso === sugerencia}
-                        >
-                            {sugerencia}
-                        </button>
-                    ))}
+            {!isReadOnly && (
+                <div className="form-actions">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="btn btn-secondary"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                    >
+                        {mode === 'create' ? 'Crear Permiso' : 'Actualizar Permiso'}
+                    </button>
                 </div>
-            </div>
+            )}
 
-            <div className="d-flex justify-content-end gap-2">
-                <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={onCancel}
-                >
-                    <i className="fas fa-times"></i>
-                    Cancelar
-                </button>
-                <button
-                    type="submit"
-                    className="btn btn-primary"
-                >
-                    {permiso ? 'Actualizar' : 'Guardar'}
-                </button>
-            </div>
+            {isReadOnly && (
+                <div className="form-actions">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="btn btn-secondary"
+                    >
+                        Cerrar
+                    </button>
+                </div>
+            )}
         </form>
     );
 };

@@ -5,8 +5,8 @@ export class PermisoModel {
         try {
             const [permisos] = await connection.query(
                 `SELECT 
-                    id_permiso,
-                    descripcion,
+                    id_permiso as idPermiso,
+                    nombrePermiso,
                     descripcionPermiso,
                     modulo,
                     accion,
@@ -14,7 +14,7 @@ export class PermisoModel {
                     fechaModificacion,
                     estado
                  FROM Permisos
-                 ORDER BY modulo, descripcion;`
+                 ORDER BY modulo, nombrePermiso;`
             )
             return permisos
         } catch (error) {
@@ -28,7 +28,7 @@ export class PermisoModel {
             const [permisos] = await connection.query(
                 `SELECT 
                     id_permiso,
-                    descripcion,
+                    nombrePermiso,
                     descripcionPermiso,
                     modulo,
                     accion,
@@ -49,23 +49,23 @@ export class PermisoModel {
 
     static async create({ input }) {
         const {
-            descripcion,
+            nombrePermiso,
             descripcionPermiso,
-            modulo,
-            accion = '---',
+            modulo = 'Sin Módulo',
+            accion = 'Sin Acción',
             estado = 'Activo'
         } = input
 
         try {
             const [result] = await connection.query(
                 `INSERT INTO Permisos (
-                    descripcion,
+                    nombrePermiso,
                     descripcionPermiso,
                     modulo,
                     accion,
                     estado
                 ) VALUES (?, ?, ?, ?, ?);`,
-                [descripcion, descripcionPermiso, modulo, accion, estado]
+                [nombrePermiso, descripcionPermiso, modulo, accion, estado]
             )
 
             const newId = result.insertId
@@ -73,7 +73,7 @@ export class PermisoModel {
         } catch (error) {
             console.error('Error al crear el permiso:', error)
             if (error.code === 'ER_DUP_ENTRY') {
-                throw new Error('Ya existe un permiso con esta descripción')
+                throw new Error('Ya existe un permiso con esta descripción, módulo y acción')
             }
             throw new Error('Error al crear el permiso')
         }
@@ -81,6 +81,16 @@ export class PermisoModel {
 
     static async delete({ id }) {
         try {
+            // Verificar si el permiso está siendo usado en RolesPermisos
+            const [referencias] = await connection.query(
+                `SELECT COUNT(*) as count FROM RolesPermisos WHERE id_permiso = ?;`,
+                [id]
+            )
+
+            if (referencias[0].count > 0) {
+                throw new Error(`No se puede eliminar el permiso porque está asignado a ${referencias[0].count} rol(es). Primero debe eliminar las asignaciones.`)
+            }
+
             await connection.query(
                 `DELETE FROM Permisos WHERE id_permiso = ?;`,
                 [id]
@@ -88,13 +98,13 @@ export class PermisoModel {
             return true
         } catch (error) {
             console.error('Error al eliminar permiso:', error)
-            return false
+            throw error
         }
     }
 
     static async update({ id, input }) {
         const {
-            descripcion,
+            nombrePermiso,
             descripcionPermiso,
             modulo,
             accion,
@@ -105,45 +115,45 @@ export class PermisoModel {
             const updates = []
             const values = []
 
-            if (descripcion !== undefined) {
-                updates.push('descripcion = ?')
-                values.push(descripcion)
+            if (nombrePermiso !== undefined) {
+                updates.push('nombrePermiso = ?')
+                values.push(nombrePermiso)
             }
+
             if (descripcionPermiso !== undefined) {
                 updates.push('descripcionPermiso = ?')
                 values.push(descripcionPermiso)
             }
+
             if (modulo !== undefined) {
                 updates.push('modulo = ?')
                 values.push(modulo)
             }
+
             if (accion !== undefined) {
                 updates.push('accion = ?')
                 values.push(accion)
             }
+
             if (estado !== undefined) {
                 updates.push('estado = ?')
                 values.push(estado)
             }
 
-            if (updates.length === 0) return this.getById({ id })
+            if (updates.length === 0) {
+                throw new Error('No se proporcionaron campos para actualizar')
+            }
 
-            updates.push('fechaModificacion = NOW()')
             values.push(id)
 
             await connection.query(
-                `UPDATE Permisos
-                 SET ${updates.join(', ')}
-                 WHERE id_permiso = ?;`,
+                `UPDATE Permisos SET ${updates.join(', ')}, fechaModificacion = NOW() WHERE id_permiso = ?`,
                 values
             )
 
             return this.getById({ id })
         } catch (error) {
-            console.error('Error al actualizar el permiso:', error)
-            if (error.code === 'ER_DUP_ENTRY') {
-                throw new Error('Ya existe un permiso con esta descripción')
-            }
+            console.error('Error al actualizar permiso:', error)
             throw new Error('Error al actualizar el permiso')
         }
     }
@@ -154,7 +164,7 @@ export class PermisoModel {
             const [permisos] = await connection.query(
                 `SELECT 
                     id_permiso,
-                    descripcion,
+                    nombrePermiso,
                     descripcionPermiso,
                     modulo,
                     accion,
@@ -163,7 +173,7 @@ export class PermisoModel {
                     estado
                  FROM Permisos
                  WHERE modulo = ? AND estado = 'Activo'
-                 ORDER BY descripcion;`,
+                 ORDER BY nombrePermiso;`,
                 [modulo]
             )
             return permisos
@@ -179,7 +189,7 @@ export class PermisoModel {
             const [permisos] = await connection.query(
                 `SELECT 
                     id_permiso,
-                    descripcion,
+                    nombrePermiso,
                     descripcionPermiso,
                     modulo,
                     accion,
@@ -188,7 +198,7 @@ export class PermisoModel {
                     estado
                  FROM Permisos
                  WHERE accion = ? AND estado = 'Activo'
-                 ORDER BY modulo, descripcion;`,
+                 ORDER BY modulo, nombrePermiso;`,
                 [accion]
             )
             return permisos
@@ -204,7 +214,7 @@ export class PermisoModel {
             const [permisos] = await connection.query(
                 `SELECT 
                     id_permiso,
-                    descripcion,
+                    nombrePermiso,
                     descripcionPermiso,
                     modulo,
                     accion,
@@ -213,7 +223,7 @@ export class PermisoModel {
                     estado
                  FROM Permisos
                  WHERE estado = 'Activo'
-                 ORDER BY modulo, descripcion;`
+                 ORDER BY modulo, nombrePermiso;`
             )
             return permisos
         } catch (error) {
@@ -264,7 +274,7 @@ export class PermisoModel {
             const [permisos] = await connection.query(
                 `SELECT 
                     id_permiso,
-                    descripcion,
+                    nombrePermiso,
                     descripcionPermiso,
                     modulo,
                     accion,
@@ -273,7 +283,7 @@ export class PermisoModel {
                     estado
                  FROM Permisos
                  WHERE estado = 'Activo'
-                 ORDER BY modulo, accion, descripcion;`
+                 ORDER BY modulo, accion, nombrePermiso;`
             )
 
             // Agrupar por módulo
@@ -295,13 +305,13 @@ export class PermisoModel {
         }
     }
 
-    // Método para buscar permisos por descripción
-    static async buscarPorDescripcion({ descripcion }) {
+    // Método para buscar permisos por texto
+    static async buscarPorTexto({ texto }) {
         try {
             const [permisos] = await connection.query(
                 `SELECT 
                     id_permiso,
-                    descripcion,
+                    nombrePermiso,
                     descripcionPermiso,
                     modulo,
                     accion,
@@ -309,14 +319,14 @@ export class PermisoModel {
                     fechaModificacion,
                     estado
                  FROM Permisos
-                 WHERE descripcion LIKE ? OR descripcionPermiso LIKE ?
-                 ORDER BY modulo, descripcion;`,
-                [`%${descripcion}%`, `%${descripcion}%`]
+                 WHERE nombrePermiso LIKE ? OR descripcionPermiso LIKE ?
+                 ORDER BY modulo, nombrePermiso;`,
+                [`%${texto}%`, `%${texto}%`]
             )
             return permisos
         } catch (error) {
-            console.error('Error al buscar permisos por descripción:', error)
-            throw new Error('Error al buscar permisos por descripción')
+            console.error('Error al buscar permisos por texto:', error)
+            throw new Error('Error al buscar permisos por texto')
         }
     }
 }

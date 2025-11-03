@@ -64,14 +64,22 @@ export class ServicioController {
     delete = async (req, res) => {
         try {
             const { id } = req.params
+            console.log('ServicioController: Eliminando servicio con ID:', id)
+
             const deleted = await this.servicioModel.delete({ id })
+            console.log('ServicioController: Resultado de eliminación:', deleted)
 
             if (!deleted) {
+                console.log('ServicioController: Servicio no found')
                 return res.status(404).json({ message: 'Servicio no encontrado' })
             }
+            console.log('ServicioController: Servicio eliminado exitosamente')
             return res.json({ message: 'Servicio eliminado correctamente' })
         } catch (error) {
-            console.error('Error al eliminar servicio:', error)
+            console.error('ServicioController: Error al eliminar servicio:', error)
+            if (error.message.includes('referencia') || error.message.includes('usado')) {
+                return res.status(409).json({ message: 'No se puede eliminar el servicio porque está en uso' })
+            }
             res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
@@ -109,7 +117,7 @@ export class ServicioController {
     // Obtener servicios activos
     getActivos = async (req, res) => {
         try {
-            const servicios = await this.servicioModel.getServiciosActivos()
+            const servicios = await this.servicioModel.getActivos()
             res.json(servicios)
         } catch (error) {
             console.error('Error al obtener servicios activos:', error)

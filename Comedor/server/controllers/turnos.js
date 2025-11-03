@@ -72,14 +72,19 @@ export class TurnoController {
     delete = async (req, res) => {
         try {
             const { id } = req.params
+            console.log('TurnoController: Eliminando turno con ID:', id)
+
             const deleted = await this.turnoModel.delete({ id })
+            console.log('TurnoController: Resultado de eliminación:', deleted)
 
             if (!deleted) {
+                console.log('TurnoController: Turno no encontrado')
                 return res.status(404).json({ message: 'Turno no encontrado' })
             }
+            console.log('TurnoController: Turno eliminado exitosamente')
             return res.json({ message: 'Turno eliminado correctamente' })
         } catch (error) {
-            console.error('Error al eliminar turno:', error)
+            console.error('TurnoController: Error al eliminar turno:', error)
             if (error.message.includes('referencia') || error.message.includes('usado')) {
                 return res.status(409).json({ message: 'No se puede eliminar el turno porque está en uso' })
             }
@@ -128,7 +133,7 @@ export class TurnoController {
     // Obtener turnos activos
     getActivos = async (req, res) => {
         try {
-            const turnos = await this.turnoModel.getTurnosActivos()
+            const turnos = await this.turnoModel.getActivos()
             res.json(turnos)
         } catch (error) {
             console.error('Error al obtener turnos activos:', error)

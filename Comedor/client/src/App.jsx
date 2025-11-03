@@ -3,17 +3,17 @@ import Login from './pages/auth/Login'
 import AdminDashboard from './pages/admins/Dashboard'
 import ListaPersonas from './pages/admins/ListaPersonas'
 import ListaGrados from './pages/admins/ListaGrados'
-import ListaUsuarios from './pages/admins/ListaUsuarios'
 import GestionRolesPermisos from './pages/admins/GestionRolesPermisos'
 import ListaInsumos from './pages/admins/ListaInsumos'
 import ListaProveedores from './pages/admins/ListaProveedores'
+import Configuracion from './pages/admins/Configuracion'
 import AdminLayout from './layouts/AdminLayout'
 import './App.css'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userRole, setUserRole] = useState(null)
-  const [currentPage, setCurrentPage] = useState('dashboard') // 'login', 'dashboard', 'personas', 'grados', 'usuarios', 'roles', 'insumos', 'proveedores'
+  const [currentPage, setCurrentPage] = useState('dashboard') // 'login', 'dashboard', 'personas', 'grados', 'roles', 'insumos', 'proveedores', 'configuracion'
 
   // Evitar warning del linter - userRole se usará para control de acceso
   console.log('User role:', userRole);
@@ -50,14 +50,14 @@ function App() {
         return <ListaPersonas />
       case 'grados':
         return <ListaGrados />
-      case 'usuarios':
-        return <ListaUsuarios />
       case 'roles':
         return <GestionRolesPermisos />
       case 'insumos':
         return <ListaInsumos />
       case 'proveedores':
         return <ListaProveedores />
+      case 'configuracion':
+        return <Configuracion />
       default:
         return <AdminDashboard />
     }

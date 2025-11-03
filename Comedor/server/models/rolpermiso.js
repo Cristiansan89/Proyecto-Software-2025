@@ -5,11 +5,13 @@ export class RolPermisoModel {
         try {
             const [rolesPermisos] = await connection.query(
                 `SELECT 
-                    BIN_TO_UUID(rp.id_rol) as id_rol,
+                    rp.id_rol,
                     r.nombreRol,
-                    BIN_TO_UUID(rp.id_permiso) as id_permiso,
+                    rp.id_permiso,
                     p.nombrePermiso,
-                    rp.fecha_creacion
+                    p.descripcionPermiso,
+                    p.modulo,
+                    p.accion
                  FROM RolesPermisos rp
                  INNER JOIN Roles r ON rp.id_rol = r.id_rol
                  INNER JOIN Permisos p ON rp.id_permiso = p.id_permiso
@@ -26,15 +28,15 @@ export class RolPermisoModel {
         try {
             const [rolesPermisos] = await connection.query(
                 `SELECT 
-                    BIN_TO_UUID(rp.id_rol) as id_rol,
+                    rp.id_rol,
                     r.nombreRol,
-                    BIN_TO_UUID(rp.id_permiso) as id_permiso,
+                    rp.id_permiso,
                     p.nombrePermiso,
-                    rp.fecha_creacion
+                    p.descripcionPermiso
                  FROM RolesPermisos rp
                  INNER JOIN Roles r ON rp.id_rol = r.id_rol
                  INNER JOIN Permisos p ON rp.id_permiso = p.id_permiso
-                 WHERE rp.id_rol = UUID_TO_BIN(?) AND rp.id_permiso = UUID_TO_BIN(?);`,
+                 WHERE rp.id_rol = ? AND rp.id_permiso = ?;`,
                 [id_rol, id_permiso]
             )
             if (rolesPermisos.length === 0) return null
@@ -54,7 +56,7 @@ export class RolPermisoModel {
         try {
             await connection.query(
                 `INSERT INTO RolesPermisos (id_rol, id_permiso)
-                 VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?));`,
+                 VALUES (?, ?);`,
                 [id_rol, id_permiso]
             )
 
@@ -70,15 +72,22 @@ export class RolPermisoModel {
 
     static async delete({ id_rol, id_permiso }) {
         try {
+            console.log('Intentando eliminar relación rol-permiso:', { id_rol, id_permiso });
+
+            if (!id_rol || !id_permiso) {
+                throw new Error(`Parámetros inválidos: id_rol=${id_rol}, id_permiso=${id_permiso}`);
+            }
+
             await connection.query(
                 `DELETE FROM RolesPermisos
-                 WHERE id_rol = UUID_TO_BIN(?) AND id_permiso = UUID_TO_BIN(?);`,
+                 WHERE id_rol = ? AND id_permiso = ?;`,
                 [id_rol, id_permiso]
             )
+            console.log('Relación rol-permiso eliminada exitosamente');
             return true
         } catch (error) {
             console.error('Error al eliminar relación rol-permiso:', error)
-            return false
+            throw error
         }
     }
 
@@ -86,12 +95,14 @@ export class RolPermisoModel {
         try {
             const [permisos] = await connection.query(
                 `SELECT 
-                    BIN_TO_UUID(p.id_permiso) as id_permiso,
+                    p.id_permiso,
                     p.nombrePermiso,
-                    p.descripcion
+                    p.descripcionPermiso,
+                    p.modulo,
+                    p.accion
                  FROM RolesPermisos rp
                  INNER JOIN Permisos p ON rp.id_permiso = p.id_permiso
-                 WHERE rp.id_rol = UUID_TO_BIN(?)
+                 WHERE rp.id_rol = ?
                  ORDER BY p.nombrePermiso;`,
                 [id_rol]
             )
@@ -103,36 +114,28 @@ export class RolPermisoModel {
     }
 
     static async asignarPermisos({ id_rol, permisos }) {
-        const conn = await connection.getConnection()
-
         try {
-            await conn.beginTransaction()
-
             // Eliminar permisos existentes
-            await conn.query(
-                `DELETE FROM RolesPermisos WHERE id_rol = UUID_TO_BIN(?);`,
+            await connection.query(
+                `DELETE FROM RolesPermisos WHERE id_rol = ?;`,
                 [id_rol]
             )
 
             // Insertar nuevos permisos
             if (permisos && permisos.length > 0) {
                 for (const id_permiso of permisos) {
-                    await conn.query(
+                    await connection.query(
                         `INSERT INTO RolesPermisos (id_rol, id_permiso)
-                         VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?));`,
+                         VALUES (?, ?);`,
                         [id_rol, id_permiso]
                     )
                 }
             }
 
-            await conn.commit()
             return this.getByRol({ id_rol })
         } catch (error) {
-            await conn.rollback()
             console.error('Error al asignar permisos al rol:', error)
             throw new Error('Error al asignar permisos al rol')
-        } finally {
-            conn.release()
         }
     }
 
@@ -143,7 +146,7 @@ export class RolPermisoModel {
                 `SELECT DISTINCT
                     BIN_TO_UUID(p.id_permiso) as id_permiso,
                     p.nombrePermiso,
-                    p.descripcion
+                    p.descripcionPermiso
                  FROM Usuarios u
                  INNER JOIN Roles r ON u.id_rol = r.id_rol
                  INNER JOIN RolesPermisos rp ON r.id_rol = rp.id_rol
@@ -181,9 +184,9 @@ export class RolPermisoModel {
         try {
             const [roles] = await connection.query(
                 `SELECT DISTINCT
-                    BIN_TO_UUID(r.id_rol) as id_rol,
+                    r.id_rol,
                     r.nombreRol,
-                    r.descripcion
+                    r.descripcionRol
                  FROM Roles r
                  ORDER BY r.nombreRol;`
             )
@@ -197,5 +200,18 @@ export class RolPermisoModel {
             console.error('Error al obtener roles con permisos:', error)
             return []
         }
+    }
+
+    // Métodos para compatibilidad con el controlador
+    static async getPermisosByRol({ id_rol }) {
+        return this.getByRol({ id_rol })
+    }
+
+    static async asignarPermisosRol({ id_rol, permisos }) {
+        return this.asignarPermisos({ id_rol, permisos })
+    }
+
+    static async revocarPermisoRol({ id_rol, id_permiso }) {
+        return this.delete({ id_rol, id_permiso })
     }
 }

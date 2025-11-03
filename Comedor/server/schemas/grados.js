@@ -1,7 +1,7 @@
 import z from 'zod'
 
 const gradoSchema = z.object({
-    id_turno: z.number({
+    idTurno: z.number({
         required_error: 'El ID del turno es requerido',
         invalid_type_error: 'El ID del turno debe ser un número'
     }).int().positive(),
@@ -12,7 +12,10 @@ const gradoSchema = z.object({
     estado: z.enum(['Activo', 'Inactivo'], {
         invalid_type_error: 'Estado inválido'
     }).default('Activo')
-})
+}).transform((data) => ({
+    ...data,
+    id_turno: data.idTurno // Convertir idTurno a id_turno para la base de datos
+}))
 
 export function validateGrado(input) {
     return gradoSchema.safeParse(input)

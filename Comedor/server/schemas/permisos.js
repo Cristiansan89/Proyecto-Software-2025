@@ -5,15 +5,24 @@ const permisoSchema = z.object({
         required_error: 'El nombre del permiso es requerido',
         invalid_type_error: 'El nombre del permiso debe ser un texto'
     }).min(1, 'El nombre del permiso no puede estar vacío').max(100, 'El nombre del permiso no puede tener más de 100 caracteres'),
-    descripcion: z.string({
-        invalid_type_error: 'La descripción debe ser un texto'
-    }).max(255, 'La descripción no puede tener más de 255 caracteres').optional().nullable(),
-    modulo: z.string({
-        invalid_type_error: 'El módulo debe ser un texto'
-    }).max(50, 'El módulo no puede tener más de 50 caracteres').optional().nullable(),
-    accion: z.string({
-        invalid_type_error: 'La acción debe ser un texto'
-    }).max(50, 'La acción no puede tener más de 50 caracteres').optional().nullable(),
+    descripcionPermiso: z.string({
+        required_error: 'La descripción del permiso es requerida',
+        invalid_type_error: 'La descripción del permiso debe ser un texto'
+    }).min(1, 'La descripción del permiso no puede estar vacía').max(100, 'La descripción del permiso no puede tener más de 100 caracteres'),
+    modulo: z.enum([
+        'Sin Módulo', 'Asistencias', 'Auditoria', 'Consumos', 'Insumos', 'Inventarios',
+        'Parámetros', 'Pedidos', 'Permisos', 'Personas', 'Planificación de Menús',
+        'Proveedores', 'Recetas', 'Reportes', 'Roles', 'Seguridad', 'Turnos', 'Usuarios'
+    ], {
+        required_error: 'El módulo es requerido',
+        invalid_type_error: 'Módulo inválido'
+    }),
+    accion: z.enum([
+        'Sin Acción', 'Registrar', 'Modificar', 'Eliminar', 'Buscar', 'Consultar', 'Exportar'
+    ], {
+        required_error: 'La acción es requerida',
+        invalid_type_error: 'Acción inválida'
+    }),
     estado: z.enum(['Activo', 'Inactivo'], {
         invalid_type_error: 'Estado inválido'
     }).default('Activo')

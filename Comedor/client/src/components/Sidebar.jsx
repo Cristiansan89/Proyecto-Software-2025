@@ -23,9 +23,6 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
                 case 'proveedores':
                     setActiveSection('proveedores');
                     break;
-                case 'usuarios':
-                    setActiveSection('usuarios');
-                    break;
                 case 'roles':
                     setActiveSection('seguridad');
                     break;
@@ -44,12 +41,6 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
             label: 'Dashboard',
             icon: 'fas fa-tachometer-alt',
             path: '/admin'
-        },
-        {
-            id: 'usuarios',
-            label: 'Usuarios',
-            icon: 'fas fa-users',
-            path: '/admin/usuarios'
         },
         {
             id: 'seguridad',

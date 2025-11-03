@@ -1,45 +1,84 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import personaService from '../services/personaService.js';
+import { rolService } from '../services/rolService.js';
+import usuarioService from '../services/usuarioService.js';
 
 const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
         nombre: persona?.nombre || '',
         apellido: persona?.apellido || '',
-        numeroDocumento: persona?.numeroDocumento || '',
-        tipoPersona: persona?.tipoPersona || 'Alumno',
-        grado: persona?.grado || '',
-        telefono: persona?.telefono || '',
-        email: persona?.email || '',
-        direccion: persona?.direccion || '',
+        dni: persona?.dni || '',
+        fechaNacimiento: persona?.fechaNacimiento ? persona.fechaNacimiento.split('T')[0] : '',
+        genero: persona?.genero || '',
+        idRol: persona?.idRol || '',
         estado: persona?.estado || 'Activo'
     });
 
-    // Datos para el formulario de usuario (solo para docentes)
+    // Datos para el formulario de usuario
     const [userFormData, setUserFormData] = useState({
         nombreUsuario: '',
         email: '',
+        telefono: '',
         password: '',
         confirmPassword: '',
-        rol: 'Docente'
+        estado: 'Activo',
+        rol: ''
     });
 
     const [errors, setErrors] = useState({});
     const [userErrors, setUserErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
-    const grados = [
-        'Preescolar',
-        'Primero',
-        'Segundo',
-        'Tercero',
-        'Cuarto',
-        'Quinto',
-        'Sexto'
-    ];
+    const [roles, setRoles] = useState([]);
+    const [loadingRoles, setLoadingRoles] = useState(true);
+    const [rolSeleccionado, setRolSeleccionado] = useState(null);
+    const [habilitaCuentaUsuario, setHabilitaCuentaUsuario] = useState(false);
 
-    const tiposPersona = [
-        { value: 'Alumno', label: 'Alumno' },
-        { value: 'Docente', label: 'Docente' }
-    ];
+    // Cargar roles al montar el componente
+    useEffect(() => {
+        const loadRoles = async () => {
+            try {
+                setLoadingRoles(true);
+                const rolesData = await rolService.getActivos();
+                setRoles(rolesData);
+            } catch (error) {
+                console.error('Error al cargar roles:', error);
+            } finally {
+                setLoadingRoles(false);
+            }
+        };
+
+        loadRoles();
+    }, []); // Solo se ejecuta al montar
+
+    // Efecto separado para manejar el rol inicial cuando se cargan los roles
+    useEffect(() => {
+        if (roles.length > 0 && !rolSeleccionado) {
+            let rol = null;
+
+            // Si estamos editando o visualizando, buscar por nombreRol
+            if ((mode === 'edit' || mode === 'view') && persona?.nombreRol) {
+                rol = roles.find(r => r.nombreRol === persona.nombreRol);
+                if (rol) {
+                    // Actualizar formData con el idRol correcto
+                    setFormData(prev => ({ ...prev, idRol: rol.idRol }));
+                }
+            }
+            // Si estamos creando y ya hay un idRol seleccionado
+            else if (formData.idRol) {
+                const rolId = parseInt(formData.idRol);
+                rol = roles.find(r => r.idRol === rolId);
+            }
+
+            if (rol) {
+                setRolSeleccionado(rol);
+                const habilita = rol.habilitaCuentaUsuario === 'Si';
+                setHabilitaCuentaUsuario(habilita);
+            }
+        }
+    }, [roles, persona, mode, formData.idRol, rolSeleccionado]);
+
+
 
     const generateUsername = (nombre, apellido) => {
         if (!nombre || !apellido) return '';
@@ -52,38 +91,46 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
 
-            // Si cambia a docente, limpiar el grado y sincronizar email
-            if (name === 'tipoPersona' && value === 'Docente') {
-                newData.grado = '';
-                // Solo generar nombre de usuario si tenemos nombre y apellido
-                const nombreUsuario = generateUsername(newData.nombre, newData.apellido);
-                setUserFormData(prevUser => ({
-                    ...prevUser,
-                    email: newData.email,
-                    nombreUsuario: nombreUsuario
-                }));
-            }
+            // Si cambia el rol, verificar si habilita cuenta de usuario
+            if (name === 'idRol') {
+                const rolId = parseInt(value);
+                const rol = roles.find(r => r.idRol === rolId);
 
-            // Si cambia a alumno, limpiar información de contacto
-            if (name === 'tipoPersona' && value === 'Alumno') {
-                newData.telefono = '';
-                newData.email = '';
-                newData.direccion = '';
-                // Limpiar formulario de usuario
-                setUserFormData({
-                    nombreUsuario: '',
-                    email: '',
-                    password: '',
-                    confirmPassword: '',
-                    rol: 'Docente'
-                });
+                if (rol) {
+                    setRolSeleccionado(rol);
+                    const habilita = rol.habilitaCuentaUsuario === 'Si';
+                    setHabilitaCuentaUsuario(habilita);
+                    if (habilita) {
+                        // Si habilita cuenta, generar nombre de usuario si tenemos nombre y apellido
+                        const nombreUsuario = generateUsername(newData.nombre, newData.apellido);
+                        setUserFormData(prevUser => ({
+                            ...prevUser,
+                            nombreUsuario: nombreUsuario,
+                            rol: rol.nombreRol
+                        }));
+                    } else {
+                        // Si no habilita cuenta, limpiar formulario de usuario
+                        setUserFormData({
+                            nombreUsuario: '',
+                            email: '',
+                            telefono: '',
+                            password: '',
+                            confirmPassword: '',
+                            estado: 'Activo',
+                            rol: ''
+                        });
+                    }
+                } else {
+                    setRolSeleccionado(null);
+                    setHabilitaCuentaUsuario(false);
+                }
             }
 
             return newData;
         });
 
-        // Actualizar nombre de usuario si cambia nombre o apellido y es docente
-        if ((name === 'nombre' || name === 'apellido') && formData.tipoPersona === 'Docente') {
+        // Actualizar nombre de usuario si cambia nombre o apellido y el rol habilita cuenta
+        if ((name === 'nombre' || name === 'apellido') && habilitaCuentaUsuario) {
             const nombre = name === 'nombre' ? value : formData.nombre;
             const apellido = name === 'apellido' ? value : formData.apellido;
             const nombreUsuario = generateUsername(nombre, apellido);
@@ -91,14 +138,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
             setUserFormData(prevUser => ({
                 ...prevUser,
                 nombreUsuario: nombreUsuario
-            }));
-        }
-
-        // Si cambia el email y es docente, sincronizar con usuario
-        if (name === 'email' && formData.tipoPersona === 'Docente') {
-            setUserFormData(prevUser => ({
-                ...prevUser,
-                email: value
             }));
         }
 
@@ -139,32 +178,29 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
             newErrors.apellido = 'El apellido es requerido';
         }
 
-        if (!formData.numeroDocumento.trim()) {
-            newErrors.numeroDocumento = 'El número de documento es requerido';
-        } else if (formData.numeroDocumento.length < 6) {
-            newErrors.numeroDocumento = 'El documento debe tener al menos 6 caracteres';
+        if (!formData.dni.trim()) {
+            newErrors.dni = 'El número de documento es requerido';
+        } else if (formData.dni.length < 6) {
+            newErrors.dni = 'El documento debe tener al menos 6 caracteres';
         }
 
-        if (!formData.tipoPersona) {
-            newErrors.tipoPersona = 'El tipo de persona es requerido';
-        }
-
-        // Solo validar grado si es alumno
-        if (formData.tipoPersona === 'Alumno' && !formData.grado) {
-            newErrors.grado = 'El grado es requerido para alumnos';
-        }
-
-        // Validar información de contacto solo para docentes
-        if (formData.tipoPersona === 'Docente') {
-            if (!formData.email || !formData.email.trim()) {
-                newErrors.email = 'El email es requerido para docentes';
-            } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-                newErrors.email = 'El formato del email no es válido';
+        if (!formData.fechaNacimiento) {
+            newErrors.fechaNacimiento = 'La fecha de nacimiento es requerida';
+        } else {
+            const fechaNac = new Date(formData.fechaNacimiento);
+            const hoy = new Date();
+            const edad = hoy.getFullYear() - fechaNac.getFullYear();
+            if (edad < 3 || edad > 100) {
+                newErrors.fechaNacimiento = 'La edad debe estar entre 3 y 100 años';
             }
+        }
 
-            if (formData.telefono && !/^\d{8,15}$/.test(formData.telefono.replace(/\s/g, ''))) {
-                newErrors.telefono = 'El teléfono debe tener entre 8 y 15 dígitos';
-            }
+        if (!formData.genero) {
+            newErrors.genero = 'El género es requerido';
+        }
+
+        if (!formData.idRol) {
+            newErrors.idRol = 'El rol es requerido';
         }
 
         setErrors(newErrors);
@@ -184,6 +220,12 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
             newUserErrors.email = 'El email es requerido';
         } else if (!/\S+@\S+\.\S+/.test(userFormData.email)) {
             newUserErrors.email = 'El formato del email no es válido';
+        }
+
+        if (!userFormData.telefono.trim()) {
+            newUserErrors.telefono = 'El teléfono es requerido';
+        } else if (!/^\d{8,15}$/.test(userFormData.telefono.replace(/\s/g, ''))) {
+            newUserErrors.telefono = 'El teléfono debe tener entre 8 y 15 dígitos';
         }
 
         if (!userFormData.password) {
@@ -209,8 +251,8 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
             return;
         }
 
-        // Si es docente, también validar formulario de usuario
-        if (formData.tipoPersona === 'Docente' && !isViewMode) {
+        // Si el rol habilita cuenta de usuario, también validar formulario de usuario
+        if (habilitaCuentaUsuario && !isViewMode) {
             if (!validateUserForm()) {
                 return;
             }
@@ -219,33 +261,56 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
         setLoading(true);
 
         try {
-            // Simular llamada a API
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const personaToSave = {
-                ...formData,
-                id: persona?.id || Date.now(), // En producción vendría del backend
-                fechaRegistro: persona?.fechaRegistro || new Date().toISOString().split('T')[0]
+            // Preparar datos para enviar al backend
+            const rolSeleccionadoActual = roles.find(r => r.idRol == formData.idRol);
+            const personaData = {
+                nombre: formData.nombre.trim(),
+                apellido: formData.apellido.trim(),
+                dni: formData.dni.trim(),
+                fechaNacimiento: formData.fechaNacimiento,
+                genero: formData.genero,
+                nombreRol: rolSeleccionadoActual?.nombreRol || '',
+                estado: formData.estado
             };
 
-            // Si es docente, también crear usuario
-            let usuarioCreado = null;
-            if (formData.tipoPersona === 'Docente' && !isViewMode) {
-                usuarioCreado = {
-                    id: Date.now() + 1,
-                    nombreUsuario: userFormData.nombreUsuario,
-                    email: userFormData.email,
-                    rol: userFormData.rol,
-                    personaId: personaToSave.id,
-                    fechaCreacion: new Date().toISOString().split('T')[0],
-                    estado: 'Activo'
-                };
+            let savedPersona;
+
+            // Crear o actualizar persona
+            if (mode === 'create') {
+                savedPersona = await personaService.create(personaData);
+            } else {
+                savedPersona = await personaService.update(persona.idPersona, personaData);
             }
 
-            // Pasar ambos objetos al callback
-            onSave(personaToSave, usuarioCreado);
+            // Si el rol habilita cuenta de usuario y es modo crear, también crear usuario
+            let usuarioCreado = null;
+            if (habilitaCuentaUsuario && mode === 'create') {
+                const usuarioData = {
+                    idPersona: savedPersona.idPersona,
+                    nombreUsuario: userFormData.nombreUsuario,
+                    contrasena: userFormData.password, // El modelo espera 'contrasena', no 'contrasenia'
+                    mail: userFormData.email,
+                    telefono: userFormData.telefono,
+                    estado: userFormData.estado
+                };
+
+                usuarioCreado = await usuarioService.create(usuarioData);
+            }
+
+            // Pasar datos al callback del componente padre
+            onSave(savedPersona, usuarioCreado);
         } catch (error) {
             console.error('Error al guardar persona:', error);
+
+            // Mostrar error al usuario
+            if (error.response?.data?.message) {
+                alert(`Error: ${error.response.data.message}`);
+            } else if (error.response?.data?.errors) {
+                const errorMessages = error.response.data.errors.map(err => `${err.field}: ${err.message}`).join('\n');
+                alert(`Errores de validación:\n${errorMessages}`);
+            } else {
+                alert('Error al guardar la persona. Por favor, inténtelo de nuevo.');
+            }
         } finally {
             setLoading(false);
         }
@@ -266,25 +331,39 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                         </h5>
 
                         <div className="form-group">
-                            <label htmlFor="tipoPersona" className="form-label required mt-3">
-                                Tipo de Persona
+                            <label htmlFor="idRol" className="form-label required mt-3">
+                                Rol de la Persona
                             </label>
                             <select
-                                id="tipoPersona"
-                                name="tipoPersona"
-                                className={`form-control ${errors.tipoPersona ? 'is-invalid' : ''}`}
-                                value={formData.tipoPersona}
+                                id="idRol"
+                                name="idRol"
+                                className={`form-control ${errors.idRol ? 'is-invalid' : ''}`}
+                                value={formData.idRol}
                                 onChange={handleInputChange}
-                                disabled={isViewMode}
+                                disabled={isViewMode || loadingRoles}
                             >
-                                {tiposPersona.map(tipo => (
-                                    <option key={tipo.value} value={tipo.value}>
-                                        {tipo.label}
+                                <option value="">
+                                    {loadingRoles ? 'Cargando roles...' : 'Seleccionar rol'}
+                                </option>
+                                {roles.map(rol => (
+                                    <option key={rol.idRol} value={rol.idRol}>
+                                        {rol.nombreRol}
                                     </option>
                                 ))}
                             </select>
-                            {errors.tipoPersona && (
-                                <div className="invalid-feedback">{errors.tipoPersona}</div>
+                            {errors.idRol && (
+                                <div className="invalid-feedback">{errors.idRol}</div>
+                            )}
+                            {rolSeleccionado && (
+                                <small className="form-text text-muted">
+                                    <i className="fas fa-info-circle me-1"></i>
+                                    {rolSeleccionado.descripcionRol}
+                                    {rolSeleccionado.habilitaCuentaUsuario === 'Si' && (
+                                        <span className="text-success ms-2">
+                                            <i className="fas fa-user-check"></i> Incluye cuenta de usuario
+                                        </span>
+                                    )}
+                                </small>
                             )}
                         </div>
 
@@ -330,115 +409,95 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
                         <div className="form-row">
                             <div className="form-group">
-                                <label htmlFor="numeroDocumento" className="form-label required mt-3">
+                                <label htmlFor="dni" className="form-label required mt-3">
                                     Número de Documento
                                 </label>
                                 <input
                                     type="text"
-                                    id="numeroDocumento"
-                                    name="numeroDocumento"
-                                    className={`form-control ${errors.numeroDocumento ? 'is-invalid' : ''}`}
-                                    value={formData.numeroDocumento}
+                                    id="dni"
+                                    name="dni"
+                                    className={`form-control ${errors.dni ? 'is-invalid' : ''}`}
+                                    value={formData.dni}
                                     onChange={handleInputChange}
                                     disabled={isViewMode}
                                     placeholder="Ingrese el número de documento"
                                 />
-                                {errors.numeroDocumento && (
-                                    <div className="invalid-feedback">{errors.numeroDocumento}</div>
+                                {errors.dni && (
+                                    <div className="invalid-feedback">{errors.dni}</div>
                                 )}
                             </div>
 
-
+                            <div className="form-group">
+                                <label htmlFor="fechaNacimiento" className="form-label required mt-3">
+                                    Fecha de Nacimiento
+                                </label>
+                                <input
+                                    type="date"
+                                    id="fechaNacimiento"
+                                    name="fechaNacimiento"
+                                    className={`form-control ${errors.fechaNacimiento ? 'is-invalid' : ''}`}
+                                    value={formData.fechaNacimiento}
+                                    onChange={handleInputChange}
+                                    disabled={isViewMode}
+                                    max={new Date().toISOString().split('T')[0]}
+                                />
+                                {errors.fechaNacimiento && (
+                                    <div className="invalid-feedback">{errors.fechaNacimiento}</div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Grado solo para alumnos */}
-                        {formData.tipoPersona === 'Alumno' && (
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label htmlFor="grado" className="form-label required mt-3">
-                                        Grado
-                                    </label>
-                                    <select
-                                        id="grado"
-                                        name="grado"
-                                        className={`form-control ${errors.grado ? 'is-invalid' : ''}`}
-                                        value={formData.grado}
-                                        onChange={handleInputChange}
-                                        disabled={isViewMode}
-                                    >
-                                        <option value="">Seleccionar grado</option>
-                                        {grados.map(grado => (
-                                            <option key={grado} value={grado}>
-                                                {grado}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.grado && (
-                                        <div className="invalid-feedback">{errors.grado}</div>
-                                    )}
-                                </div>
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label htmlFor="genero" className="form-label required mt-3">
+                                    Género
+                                </label>
+                                <select
+                                    id="genero"
+                                    name="genero"
+                                    className={`form-control ${errors.genero ? 'is-invalid' : ''}`}
+                                    value={formData.genero}
+                                    onChange={handleInputChange}
+                                    disabled={isViewMode}
+                                >
+                                    <option value="">Seleccionar género</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Femenina">Femenina</option>
+                                    <option value="Otros">Otros</option>
+                                </select>
+                                {errors.genero && (
+                                    <div className="invalid-feedback">{errors.genero}</div>
+                                )}
                             </div>
-                        )}
+                            {/* Estado */}
 
-                        {/* Campos adicionales para docentes */}
-                        {formData.tipoPersona === 'Docente' && (
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label htmlFor="email" className="form-label required mt-3">
-                                        Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        name="email"
-                                        className={`form-control ${errors.email ? 'is-invalid' : ''}`}
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        disabled={isViewMode}
-                                        placeholder="Ingrese el email"
-                                    />
-                                    {errors.email && (
-                                        <div className="invalid-feedback">{errors.email}</div>
-                                    )}
-                                </div>
-
-                                <div className="form-group">
-                                    <label htmlFor="telefono" className="form-label mt-3">
-                                        Teléfono
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="telefono"
-                                        name="telefono"
-                                        className={`form-control ${errors.telefono ? 'is-invalid' : ''}`}
-                                        value={formData.telefono}
-                                        onChange={handleInputChange}
-                                        disabled={isViewMode}
-                                        placeholder="Ingrese el teléfono"
-                                    />
-                                    {errors.telefono && (
-                                        <div className="invalid-feedback">{errors.telefono}</div>
-                                    )}
-                                </div>
+                            <div className="form-group">
+                                <label htmlFor="estado" className="form-label mt-3">
+                                    Estado
+                                </label>
+                                <select
+                                    id="estado"
+                                    name="estado"
+                                    className="form-control"
+                                    value={formData.estado}
+                                    onChange={handleInputChange}
+                                    disabled={isViewMode}
+                                >
+                                    <option value="Activo">Activo</option>
+                                    <option value="Inactivo">Inactivo</option>
+                                </select>
                             </div>
-                        )}
-
+                        </div>
                     </div>
 
-                    {/* Formulario de Usuario - Solo para Docentes */}
-                    {formData.tipoPersona === 'Docente' && !isViewMode && (
+                    {/* Formulario de Usuario - Solo para roles que habilitan cuenta */}
+                    {habilitaCuentaUsuario && !isViewMode && (
 
                         <div className="mt-4">
-                            <div className="separar-secciones-cuenta"></div>
                             <h5 className="section-title">
                                 <i className="fas fa-user-shield me-2"></i>
                                 Cuenta de Usuario
                             </h5>
-                            <div className="alert alert-info">
-                                <i className="fas fa-info-circle me-2"></i>
-                                Se creará automáticamente una cuenta de usuario para este docente.
-                            </div>
-
                             <div className="form-row">
                                 <div className="form-group">
                                     <label htmlFor="nombreUsuario" className="form-label required mt-3">
@@ -488,6 +547,30 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
                             <div className="form-row">
                                 <div className="form-group">
+                                    <label htmlFor="userTelefono" className="form-label required mt-3">
+                                        Teléfono de Usuario
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="userTelefono"
+                                        name="telefono"
+                                        className={`form-control ${userErrors.telefono ? 'is-invalid' : ''}`}
+                                        value={userFormData.telefono}
+                                        onChange={handleUserInputChange}
+                                        placeholder="Teléfono para la cuenta de usuario"
+                                    />
+                                    {userErrors.telefono && (
+                                        <div className="invalid-feedback">{userErrors.telefono}</div>
+                                    )}
+                                    <small className="form-text text-muted">
+                                        <i className="fas fa-info-circle me-1"></i>
+                                        La fecha de alta se establecerá automáticamente
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-group">
                                     <label htmlFor="password" className="form-label required mt-3">
                                         Contraseña
                                     </label>
@@ -526,46 +609,42 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="rol" className="form-label mt-3">
-                                        Rol
+                                    <label htmlFor="estadoUsuario" className="form-label mt-3">
+                                        Estado de Usuario
                                     </label>
                                     <select
-                                        id="rol"
-                                        name="rol"
+                                        id="estadoUsuario"
+                                        name="estado"
                                         className="form-control"
-                                        value={userFormData.rol}
+                                        value={userFormData.estado}
                                         onChange={handleUserInputChange}
-                                        disabled
                                     >
-                                        <option value="Docente">Docente</option>
+                                        <option value="Activo">Activo</option>
+                                        <option value="Inactivo">Inactivo</option>
                                     </select>
                                     <small className="form-text text-muted">
-                                        El rol se asigna automáticamente como Docente.
+                                        La fecha de última actividad se actualizará automáticamente
                                     </small>
                                 </div>
                             </div>
                         </div>
+
                     )}
 
-                    {/* Estado */}
-                    <div>
-                        <div className="form-group">
-                            <label htmlFor="estado" className="form-label mt-3">
-                                Estado
-                            </label>
-                            <select
-                                id="estado"
-                                name="estado"
-                                className="form-control"
-                                value={formData.estado}
-                                onChange={handleInputChange}
-                                disabled={isViewMode}
-                            >
-                                <option value="Activo">Activo</option>
-                                <option value="Inactivo">Inactivo</option>
-                            </select>
+                    {/* Información de Usuario - Solo en modo visualización para roles que habilitan cuenta */}
+                    {habilitaCuentaUsuario && isViewMode && (
+                        <div className="mt-4">
+                            <h5 className="section-title">
+                                <i className="fas fa-user-shield me-2"></i>
+                                Información de Cuenta de Usuario
+                            </h5>
+                            <div className="alert alert-info">
+                                <i className="fas fa-info-circle me-2"></i>
+                                Esta persona tiene un rol que habilita cuenta de usuario. Para ver los detalles específicos de la cuenta,
+                                consulte la sección de gestión de usuarios.
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Botones */}
@@ -595,7 +674,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                                 <>
                                     <i className="fas fa-save"></i>
                                     {isCreateMode ?
-                                        (formData.tipoPersona === 'Docente' ? 'Crear Persona y Usuario' : 'Crear Persona')
+                                        (habilitaCuentaUsuario ? 'Crear Persona y Usuario' : 'Crear Persona')
                                         : 'Actualizar Persona'
                                     }
                                 </>
@@ -603,8 +682,8 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                         </button>
                     )}
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 };
 

@@ -36,22 +36,35 @@ export class GradoController {
     // Crea un nuevo Grado después de validar los datos recibidos
     create = async (req, res) => {
         try {
-            const result = validateGrado(req.body)
+            console.log('GradoController: Datos recibidos:', req.body)
+
+            // Transformar idTurno de string a number si es necesario
+            const processedData = {
+                ...req.body,
+                idTurno: req.body.idTurno ? parseInt(req.body.idTurno) : req.body.idTurno
+            }
+            console.log('GradoController: Datos procesados:', processedData)
+
+            const result = validateGrado(processedData)
+            console.log('GradoController: Resultado de validación:', result)
 
             if (!result.success) {
+                console.log('GradoController: Errores de validación:', result.error.issues)
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))
                 })
             }
 
+            console.log('GradoController: Creando grado con datos:', result.data)
             const newGrado = await this.gradoModel.create({ input: result.data })
+            console.log('GradoController: Grado creado:', newGrado)
             res.status(201).json(newGrado)
         } catch (error) {
-            console.error('Error al crear grado:', error)
+            console.error('GradoController: Error al crear grado:', error)
             if (error.message.includes('ya existe')) {
                 return res.status(409).json({ message: error.message })
             }
@@ -63,15 +76,20 @@ export class GradoController {
     delete = async (req, res) => {
         try {
             const { id } = req.params
+            console.log('GradoController: Eliminando grado con ID:', id)
+
             const deleted = await this.gradoModel.delete({ id })
+            console.log('GradoController: Resultado de eliminación:', deleted)
 
             if (!deleted) {
+                console.log('GradoController: Grado no encontrado')
                 return res.status(404).json({ message: 'Grado no encontrado' })
             }
 
+            console.log('GradoController: Grado eliminado exitosamente')
             return res.json({ message: 'Grado eliminado correctamente' })
         } catch (error) {
-            console.error('Error al eliminar grado:', error)
+            console.error('GradoController: Error al eliminar grado:', error)
             if (error.message.includes('referencia') || error.message.includes('usado')) {
                 return res.status(409).json({ message: 'No se puede eliminar el grado porque está en uso' })
             }
@@ -82,12 +100,18 @@ export class GradoController {
     // Actualiza un Grado parcialmente después de validar los datos recibidos
     update = async (req, res) => {
         try {
-            const result = validatePartialGrado(req.body)
+            // Transformar idTurno de string a number si es necesario
+            const processedData = {
+                ...req.body,
+                idTurno: req.body.idTurno ? parseInt(req.body.idTurno) : req.body.idTurno
+            }
+
+            const result = validatePartialGrado(processedData)
 
             if (!result.success) {
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))
@@ -111,8 +135,10 @@ export class GradoController {
     // Obtener grados activos
     getActivos = async (req, res) => {
         try {
-            const grados = await this.gradoModel.getGradosActivos()
-            res.json(grados)
+            // Filtrar grados activos desde getAll()
+            const allGrados = await this.gradoModel.getAll()
+            const gradosActivos = allGrados.filter(grado => grado.estado === 'Activo')
+            res.json(gradosActivos)
         } catch (error) {
             console.error('Error al obtener grados activos:', error)
             res.status(500).json({ message: 'Error interno del servidor' })
@@ -123,7 +149,7 @@ export class GradoController {
     getByTurno = async (req, res) => {
         try {
             const { id_turno } = req.params
-            const grados = await this.gradoModel.getGradosByTurno({ id_turno })
+            const grados = await this.gradoModel.getByTurno({ idTurno: id_turno })
             res.json(grados)
         } catch (error) {
             console.error('Error al obtener grados por turno:', error)
@@ -138,8 +164,12 @@ export class GradoController {
             if (!nombre) {
                 return res.status(400).json({ message: 'El parámetro nombre es requerido' })
             }
-            const grados = await this.gradoModel.searchByNombre({ nombre })
-            res.json(grados)
+            // Implementar búsqueda usando getAll y filtrar
+            const allGrados = await this.gradoModel.getAll()
+            const gradosFiltrados = allGrados.filter(grado =>
+                grado.nombreGrado.toLowerCase().includes(nombre.toLowerCase())
+            )
+            res.json(gradosFiltrados)
         } catch (error) {
             console.error('Error al buscar grados por nombre:', error)
             res.status(500).json({ message: 'Error interno del servidor' })
@@ -156,7 +186,11 @@ export class GradoController {
                 return res.status(400).json({ message: 'El estado es requerido' })
             }
 
-            const gradoActualizado = await this.gradoModel.cambiarEstado({ id, estado })
+            if (!['Activo', 'Inactivo'].includes(estado)) {
+                return res.status(400).json({ message: 'Estado inválido' })
+            }
+
+            const gradoActualizado = await this.gradoModel.update({ id, input: { estado } })
             if (!gradoActualizado) {
                 return res.status(404).json({ message: 'Grado no encontrado' })
             }

@@ -8,11 +8,10 @@ export class RolController {
         this.rolModel = rolModel
     }
 
-    // Obtiene todos los roles o filtra por nombre_rol si se pasa como query
+    // Obtiene todos los roles
     getAll = async (req, res) => {
         try {
-            const { nombre_rol } = req.query
-            const roles = await this.rolModel.getAll({ nombre_rol })
+            const roles = await this.rolModel.getAll()
             res.json(roles)
         } catch (error) {
             console.error('Error al obtener roles:', error)
@@ -36,12 +35,15 @@ export class RolController {
     // Crea un nuevo rol después de validar los datos recibidos
     create = async (req, res) => {
         try {
+            console.log('RolController: Datos recibidos:', req.body)
             const result = validateRol(req.body)
+            console.log('RolController: Resultado de validación:', result)
 
             if (!result.success) {
+                console.log('RolController: Errores de validación:', result.error.issues)
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))
@@ -83,7 +85,7 @@ export class RolController {
             if (!result.success) {
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))
@@ -107,8 +109,9 @@ export class RolController {
     // Obtener roles activos
     getActivos = async (req, res) => {
         try {
-            const roles = await this.rolModel.getRolesActivos()
-            res.json(roles)
+            const allRoles = await this.rolModel.getAll()
+            const rolesActivos = allRoles.filter(rol => rol.estado === 'Activo')
+            res.json(rolesActivos)
         } catch (error) {
             console.error('Error al obtener roles activos:', error)
             res.status(500).json({ message: 'Error interno del servidor' })
@@ -122,23 +125,28 @@ export class RolController {
             if (!nombre) {
                 return res.status(400).json({ message: 'El parámetro nombre es requerido' })
             }
-            const roles = await this.rolModel.searchByNombre({ nombre })
-            res.json(roles)
+            const allRoles = await this.rolModel.getAll()
+            const rolesFiltrados = allRoles.filter(rol =>
+                rol.nombreRol.toLowerCase().includes(nombre.toLowerCase()) ||
+                rol.descripcionRol.toLowerCase().includes(nombre.toLowerCase())
+            )
+            res.json(rolesFiltrados)
         } catch (error) {
             console.error('Error al buscar roles por nombre:', error)
             res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
 
-    // Obtener rol con sus permisos
+    // Obtener rol con sus permisos (por implementar cuando tengamos RolPermisos)
     getConPermisos = async (req, res) => {
         try {
             const { id } = req.params
-            const rolConPermisos = await this.rolModel.getConPermisos({ id })
-            if (!rolConPermisos) {
+            const rol = await this.rolModel.getById({ id })
+            if (!rol) {
                 return res.status(404).json({ message: 'Rol no encontrado' })
             }
-            res.json(rolConPermisos)
+            // Por ahora solo devolvemos el rol, luego implementaremos la relación con permisos
+            res.json({ ...rol, permisos: [] })
         } catch (error) {
             console.error('Error al obtener rol con permisos:', error)
             res.status(500).json({ message: 'Error interno del servidor' })
@@ -155,7 +163,11 @@ export class RolController {
                 return res.status(400).json({ message: 'El estado es requerido' })
             }
 
-            const rolActualizado = await this.rolModel.cambiarEstado({ id, estado })
+            if (!['Activo', 'Inactivo'].includes(estado)) {
+                return res.status(400).json({ message: 'Estado inválido' })
+            }
+
+            const rolActualizado = await this.rolModel.update({ id, input: { estado } })
             if (!rolActualizado) {
                 return res.status(404).json({ message: 'Rol no encontrado' })
             }

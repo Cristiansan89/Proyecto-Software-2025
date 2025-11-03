@@ -4,7 +4,7 @@ import 'dotenv/config'
 const config = {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'gpl',
+    password: process.env.DB_PASSWORD || 'xenopus',
     database: process.env.DB_NAME || 'Comedor'
 }
 

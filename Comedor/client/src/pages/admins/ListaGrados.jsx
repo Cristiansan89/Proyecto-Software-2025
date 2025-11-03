@@ -1,51 +1,7 @@
 import { useState, useEffect } from 'react';
 import GradoForm from '../../components/GradoForm';
+import gradoService from '../../services/gradoService';
 
-// Datos de ejemplo - en producción vendría de la API
-const datosEjemplo = [
-    {
-        id: 1,
-        nombreGrado: 'Preescolar',
-        estado: 'Activo',
-        fechaRegistro: '2024-01-15'
-    },
-    {
-        id: 2,
-        nombreGrado: 'Primero',
-        estado: 'Activo',
-        fechaRegistro: '2024-01-15'
-    },
-    {
-        id: 3,
-        nombreGrado: 'Segundo',
-        estado: 'Activo',
-        fechaRegistro: '2024-01-15'
-    },
-    {
-        id: 4,
-        nombreGrado: 'Tercero',
-        estado: 'Activo',
-        fechaRegistro: '2024-01-15'
-    },
-    {
-        id: 5,
-        nombreGrado: 'Cuarto',
-        estado: 'Activo',
-        fechaRegistro: '2024-01-15'
-    },
-    {
-        id: 6,
-        nombreGrado: 'Quinto',
-        estado: 'Activo',
-        fechaRegistro: '2024-01-15'
-    },
-    {
-        id: 7,
-        nombreGrado: 'Sexto',
-        estado: 'Inactivo',
-        fechaRegistro: '2024-01-15'
-    }
-];
 
 const ListaGrados = () => {
     const [grados, setGrados] = useState([]);
@@ -61,14 +17,22 @@ const ListaGrados = () => {
     const [filterEstado, setFilterEstado] = useState('');
 
     useEffect(() => {
-        // Simular carga de datos
-        setLoading(true);
-        setTimeout(() => {
-            setGrados(datosEjemplo);
-            setFilteredGrados(datosEjemplo);
-            setLoading(false);
-        }, 1000);
+        loadGrados();
     }, []);
+
+    const loadGrados = async () => {
+        try {
+            setLoading(true);
+            const gradosData = await gradoService.getAll();
+            setGrados(gradosData);
+            setFilteredGrados(gradosData);
+        } catch (error) {
+            console.error('Error al cargar grados:', error);
+            alert('Error al cargar los grados');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Búsqueda y filtros
     useEffect(() => {
@@ -121,7 +85,7 @@ const ListaGrados = () => {
         if (selectedGrados.length === currentGrados.length) {
             setSelectedGrados([]);
         } else {
-            setSelectedGrados(currentGrados.map(grado => grado.id));
+            setSelectedGrados(currentGrados.map(grado => grado.idGrado));
         }
     };
 
@@ -137,37 +101,46 @@ const ListaGrados = () => {
         setModalMode('create');
     };
 
-    const handleSaveGrado = async (gradoData) => {
+    const handleSaveGrado = async () => {
         try {
-            if (modalMode === 'create') {
-                // Agregar nuevo grado
-                const newGrado = {
-                    ...gradoData,
-                    id: Date.now() // En producción vendría del backend
-                };
-                setGrados(prev => [...prev, newGrado]);
-            } else if (modalMode === 'edit') {
-                // Actualizar grado existente
-                setGrados(prev =>
-                    prev.map(g => g.id === gradoData.id ? gradoData : g)
-                );
-            }
             closeModal();
+            alert(`Grado ${modalMode === 'create' ? 'creado' : 'actualizado'} correctamente`);
+            loadGrados(); // Recargar la lista
         } catch (error) {
             console.error('Error al guardar grado:', error);
         }
     };
 
-    const handleDelete = (gradoId) => {
-        if (window.confirm('¿Está seguro de que desea eliminar este grado?')) {
-            setGrados(prev => prev.filter(g => g.id !== gradoId));
+    const handleDelete = async (grado) => {
+        if (window.confirm(`¿Está seguro de eliminar el grado "${grado.nombreGrado}"?`)) {
+            try {
+                await gradoService.delete(grado.idGrado);
+                alert('Grado eliminado correctamente');
+                loadGrados();
+            } catch (error) {
+                console.error('Error al eliminar grado:', error);
+                if (error.response?.data?.message) {
+                    alert(`Error: ${error.response.data.message}`);
+                } else {
+                    alert('Error al eliminar el grado');
+                }
+            }
         }
     };
 
-    const handleBulkDelete = () => {
+    const handleBulkDelete = async () => {
         if (window.confirm(`¿Está seguro de que desea eliminar ${selectedGrados.length} grado(s)?`)) {
-            setGrados(prev => prev.filter(g => !selectedGrados.includes(g.id)));
-            setSelectedGrados([]);
+            try {
+                // Eliminar cada grado seleccionado
+                await Promise.all(selectedGrados.map(id => gradoService.delete(id)));
+                alert(`${selectedGrados.length} grado(s) eliminado(s) correctamente`);
+                setSelectedGrados([]);
+                loadGrados();
+            } catch (error) {
+                console.error('Error al eliminar grados:', error);
+                alert('Error al eliminar algunos grados');
+                loadGrados(); // Recargar para ver cuáles se eliminaron
+            }
         }
     };
 
@@ -283,28 +256,27 @@ const ListaGrados = () => {
                                         onChange={handleSelectAll}
                                     />
                                 </th>
-                                <th>Nobre del Grado</th>
+                                <th>Grado</th>
+                                <th>Turno</th>
                                 <th>Estado</th>
-                                <th>Fecha Registro</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {currentGrados.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="empty-state">
-                                        <i className="fas fa-graduation-cap"></i>
+                                    <td colSpan="5" className="no-data">
                                         <p>No se encontraron grados</p>
                                     </td>
                                 </tr>
                             ) : (
                                 currentGrados.map(grado => (
-                                    <tr key={grado.id}>
+                                    <tr key={grado.idGrado}>
                                         <td>
                                             <input
                                                 type="checkbox"
-                                                checked={selectedGrados.includes(grado.id)}
-                                                onChange={() => handleSelectGrado(grado.id)}
+                                                checked={selectedGrados.includes(grado.idGrado)}
+                                                onChange={() => handleSelectGrado(grado.idGrado)}
                                             />
                                         </td>
                                         <td>
@@ -314,10 +286,15 @@ const ListaGrados = () => {
                                             </div>
                                         </td>
                                         <td>
-
+                                            <div className="turno-info">
+                                                <i className="fas fa-clock me-1"></i>
+                                                <span className="turno-name">{grado.turno}</span>
+                                                <span className="turno-hours">({grado.horaInicio} - {grado.horaFin})</span>
+                                            </div>
+                                        </td>
+                                        <td>
                                             <span className={`status-badge ${grado.estado.toLowerCase()}`}>{grado.estado}</span>
                                         </td>
-                                        <td>{grado.fechaRegistro}</td>
                                         <td>
                                             <div className="table-actions">
                                                 <button
@@ -336,7 +313,7 @@ const ListaGrados = () => {
                                                 </button>
                                                 <button
                                                     className="btn-action btn-delete"
-                                                    onClick={() => handleDelete(grado.id)}
+                                                    onClick={() => handleDelete(grado)}
                                                     title="Eliminar"
                                                 >
                                                     <i className="fas fa-trash"></i>
@@ -380,8 +357,8 @@ const ListaGrados = () => {
 
             {/* Modal para Grado */}
             {showModal && (
-                <div className="modal-overlay" onClick={closeModal}>
-                    <div className="modal-content grado-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-overlay">
+                    <div className="modal-content grado-modal">
                         <div className="modal-header">
                             <h3>
                                 {modalMode === 'create' && (

@@ -1,73 +1,6 @@
 import { useState, useEffect } from 'react';
 import PersonaForm from '../../components/PersonaForm';
-
-// Datos de ejemplo - en producción vendría de la API
-const datosEjemplo = [
-    {
-        id: 1,
-        nombre: 'María',
-        apellido: 'García López',
-        numeroDocumento: '12345678',
-        tipoPersona: 'Alumno',
-        grado: 'Primero',
-        estado: 'Activo',
-        fechaRegistro: '2024-01-15'
-    },
-    {
-        id: 2,
-        nombre: 'Carlos',
-        apellido: 'Rodríguez Silva',
-        numeroDocumento: '23456789',
-        tipoPersona: 'Alumno',
-        grado: 'Segundo',
-        estado: 'Activo',
-        fechaRegistro: '2024-01-20'
-    },
-    {
-        id: 3,
-        nombre: 'Ana',
-        apellido: 'Martínez Pérez',
-        numeroDocumento: '34567890',
-        tipoPersona: 'Alumno',
-        grado: 'Tercero',
-        estado: 'Inactivo',
-        fechaRegistro: '2024-02-01'
-    },
-    {
-        id: 4,
-        nombre: 'Luis',
-        apellido: 'González Torres',
-        numeroDocumento: '45678901',
-        tipoPersona: 'Docente',
-        telefono: '099456789',
-        email: 'luis.gonzalez@escuela.edu.uy',
-        direccion: 'Barrio Norte 321',
-        estado: 'Activo',
-        fechaRegistro: '2024-02-10'
-    },
-    {
-        id: 5,
-        nombre: 'Sofia',
-        apellido: 'Fernández Ruiz',
-        numeroDocumento: '56789012',
-        tipoPersona: 'Docente',
-        telefono: '099567890',
-        email: 'sofia.fernandez@escuela.edu.uy',
-        direccion: 'Zona Sur 654',
-        estado: 'Activo',
-        fechaRegistro: '2024-02-15'
-    },
-    {
-        id: 6,
-        nombre: 'Pedro',
-        apellido: 'Jiménez Castro',
-        numeroDocumento: '67890123',
-        tipoPersona: 'Alumno',
-        grado: 'Quinto',
-        estado: 'Activo',
-        fechaRegistro: '2024-02-20'
-    }
-];
+import personaService from '../../services/personaService.js';
 
 const ListaPersonas = () => {
     const [personas, setPersonas] = useState([]);
@@ -84,14 +17,24 @@ const ListaPersonas = () => {
     const [filterEstado, setFilterEstado] = useState('');
 
     useEffect(() => {
-        // Simular carga de datos
-        setLoading(true);
-        setTimeout(() => {
-            setPersonas(datosEjemplo);
-            setFilteredPersonas(datosEjemplo);
-            setLoading(false);
-        }, 1000);
+        loadPersonas();
     }, []);
+
+    const loadPersonas = async () => {
+        try {
+            setLoading(true);
+            const data = await personaService.getAll();
+            setPersonas(data);
+            setFilteredPersonas(data);
+        } catch (error) {
+            console.error('Error al cargar personas:', error);
+
+
+
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Búsqueda y filtros
     useEffect(() => {
@@ -103,14 +46,14 @@ const ListaPersonas = () => {
                 persona.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 persona.apellido.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 persona.numeroDocumento.includes(searchQuery) ||
-                persona.tipoPersona.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (persona.grado && persona.grado.toLowerCase().includes(searchQuery.toLowerCase()))
+                (persona.nombreRol && persona.nombreRol.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (persona.genero && persona.genero.toLowerCase().includes(searchQuery.toLowerCase()))
             );
         }
 
-        // Filtro por tipo de persona
+        // Filtro por rol
         if (filterTipo) {
-            filtered = filtered.filter(persona => persona.tipoPersona === filterTipo);
+            filtered = filtered.filter(persona => persona.nombreRol === filterTipo);
         }
 
         // Filtro por estado
@@ -156,7 +99,7 @@ const ListaPersonas = () => {
 
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            setSelectedPersonas(currentPersonas.map(p => p.id));
+            setSelectedPersonas(currentPersonas.map(p => p.idPersona));
         } else {
             setSelectedPersonas([]);
         }
@@ -174,8 +117,10 @@ const ListaPersonas = () => {
     };
 
     const handleSavePersona = (personaData, usuarioData = null) => {
+        // La lógica de guardado ya se maneja en PersonaForm
+        // Aquí solo actualizamos la lista local y cerramos el modal
         if (modalMode === 'create') {
-            // Agregar nueva persona
+            // Agregar nueva persona a la lista local
             setPersonas(prev => [...prev, personaData]);
 
             // Si se creó un usuario también, mostrar mensaje de éxito
@@ -185,21 +130,36 @@ const ListaPersonas = () => {
                     `👨‍🏫 Usuario: ${usuarioData.nombreUsuario}\n` +
                     `📧 Email: ${usuarioData.email}\n` +
                     `🔑 Rol: ${usuarioData.rol}\n\n` +
-                    `El docente ya puede acceder al sistema con su cuenta de usuario.`);
+                    `La persona ya puede acceder al sistema con su cuenta de usuario.`);
+            } else {
+                alert(`✅ Persona creada exitosamente!\n\n` +
+                    `👤 ${personaData.nombre} ${personaData.apellido}`);
             }
         } else if (modalMode === 'edit') {
-            // Actualizar persona existente
+            // Actualizar persona en la lista local
             setPersonas(prev => prev.map(p =>
-                p.id === personaData.id ? personaData : p
+                p.idPersona === personaData.idPersona ? personaData : p
             ));
+            alert('✅ Persona actualizada exitosamente!');
         }
         closeModal();
     };
 
-    const handleDelete = (personaId) => {
+    const handleDelete = async (personaId) => {
         if (window.confirm('¿Está seguro de que desea eliminar esta persona?')) {
-            setPersonas(prev => prev.filter(p => p.id !== personaId));
-            setSelectedPersonas(prev => prev.filter(id => id !== personaId));
+            try {
+                await personaService.delete(personaId);
+                setPersonas(prev => prev.filter(p => p.idPersona !== personaId));
+                setSelectedPersonas(prev => prev.filter(id => id !== personaId));
+                alert('✅ Persona eliminada exitosamente!');
+            } catch (error) {
+                console.error('Error al eliminar persona:', error);
+                if (error.response?.data?.message) {
+                    alert(`Error: ${error.response.data.message}`);
+                } else {
+                    alert('Error al eliminar la persona. Por favor, inténtelo de nuevo.');
+                }
+            }
         }
     }; const handleBulkDelete = () => {
         if (selectedPersonas.length === 0) {
@@ -208,7 +168,7 @@ const ListaPersonas = () => {
         }
 
         if (window.confirm(`¿Está seguro de que desea eliminar ${selectedPersonas.length} persona(s)?`)) {
-            setPersonas(prev => prev.filter(p => !selectedPersonas.includes(p.id)));
+            setPersonas(prev => prev.filter(p => !selectedPersonas.includes(p.idPersona)));
             setSelectedPersonas([]);
         }
     };
@@ -241,7 +201,7 @@ const ListaPersonas = () => {
                     <i className="fas fa-search"></i>
                     <input
                         type="text"
-                        placeholder="Buscar por nombre, apellido, documento o tipo..."
+                        placeholder="Buscar por nombre, apellido, documento o rol..."
                         value={searchQuery}
                         onChange={handleSearch}
                         className="search-input"
@@ -254,9 +214,12 @@ const ListaPersonas = () => {
                         value={filterTipo}
                         onChange={handleFilterTipo}
                     >
-                        <option value="">Todos los tipos</option>
+                        <option value="">Todos los roles</option>
+                        {/* TODO: Cargar roles dinámicamente desde el servicio */}
                         <option value="Alumno">Alumno</option>
                         <option value="Docente">Docente</option>
+                        <option value="Administrador General">Administrador General</option>
+                        <option value="Secretario Académico">Secretario Académico</option>
                     </select>
 
                     <select
@@ -321,20 +284,12 @@ const ListaPersonas = () => {
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>
-                                    <input
-                                        type="checkbox"
-                                        onChange={handleSelectAll}
-                                        checked={selectedPersonas.length === currentPersonas.length && currentPersonas.length > 0}
-                                    />
-                                </th>
-                                <th>Nombre Completo</th>
+                                <th>Información Personal</th>
                                 <th>Documento</th>
-                                <th>Tipo</th>
-                                <th>Grado</th>
-                                <th>Teléfono</th>
+                                <th>Fecha Nacimiento</th>
+                                <th>Género</th>
+                                <th>Rol</th>
                                 <th>Estado</th>
-                                <th>Fecha Registro</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -342,20 +297,12 @@ const ListaPersonas = () => {
                             {currentPersonas.length === 0 ? (
                                 <tr>
                                     <td colSpan="8" className="no-data">
-                                        <i className="fas fa-users"></i>
                                         <p>No se encontraron personas</p>
                                     </td>
                                 </tr>
                             ) : (
                                 currentPersonas.map((persona) => (
-                                    <tr key={persona.id}>
-                                        <td>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedPersonas.includes(persona.id)}
-                                                onChange={() => handleSelectPersona(persona.id)}
-                                            />
-                                        </td>
+                                    <tr key={persona.idPersona}>
                                         <td>
                                             <div className="user-info">
                                                 <div className="user-avatar">
@@ -363,32 +310,35 @@ const ListaPersonas = () => {
                                                 </div>
                                                 <div>
                                                     <strong>{persona.nombre} {persona.apellido}</strong>
-                                                    <small>{persona.email}</small>
+                                                    <small className="d-block">{persona.email}</small>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
-                                            {persona.numeroDocumento}
+                                            {persona.dni}
                                         </td>
                                         <td>
-                                            <span className={`type-badge ${persona.tipoPersona === 'Docente' ? 'teacher' : 'student'}`}>
-                                                {persona.tipoPersona}
+                                            {persona.fechaNacimiento ?
+                                                new Date(persona.fechaNacimiento).toLocaleDateString() :
+                                                'No registrada'
+                                            }
+                                        </td>
+                                        <td>
+                                            <span className="badge bg-secondary">
+                                                {persona.genero || 'No especificado'}
                                             </span>
                                         </td>
                                         <td>
-                                            <span className={`type-badge ${persona.tipoPersona === 'Docente' ? 'teacher' : 'student'}`}>
-                                                {persona.grado && (
-                                                    <small className="grade-info">{persona.grado}</small>
-                                                )}
+                                            <span className={`type-badge ${persona.habilitaCuentaUsuario === 'Sí' ? 'teacher' : 'student'}`}>
+                                                {persona.nombreRol || 'Sin rol'}
                                             </span>
                                         </td>
-                                        <td>{persona.telefono}</td>
+
                                         <td>
                                             <span className={`status-badge ${persona.estado.toLowerCase()}`}>
                                                 {persona.estado}
                                             </span>
                                         </td>
-                                        <td>{new Date(persona.fechaRegistro).toLocaleDateString()}</td>
                                         <td>
                                             <div className="action-buttons">
                                                 <button
@@ -407,7 +357,7 @@ const ListaPersonas = () => {
                                                 </button>
                                                 <button
                                                     className="btn-action btn-delete"
-                                                    onClick={() => handleDelete(persona.id)}
+                                                    onClick={() => handleDelete(persona.idPersona)}
                                                     title="Eliminar"
                                                 >
                                                     <i className="fas fa-trash"></i>
@@ -449,8 +399,8 @@ const ListaPersonas = () => {
 
             {/* Modal para Persona */}
             {showModal && (
-                <div className="modal-overlay" onClick={closeModal}>
-                    <div className="modal-content persona-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-overlay">
+                    <div className="modal-content persona-modal">
                         <div className="modal-header">
                             <h3>
                                 {modalMode === 'create' && (

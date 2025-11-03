@@ -58,14 +58,20 @@ export class ServicioModel {
 
     static async delete({ id }) {
         try {
-            await connection.query(
+            console.log('ServicioModel: Ejecutando DELETE para ID:', id)
+            const [result] = await connection.query(
                 `DELETE FROM Servicios
                  WHERE id_servicio = ?;`,
                 [id]
             )
-            return true
+            console.log('ServicioModel: Resultado de DELETE:', result)
+            console.log('ServicioModel: Filas afectadas:', result.affectedRows)
+
+            // Verificar si se eliminó alguna fila
+            return result.affectedRows > 0
         } catch (error) {
-            return false
+            console.error('ServicioModel: Error en DELETE:', error)
+            throw error
         }
     }
 

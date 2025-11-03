@@ -274,10 +274,12 @@ CREATE TABLE Pedidos(
 
 CREATE TABLE Permisos(
     id_permiso            INT                        AUTO_INCREMENT,
-    descripcion           VARCHAR(100)               NOT NULL,
+    nombrePermiso         VARCHAR(100)               NOT NULL,
     descripcionPermiso    VARCHAR(100)               NOT NULL,
-    modulo                VARCHAR(100)               NOT NULL,
-    accion                ENUM('---', 'Registrar', 'Modificar', 'Eliminar', 'Buscar', 'Consultar', 'Exportar')    NOT NULL DEFAULT '---',
+    modulo                ENUM('Sin Módulo', 'Asistencias','Auditoria','Consumos','Insumos','Inventarios','Parámetros','Pedidos',
+                            'Permisos', 'Personas','Planificación de Menús','Proveedores','Recetas','Reportes','Roles','Seguridad',
+                            'Turnos','Usuarios') NOT NULL DEFAULT 'Sin Módulo',
+    accion                ENUM('Sin Acción', 'Registrar', 'Modificar', 'Eliminar', 'Buscar', 'Consultar', 'Exportar')    NOT NULL DEFAULT 'Sin Acción',
     fechaAlta             DATETIME                   DEFAULT CURRENT_TIMESTAMP,
     fechaModificacion     DATETIME,
     estado                ENUM('Activo', 'Inactivo')    NOT NULL DEFAULT 'Activo',
@@ -756,7 +758,7 @@ CREATE INDEX Ref1280 ON Pedidos(id_planificacion)
 -- INDEX: uk_permiso 
 --
 
-CREATE UNIQUE INDEX uk_permiso ON Permisos(descripcion, modulo, accion)
+CREATE UNIQUE INDEX uk_permiso ON Permisos(nombrePermiso, modulo, accion)
 ;
 -- 
 -- INDEX: uk_personas_dni 
