@@ -26,6 +26,9 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
                 case 'roles':
                     setActiveSection('seguridad');
                     break;
+                case 'personasgrados':
+                    setActiveSection('personasgrados');
+                    break;
                 case 'configuracion':
                     setActiveSection('configuracion');
                     break;
@@ -41,6 +44,12 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
             label: 'Dashboard',
             icon: 'fas fa-tachometer-alt',
             path: '/admin'
+        },
+        {
+            id: 'configuracion',
+            label: 'Configuración',
+            icon: 'fas fa-cog',
+            path: '/admin/configuracion',
         },
         {
             id: 'seguridad',
@@ -61,6 +70,12 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
             path: '/admin/personas/grados'
         },
         {
+            id: 'personasgrados',
+            label: 'Personas a Grados',
+            icon: 'fas fa-chalkboard-teacher',
+            path: '/admin/personasgrados'
+        },
+        {
             id: 'insumos',
             label: 'Insumos',
             icon: 'fas fa-boxes',
@@ -71,13 +86,8 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
             label: 'Proveedores',
             icon: 'fas fa-truck',
             path: '/admin/proveedores',
-        },
-        {
-            id: 'configuracion',
-            label: 'Configuración',
-            icon: 'fas fa-cog',
-            path: '/admin/configuracion',
         }
+
     ];
 
     const handleItemClick = (item) => {

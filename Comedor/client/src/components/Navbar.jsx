@@ -14,11 +14,6 @@ const Navbar = ({ onToggleSidebar, sidebarCollapsed }) => {
             <div className="navbar-right">
                 <div className="navbar-actions">
                     <button className="nav-action-btn">
-                        <i className="fas fa-bell"></i>
-                        <span className="notification-badge">3</span>
-                    </button>
-
-                    <button className="nav-action-btn">
                         <i className="fas fa-envelope"></i>
                     </button>
 

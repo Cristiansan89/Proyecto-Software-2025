@@ -7,6 +7,7 @@ import GestionRolesPermisos from './pages/admins/GestionRolesPermisos'
 import ListaInsumos from './pages/admins/ListaInsumos'
 import ListaProveedores from './pages/admins/ListaProveedores'
 import Configuracion from './pages/admins/Configuracion'
+import PersonaGrado from './pages/admins/PersonaGrado'
 import AdminLayout from './layouts/AdminLayout'
 import './App.css'
 
@@ -56,6 +57,8 @@ function App() {
         return <ListaInsumos />
       case 'proveedores':
         return <ListaProveedores />
+      case 'personasgrados':
+        return <PersonaGrado />
       case 'configuracion':
         return <Configuracion />
       default:

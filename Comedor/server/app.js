@@ -24,6 +24,9 @@ import { createTurnoRouter } from './routes/turnos.js'
 import { createUsuarioRouter } from './routes/usuarios.js'
 import { createConsumoRouter } from './routes/consumos.js'
 import { createProveedorInsumoRouter } from './routes/proveedorinsumos.js'
+import alumnoGradoRouter from './routes/alumnogrado.js'
+import docenteGradoRouter from './routes/docentegrado.js'
+import reemplazoDocenteRouter from './routes/reemplazodocente.js'
 
 
 
@@ -85,6 +88,9 @@ export const createApp = ({
     app.use('/servicios', createServicioRouter({ servicioModel }))
     app.use('/turnos', createTurnoRouter({ turnoModel }))
     app.use('/proveedor-insumos', createProveedorInsumoRouter({ proveedorInsumoModel }))
+    app.use('/alumno-grados', alumnoGradoRouter)
+    app.use('/docente-grados', docenteGradoRouter)
+    app.use('/reemplazo-docentes', reemplazoDocenteRouter)
 
     return app
 }

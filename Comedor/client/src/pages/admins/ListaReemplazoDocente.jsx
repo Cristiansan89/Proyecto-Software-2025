@@ -1,0 +1,407 @@
+import { useState, useEffect } from 'react';
+import ReemplazoDocenteForm from '../../components/ReemplazoDocenteForm';
+import reemplazoDocenteService from '../../services/reemplazoDocenteService.js';
+
+const ListaReemplazosGrados = () => {
+    const [reemplazos, setReemplazos] = useState([]);
+    const [filteredReemplazos, setFilteredReemplazos] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
+    const [selectedReemplazo, setSelectedReemplazo] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [gradoFilter, setGradoFilter] = useState('');
+    const [estadoFilter, setEstadoFilter] = useState('');
+    const [motivoFilter, setMotivoFilter] = useState('');
+
+    // Cargar reemplazos al montar el componente
+    useEffect(() => {
+        loadReemplazos();
+    }, []);
+
+    const loadReemplazos = async () => {
+        try {
+            setLoading(true);
+            const data = await reemplazoDocenteService.getAll();
+            setReemplazos(data);
+            setFilteredReemplazos(data);
+        } catch (error) {
+            console.error('Error al cargar los reemplazos:', error);
+            alert('Error al cargar la lista de reemplazos');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Filtrar reemplazos cuando cambien los filtros
+    useEffect(() => {
+        let filtered = reemplazos;
+
+        // Filtro por búsqueda de texto
+        if (searchTerm.trim()) {
+            filtered = filtered.filter(reemplazo =>
+                reemplazo.nombreSuplente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                reemplazo.apellidoSuplente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                reemplazo.dniSuplente.includes(searchTerm) ||
+                reemplazo.nombreTitular.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                reemplazo.apellidoTitular.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                reemplazo.dniTitular.includes(searchTerm) ||
+                reemplazo.nombreGrado.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        // Filtro por grado
+        if (gradoFilter) {
+            filtered = filtered.filter(reemplazo => reemplazo.nombreGrado === gradoFilter);
+        }
+
+        // Filtro por estado
+        if (estadoFilter) {
+            filtered = filtered.filter(reemplazo => reemplazo.estado === estadoFilter);
+        }
+
+        // Filtro por motivo
+        if (motivoFilter) {
+            filtered = filtered.filter(reemplazo => reemplazo.motivo === motivoFilter);
+        }
+
+        setFilteredReemplazos(filtered);
+    }, [searchTerm, gradoFilter, estadoFilter, motivoFilter, reemplazos]);
+
+    // Operaciones CRUD
+    const handleCreate = () => {
+        setModalMode('create');
+        setSelectedReemplazo(null);
+        setShowModal(true);
+    };
+
+    const handleEdit = (reemplazo) => {
+        setModalMode('edit');
+        setSelectedReemplazo(reemplazo);
+        setShowModal(true);
+    };
+
+    const handleView = (reemplazo) => {
+        setModalMode('view');
+        setSelectedReemplazo(reemplazo);
+        setShowModal(true);
+    };
+
+    const handleDelete = async (reemplazoId) => {
+        if (window.confirm('¿Está seguro de eliminar este reemplazo?')) {
+            try {
+                await reemplazoDocenteService.delete(reemplazoId);
+                loadReemplazos();
+                alert('✅ Reemplazo eliminado correctamente');
+            } catch (error) {
+                console.error('Error al eliminar el reemplazo:', error);
+                if (error.response?.data?.message) {
+                    alert(`Error: ${error.response.data.message}`);
+                } else {
+                    alert('Error al eliminar el reemplazo. Por favor, inténtelo de nuevo.');
+                }
+            }
+        }
+    };
+
+    const handleFinalizarReemplazo = async (reemplazoId) => {
+        if (window.confirm('¿Está seguro de finalizar este reemplazo?')) {
+            try {
+                await reemplazoDocenteService.finalizar(reemplazoId);
+                loadReemplazos();
+                alert('✅ Reemplazo finalizado correctamente');
+            } catch (error) {
+                console.error('Error al finalizar el reemplazo:', error);
+                if (error.response?.data?.message) {
+                    alert(`Error: ${error.response.data.message}`);
+                } else {
+                    alert('Error al finalizar el reemplazo. Por favor, inténtelo de nuevo.');
+                }
+            }
+        }
+    };
+
+    const handleSave = (result) => {
+        setShowModal(false);
+        setSelectedReemplazo(null);
+        loadReemplazos();
+
+        if (modalMode === 'create') {
+            alert(`✅ Reemplazo creado correctamente!\n\nSuplente: ${result.nombreSuplente} ${result.apellidoSuplente}\nTitular: ${result.nombreTitular} ${result.apellidoTitular}\nGrado: ${result.nombreGrado}\nMotivo: ${result.motivo}`);
+        } else {
+            alert('✅ Reemplazo actualizado correctamente!');
+        }
+    };
+
+    const handleCancel = () => {
+        setShowModal(false);
+        setSelectedReemplazo(null);
+    };
+
+    // Obtener listas únicas para los filtros
+    const gradosUnicos = [...new Set(reemplazos.map(reemplazo => reemplazo.nombreGrado))].sort();
+    const estadosUnicos = [...new Set(reemplazos.map(reemplazo => reemplazo.estado))].sort();
+    const motivosUnicos = [...new Set(reemplazos.map(reemplazo => reemplazo.motivo))].sort();
+
+    if (loading) {
+        return (
+            <div className="loading-spinner">
+                <i className="fas fa-spinner fa-spin"></i>
+                <p>Cargando reemplazos...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="reemplazos-page">
+            {/* Header */}
+            <div className="page-header">
+                <div className="header-content">
+                    <h1 className="page-title">
+                        Reemplazos de Docentes
+                    </h1>
+                </div>
+                <div className="header-actions">
+                    <button className="btn btn-primary-new" onClick={handleCreate}>
+                        <i className="fas fa-plus"></i>
+                        Crear Reemplazo
+                    </button>
+                </div>
+            </div>
+
+            {/* Filtros y búsqueda */}
+            <div className="filters-section">
+                <div className="search-bar">
+                    <i className="fas fa-search"></i>
+                    <input
+                        type="text"
+                        placeholder="Buscar por suplente, titular, grado o DNI..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input"
+                    />
+                </div>
+
+                <div className="filter-actions">
+                    <select
+                        className="filter-select"
+                        value={gradoFilter}
+                        onChange={(e) => setGradoFilter(e.target.value)}
+                    >
+                        <option value="">Todos los grados</option>
+                        {gradosUnicos.map(grado => (
+                            <option key={grado} value={grado}>{grado}</option>
+                        ))}
+                    </select>
+
+                    <select
+                        className="filter-select"
+                        value={estadoFilter}
+                        onChange={(e) => setEstadoFilter(e.target.value)}
+                    >
+                        <option value="">Todos los estados</option>
+                        {estadosUnicos.map(estado => (
+                            <option key={estado} value={estado}>{estado}</option>
+                        ))}
+                    </select>
+
+                    <select
+                        className="filter-select"
+                        value={motivoFilter}
+                        onChange={(e) => setMotivoFilter(e.target.value)}
+                    >
+                        <option value="">Todos los motivos</option>
+                        {motivosUnicos.map(motivo => (
+                            <option key={motivo} value={motivo}>{motivo}</option>
+                        ))}
+                    </select>
+
+                    {(searchTerm || gradoFilter || estadoFilter || motivoFilter) && (
+                        <button
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={() => {
+                                setSearchTerm('');
+                                setGradoFilter('');
+                                setEstadoFilter('');
+                                setMotivoFilter('');
+                            }}
+                            title="Limpiar filtros"
+                        >
+                            <i className="fas fa-times"></i>
+                            Limpiar
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Indicador de resultados */}
+            <div className="results-info">
+                <span className="results-count">
+                    Mostrando {filteredReemplazos.length} de {reemplazos.length} reemplazo(s)
+                    {(searchTerm || gradoFilter || estadoFilter || motivoFilter) && (
+                        <span className="filter-indicator"> (filtrado)</span>
+                    )}
+                </span>
+            </div>
+
+            {/* Tabla */}
+            <div className="table-container">
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th>Docente Suplente</th>
+                            <th>Docente Titular</th>
+                            <th>Grado</th>
+                            <th>Período</th>
+                            <th>Motivo</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredReemplazos.length === 0 ? (
+                            <tr>
+                                <td colSpan="8" className="no-data">
+                                    <p>No se encontraron reemplazos</p>
+                                </td>
+                            </tr>
+                        ) : (
+                            filteredReemplazos.map((reemplazo) => (
+                                <tr key={reemplazo.idReemplazoDocente}>
+                                    <td>
+                                        <div className="user-info">
+                                            <div className="user-avatar">
+                                                <i className="fas fa-user-clock"></i>
+                                            </div>
+                                            <div>
+                                                <strong>{reemplazo.nombreSuplente} {reemplazo.apellidoSuplente}</strong>
+                                                <small className="d-block">DNI: {reemplazo.dniSuplente}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="user-info">
+                                            <div className="user-avatar">
+                                                <i className="fas fa-chalkboard-teacher"></i>
+                                            </div>
+                                            <div>
+                                                <strong>{reemplazo.nombreTitular} {reemplazo.apellidoTitular}</strong>
+                                                <small className="d-block">DNI: {reemplazo.dniTitular}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="type-badge teacher">
+                                            {reemplazo.nombreGrado}
+                                        </span>
+                                        <small className="d-block text-muted">
+                                            Ciclo: {reemplazo.cicloLectivo}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>Inicio:</strong> {new Date(reemplazo.fechaInicio).toLocaleDateString()}
+                                        </div>
+                                        <div>
+                                            <strong>Fin:</strong> {reemplazo.fechaFin ?
+                                                new Date(reemplazo.fechaFin).toLocaleDateString() :
+                                                'Sin definir'
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="badge bg-info">
+                                            {reemplazo.motivo}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span className={`status-badge ${reemplazo.estado.toLowerCase()}`}>
+                                            {reemplazo.estado}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div className="action-buttons">
+                                            <button
+                                                className="btn-action btn-view"
+                                                onClick={() => handleView(reemplazo)}
+                                                title="Ver detalles"
+                                            >
+                                                <i className="fas fa-eye"></i>
+                                            </button>
+                                            <button
+                                                className="btn-action btn-edit"
+                                                onClick={() => handleEdit(reemplazo)}
+                                                title="Editar reemplazo"
+                                            >
+                                                <i className="fas fa-edit"></i>
+                                            </button>
+                                            {reemplazo.estado === 'Activo' && (
+                                                <button
+                                                    className="btn-action btn-warning"
+                                                    onClick={() => handleFinalizarReemplazo(reemplazo.idReemplazoDocente)}
+                                                    title="Finalizar reemplazo"
+                                                >
+                                                    <i className="fas fa-stop"></i>
+                                                </button>
+                                            )}
+                                            <button
+                                                className="btn-action btn-delete"
+                                                onClick={() => handleDelete(reemplazo.idReemplazoDocente)}
+                                                title="Eliminar reemplazo"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Modal para Reemplazo */}
+            {showModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content reemplazo-modal">
+                        <div className="modal-header">
+                            <h3>
+                                {modalMode === 'create' && (
+                                    <>
+                                        <i className="fas fa-user-plus me-2"></i>
+                                        Crear Reemplazo
+                                    </>
+                                )}
+                                {modalMode === 'edit' && (
+                                    <>
+                                        <i className="fas fa-user-edit me-2"></i>
+                                        Editar Reemplazo
+                                    </>
+                                )}
+                                {modalMode === 'view' && (
+                                    <>
+                                        <i className="fas fa-user me-2"></i>
+                                        Detalles del Reemplazo
+                                    </>
+                                )}
+                            </h3>
+                            <button className="modal-close" onClick={handleCancel}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <ReemplazoDocenteForm
+                                reemplazo={selectedReemplazo}
+                                mode={modalMode}
+                                onSave={handleSave}
+                                onCancel={handleCancel}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default ListaReemplazosGrados;
