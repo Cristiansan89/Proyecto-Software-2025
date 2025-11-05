@@ -3,8 +3,10 @@ import { useState } from 'react';
 const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
         razonSocial: proveedor?.razonSocial || '',
+        CUIT: proveedor?.CUIT || '',
         direccion: proveedor?.direccion || '',
         telefono: proveedor?.telefono || '',
+        mail: proveedor?.mail || '',
         estado: proveedor?.estado || 'Activo'
     });
 
@@ -38,16 +40,24 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
             newErrors.razonSocial = 'La razón social no puede exceder 100 caracteres';
         }
 
-        if (!formData.direccion.trim()) {
-            newErrors.direccion = 'La dirección es requerida';
-        } else if (formData.direccion.length > 200) {
-            newErrors.direccion = 'La dirección no puede exceder 200 caracteres';
+        if (!formData.CUIT.trim()) {
+            newErrors.CUIT = 'El CUIT es requerido';
+        } else if (formData.CUIT.length < 11 || formData.CUIT.length > 13) {
+            newErrors.CUIT = 'El CUIT debe tener entre 11 y 13 caracteres';
         }
 
-        if (!formData.telefono.trim()) {
-            newErrors.telefono = 'El teléfono es requerido';
-        } else if (!/^\d{3}-\d{4}$|^\d{7,15}$/.test(formData.telefono.replace(/[\s\-()]/g, ''))) {
-            newErrors.telefono = 'El formato del teléfono no es válido (ej: 555-1234 o 5551234567)';
+        if (!formData.mail.trim()) {
+            newErrors.mail = 'El email es requerido';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.mail)) {
+            newErrors.mail = 'El formato del email no es válido';
+        }
+
+        if (formData.direccion && formData.direccion.length > 100) {
+            newErrors.direccion = 'La dirección no puede exceder 100 caracteres';
+        }
+
+        if (formData.telefono && formData.telefono.length > 20) {
+            newErrors.telefono = 'El teléfono no puede exceder 20 caracteres';
         }
 
         if (!formData.estado) {
@@ -68,18 +78,29 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
         setLoading(true);
 
         try {
-            // Simular llamada a API
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const proveedorToSave = {
-                ...formData,
-                idProveedor: proveedor?.idProveedor || Date.now(),
-                fechaRegistro: proveedor?.fechaRegistro || new Date().toISOString().split('T')[0]
+            // Preparar datos para enviar al backend
+            const proveedorData = {
+                razonSocial: formData.razonSocial.trim(),
+                CUIT: formData.CUIT.trim(),
+                direccion: formData.direccion.trim() || null,
+                telefono: formData.telefono.trim() || null,
+                mail: formData.mail.trim(),
+                estado: formData.estado
             };
 
-            onSave(proveedorToSave);
+            console.log('ProveedorForm: Enviando datos:', proveedorData);
+            onSave(proveedorData);
         } catch (error) {
             console.error('Error al guardar proveedor:', error);
+            // Mostrar error al usuario
+            if (error.response?.data?.message) {
+                alert(`Error: ${error.response.data.message}`);
+            } else if (error.response?.data?.errors) {
+                const errorMessages = error.response.data.errors.map(err => `${err.field}: ${err.message}`).join('\n');
+                alert(`Errores de validación:\n${errorMessages}`);
+            } else {
+                alert('Error al guardar el proveedor. Por favor, inténtelo de nuevo.');
+            }
         } finally {
             setLoading(false);
         }
@@ -117,13 +138,30 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                             {errors.razonSocial && (
                                 <div className="invalid-feedback">{errors.razonSocial}</div>
                             )}
-                            <small className="form-text text-muted">
-                                {formData.razonSocial.length}/100 caracteres
-                            </small>
                         </div>
 
                         <div className="form-group">
-                            <label htmlFor="direccion" className="form-label required mt-2">
+                            <label htmlFor="CUIT" className="form-label required mt-2">
+                                CUIT
+                            </label>
+                            <input
+                                type="text"
+                                id="CUIT"
+                                name="CUIT"
+                                className={`form-control ${errors.CUIT ? 'is-invalid' : ''}`}
+                                value={formData.CUIT}
+                                onChange={handleInputChange}
+                                disabled={isViewMode}
+                                placeholder="Ingrese el CUIT del proveedor (ej: 20-12345678-9)"
+                                maxLength="13"
+                            />
+                            {errors.CUIT && (
+                                <div className="invalid-feedback">{errors.CUIT}</div>
+                            )}
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="direccion" className="form-label mt-2">
                                 Dirección
                             </label>
                             <textarea
@@ -133,21 +171,18 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                                 value={formData.direccion}
                                 onChange={handleInputChange}
                                 disabled={isViewMode}
-                                placeholder="Ingrese la dirección completa del proveedor"
+                                placeholder="Ingrese la dirección completa del proveedor (opcional)"
                                 rows="3"
-                                maxLength="200"
+                                maxLength="100"
                             />
                             {errors.direccion && (
                                 <div className="invalid-feedback">{errors.direccion}</div>
                             )}
-                            <small className="form-text text-muted">
-                                {formData.direccion.length}/200 caracteres
-                            </small>
                         </div>
 
                         <div className="form-row">
                             <div className="form-group">
-                                <label htmlFor="telefono" className="form-label required mt-2">
+                                <label htmlFor="telefono" className="form-label mt-2">
                                     Teléfono
                                 </label>
                                 <input
@@ -158,35 +193,53 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                                     value={formData.telefono}
                                     onChange={handleInputChange}
                                     disabled={isViewMode}
-                                    placeholder="Ej: 555-1234 o 5551234567"
+                                    placeholder="Ingrese número teléfono"
+                                    maxLength="20"
                                 />
                                 {errors.telefono && (
                                     <div className="invalid-feedback">{errors.telefono}</div>
                                 )}
-                                <small className="form-text text-muted">
-                                    Formato aceptado: 555-1234 o números de 7-15 dígitos
-                                </small>
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="estado" className="form-label required mt-2">
-                                    Estado
+                                <label htmlFor="mail" className="form-label required mt-2">
+                                    Email
                                 </label>
-                                <select
-                                    id="estado"
-                                    name="estado"
-                                    className={`form-control ${errors.estado ? 'is-invalid' : ''}`}
-                                    value={formData.estado}
+                                <input
+                                    type="email"
+                                    id="mail"
+                                    name="mail"
+                                    className={`form-control ${errors.mail ? 'is-invalid' : ''}`}
+                                    value={formData.mail}
                                     onChange={handleInputChange}
                                     disabled={isViewMode}
-                                >
-                                    <option value="Activo">Activo</option>
-                                    <option value="Inactivo">Inactivo</option>
-                                </select>
-                                {errors.estado && (
-                                    <div className="invalid-feedback">{errors.estado}</div>
+                                    placeholder="proveedor@empresa.com"
+                                    maxLength="100"
+                                />
+                                {errors.mail && (
+                                    <div className="invalid-feedback">{errors.mail}</div>
                                 )}
                             </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="estado" className="form-label required mt-2">
+                                Estado
+                            </label>
+                            <select
+                                id="estado"
+                                name="estado"
+                                className={`form-control ${errors.estado ? 'is-invalid' : ''}`}
+                                value={formData.estado}
+                                onChange={handleInputChange}
+                                disabled={isViewMode}
+                            >
+                                <option value="Activo">Activo</option>
+                                <option value="Inactivo">Inactivo</option>
+                            </select>
+                            {errors.estado && (
+                                <div className="invalid-feedback">{errors.estado}</div>
+                            )}
                         </div>
                     </div>
 
@@ -201,13 +254,19 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
 
                             <div className="info-card">
                                 <div className="info-row">
-                                    <span className="info-label">ID del Proveedor:</span>
-                                    <span className="info-value">{proveedor.idProveedor}</span>
+                                    <span className="info-label">CUIT:</span>
+                                    <span className="info-value">{proveedor.CUIT}</span>
                                 </div>
-                                {proveedor.fechaRegistro && (
+                                {proveedor.fechaAlta && (
                                     <div className="info-row">
                                         <span className="info-label">Fecha de Registro:</span>
-                                        <span className="info-value">{proveedor.fechaRegistro}</span>
+                                        <span className="info-value">{new Date(proveedor.fechaAlta).toLocaleDateString()}</span>
+                                    </div>
+                                )}
+                                {proveedor.fechaModificacion && (
+                                    <div className="info-row">
+                                        <span className="info-label">Última Modificación:</span>
+                                        <span className="info-value">{new Date(proveedor.fechaModificacion).toLocaleDateString()}</span>
                                     </div>
                                 )}
                                 <div className="info-row">

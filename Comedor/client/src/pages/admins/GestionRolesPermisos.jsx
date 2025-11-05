@@ -513,7 +513,6 @@ const GestionRolesPermisos = () => {
                 {/* Controles de búsqueda y filtros */}
                 <div className="search-filters">
                     <div className="search-bar">
-                        <i className="fas fa-search search-icon"></i>
                         <input
                             type="text"
                             className="search-input"
@@ -716,7 +715,7 @@ const GestionRolesPermisos = () => {
                     </div>
                 )}
 
-                {/* Modal */}
+                {/* Modal para permiso*/}
                 {showModal && (
                     <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
                         <div className="modal-dialog modal-lg">
@@ -1154,7 +1153,7 @@ const GestionRolesPermisos = () => {
                                         value={formRol.habilitaCuentaUsuario}
                                         onChange={(e) => setFormRol({ ...formRol, habilitaCuentaUsuario: e.target.value })}
                                     >
-                                        <option value="Sí">Sí</option>
+                                        <option value="Si">Si</option>
                                         <option value="No">No</option>
                                     </select>
                                 </div>

@@ -73,22 +73,6 @@ const ListaGrados = () => {
         setFilterEstado('');
     };
 
-    const handleSelectGrado = (gradoId) => {
-        setSelectedGrados(prev =>
-            prev.includes(gradoId)
-                ? prev.filter(id => id !== gradoId)
-                : [...prev, gradoId]
-        );
-    };
-
-    const handleSelectAll = () => {
-        if (selectedGrados.length === currentGrados.length) {
-            setSelectedGrados([]);
-        } else {
-            setSelectedGrados(currentGrados.map(grado => grado.idGrado));
-        }
-    };
-
     const openModal = (mode, grado = null) => {
         setModalMode(mode);
         setSelectedGrado(grado);
@@ -176,7 +160,6 @@ const ListaGrados = () => {
             {/* Controles de búsqueda y filtros */}
             <div className="search-filters">
                 <div className="search-bar">
-                    <i className="fas fa-search search-icon"></i>
                     <input
                         type="text"
                         className="search-input"
@@ -246,85 +229,74 @@ const ListaGrados = () => {
                         <p>Cargando grados...</p>
                     </div>
                 ) : (
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedGrados.length === currentGrados.length && currentGrados.length > 0}
-                                        onChange={handleSelectAll}
-                                    />
-                                </th>
-                                <th>Grado</th>
-                                <th>Turno</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {currentGrados.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5" className="no-data">
-                                        <p>No se encontraron grados</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                currentGrados.map(grado => (
-                                    <tr key={grado.idGrado}>
-                                        <td>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedGrados.includes(grado.idGrado)}
-                                                onChange={() => handleSelectGrado(grado.idGrado)}
-                                            />
-                                        </td>
-                                        <td>
-                                            <div className="grado-name">
-                                                <i className="fas fa-graduation-cap"></i>
-                                                <strong>{grado.nombreGrado}</strong>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="turno-info">
-                                                <i className="fas fa-clock me-1"></i>
-                                                <span className="turno-name">{grado.turno}</span>
-                                                <span className="turno-hours">({grado.horaInicio} - {grado.horaFin})</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={`status-badge ${grado.estado.toLowerCase()}`}>{grado.estado}</span>
-                                        </td>
-                                        <td>
-                                            <div className="table-actions">
-                                                <button
-                                                    className="btn-action btn-view"
-                                                    onClick={() => openModal('view', grado)}
-                                                    title="Ver detalles"
-                                                >
-                                                    <i className="fas fa-eye"></i>
-                                                </button>
-                                                <button
-                                                    className="btn-action btn-edit"
-                                                    onClick={() => openModal('edit', grado)}
-                                                    title="Editar"
-                                                >
-                                                    <i className="fas fa-edit"></i>
-                                                </button>
-                                                <button
-                                                    className="btn-action btn-delete"
-                                                    onClick={() => handleDelete(grado)}
-                                                    title="Eliminar"
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
+                    <div className="scrollable-table">
+                        <div className="table-body-scroll">
+                            <table className="data-table" style={{ width: '100%' }}>
+                                <thead className="table-header-fixed">
+                                    <tr>
+                                        <th>Grado</th>
+                                        <th>Turno</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    {currentGrados.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="4" className="no-data">
+                                                <p>No se encontraron grados</p>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        currentGrados.map(grado => (
+                                            <tr key={grado.idGrado}>
+                                                <td>
+                                                    <div className="grado-name">
+                                                        <i className="fas fa-graduation-cap"></i>
+                                                        <strong>{grado.nombreGrado}</strong>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="turno-info">
+                                                        <span className="turno-name">{grado.turno}</span>
+                                                        <span className="turno-hours">({grado.horaInicio} - {grado.horaFin})</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className={`status-badge ${grado.estado.toLowerCase()}`}>{grado.estado}</span>
+                                                </td>
+                                                <td>
+                                                    <div className="table-actions">
+                                                        <button
+                                                            className="btn-action btn-view"
+                                                            onClick={() => openModal('view', grado)}
+                                                            title="Ver detalles"
+                                                        >
+                                                            <i className="fas fa-eye"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn-action btn-edit"
+                                                            onClick={() => openModal('edit', grado)}
+                                                            title="Editar"
+                                                        >
+                                                            <i className="fas fa-edit"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn-action btn-delete"
+                                                            onClick={() => handleDelete(grado)}
+                                                            title="Eliminar"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 )}
             </div>
 

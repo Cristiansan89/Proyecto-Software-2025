@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import ServicioForm from '../../components/ServicioForm';
 import servicioService from '../../services/servicioService';
+import servicioTurnoService from '../../services/servicioTurnoService';
 
 const ListaServicios = () => {
     const [servicios, setServicios] = useState([]);
+    const [servicioTurnos, setServicioTurnos] = useState({});
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
@@ -23,6 +25,19 @@ const ListaServicios = () => {
             const data = await servicioService.getAll();
             console.log('ListaServicios: Datos recibidos:', data);
             setServicios(data);
+
+            // Cargar turnos para cada servicio
+            const turnosData = {};
+            for (const servicio of data) {
+                try {
+                    const turnos = await servicioTurnoService.getTurnosByServicio(servicio.idServicio);
+                    turnosData[servicio.idServicio] = turnos;
+                } catch (error) {
+                    console.error(`Error al cargar turnos para servicio ${servicio.idServicio}:`, error);
+                    turnosData[servicio.idServicio] = [];
+                }
+            }
+            setServicioTurnos(turnosData);
         } catch (error) {
             console.error('Error al cargar servicios:', error);
             alert('Error al cargar los servicios');
@@ -129,6 +144,12 @@ const ListaServicios = () => {
                             <div className="summary-number-alert">{servicios.filter(s => s.estado === 'Inactivo').length}</div>
                             <div className="summary-label-alert">Inactivos</div>
                         </div>
+                        <div className="stat-card-users">
+                            <div className="stat-number-users">
+                                {Object.values(servicioTurnos).reduce((total, turnos) => total + turnos.length, 0)}
+                            </div>
+                            <div className="stat-label-users">Turnos Asignados</div>
+                        </div>
                     </div>
                 </div>
                 <div className="header-actions">
@@ -142,7 +163,6 @@ const ListaServicios = () => {
             {/* Filtros */}
             <div className="search-filters">
                 <div className="search-bar">
-                    <i className="fas fa-search"></i>
                     <input
                         type="text"
                         className="search-input"
@@ -179,74 +199,98 @@ const ListaServicios = () => {
                         <p>No se encontraron servicios</p>
                     </div>
                 ) : (
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Descripción</th>
-                                <th>Estado</th>
-                                <th>Fecha Alta</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredServicios.map(servicio => (
-                                <tr key={servicio.idServicio}>
-                                    <td>
-                                        <div className="servicio-name">
-                                            <i className="fas fa-utensils"></i>
-                                            <strong>{servicio.nombre}</strong>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="servicio-description">
-                                            {servicio.descripcion}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className={`status-badge ${servicio.estado.toLowerCase()}`}>
-                                            {servicio.estado}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {servicio.fechaAlta ? new Date(servicio.fechaAlta).toLocaleDateString() : '-'}
-                                    </td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button
-                                                className="btn-action btn-view"
-                                                onClick={() => handleView(servicio)}
-                                                title="Ver detalles"
-                                            >
-                                                <i className="fas fa-eye"></i>
-                                            </button>
-                                            <button
-                                                className="btn-action btn-edit"
-                                                onClick={() => handleEdit(servicio)}
-                                                title="Editar"
-                                            >
-                                                <i className="fas fa-edit"></i>
-                                            </button>
-                                            <button
-                                                className="btn-action btn-delete"
-                                                onClick={() => handleDelete(servicio)}
-                                                title="Eliminar"
-                                            >
-                                                <i className="fas fa-trash"></i>
-                                            </button>
-                                            <button
-                                                className={`btn-action ${servicio.estado === 'Activo' ? 'btn-delete' : 'btn-assign'}`}
-                                                onClick={() => handleChangeStatus(servicio, servicio.estado === 'Activo' ? 'Inactivo' : 'Activo')}
-                                                title={servicio.estado === 'Activo' ? 'Desactivar' : 'Activar'}
-                                            >
-                                                <i className={`fas ${servicio.estado === 'Activo' ? 'fa-times' : 'fa-check'}`}></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <div className="scrollable-table">
+                        <div className="table-body-scroll">
+                            <table className="data-table" style={{ width: '100%' }}>
+                                <thead className="table-header-fixed">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Turno</th>
+                                        <th>Estado</th>
+                                        <th>Fecha Alta</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredServicios.map(servicio => (
+                                        <tr key={servicio.idServicio}>
+                                            <td>
+                                                <div className="servicio-name">
+                                                    <i className="fas fa-utensils"></i>
+                                                    <strong>{servicio.nombre}</strong>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="servicio-description">
+                                                    {servicio.descripcion}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="servicio-turno">
+                                                    {servicioTurnos[servicio.idServicio] && servicioTurnos[servicio.idServicio].length > 0 ? (
+                                                        <div className="turnos-list">
+                                                            {servicioTurnos[servicio.idServicio].map((turno) => (
+                                                                <span
+                                                                    key={turno.idTurno}
+                                                                    className="turno-badge"
+                                                                    title={`${turno.nombreTurno}: ${turno.horaInicio} - ${turno.horaFin}`}
+                                                                >
+                                                                    {turno.nombreTurno}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="no-turnos">Sin turnos asignados</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={`status-badge ${servicio.estado.toLowerCase()}`}>
+                                                    {servicio.estado}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {servicio.fechaAlta ? new Date(servicio.fechaAlta).toLocaleDateString() : '-'}
+                                            </td>
+                                            <td>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        className="btn-action btn-view"
+                                                        onClick={() => handleView(servicio)}
+                                                        title="Ver detalles"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-edit"
+                                                        onClick={() => handleEdit(servicio)}
+                                                        title="Editar"
+                                                    >
+                                                        <i className="fas fa-edit"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-delete"
+                                                        onClick={() => handleDelete(servicio)}
+                                                        title="Eliminar"
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                    <button
+                                                        className={`btn-action ${servicio.estado === 'Activo' ? 'btn-delete' : 'btn-assign'}`}
+                                                        onClick={() => handleChangeStatus(servicio, servicio.estado === 'Activo' ? 'Inactivo' : 'Activo')}
+                                                        title={servicio.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                                                    >
+                                                        <i className={`fas ${servicio.estado === 'Activo' ? 'fa-times' : 'fa-check'}`}></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 )}
             </div>
 

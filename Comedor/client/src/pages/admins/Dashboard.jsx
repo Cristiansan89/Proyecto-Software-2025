@@ -1,61 +1,174 @@
 
+import { useState, useEffect } from 'react';
+import usuarioService from '../../services/usuarioService';
+import personaService from '../../services/personaService';
+import insumoService from '../../services/insumoService';
+import proveedorService from '../../services/proveedorService';
+import '../../styles/Dashboard.css';
+
 const AdminDashboard = () => {
+    const [dashboardStats, setDashboardStats] = useState({
+        usuariosActivos: 0,
+        personasActivas: 0,
+        alumnosActivos: 0,
+        docentesActivos: 0,
+        insumosStock: 0,
+        proveedoresActivos: 0
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadDashboardData();
+    }, []);
+
+    const loadDashboardData = async () => {
+        try {
+            setLoading(true);
+
+            // Cargar datos en paralelo para mejor rendimiento
+            const [usuarios, personas, insumos, proveedores] = await Promise.all([
+                usuarioService.getAll().catch(() => []),
+                personaService.getAll().catch(() => []),
+                insumoService.getAll().catch(() => []),
+                proveedorService.getAll().catch(() => [])
+            ]);
+
+            // Calcular estadísticas
+            const usuariosActivos = usuarios.filter(u => u.estado === 'Activo').length;
+            const personasActivas = personas.filter(p => p.estado === 'Activo').length;
+            const alumnosActivos = personas.filter(p => p.estado === 'Activo' && p.tipoPersona === 'Alumno').length;
+            const docentesActivos = personas.filter(p => p.estado === 'Activo' && p.tipoPersona === 'Docente').length;
+            const insumosStock = insumos.filter(i => i.estado === 'Activo').length;
+            const proveedoresActivos = proveedores.filter(p => p.estado === 'Activo').length;
+
+            setDashboardStats({
+                usuariosActivos,
+                personasActivas,
+                alumnosActivos,
+                docentesActivos,
+                insumosStock,
+                proveedoresActivos
+            });
+
+        } catch (error) {
+            console.error('Error al cargar datos del dashboard:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="dashboard-loading">
+                <div className="loading-spinner">
+                    <i className="fas fa-spinner fa-spin"></i>
+                    <p>Cargando estadísticas...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div>
             <div className="dashboard-header">
-                <h2>Panel de Administración</h2>
-                <p>Resumen general del sistema de comedor</p>
+                <div className="header-content">
+                    <div className="header-text">
+                        <h2>Panel de Administración</h2>
+                        <p>Resumen general del sistema de comedor</p>
+                    </div>
+                    <div className="header-actions">
+                        <button
+                            className="btn btn-outline-primary"
+                            onClick={loadDashboardData}
+                            disabled={loading}
+                            title="Actualizar estadísticas"
+                        >
+                            {loading ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                            ) : (
+                                <i className="fas fa-sync-alt"></i>
+                            )}
+                            <span className="ms-2">Actualizar</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div className="dashboard-stats">
                 <div className="stat-card">
-                    <div className="stat-icon visitors">
+                    <div className="stat-icon users">
                         <i className="fas fa-users"></i>
                     </div>
                     <div className="stat-info">
-                        <h3>1,247</h3>
+                        <h3>{dashboardStats.usuariosActivos}</h3>
                         <p>Usuarios Activos</p>
-                        <small className="stat-change positive">
-                            <i className="fas fa-arrow-up"></i> +12.5%
+                        <small className="stat-description">
+                            <i className="fas fa-info-circle"></i> Total en sistema
                         </small>
                     </div>
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon revenue">
-                        <i className="fas fa-utensils"></i>
+                    <div className="stat-icon personas">
+                        <i className="fas fa-address-book"></i>
                     </div>
                     <div className="stat-info">
-                        <h3>3,456</h3>
-                        <p>Comidas Servidas</p>
-                        <small className="stat-change positive">
-                            <i className="fas fa-arrow-up"></i> +8.2%
+                        <h3>{dashboardStats.personasActivas}</h3>
+                        <p>Personas Activas</p>
+                        <small className="stat-description">
+                            <i className="fas fa-info-circle"></i> Personal y estudiantes
                         </small>
                     </div>
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon sales">
+                    <div className="stat-icon alumnos">
+                        <i className="fas fa-graduation-cap"></i>
+                    </div>
+                    <div className="stat-info">
+                        <h3>{dashboardStats.alumnosActivos}</h3>
+                        <p>Alumnos Activos</p>
+                        <small className="stat-description">
+                            <i className="fas fa-info-circle"></i> Estudiantes registrados
+                        </small>
+                    </div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-icon docentes">
+                        <i className="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div className="stat-info">
+                        <h3>{dashboardStats.docentesActivos}</h3>
+                        <p>Docentes Activos</p>
+                        <small className="stat-description">
+                            <i className="fas fa-info-circle"></i> Personal docente
+                        </small>
+                    </div>
+                </div>
+
+                <div className="stat-card">
+                    <div className="stat-icon insumos">
                         <i className="fas fa-boxes"></i>
                     </div>
                     <div className="stat-info">
-                        <h3>89</h3>
+                        <h3>{dashboardStats.insumosStock}</h3>
                         <p>Insumos en Stock</p>
-                        <small className="stat-change negative">
-                            <i className="fas fa-arrow-down"></i> -3.1%
+                        <small className="stat-description">
+                            <i className="fas fa-info-circle"></i> Productos disponibles
                         </small>
                     </div>
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon orders">
-                        <i className="fas fa-shopping-cart"></i>
+                    <div className="stat-icon proveedores">
+                        <i className="fas fa-truck"></i>
                     </div>
                     <div className="stat-info">
-                        <h3>156</h3>
-                        <p>Pedidos Pendientes</p>
-                        <small className="stat-change positive">
-                            <i className="fas fa-arrow-up"></i> +5.7%
+                        <h3>{dashboardStats.proveedoresActivos}</h3>
+                        <p>Proveedores Activos</p>
+                        <small className="stat-description">
+                            <i className="fas fa-info-circle"></i> Suministradores registrados
                         </small>
                     </div>
                 </div>
@@ -66,47 +179,91 @@ const AdminDashboard = () => {
                     <div className="col-lg-8">
                         <div className="dashboard-card">
                             <div className="card-header">
-                                <h4>Actividad Reciente</h4>
+                                <h4>
+                                    <i className="fas fa-clock me-2"></i>
+                                    Resumen del Sistema
+                                </h4>
                             </div>
                             <div className="card-body">
-                                <div className="activity-list">
-                                    <div className="activity-item">
-                                        <div className="activity-icon">
-                                            <i className="fas fa-user-plus text-success"></i>
+                                <div className="system-summary">
+                                    <div className="summary-item">
+                                        <div className="summary-icon">
+                                            <i className="fas fa-database text-primary"></i>
                                         </div>
-                                        <div className="activity-content">
-                                            <p><strong>Nuevo usuario registrado:</strong> María García</p>
-                                            <small className="text-muted">Hace 2 minutos</small>
-                                        </div>
-                                    </div>
-
-                                    <div className="activity-item">
-                                        <div className="activity-icon">
-                                            <i className="fas fa-shopping-cart text-primary"></i>
-                                        </div>
-                                        <div className="activity-content">
-                                            <p><strong>Nuevo pedido:</strong> Pedido #1234</p>
-                                            <small className="text-muted">Hace 15 minutos</small>
-                                        </div>
-                                    </div>
-
-                                    <div className="activity-item">
-                                        <div className="activity-icon">
-                                            <i className="fas fa-boxes text-warning"></i>
-                                        </div>
-                                        <div className="activity-content">
-                                            <p><strong>Stock bajo:</strong> Arroz - Quedan 5kg</p>
-                                            <small className="text-muted">Hace 1 hora</small>
+                                        <div className="summary-content">
+                                            <h5>Estado del Sistema</h5>
+                                            <p>Todos los servicios funcionando correctamente</p>
+                                            <div className="status-indicators">
+                                                <span className="status-badge active">
+                                                    <i className="fas fa-circle"></i> Base de datos
+                                                </span>
+                                                <span className="status-badge active">
+                                                    <i className="fas fa-circle"></i> API REST
+                                                </span>
+                                                <span className="status-badge active">
+                                                    <i className="fas fa-circle"></i> Frontend
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="activity-item">
-                                        <div className="activity-icon">
-                                            <i className="fas fa-utensils text-info"></i>
+                                    <div className="summary-item">
+                                        <div className="summary-icon">
+                                            <i className="fas fa-chart-line text-success"></i>
                                         </div>
-                                        <div className="activity-content">
-                                            <p><strong>Menú actualizado:</strong> Almuerzo del día</p>
-                                            <small className="text-muted">Hace 2 horas</small>
+                                        <div className="summary-content">
+                                            <h5>Gestión de Recursos</h5>
+                                            <p>Sistema de proveedores e insumos operativo</p>
+                                            <div className="resource-stats">
+                                                <div className="resource-stat">
+                                                    <span className="stat-label">Proveedores:</span>
+                                                    <span className="stat-value">{dashboardStats.proveedoresActivos}</span>
+                                                </div>
+                                                <div className="resource-stat">
+                                                    <span className="stat-label">Insumos:</span>
+                                                    <span className="stat-value">{dashboardStats.insumosStock}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="summary-item">
+                                        <div className="summary-icon">
+                                            <i className="fas fa-users text-info"></i>
+                                        </div>
+                                        <div className="summary-content">
+                                            <h5>Comunidad Educativa</h5>
+                                            <p>Personal y estudiantes registrados en el sistema</p>
+                                            <div className="community-stats">
+                                                <div className="community-stat">
+                                                    <i className="fas fa-graduation-cap"></i>
+                                                    <span>{dashboardStats.alumnosActivos} Alumnos</span>
+                                                </div>
+                                                <div className="community-stat">
+                                                    <i className="fas fa-chalkboard-teacher"></i>
+                                                    <span>{dashboardStats.docentesActivos} Docentes</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="summary-item">
+                                        <div className="summary-icon">
+                                            <i className="fas fa-shield-alt text-warning"></i>
+                                        </div>
+                                        <div className="summary-content">
+                                            <h5>Seguridad y Acceso</h5>
+                                            <p>Control de usuarios y permisos activo</p>
+                                            <div className="security-info">
+                                                <span className="security-badge">
+                                                    <i className="fas fa-lock"></i>
+                                                    Autenticación JWT
+                                                </span>
+                                                <span className="security-badge">
+                                                    <i className="fas fa-key"></i>
+                                                    {dashboardStats.usuariosActivos} Usuarios activos
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -117,61 +274,28 @@ const AdminDashboard = () => {
                     <div className="col-lg-4">
                         <div className="dashboard-card">
                             <div className="card-header">
-                                <h4>Accesos Rápidos</h4>
+                                <h5>
+                                    <i className="fas fa-info-circle me-2"></i>
+                                    Información del Sistema
+                                </h5>
                             </div>
                             <div className="card-body">
-                                <div className="quick-actions">
-                                    <button className="quick-action-btn">
-                                        <i className="fas fa-user-plus"></i>
-                                        <span>Nuevo Usuario</span>
-                                    </button>
-
-                                    <button className="quick-action-btn">
-                                        <i className="fas fa-utensils"></i>
-                                        <span>Crear Menú</span>
-                                    </button>
-
-                                    <button className="quick-action-btn">
-                                        <i className="fas fa-shopping-cart"></i>
-                                        <span>Nuevo Pedido</span>
-                                    </button>
-
-                                    <button className="quick-action-btn">
-                                        <i className="fas fa-boxes"></i>
-                                        <span>Gestión Inventario</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="dashboard-card mt-3">
-                            <div className="card-header">
-                                <h4>Notificaciones</h4>
-                            </div>
-                            <div className="card-body">
-                                <div className="notification-list">
-                                    <div className="notification-item urgent">
-                                        <i className="fas fa-exclamation-circle"></i>
-                                        <div>
-                                            <p>Stock crítico en varios insumos</p>
-                                            <small>3 productos</small>
-                                        </div>
+                                <div className="system-info">
+                                    <div className="info-item">
+                                        <span className="info-label">Versión:</span>
+                                        <span className="info-value">1.0.0</span>
                                     </div>
-
-                                    <div className="notification-item warning">
-                                        <i className="fas fa-clock"></i>
-                                        <div>
-                                            <p>Pedidos pendientes de aprobación</p>
-                                            <small>12 pedidos</small>
-                                        </div>
+                                    <div className="info-item">
+                                        <span className="info-label">Última actualización:</span>
+                                        <span className="info-value">Noviembre 2025</span>
                                     </div>
-
-                                    <div className="notification-item info">
-                                        <i className="fas fa-info-circle"></i>
-                                        <div>
-                                            <p>Backup programado para hoy</p>
-                                            <small>22:00 hrs</small>
-                                        </div>
+                                    <div className="info-item">
+                                        <span className="info-label">Base de datos:</span>
+                                        <span className="info-value">MySQL 8.x</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <span className="info-label">Framework:</span>
+                                        <span className="info-value">React + Node.js</span>
                                     </div>
                                 </div>
                             </div>

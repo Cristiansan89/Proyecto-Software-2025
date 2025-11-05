@@ -2,6 +2,21 @@ import { DocenteGradoModel } from '../models/docentegrado.js'
 import { validateDocenteGrado, validatePartialDocenteGrado } from '../schemas/docentegrado.js'
 
 export class DocenteGradoController {
+    // Función para normalizar fechas de timestamp a YYYY-MM-DD
+    static normalizeFecha(fecha) {
+        if (!fecha) return fecha;
+
+        // Convertir a string si no lo es
+        const fechaStr = String(fecha);
+
+        // Si es un timestamp completo, convertir a fecha
+        if (fechaStr.includes('T')) {
+            return fechaStr.split('T')[0];
+        }
+
+        return fechaStr;
+    }
+
     static async getAll(req, res) {
         try {
             const docentes = await DocenteGradoModel.getAll()
@@ -56,7 +71,14 @@ export class DocenteGradoController {
 
     static async create(req, res) {
         try {
-            const result = validateDocenteGrado(req.body)
+            // Normalizar fechas antes de validar
+            const normalizedData = {
+                ...req.body,
+                cicloLectivo: DocenteGradoController.normalizeFecha(req.body.cicloLectivo),
+                fechaAsignado: DocenteGradoController.normalizeFecha(req.body.fechaAsignado)
+            };
+
+            const result = validateDocenteGrado(normalizedData)
 
             if (!result.success) {
                 return res.status(400).json({

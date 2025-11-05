@@ -1,49 +1,14 @@
-import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
-const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
-    const [activeSection, setActiveSection] = useState('dashboard');
-
-    // Sincronizar el estado del sidebar con la página actual
-    useEffect(() => {
-        if (currentPage) {
-            // Mapear páginas a secciones del sidebar
-            switch (currentPage) {
-                case 'dashboard':
-                    setActiveSection('dashboard');
-                    break;
-                case 'personas':
-                    setActiveSection('personas');
-                    break;
-                case 'grados':
-                    setActiveSection('grados');
-                    break;
-                case 'insumos':
-                    setActiveSection('insumos');
-                    break;
-                case 'proveedores':
-                    setActiveSection('proveedores');
-                    break;
-                case 'roles':
-                    setActiveSection('seguridad');
-                    break;
-                case 'personasgrados':
-                    setActiveSection('personasgrados');
-                    break;
-                case 'configuracion':
-                    setActiveSection('configuracion');
-                    break;
-                default:
-                    setActiveSection('dashboard');
-            }
-        }
-    }, [currentPage]);
+const Sidebar = ({ collapsed }) => {
+    const location = useLocation();
 
     const menuItems = [
         {
             id: 'dashboard',
             label: 'Dashboard',
             icon: 'fas fa-tachometer-alt',
-            path: '/admin'
+            path: '/admin/dashboard'
         },
         {
             id: 'configuracion',
@@ -52,10 +17,10 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
             path: '/admin/configuracion',
         },
         {
-            id: 'seguridad',
+            id: 'roles',
             label: 'Seguridad',
             icon: 'fas fa-shield-alt',
-            path: '/admin/seguridad/roles-permisos'
+            path: '/admin/roles'
         },
         {
             id: 'personas',
@@ -67,7 +32,7 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
             id: 'grados',
             label: 'Grados',
             icon: 'fas fa-layer-group',
-            path: '/admin/personas/grados'
+            path: '/admin/grados'
         },
         {
             id: 'personasgrados',
@@ -87,19 +52,10 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
             icon: 'fas fa-truck',
             path: '/admin/proveedores',
         }
-
     ];
 
-    const handleItemClick = (item) => {
-        setActiveSection(item.id);
-        if (onNavigate) {
-            // Mapear 'seguridad' a 'roles' para la navegación
-            if (item.id === 'seguridad') {
-                onNavigate('roles');
-            } else {
-                onNavigate(item.id);
-            }
-        }
+    const isActive = (path) => {
+        return location.pathname === path || (path === '/admin/dashboard' && location.pathname === '/admin');
     };
 
     return (
@@ -113,18 +69,15 @@ const Sidebar = ({ collapsed, onNavigate, currentPage }) => {
             <div className="sidebar-menu">
                 {menuItems.map((item) => (
                     <div key={item.id} className="menu-item-group">
-                        <div
-                            className={`menu-item ${activeSection === item.id ? 'active' : ''}`}
-                            onClick={() => handleItemClick(item)}
+                        <Link
+                            to={item.path}
+                            className={`menu-item ${isActive(item.path) ? 'active' : ''}`}
                         >
                             <i className={item.icon}></i>
                             {!collapsed && (
-                                <>
-                                    <span className="menu-label">{item.label}</span>
-                                </>
+                                <span className="menu-label">{item.label}</span>
                             )}
-                        </div>
-
+                        </Link>
                     </div>
                 ))}
             </div>

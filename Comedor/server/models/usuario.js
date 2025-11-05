@@ -53,6 +53,7 @@ export class UsuarioModel {
                 u.id_persona as idPersona,
                 p.nombre,
                 p.apellido,
+                CONCAT(p.nombre, ' ', p.apellido) as nombres,
                 p.nombreRol,
                 u.nombreUsuario,
                 u.contrasenia as contrasena,
@@ -63,7 +64,7 @@ export class UsuarioModel {
                 u.estado
              FROM Usuarios u
              JOIN Personas p ON u.id_persona = p.id_persona
-             WHERE u.nombreUsuario = ?;`,
+             WHERE u.nombreUsuario = ? AND u.estado = 'Activo';`,
             [nombreUsuario]
         )
         if (usuarios.length === 0) return null

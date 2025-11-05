@@ -41,7 +41,21 @@ export const createAuthRouter = ({ usuarioModel }) => {
                 { expiresIn: '8h' }
             )
 
-            res.json({ token })
+            const userData = {
+                idUsuario: usuario.idUsuario,
+                nombreUsuario: usuario.nombreUsuario,
+                nombres: usuario.nombres,
+                nombre: usuario.nombre,
+                apellido: usuario.apellido,
+                rol: usuario.nombreRol,
+                mail: usuario.mail,
+                telefono: usuario.telefono
+            }
+
+            res.json({
+                token,
+                user: userData
+            })
         } catch (error) {
             console.error(error)
             res.status(500).json({

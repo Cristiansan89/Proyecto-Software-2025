@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ReemplazoDocenteForm from '../../components/ReemplazoDocenteForm';
 import reemplazoDocenteService from '../../services/reemplazoDocenteService.js';
+import { formatCicloLectivo } from '../../utils/dateUtils.js';
 
 const ListaReemplazosGrados = () => {
     const [reemplazos, setReemplazos] = useState([]);
@@ -172,7 +173,6 @@ const ListaReemplazosGrados = () => {
             {/* Filtros y búsqueda */}
             <div className="filters-section">
                 <div className="search-bar">
-                    <i className="fas fa-search"></i>
                     <input
                         type="text"
                         placeholder="Buscar por suplente, titular, grado o DNI..."
@@ -246,118 +246,114 @@ const ListaReemplazosGrados = () => {
 
             {/* Tabla */}
             <div className="table-container">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Docente Suplente</th>
-                            <th>Docente Titular</th>
-                            <th>Grado</th>
-                            <th>Período</th>
-                            <th>Motivo</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredReemplazos.length === 0 ? (
-                            <tr>
-                                <td colSpan="8" className="no-data">
-                                    <p>No se encontraron reemplazos</p>
-                                </td>
-                            </tr>
-                        ) : (
-                            filteredReemplazos.map((reemplazo) => (
-                                <tr key={reemplazo.idReemplazoDocente}>
-                                    <td>
-                                        <div className="user-info">
-                                            <div className="user-avatar">
-                                                <i className="fas fa-user-clock"></i>
-                                            </div>
-                                            <div>
-                                                <strong>{reemplazo.nombreSuplente} {reemplazo.apellidoSuplente}</strong>
-                                                <small className="d-block">DNI: {reemplazo.dniSuplente}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="user-info">
-                                            <div className="user-avatar">
-                                                <i className="fas fa-chalkboard-teacher"></i>
-                                            </div>
-                                            <div>
-                                                <strong>{reemplazo.nombreTitular} {reemplazo.apellidoTitular}</strong>
-                                                <small className="d-block">DNI: {reemplazo.dniTitular}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className="type-badge teacher">
-                                            {reemplazo.nombreGrado}
-                                        </span>
-                                        <small className="d-block text-muted">
-                                            Ciclo: {reemplazo.cicloLectivo}
-                                        </small>
-                                    </td>
-                                    <td>
-                                        <div>
-                                            <strong>Inicio:</strong> {new Date(reemplazo.fechaInicio).toLocaleDateString()}
-                                        </div>
-                                        <div>
-                                            <strong>Fin:</strong> {reemplazo.fechaFin ?
-                                                new Date(reemplazo.fechaFin).toLocaleDateString() :
-                                                'Sin definir'
-                                            }
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className="badge bg-info">
-                                            {reemplazo.motivo}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`status-badge ${reemplazo.estado.toLowerCase()}`}>
-                                            {reemplazo.estado}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button
-                                                className="btn-action btn-view"
-                                                onClick={() => handleView(reemplazo)}
-                                                title="Ver detalles"
-                                            >
-                                                <i className="fas fa-eye"></i>
-                                            </button>
-                                            <button
-                                                className="btn-action btn-edit"
-                                                onClick={() => handleEdit(reemplazo)}
-                                                title="Editar reemplazo"
-                                            >
-                                                <i className="fas fa-edit"></i>
-                                            </button>
-                                            {reemplazo.estado === 'Activo' && (
-                                                <button
-                                                    className="btn-action btn-warning"
-                                                    onClick={() => handleFinalizarReemplazo(reemplazo.idReemplazoDocente)}
-                                                    title="Finalizar reemplazo"
-                                                >
-                                                    <i className="fas fa-stop"></i>
-                                                </button>
-                                            )}
-                                            <button
-                                                className="btn-action btn-delete"
-                                                onClick={() => handleDelete(reemplazo.idReemplazoDocente)}
-                                                title="Eliminar reemplazo"
-                                            >
-                                                <i className="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                {filteredReemplazos.length === 0 ? (
+                    <div className="no-data">
+                        <p>No se encontraron reemplazos de docentes</p>
+                    </div>
+                ) : (
+                    <div className="scrollable-table">
+                        <div className="table-body-scroll">
+                            <table className="data-table">
+                                <thead className="table-header-fixed">
+                                    <tr>
+                                        <th>Docente Suplente</th>
+                                        <th>Docente Titular</th>
+                                        <th>Grado</th>
+                                        <th>Período</th>
+                                        <th>Motivo</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredReemplazos.map((reemplazo) => (
+                                        <tr key={reemplazo.idReemplazoDocente}>
+                                            <td>
+                                                <div className="user-info">
+                                                    <div>
+                                                        <strong><h6>{reemplazo.nombreSuplente} {reemplazo.apellidoSuplente}</h6></strong>
+                                                        <small className="d-block">DNI: {reemplazo.dniSuplente}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="user-info">
+                                                    <div>
+                                                        <strong><h6>{reemplazo.nombreTitular} {reemplazo.apellidoTitular}</h6></strong>
+                                                        <small className="d-block">DNI: {reemplazo.dniTitular}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="type-badge teacher">
+                                                    {reemplazo.nombreGrado}
+                                                </span>
+                                                <small className="d-block text-muted">
+                                                    Ciclo: {formatCicloLectivo(reemplazo.cicloLectivo)}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong>Inicio:</strong> {new Date(reemplazo.fechaInicio).toLocaleDateString()}
+                                                </div>
+                                                <div>
+                                                    <strong>Fin:</strong> {reemplazo.fechaFin ?
+                                                        new Date(reemplazo.fechaFin).toLocaleDateString() :
+                                                        'Sin definir'
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="badge bg-info">
+                                                    {reemplazo.motivo}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`status-badge ${reemplazo.estado.toLowerCase()}`}>
+                                                    {reemplazo.estado}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        className="btn-action btn-view"
+                                                        onClick={() => handleView(reemplazo)}
+                                                        title="Ver detalles"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-edit"
+                                                        onClick={() => handleEdit(reemplazo)}
+                                                        title="Editar reemplazo"
+                                                    >
+                                                        <i className="fas fa-edit"></i>
+                                                    </button>
+                                                    {reemplazo.estado === 'Activo' && (
+                                                        <button
+                                                            className="btn-action btn-warning"
+                                                            onClick={() => handleFinalizarReemplazo(reemplazo.idReemplazoDocente)}
+                                                            title="Finalizar reemplazo"
+                                                        >
+                                                            <i className="fas fa-stop"></i>
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        className="btn-action btn-delete"
+                                                        onClick={() => handleDelete(reemplazo.idReemplazoDocente)}
+                                                        title="Eliminar reemplazo"
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Modal para Reemplazo */}

@@ -152,35 +152,96 @@ export class ProveedorModel {
         }
     }
 
-    static async getProveedoresWithInsumos() {
-        try {
-            const [proveedores] = await connection.query(`
-                SELECT 
-                    BIN_TO_UUID(p.id_proveedor) as id_proveedor,
-                    p.razonSocial,
-                    p.CUIT,
-                    p.direccion,
-                    p.telefono,
-                    p.mail,
-                    p.estado,
-                    p.fechaAlta,
-                    p.fechaModificacion,
-                    GROUP_CONCAT(
-                        CONCAT(i.nombre, ' (', pi.precio, ')')
-                        SEPARATOR ', '
-                    ) as insumos
-                FROM Proveedores p
-                LEFT JOIN ProveedorInsumo pi ON p.id_proveedor = pi.id_proveedor
-                LEFT JOIN Insumos i ON pi.id_insumo = i.id_insumo
-                WHERE p.estado = 'activo'
-                GROUP BY p.id_proveedor, p.razonSocial, p.CUIT, p.direccion, p.telefono, p.mail, p.estado, p.fechaAlta, p.fechaModificacion
-                ORDER BY p.razonSocial;
-            `)
+    // Obtener insumos asignados a un proveedor
+    static async getInsumosAsignados({ id }) {
+        const [insumos] = await connection.query(
+            `SELECT 
+                i.id_insumo as idInsumo,
+                i.nombreInsumo,
+                i.categoria,
+                i.unidadMedida,
+                pi.calificacion,
+                pi.estado as estadoAsignacion
+             FROM ProveedorInsumo pi
+             JOIN Insumos i ON pi.id_insumo = i.id_insumo
+             WHERE BIN_TO_UUID(pi.id_proveedor) = ? AND pi.estado = 'Activo'
+             ORDER BY i.nombreInsumo;`,
+            [id]
+        )
+        return insumos
+    }
 
-            return proveedores
+    // Asignar insumos a un proveedor
+    static async asignarInsumos({ idProveedor, insumos }) {
+        try {
+            // Primero desactivar todas las asignaciones actuales
+            await connection.query(
+                `UPDATE ProveedorInsumo 
+                 SET estado = 'Inactivo'
+                 WHERE id_proveedor = UUID_TO_BIN(?);`,
+                [idProveedor]
+            )
+
+            // Luego insertar o reactivar las nuevas asignaciones
+            for (const insumo of insumos) {
+                const { idInsumo, calificacion = 'Bueno' } = insumo
+
+                // Verificar si ya existe la relación
+                const [existing] = await connection.query(
+                    `SELECT COUNT(*) as count
+                     FROM ProveedorInsumo
+                     WHERE id_insumo = ? AND id_proveedor = UUID_TO_BIN(?);`,
+                    [idInsumo, idProveedor]
+                )
+
+                if (existing[0].count > 0) {
+                    // Reactivar y actualizar
+                    await connection.query(
+                        `UPDATE ProveedorInsumo
+                         SET calificacion = ?, estado = 'Activo'
+                         WHERE id_insumo = ? AND id_proveedor = UUID_TO_BIN(?);`,
+                        [calificacion, idInsumo, idProveedor]
+                    )
+                } else {
+                    // Crear nueva relación
+                    await connection.query(
+                        `INSERT INTO ProveedorInsumo (id_insumo, id_proveedor, calificacion, estado)
+                         VALUES (?, UUID_TO_BIN(?), ?, 'Activo');`,
+                        [idInsumo, idProveedor, calificacion]
+                    )
+                }
+            }
+
+            return true
         } catch (error) {
-            console.error('Error al obtener proveedores con sus insumos:', error)
-            throw new Error('Error al obtener proveedores con sus insumos')
+            throw new Error('Error al asignar insumos al proveedor')
         }
+    }
+
+    // Obtener proveedores con sus insumos
+    static async getAllWithInsumos() {
+        const [proveedores] = await connection.query(
+            `SELECT 
+                BIN_TO_UUID(p.id_proveedor) as idProveedor,
+                p.razonSocial,
+                p.CUIT,
+                p.direccion,
+                p.telefono,
+                p.mail,
+                p.fechaAlta,
+                p.estado,
+                COUNT(pi.id_insumo) as totalInsumos
+             FROM Proveedores p
+             LEFT JOIN ProveedorInsumo pi ON p.id_proveedor = pi.id_proveedor AND pi.estado = 'Activo'
+             GROUP BY p.id_proveedor
+             ORDER BY p.razonSocial;`
+        )
+
+        // Para cada proveedor, obtener sus insumos
+        for (let proveedor of proveedores) {
+            proveedor.insumos = await this.getInsumosAsignados({ id: proveedor.idProveedor })
+        }
+
+        return proveedores
     }
 }

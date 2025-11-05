@@ -1,16 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import insumoService from '../services/insumoService.js';
 
 const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
         nombreInsumo: insumo?.nombreInsumo || '',
         descripcion: insumo?.descripcion || '',
-        unidadDeMedida: insumo?.unidadDeMedida || '',
+        unidadMedida: insumo?.unidadMedida || '',
+        categoria: insumo?.categoria || 'Otros',
         stockMinimo: insumo?.stockMinimo || 0,
-        stockActual: insumo?.stockActual || 0
+        stockActual: insumo?.stockActual || 0,
+        estado: insumo?.estado || 'Activo'
     });
 
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
+
+    // Categorías disponibles (según la base de datos)
+    const categorias = [
+        { value: 'Carnes', label: 'Carnes' },
+        { value: 'Lacteos', label: 'Lácteos' },
+        { value: 'Cereales', label: 'Cereales' },
+        { value: 'Verduras', label: 'Verduras' },
+        { value: 'Condimentos', label: 'Condimentos' },
+        { value: 'Otros', label: 'Otros' }
+    ];
 
     // Unidades de medida comunes
     const unidadesMedida = [
@@ -53,8 +66,8 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
             newErrors.nombreInsumo = 'El nombre no puede exceder 100 caracteres';
         }
 
-        if (!formData.unidadDeMedida.trim()) {
-            newErrors.unidadDeMedida = 'La unidad de medida es requerida';
+        if (!formData.unidadMedida.trim()) {
+            newErrors.unidadMedida = 'La unidad de medida es requerida';
         }
 
         if (formData.descripcion && formData.descripcion.length > 255) {
@@ -84,18 +97,42 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
         setLoading(true);
 
         try {
-            // Simular llamada a API
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const insumoToSave = {
-                ...formData,
-                idInsumo: insumo?.idInsumo || Date.now(),
-                fechaRegistro: insumo?.fechaRegistro || new Date().toISOString().split('T')[0]
+            // Preparar datos para enviar al backend
+            const insumoData = {
+                nombreInsumo: formData.nombreInsumo.trim(),
+                descripcion: formData.descripcion.trim() || null,
+                unidadMedida: formData.unidadMedida,
+                categoria: formData.categoria,
+                stockMinimo: Number(formData.stockMinimo),
+                estado: formData.estado,
+                // Datos de inventario
+                cantidadActual: Number(formData.stockActual),
+                nivelMinimoAlerta: Number(formData.stockMinimo)
             };
 
-            onSave(insumoToSave);
+            console.log('InsumoForm: Enviando datos:', insumoData);
+
+            let savedInsumo;
+
+            if (mode === 'create') {
+                savedInsumo = await insumoService.create(insumoData);
+            } else {
+                savedInsumo = await insumoService.update(insumo.idInsumo, insumoData);
+            }
+
+            onSave(savedInsumo);
         } catch (error) {
             console.error('Error al guardar insumo:', error);
+
+            // Mostrar error al usuario
+            if (error.response?.data?.message) {
+                alert(`Error: ${error.response.data.message}`);
+            } else if (error.response?.data?.errors) {
+                const errorMessages = error.response.data.errors.map(err => `${err.field}: ${err.message}`).join('\n');
+                alert(`Errores de validación:\n${errorMessages}`);
+            } else {
+                alert('Error al guardar el insumo. Por favor, inténtelo de nuevo.');
+            }
         } finally {
             setLoading(false);
         }
@@ -103,6 +140,20 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
 
     const isViewMode = mode === 'view';
     const isCreateMode = mode === 'create';
+
+    useEffect(() => {
+        if (insumo) {
+            setFormData({
+                nombreInsumo: insumo.nombreInsumo || '',
+                descripcion: insumo.descripcion || '',
+                unidadMedida: insumo.unidadMedida || '',
+                categoria: insumo.categoria || 'Otros',
+                stockMinimo: insumo.stockMinimo || 0,
+                stockActual: insumo.stockActual || 0,
+                estado: insumo.estado || 'Activo'
+            });
+        }
+    }, [insumo]);
 
     return (
         <div className="insumo-form">
@@ -159,14 +210,34 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                         </div>
 
                         <div className="form-group">
-                            <label htmlFor="unidadDeMedida" className="form-label required mt-3">
+                            <label htmlFor="categoria" className="form-label mt-3">
+                                Categoría
+                            </label>
+                            <select
+                                id="categoria"
+                                name="categoria"
+                                className="form-control"
+                                value={formData.categoria}
+                                onChange={handleInputChange}
+                                disabled={isViewMode}
+                            >
+                                {categorias.map(categoria => (
+                                    <option key={categoria.value} value={categoria.value}>
+                                        {categoria.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="unidadMedida" className="form-label required mt-3">
                                 Unidad de Medida
                             </label>
                             <select
-                                id="unidadDeMedida"
-                                name="unidadDeMedida"
-                                className={`form-control ${errors.unidadDeMedida ? 'is-invalid' : ''}`}
-                                value={formData.unidadDeMedida}
+                                id="unidadMedida"
+                                name="unidadMedida"
+                                className={`form-control ${errors.unidadMedida ? 'is-invalid' : ''}`}
+                                value={formData.unidadMedida}
                                 onChange={handleInputChange}
                                 disabled={isViewMode}
                             >
@@ -177,107 +248,128 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                                     </option>
                                 ))}
                             </select>
-                            {errors.unidadDeMedida && (
-                                <div className="invalid-feedback">{errors.unidadDeMedida}</div>
+                            {errors.unidadMedida && (
+                                <div className="invalid-feedback">{errors.unidadMedida}</div>
                             )}
                         </div>
-                    </div>
 
-                    {/* Información de Stock */}
-                    <div className="mt-4">
-                        <div className="separar-secciones-stock"></div>
-                        <h5 className="section-title">
-                            <i className="fas fa-warehouse me-2"></i>
-                            Control de Stock
-                        </h5>
 
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label htmlFor="stockMinimo" className="form-label mt-3">
-                                    Stock Mínimo
-                                </label>
-                                <input
-                                    type="number"
-                                    id="stockMinimo"
-                                    name="stockMinimo"
-                                    className={`form-control ${errors.stockMinimo ? 'is-invalid' : ''}`}
-                                    value={formData.stockMinimo}
-                                    onChange={handleInputChange}
-                                    disabled={isViewMode}
-                                    placeholder="0"
-                                    min="0"
-                                />
-                                {errors.stockMinimo && (
-                                    <div className="invalid-feedback">{errors.stockMinimo}</div>
-                                )}
-                                <small className="form-text text-muted">
-                                    Cantidad mínima antes de requerir reposición
-                                </small>
-                            </div>
+                        {/* Información de Stock */}
+                        <div className='mt-5'>
+                            <h5 className="section-title">
+                                <i className="fas fa-warehouse me-2"></i>
+                                Control de Stock
+                            </h5>
 
-                            <div className="form-group">
-                                <label htmlFor="stockActual" className="form-label mt-3">
-                                    Stock Actual
-                                </label>
-                                <input
-                                    type="number"
-                                    id="stockActual"
-                                    name="stockActual"
-                                    className={`form-control ${errors.stockActual ? 'is-invalid' : ''}`}
-                                    value={formData.stockActual}
-                                    onChange={handleInputChange}
-                                    disabled={isViewMode}
-                                    placeholder="0"
-                                    min="0"
-                                />
-                                {errors.stockActual && (
-                                    <div className="invalid-feedback">{errors.stockActual}</div>
-                                )}
-                                <small className="form-text text-muted">
-                                    Cantidad disponible actualmente
-                                </small>
-                            </div>
-                        </div>
-
-                        {/* Alerta de stock bajo */}
-                        {formData.stockActual > 0 && formData.stockMinimo > 0 &&
-                            formData.stockActual <= formData.stockMinimo && (
-                                <div className="alert alert-warning mt-3">
-                                    <i className="fas fa-exclamation-triangle me-2"></i>
-                                    <strong>Atención:</strong> El stock actual está por debajo o igual al mínimo establecido.
-                                </div>
-                            )}
-
-                        {/* Información adicional en modo vista */}
-                        {isViewMode && insumo && (
-                            <div className="mt-4">
-                                <div className="info-card">
-                                    <h6 className="info-title">Información Adicional</h6>
-                                    <div className="info-row">
-                                        <span className="info-label">ID del Insumo:</span>
-                                        <span className="info-value">{insumo.idInsumo}</span>
-                                    </div>
-                                    {insumo.fechaRegistro && (
-                                        <div className="info-row">
-                                            <span className="info-label">Fecha de Registro:</span>
-                                            <span className="info-value">{insumo.fechaRegistro}</span>
-                                        </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label htmlFor="stockMinimo" className="form-label mt-3">
+                                        Stock Mínimo
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="stockMinimo"
+                                        name="stockMinimo"
+                                        className={`form-control ${errors.stockMinimo ? 'is-invalid' : ''}`}
+                                        value={formData.stockMinimo}
+                                        onChange={handleInputChange}
+                                        disabled={isViewMode}
+                                        placeholder="0"
+                                        min="0"
+                                    />
+                                    {errors.stockMinimo && (
+                                        <div className="invalid-feedback">{errors.stockMinimo}</div>
                                     )}
-                                    <div className="info-row">
-                                        <span className="info-label">Estado del Stock:</span>
-                                        <span className={`info-value ${insumo.stockActual <= insumo.stockMinimo ? 'text-danger' :
-                                                insumo.stockActual <= insumo.stockMinimo * 1.5 ? 'text-warning' : 'text-success'
-                                            }`}>
-                                            {insumo.stockActual <= insumo.stockMinimo ? 'Stock Bajo' :
-                                                insumo.stockActual <= insumo.stockMinimo * 1.5 ? 'Stock Medio' : 'Stock Bueno'}
-                                        </span>
-                                    </div>
+                                    <small className="form-text text-muted">
+                                        Cantidad mínima antes de requerir reposición
+                                    </small>
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="stockActual" className="form-label mt-3">
+                                        Stock Actual
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="stockActual"
+                                        name="stockActual"
+                                        className={`form-control ${errors.stockActual ? 'is-invalid' : ''}`}
+                                        value={formData.stockActual}
+                                        onChange={handleInputChange}
+                                        disabled={isViewMode}
+                                        placeholder="0"
+                                        min="0"
+                                    />
+                                    {errors.stockActual && (
+                                        <div className="invalid-feedback">{errors.stockActual}</div>
+                                    )}
+                                    <small className="form-text text-muted">
+                                        Cantidad disponible actualmente
+                                    </small>
                                 </div>
                             </div>
-                        )}
+
+                            {/* Alerta de stock bajo */}
+                            {formData.stockActual > 0 && formData.stockMinimo > 0 &&
+                                formData.stockActual <= formData.stockMinimo && (
+                                    <div className="alert alert-warning mt-3">
+                                        <i className="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Atención:</strong> El stock actual está por debajo o igual al mínimo establecido.
+                                    </div>
+                                )}
+
+                            {/* Estado */}
+                            <div className="form-group">
+                                <label htmlFor="estado" className="form-label mt-3">
+                                    Estado
+                                </label>
+                                <select
+                                    id="estado"
+                                    name="estado"
+                                    className="form-control"
+                                    value={formData.estado}
+                                    onChange={handleInputChange}
+                                    disabled={isViewMode}
+                                >
+                                    <option value="Activo">Activo</option>
+                                    <option value="Inactivo">Inactivo</option>
+                                </select>
+                            </div>
+
+                            {/* Información adicional en modo vista */}
+                            {isViewMode && insumo && (
+                                <div className="mt-4">
+                                    <div className="info-card">
+                                        <h6 className="info-title">Información Adicional</h6>
+                                        <div className="info-row">
+                                            <span className="info-label">ID del Insumo:</span>
+                                            <span className="info-value">{insumo.idInsumo}</span>
+                                        </div>
+                                        {insumo.fecha && (
+                                            <div className="info-row">
+                                                <span className="info-label">Fecha de Registro:</span>
+                                                <span className="info-value">{new Date(insumo.fecha).toLocaleDateString()}</span>
+                                            </div>
+                                        )}
+                                        <div className="info-row">
+                                            <span className="info-label">Categoría:</span>
+                                            <span className="info-value">{insumo.categoria}</span>
+                                        </div>
+                                        <div className="info-row">
+                                            <span className="info-label">Estado del Stock:</span>
+                                            <span className={`info-value ${insumo.stockActual <= insumo.stockMinimo ? 'text-danger' :
+                                                insumo.stockActual <= insumo.stockMinimo * 1.5 ? 'text-warning' : 'text-success'
+                                                }`}>
+                                                {insumo.stockActual <= insumo.stockMinimo ? 'Stock Bajo' :
+                                                    insumo.stockActual <= insumo.stockMinimo * 1.5 ? 'Stock Medio' : 'Stock Bueno'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-
                 {/* Botones */}
                 <div className="form-actions mt-4">
                     <button

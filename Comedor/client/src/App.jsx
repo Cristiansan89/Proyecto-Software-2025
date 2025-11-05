@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
 import Login from './pages/auth/Login'
 import AdminDashboard from './pages/admins/Dashboard'
 import ListaPersonas from './pages/admins/ListaPersonas'
@@ -9,81 +10,56 @@ import ListaProveedores from './pages/admins/ListaProveedores'
 import Configuracion from './pages/admins/Configuracion'
 import PersonaGrado from './pages/admins/PersonaGrado'
 import AdminLayout from './layouts/AdminLayout'
-import './App.css'
+import ProtectedRoute from './components/ProtectedRoute'
+import './styles/App.css'
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [userRole, setUserRole] = useState(null)
-  const [currentPage, setCurrentPage] = useState('dashboard') // 'login', 'dashboard', 'personas', 'grados', 'roles', 'insumos', 'proveedores', 'configuracion'
-
-  // Evitar warning del linter - userRole se usará para control de acceso
-  console.log('User role:', userRole);
-
-  // Simulación de login exitoso - en un caso real esto vendría del contexto de autenticación
-  const handleLoginSuccess = (role) => {
-    setIsAuthenticated(true)
-    setUserRole(role)
-    setCurrentPage('dashboard')
-  }
-
-  // Función para navegar entre páginas
-  const handleNavigation = (page) => {
-    setCurrentPage(page)
-  }
-
-  // Para propósitos de demostración
-  const showDemo = true // Cambiar a false para ver el login
-
-  if (!isAuthenticated && !showDemo) {
-    return (
-      <div className="App">
-        <Login onLoginSuccess={handleLoginSuccess} />
-      </div>
-    )
-  }
-
-  // Renderizar el contenido de la página (sin layout)
-  const renderPageContent = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <AdminDashboard />
-      case 'personas':
-        return <ListaPersonas />
-      case 'grados':
-        return <ListaGrados />
-      case 'roles':
-        return <GestionRolesPermisos />
-      case 'insumos':
-        return <ListaInsumos />
-      case 'proveedores':
-        return <ListaProveedores />
-      case 'personasgrados':
-        return <PersonaGrado />
-      case 'configuracion':
-        return <Configuracion />
-      default:
-        return <AdminDashboard />
-    }
-  }
-
-  // Renderizar según la página actual
-  const renderCurrentPage = () => {
-    if (currentPage === 'login') {
-      return <Login onLoginSuccess={handleLoginSuccess} />
-    }
-
-    // Para todas las demás páginas, usar AdminLayout
-    return (
-      <AdminLayout onNavigate={handleNavigation} currentPage={currentPage}>
-        {renderPageContent()}
-      </AdminLayout>
-    )
-  }
-
   return (
-    <div className="App">
-      {renderCurrentPage()}
-    </div>
+    <Router>
+      <AuthProvider>
+        <div className="App">
+          <Routes>
+            {/* Ruta pública de login */}
+            <Route path="/login" element={<Login />} />
+
+            {/* Rutas protegidas del panel administrativo */}
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <AdminLayout>
+                    <Routes>
+                      <Route path="/" element={<AdminDashboard />} />
+                      <Route path="/dashboard" element={<AdminDashboard />} />
+                      <Route path="/personas" element={<ListaPersonas />} />
+                      <Route path="/grados" element={<ListaGrados />} />
+                      <Route path="/roles" element={<GestionRolesPermisos />} />
+                      <Route path="/insumos" element={<ListaInsumos />} />
+                      <Route path="/proveedores" element={<ListaProveedores />} />
+                      <Route path="/personasgrados" element={<PersonaGrado />} />
+                      <Route path="/configuracion" element={<Configuracion />} />
+                    </Routes>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Ruta raíz - redirige según autenticación */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Navigate to="/admin/dashboard" replace />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Rutas no encontradas */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </div>
+      </AuthProvider>
+    </Router>
   )
 }
 

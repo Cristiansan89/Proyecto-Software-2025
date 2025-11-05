@@ -2,6 +2,21 @@ import { ReemplazoDocenteModel } from '../models/reemplazodocente.js'
 import { validateReemplazoDocente, validatePartialReemplazoDocente, motivosReemplazo, estadosReemplazo } from '../schemas/reemplazodocente.js'
 
 export class ReemplazoDocenteController {
+    // Función para normalizar fechas de timestamp a YYYY-MM-DD
+    static normalizeFecha(fecha) {
+        if (!fecha) return fecha;
+
+        // Convertir a string si no lo es
+        const fechaStr = String(fecha);
+
+        // Si es un timestamp completo, convertir a fecha
+        if (fechaStr.includes('T')) {
+            return fechaStr.split('T')[0];
+        }
+
+        return fechaStr;
+    }
+
     static async getAll(req, res) {
         try {
             const reemplazos = await ReemplazoDocenteModel.getAll()
@@ -52,7 +67,15 @@ export class ReemplazoDocenteController {
 
     static async create(req, res) {
         try {
-            const result = validateReemplazoDocente(req.body)
+            // Normalizar fechas antes de validar
+            const normalizedData = {
+                ...req.body,
+                fechaInicio: ReemplazoDocenteController.normalizeFecha(req.body.fechaInicio),
+                fechaFin: ReemplazoDocenteController.normalizeFecha(req.body.fechaFin),
+                cicloLectivo: ReemplazoDocenteController.normalizeFecha(req.body.cicloLectivo)
+            };
+
+            const result = validateReemplazoDocente(normalizedData)
 
             if (!result.success) {
                 return res.status(400).json({
@@ -97,7 +120,16 @@ export class ReemplazoDocenteController {
     static async update(req, res) {
         try {
             const { id } = req.params
-            const result = validatePartialReemplazoDocente(req.body)
+
+            // Normalizar fechas antes de validar
+            const normalizedData = {
+                ...req.body,
+                fechaInicio: ReemplazoDocenteController.normalizeFecha(req.body.fechaInicio),
+                fechaFin: ReemplazoDocenteController.normalizeFecha(req.body.fechaFin),
+                cicloLectivo: ReemplazoDocenteController.normalizeFecha(req.body.cicloLectivo)
+            };
+
+            const result = validatePartialReemplazoDocente(normalizedData)
 
             if (!result.success) {
                 return res.status(400).json({

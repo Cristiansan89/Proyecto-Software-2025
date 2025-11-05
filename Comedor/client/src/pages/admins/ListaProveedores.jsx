@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ProveedorForm from '../../components/ProveedorForm';
 import AsignarInsumosForm from '../../components/AsignarInsumosForm';
+import proveedorService from '../../services/proveedorService';
 
 const ListaProveedores = () => {
     const [proveedores, setProveedores] = useState([]);
@@ -13,72 +14,24 @@ const ListaProveedores = () => {
     const [filteredProveedores, setFilteredProveedores] = useState([]);
     const [estadoFilter, setEstadoFilter] = useState('todos');
 
-    // Datos de ejemplo - en producción vendrían del backend
-    const mockProveedores = [
-        {
-            idProveedor: '1',
-            razonSocial: 'Distribuidora El Buen Gusto S.A.',
-            direccion: 'Av. Principal 123, Ciudad',
-            telefono: '555-0123',
-            estado: 'Activo',
-            insumos: [
-                { idInsumo: '1', nombreInsumo: 'Arroz', calificacion: 'Excelente' },
-                { idInsumo: '3', nombreInsumo: 'Sal', calificacion: 'Aceptable' }
-            ],
-            fechaRegistro: '2024-01-15'
-        },
-        {
-            idProveedor: '2',
-            razonSocial: 'Abarrotes Los Hermanos Ltda.',
-            direccion: 'Calle Comercio 456, Centro',
-            telefono: '555-0456',
-            estado: 'Activo',
-            insumos: [
-                { idInsumo: '2', nombreInsumo: 'Aceite de Cocina', calificacion: 'Excelente' },
-                { idInsumo: '4', nombreInsumo: 'Azúcar', calificacion: 'Aceptable' },
-                { idInsumo: '5', nombreInsumo: 'Cebolla', calificacion: 'Excelente' }
-            ],
-            fechaRegistro: '2024-02-10'
-        },
-        {
-            idProveedor: '3',
-            razonSocial: 'Verduras Frescas del Campo',
-            direccion: 'Mercado Central Local 78',
-            telefono: '555-0789',
-            estado: 'Activo',
-            insumos: [
-                { idInsumo: '5', nombreInsumo: 'Cebolla', calificacion: 'Aceptable' }
-            ],
-            fechaRegistro: '2024-03-20'
-        },
-        {
-            idProveedor: '4',
-            razonSocial: 'Productos Básicos del Sur',
-            direccion: 'Zona Industrial 45',
-            telefono: '555-0321',
-            estado: 'Inactivo',
-            insumos: [
-                { idInsumo: '1', nombreInsumo: 'Arroz', calificacion: 'Poco Eficiente' }
-            ],
-            fechaRegistro: '2023-12-05'
-        }
-    ];
-
     useEffect(() => {
         loadProveedores();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         filterProveedores();
     }, [proveedores, searchTerm, estadoFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const loadProveedores = async () => {
+        console.log('ListaProveedores: Iniciando loadProveedores');
         try {
-            // Simular llamada a API
-            await new Promise(resolve => setTimeout(resolve, 500));
-            setProveedores(mockProveedores);
+            setLoading(true);
+            const data = await proveedorService.getAll();
+            console.log('ListaProveedores: Datos recibidos:', data);
+            setProveedores(data);
         } catch (error) {
             console.error('Error al cargar proveedores:', error);
+            alert('Error al cargar los proveedores');
         } finally {
             setLoading(false);
         }
@@ -133,60 +86,53 @@ const ListaProveedores = () => {
     const handleDelete = async (proveedorId) => {
         if (window.confirm('¿Está seguro de que desea eliminar este proveedor?')) {
             try {
-                // Simular llamada a API
-                await new Promise(resolve => setTimeout(resolve, 500));
-                setProveedores(prev => prev.filter(proveedor => proveedor.idProveedor !== proveedorId));
-                console.log('Proveedor eliminado exitosamente');
+                await proveedorService.delete(proveedorId);
+                alert('Proveedor eliminado correctamente');
+                loadProveedores();
             } catch (error) {
                 console.error('Error al eliminar proveedor:', error);
+                if (error.response?.data?.message) {
+                    alert(`Error: ${error.response.data.message}`);
+                } else {
+                    alert('Error al eliminar el proveedor');
+                }
             }
         }
     };
 
     const handleSaveProveedor = async (proveedorData) => {
         try {
-            // Simular llamada a API
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
             if (modalMode === 'create') {
-                const newProveedor = {
-                    ...proveedorData,
-                    idProveedor: Date.now().toString(),
-                    insumos: [],
-                    fechaRegistro: new Date().toISOString().split('T')[0]
-                };
-                setProveedores(prev => [newProveedor, ...prev]);
-                console.log('Proveedor creado exitosamente');
+                await proveedorService.create(proveedorData);
+                alert('Proveedor creado correctamente');
             } else if (modalMode === 'edit') {
-                setProveedores(prev => prev.map(proveedor =>
-                    proveedor.idProveedor === selectedProveedor.idProveedor
-                        ? { ...proveedor, ...proveedorData }
-                        : proveedor
-                ));
-                console.log('Proveedor actualizado exitosamente');
+                await proveedorService.update(selectedProveedor.idProveedor, proveedorData);
+                alert('Proveedor actualizado correctamente');
             }
 
             setShowModal(false);
+            setSelectedProveedor(null);
+            loadProveedores();
         } catch (error) {
             console.error('Error al guardar proveedor:', error);
+            // Los errores ya se manejan en el ProveedorForm
         }
     };
 
     const handleSaveInsumosAsignados = async (insumosData) => {
         try {
-            // Simular llamada a API
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            setProveedores(prev => prev.map(proveedor =>
-                proveedor.idProveedor === selectedProveedor.idProveedor
-                    ? { ...proveedor, insumos: insumosData }
-                    : proveedor
-            ));
-
+            await proveedorService.asignarInsumos(selectedProveedor.idProveedor, { insumos: insumosData });
+            alert('Insumos asignados correctamente');
             setShowInsumosModal(false);
-            console.log('Insumos asignados exitosamente');
+            setSelectedProveedor(null);
+            loadProveedores();
         } catch (error) {
             console.error('Error al asignar insumos:', error);
+            if (error.response?.data?.message) {
+                alert(`Error: ${error.response.data.message}`);
+            } else {
+                alert('Error al asignar insumos');
+            }
         }
     };
 
@@ -243,7 +189,7 @@ const ListaProveedores = () => {
                 <div className="header-actions">
                     <button
                         className="btn btn-primary-new"
-                        onClick={() => handleCreate('create')}
+                        onClick={handleCreate}
                     >
                         <i className="fas fa-plus me-2"></i>
                         Nuevo Proveedor
@@ -268,7 +214,6 @@ const ListaProveedores = () => {
             <div className="filters-section">
 
                 <div className="search-bar">
-                    <i className="fas fa-search search-icon"></i>
                     <input
                         type="text"
                         className="form-control search-input"
@@ -292,103 +237,110 @@ const ListaProveedores = () => {
             {/* Tabla de Proveedores */}
             <div className="vista-proveedores">
                 <div className="table-container">
-                    <div className="table-responsive">
-                        <table className="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Proveedor</th>
-                                    <th>Contacto</th>
-                                    <th>Insumos Asignados</th>
-                                    <th>Estado</th>
-                                    <th className="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredProveedores.map((proveedor) => (
-                                    <tr key={proveedor.idProveedor}>
-                                        <td>
-                                            <div className="item-info">
-                                                <div>
-                                                    <div className="item-name">{proveedor.razonSocial}</div>
-                                                    <div className="item-detail text-muted">
-                                                        <i className="fas fa-map-marker-alt me-1"></i>
-                                                        {proveedor.direccion}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="contact-info">
-                                                <div>
-                                                    {proveedor.telefono}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="insumos-list">
-                                                {proveedor.insumos.length > 0 ? (
-                                                    <div>
-                                                        {proveedor.insumos.slice(0, 5).map((insumo, index) => (
-                                                            <div key={index} className="insumo-item">
-                                                                <span className="insumo-name">{insumo.nombreInsumo}</span>
-                                                                <span className={`badge ms-2 ${getCalificacionBadge(insumo.calificacion)}`}>
-                                                                    {insumo.calificacion}
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                        {proveedor.insumos.length > 5 && (
-                                                            <small className="text-muted">
-                                                                +{proveedor.insumos.length - 5} más
-                                                            </small>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-muted">Sin insumos asignados</span>
-                                                )}
-                                            </div>
-                                        </td>
-
-                                        <td>
-                                            <span className={`badge ${getEstadoBadge(proveedor.estado)}`}>
-                                                {proveedor.estado}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div className="action-buttons">
-                                                <button
-                                                    className="btn-action btn-view"
-                                                    onClick={() => handleView(proveedor)}
-                                                    title="Ver detalles"
-                                                >
-                                                    <i className="fas fa-eye"></i>
-                                                </button>
-                                                <button
-                                                    className="btn-action btn-edit"
-                                                    onClick={() => handleEdit(proveedor)}
-                                                    title="Editar"
-                                                >
-                                                    <i className="fas fa-edit"></i>
-                                                </button>
-                                                <button
-                                                    className="btn-action btn-assign"
-                                                    onClick={() => handleAssignInsumos(proveedor)}
-                                                    title="Asignar Insumos"
-                                                >
-                                                    <i className="fas fa-boxes"></i>
-                                                </button>
-                                                <button
-                                                    className="btn-action btn-delete"
-                                                    onClick={() => handleDelete(proveedor.idProveedor)}
-                                                    title="Eliminar"
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
+                    <div className="scrollable-table">
+                        <div className="table-body-scroll">
+                            <table className="data-table" >
+                                <thead className="table-header-fixed">
+                                    <tr>
+                                        <th>Proveedor</th>
+                                        <th>Contacto</th>
+                                        <th>Insumos Asignados</th>
+                                        <th>Estado</th>
+                                        <th className="text-center">Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filteredProveedores.map((proveedor) => (
+                                        <tr key={proveedor.idProveedor}>
+                                            <td>
+                                                <div className="item-info">
+                                                    <div>
+                                                        <div className="item-name"><h5>{proveedor.razonSocial}</h5></div>
+                                                        <div>
+                                                            <i className="fas fa-id-card me-1"></i>
+                                                            {proveedor.CUIT}
+                                                        </div>
+                                                        <div className="item-detail text-muted">
+                                                            <i className="fas fa-map-marker-alt me-1"></i>
+                                                            {proveedor.direccion}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="contact-info">
+                                                    <div>
+                                                        {proveedor.telefono}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div >
+                                                    {proveedor.insumos.length > 0 ? (
+                                                        <div>
+                                                            {proveedor.insumos.slice(0, 5).map((insumo, index) => (
+                                                                <div key={index} >
+                                                                    <span className="insumo-name">{insumo.nombreInsumo}
+                                                                        <span className={`badge ms-2 ${getCalificacionBadge(insumo.calificacion)}`}>
+                                                                            {insumo.calificacion}
+                                                                        </span>
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                            {proveedor.insumos.length > 5 && (
+                                                                <small className="text-muted">
+                                                                    +{proveedor.insumos.length - 5} más
+                                                                </small>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-muted">Sin insumos asignados</span>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                <span className={`status-badge ${getEstadoBadge(proveedor.estado)}`}>
+                                                    {proveedor.estado}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        className="btn-action btn-view"
+                                                        onClick={() => handleView(proveedor)}
+                                                        title="Ver detalles"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-edit"
+                                                        onClick={() => handleEdit(proveedor)}
+                                                        title="Editar"
+                                                    >
+                                                        <i className="fas fa-edit"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-assign"
+                                                        onClick={() => handleAssignInsumos(proveedor)}
+                                                        title="Asignar Insumos"
+                                                    >
+                                                        <i className="fas fa-boxes"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-delete"
+                                                        onClick={() => handleDelete(proveedor.idProveedor)}
+                                                        title="Eliminar"
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     {filteredProveedores.length === 0 && (

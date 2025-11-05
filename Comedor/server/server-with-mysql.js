@@ -1,5 +1,10 @@
 import { createApp } from "./app.js"
 import { ConsumoModel } from './models/consumo.js'
+
+// Configurar JWT_SECRET si no existe
+if (!process.env.JWT_SECRET) {
+    process.env.JWT_SECRET = 'comedor-escolar-secret-key-2025'
+}
 import { GradoModel } from './models/grado.js'
 import { InsumoModel } from './models/insumo.js'
 import { InventarioModel } from './models/inventario.js'
@@ -18,6 +23,7 @@ import { RegistroAsistenciaModel } from './models/registroasistencia.js'
 import { RolModel } from './models/rol.js'
 import { RolPermisoModel } from './models/rolpermiso.js'
 import { ServicioModel } from './models/servicio.js'
+import { ServicioTurnoModel } from './models/servicioturno.js'
 import { TurnoModel } from './models/turno.js'
 import { UsuarioModel } from './models/usuario.js'
 
@@ -43,6 +49,7 @@ const app = createApp({
     registroAsistenciaModel: RegistroAsistenciaModel,
     rolPermisoModel: RolPermisoModel,
     servicioModel: ServicioModel,
+    servicioTurnoModel: ServicioTurnoModel,
     turnoModel: TurnoModel,
     usuarioModel: UsuarioModel
 })

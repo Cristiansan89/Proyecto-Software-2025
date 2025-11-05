@@ -2,6 +2,21 @@ import { AlumnoGradoModel } from '../models/alumnogrado.js'
 import { validateAlumnoGrado, validatePartialAlumnoGrado } from '../schemas/alumnogrado.js'
 
 export class AlumnoGradoController {
+    // Función para normalizar fechas de timestamp a YYYY-MM-DD
+    static normalizeFecha(fecha) {
+        if (!fecha) return fecha;
+
+        // Convertir a string si no lo es
+        const fechaStr = String(fecha);
+
+        // Si es un timestamp completo, convertir a fecha
+        if (fechaStr.includes('T')) {
+            return fechaStr.split('T')[0];
+        }
+
+        return fechaStr;
+    }
+
     static async getAll(req, res) {
         try {
             const alumnos = await AlumnoGradoModel.getAll()
@@ -52,7 +67,13 @@ export class AlumnoGradoController {
 
     static async create(req, res) {
         try {
-            const result = validateAlumnoGrado(req.body)
+            // Normalizar fechas antes de validar
+            const normalizedData = {
+                ...req.body,
+                cicloLectivo: AlumnoGradoController.normalizeFecha(req.body.cicloLectivo)
+            };
+
+            const result = validateAlumnoGrado(normalizedData)
 
             if (!result.success) {
                 return res.status(400).json({

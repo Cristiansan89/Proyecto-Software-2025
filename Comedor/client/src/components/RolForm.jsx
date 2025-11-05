@@ -198,12 +198,14 @@ const RolForm = ({ rol, onSave, onCancel, mode = 'create' }) => {
                         onClick={onCancel}
                         className="btn btn-secondary"
                     >
+                        <i className="fas fa-times mr-1"></i>
                         Cancelar
                     </button>
                     <button
                         type="submit"
                         className="btn btn-primary"
                     >
+                        <i className="fas fa-save mr-1"></i>
                         {mode === 'create' ? 'Crear Rol' : 'Actualizar Rol'}
                     </button>
                 </div>
@@ -216,6 +218,7 @@ const RolForm = ({ rol, onSave, onCancel, mode = 'create' }) => {
                         onClick={onCancel}
                         className="btn btn-secondary"
                     >
+                        <i className="fas fa-times mr-1"></i>
                         Cerrar
                     </button>
                 </div>

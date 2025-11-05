@@ -38,10 +38,11 @@ export class InsumoController {
             const result = validateInsumo(req.body)
 
             if (!result.success) {
+                const errors = result.error.issues || result.error.errors || []
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
-                        field: err.path.join('.'),
+                    errors: errors.map(err => ({
+                        field: err.path?.join('.') || 'desconocido',
                         message: err.message
                     }))
                 })
@@ -83,12 +84,15 @@ export class InsumoController {
             const result = validatePartialInsumo(req.body)
 
             if (!result.success) {
+                const errors = result.error.issues || result.error.errors || []
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
-                        field: err.path.join('.'),
+                    errors: errors.map(err => ({
+                        field: err.path?.join('.') || 'desconocido',
                         message: err.message
-                    }))
+                    })),
+                    receivedData: req.body,
+                    validationDetails: result.error
                 })
             }
 

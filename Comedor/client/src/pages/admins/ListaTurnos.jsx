@@ -5,7 +5,6 @@ import turnoService from '../../services/turnoService';
 const ListaTurnos = () => {
     const [turnos, setTurnos] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedTurnos, setSelectedTurnos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
     const [selectedTurno, setSelectedTurno] = useState(null);
@@ -38,23 +37,6 @@ const ListaTurnos = () => {
         const matchesStatus = statusFilter === 'todos' || turno.estado === statusFilter;
         return matchesSearch && matchesStatus;
     });
-
-    // Manejar selección de turnos
-    const handleSelectTurno = (turnoId) => {
-        setSelectedTurnos(prev =>
-            prev.includes(turnoId)
-                ? prev.filter(id => id !== turnoId)
-                : [...prev, turnoId]
-        );
-    };
-
-    const handleSelectAll = () => {
-        if (selectedTurnos.length === filteredTurnos.length) {
-            setSelectedTurnos([]);
-        } else {
-            setSelectedTurnos(filteredTurnos.map(turno => turno.idTurno));
-        }
-    };
 
     // Operaciones CRUD
     const handleCreate = () => {
@@ -168,7 +150,6 @@ const ListaTurnos = () => {
             {/* Filtros */}
             <div className="search-filters">
                 <div className="search-bar">
-                    <i className="fas fa-search"></i>
                     <input
                         type="text"
                         className="search-input"
@@ -190,21 +171,6 @@ const ListaTurnos = () => {
                 </div>
             </div>
 
-            {/* Acciones en lote */}
-            {selectedTurnos.length > 0 && (
-                <div className="bulk-actions">
-                    <span className="selected-count">
-                        {selectedTurnos.length} turno(s) seleccionado(s)
-                    </span>
-                    <div className="bulk-buttons">
-                        <button className="btn btn-sm btn-danger">
-                            <i className="fas fa-trash"></i>
-                            Eliminar seleccionados
-                        </button>
-                    </div>
-                </div>
-            )}
-
             {/* Información de resultados */}
             <div className="results-info">
                 <div className="results-count">
@@ -223,13 +189,6 @@ const ListaTurnos = () => {
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedTurnos.length === filteredTurnos.length && filteredTurnos.length > 0}
-                                        onChange={handleSelectAll}
-                                    />
-                                </th>
                                 <th>Nombre</th>
                                 <th>Horario</th>
                                 <th>Estado</th>
@@ -240,13 +199,6 @@ const ListaTurnos = () => {
                         <tbody>
                             {filteredTurnos.map(turno => (
                                 <tr key={turno.idTurno}>
-                                    <td>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedTurnos.includes(turno.idTurno)}
-                                            onChange={() => handleSelectTurno(turno.idTurno)}
-                                        />
-                                    </td>
                                     <td>
                                         <div className="turno-name">
                                             <i className="fas fa-clock"></i>

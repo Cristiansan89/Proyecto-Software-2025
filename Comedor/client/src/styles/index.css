@@ -249,11 +249,19 @@ html {
   transition: all 0.2s ease;
   color: #555;
   border-left: 3px solid transparent;
+  text-decoration: none;
+}
+
+.menu-item:hover,
+.menu-item:focus,
+.menu-item:visited {
+  text-decoration: none;
 }
 
 .menu-item:hover {
   background: rgba(102, 126, 234, 0.1);
   color: #667eea;
+  text-decoration: none;
 }
 
 .menu-item.active {
@@ -261,6 +269,7 @@ html {
   color: #667eea;
   border-left-color: #667eea;
   font-weight: 600;
+  text-decoration: none;
 }
 
 .menu-item i {
@@ -382,7 +391,7 @@ html {
   top: 0;
   left: 280px;
   right: 0;
-  height: 70px;
+  height: 50px;
   z-index: 999;
   transition: all 0.3s ease;
 }
@@ -459,6 +468,27 @@ html {
     font-weight: 500;
 }
 
+.badge-anual{
+      --bs-bg-opacity: 1;
+    background-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity)) !important;
+        --bs-badge-padding-x: 0.65em;
+    --bs-badge-padding-y: 0.35em;
+    --bs-badge-font-size: 1.2em;
+    --bs-badge-font-weight: 700;
+    --bs-badge-color: #fff;
+    --bs-badge-border-radius: var(--bs-border-radius);
+    display: inline-block;
+    padding: var(--bs-badge-padding-y) var(--bs-badge-padding-x);
+    font-size: var(--bs-badge-font-size);
+    font-weight: var(--bs-badge-font-weight);
+    line-height: 1;
+    color: var(--bs-badge-color);
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: var(--bs-badge-border-radius);
+}
+
 .notification-badge {
   position: absolute;
   top: 0;
@@ -521,9 +551,9 @@ html {
   padding: 1.2rem;
   background: rgb(248, 246, 246);
   margin: 0.75rem;
-  border-radius:12px;
-  box-shadow:  3px 15px rgba(0,0,0,0.08);
-  margin-top: 85px; /* Espacio para el navbar fijo */
+  border-radius: 12px;
+  box-shadow: 3px 15px rgba(0,0,0,0.08);
+  margin-top: 60px; /* Espacio para el navbar fijo */
   min-height: calc(100vh - 85px - 1.5rem); /* Altura mínima para scroll nativo */
 }
 
@@ -1078,6 +1108,159 @@ html {
   overflow: hidden;
 }
 
+/* Contenedor de tabla scrollable */
+.scrollable-table {
+  display: flex;
+  flex-direction: column;
+  height: 60vh; /* Altura relativa para permitir scroll */
+  min-height: 400px;
+  max-height: 600px;
+}
+
+/* Encabezado fijo de la tabla */
+.table-header-fixed {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table-header-fixed th {
+  background: #f8f9fa !important;
+  padding: 1rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.85rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+/* Encabezado invisible para mantener el spacing */
+.table-header-invisible {
+  visibility: hidden;
+  height: 0;
+}
+
+.table-header-invisible th {
+  padding: 0;
+  border: none;
+  height: 0;
+}
+
+/* Contenedor scrollable del cuerpo de la tabla */
+.table-body-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Personalizar scrollbar */
+.table-body-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-body-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-body-scroll::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.table-body-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Sombra superior para indicar scroll */
+.table-body-scroll {
+  position: relative;
+}
+
+.table-body-scroll::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 8px; /* Evitar superposición con scrollbar */
+  height: 3px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.1), transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Mejorar el hover en filas dentro del scroll */
+.table-body-scroll .data-table tr:hover {
+  background: #f8f9fa;
+  transition: background-color 0.2s ease;
+}
+
+/* Asegurar que el contenido no se corte */
+.table-body-scroll .data-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Permitir wrap en celdas específicas */
+.table-body-scroll .data-table td .user-info,
+.table-body-scroll .data-table td .item-info,
+.table-body-scroll .data-table td .insumo-name,
+.table-body-scroll .data-table td .grado-name,
+.table-body-scroll .data-table td .turno-info {
+  white-space: normal;
+}
+
+/* Ajustar botones de acción en scroll */
+.table-body-scroll .action-buttons {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+/* Responsividad para tablets */
+@media (max-width: 768px) {
+  .scrollable-table {
+    height: 50vh;
+    min-height: 300px;
+    max-height: 450px;
+  }
+  
+  .table-header-fixed th,
+  .data-table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Responsividad para móviles */
+@media (max-width: 576px) {
+  .scrollable-table {
+    height: 45vh;
+    min-height: 250px;
+    max-height: 350px;
+  }
+  
+  .table-header-fixed th,
+  .data-table td {
+    padding: 0.4rem 0.2rem;
+    font-size: 0.75rem;
+  }
+  
+  /* En móviles, permitir scroll horizontal también */
+  .table-body-scroll {
+    overflow-x: auto;
+  }
+  
+  .data-table {
+    min-width: 700px; /* Ancho mínimo para evitar compresión excesiva */
+  }
+}
+
 
 
 .insumo-modal {
@@ -1265,33 +1448,156 @@ html {
 }
 
 .info-label {
-  font-weight: 500;
-  color: #6c757d;
+  font-weight: 800;
+  color: #000000;
 }
 
 .info-value {
-  font-weight: 600;
-  color: #495057;
+  font-weight: 300;
+  font-style: italic;
+  color: #0165bd;
 }
 
 /* Tabla de datos */
 .data-table {
-  width: 100%;
+  /*width: 100%;*/
   border-collapse: collapse;
+  table-layout: fixed; /* Para mantener anchos consistentes */
 }
+
 
 .data-table th {
   background: #f8f9fa;
-  padding: 0.5rem;
+  padding: 0.75rem;
   text-align: left;
   font-weight: 600;
   color: #333;
   border-bottom: 1px solid #dee2e6;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+}
+
+/* Anchos específicos para las columnas en tablas con 4 columnas (como ListaGrados) */
+.data-table th:nth-child(1):nth-last-child(4),
+.data-table th:nth-child(1):nth-last-child(4) ~ th:nth-child(2),
+.data-table th:nth-child(1):nth-last-child(4) ~ th:nth-child(3),
+.data-table th:nth-child(1):nth-last-child(4) ~ th:nth-child(4),
+.data-table td:nth-child(1):nth-last-child(4),
+.data-table td:nth-child(1):nth-last-child(4) ~ td:nth-child(2),
+.data-table td:nth-child(1):nth-last-child(4) ~ td:nth-child(3),
+.data-table td:nth-child(1):nth-last-child(4) ~ td:nth-child(4) {
+  width: 25%;
+}
+
+/* Tabla con más columnas (como ListaPersonas con 7 columnas) */
+.data-table th:nth-child(1):nth-last-child(7),
+.data-table td:nth-child(1):nth-last-child(7) {
+  width: 25%;
+}
+
+.data-table th:nth-child(2):nth-last-child(6),
+.data-table td:nth-child(2):nth-last-child(6) {
+  width: 15%;
+}
+
+.data-table th:nth-child(3):nth-last-child(5),
+.data-table td:nth-child(3):nth-last-child(5) {
+  width: 15%;
+}
+
+.data-table th:nth-child(4):nth-last-child(4),
+.data-table td:nth-child(4):nth-last-child(4) {
+  width: 12%;
+}
+
+.data-table th:nth-child(5):nth-last-child(3),
+.data-table td:nth-child(5):nth-last-child(3) {
+  width: 12%;
+}
+
+.data-table th:nth-child(6):nth-last-child(2),
+.data-table td:nth-child(6):nth-last-child(2) {
+  width: 10%;
+}
+
+.data-table th:nth-child(7):nth-last-child(1),
+.data-table td:nth-child(7):nth-last-child(1) {
+  width: 11%;
+}
+
+/* Tabla con 9 columnas (como ListaInsumos) */
+.data-table th:nth-child(1):nth-last-child(9),
+.data-table td:nth-child(1):nth-last-child(9) {
+  width: 20%;
+}
+
+.data-table th:nth-child(2):nth-last-child(8),
+.data-table td:nth-child(2):nth-last-child(8) {
+  width: 15%;
+}
+
+.data-table th:nth-child(3):nth-last-child(7),
+.data-table td:nth-child(3):nth-last-child(7) {
+  width: 10%;
+}
+
+.data-table th:nth-child(4):nth-last-child(6),
+.data-table td:nth-child(4):nth-last-child(6) {
+  width: 8%;
+}
+
+.data-table th:nth-child(5):nth-last-child(5),
+.data-table td:nth-child(5):nth-last-child(5) {
+  width: 8%;
+}
+
+.data-table th:nth-child(6):nth-last-child(4),
+.data-table td:nth-child(6):nth-last-child(4) {
+  width: 8%;
+}
+
+.data-table th:nth-child(7):nth-last-child(3),
+.data-table td:nth-child(7):nth-last-child(3) {
+  width: 12%;
+}
+
+.data-table th:nth-child(8):nth-last-child(2),
+.data-table td:nth-child(8):nth-last-child(2) {
+  width: 8%;
+}
+
+.data-table th:nth-child(9):nth-last-child(1),
+.data-table td:nth-child(9):nth-last-child(1) {
+  width: 11%;
+}
+
+/* Tabla con 5 columnas (como ListaProveedores) */
+.data-table th:nth-child(1):nth-last-child(5),
+.data-table td:nth-child(1):nth-last-child(5) {
+  width: 30%;
+}
+
+.data-table th:nth-child(2):nth-last-child(4),
+.data-table td:nth-child(2):nth-last-child(4) {
+  width: 15%;
+}
+
+.data-table th:nth-child(3):nth-last-child(3),
+.data-table td:nth-child(3):nth-last-child(3) {
+  width: 25%;
+}
+
+.data-table th:nth-child(4):nth-last-child(2),
+.data-table td:nth-child(4):nth-last-child(2) {
+  width: 15%;
+}
+
+.data-table th:nth-child(5):nth-last-child(1),
+.data-table td:nth-child(5):nth-last-child(1) {
+  width: 15%;
 }
 
 .data-table td {
-  padding: 0.5rem;
+  padding: 0.75rem;
   border-bottom: 1px solid #f1f3f4;
   vertical-align: middle;
   font-size: 0.85rem;
@@ -1358,8 +1664,8 @@ html {
 .type-badge {
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 1.2em;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -1449,19 +1755,44 @@ html {
 }
 
 .status-badge {
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  display: unset;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #155724;
+  border-radius: 15px;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
 .status-badge.activo {
-  background: rgba(40, 167, 69, 0.1);
   color: #28a745;
 }
 
 .status-badge.inactivo {
-  background: rgba(220, 53, 69, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  color: #dc3545;
+}
+
+.status-badge-insumo {
+  display: unset;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #155724;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-badge-insumo.activo {
+  color: #28a745;
+}
+
+.status-badge-insumo.inactivo {
+  background: rgba(255, 255, 255, 0.1);
   color: #dc3545;
 }
 
@@ -1473,6 +1804,7 @@ html {
 
 .action-buttons {
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -1713,7 +2045,7 @@ html {
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 0.8rem;
   flex: 1;
   overflow-y: auto;
   max-height: calc(100vh - 120px); /* Reserva espacio para header y footer */
@@ -2249,7 +2581,7 @@ html {
 /* Modal footer general */
 .modal-footer {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   padding: 1rem;
   gap: 0.5rem;
 }
@@ -3116,4 +3448,404 @@ html {
 
 .persona-form .form-text.text-muted i {
   margin-right: 0.25rem;
+}
+
+/* ===== ESTILOS PARA TURNOS EN LISTA DE SERVICIOS ===== */
+.servicio-turno {
+  min-width: 150px;
+}
+
+.turnos-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.turno-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  margin-right: 4px;
+}
+
+.turno-badge:last-child {
+  margin-right: 0;
+}
+
+.no-turnos {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+/* Diferentes colores para diferentes turnos */
+.turno-badge:nth-child(1) {
+  background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+}
+
+.turno-badge:nth-child(2) {
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+}
+
+.turno-badge:nth-child(3) {
+  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+}
+
+.turno-badge:nth-child(4) {
+  background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+}
+
+/* ===== ESTILOS PARA LISTA DE INSUMOS ===== */
+.insumo-name {
+  display: flex;
+  align-items: center;
+  color: #2c3e50;
+}
+
+.insumo-description {
+  color: #6c757d;
+  font-style: italic;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.categoria-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.unidad-medida {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+/* Diferentes colores para categorías */
+.categoria-badge:nth-child(1) {
+  background: linear-gradient(135deg, #b6b6b6 0%, #b6b6b6 100%); /* Carnes */
+  color: rgb(0, 0, 0);
+}
+
+.categoria-badge:nth-child(2) {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); /* Lácteos */
+}
+
+.categoria-badge:nth-child(3) {
+  background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%); /* Cereales */
+}
+
+.categoria-badge:nth-child(4) {
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%); /* Verduras */
+}
+
+.categoria-badge:nth-child(5) {
+  background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%); /* Condimentos */
+}
+
+.categoria-badge:nth-child(6) {
+  background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); /* Otros */
+}
+
+
+/* AsignarInsumosForm.css */
+.asignar-insumos-form {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Información del proveedor */
+.proveedor-info .info-card {
+  box-shadow: 0 2px 3px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(165deg, #FDFBD4 0%, #E0CD95 100%);
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 90px;
+  margin-bottom: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.info-title::before {
+  content: "🏢";
+  margin-right: 8px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.info-label {
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.info-value {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+/* Títulos de sección */
+.section-title {
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e9ecef;
+  display: flex;
+  align-items: center;
+}
+
+/* Barra de búsqueda */
+.search-bar {
+  position: relative;
+}
+
+.search-bar input {
+  padding-left: 45px;
+  border: 2px solid #e9ecef;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.search-bar input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+}
+
+.search-bar::before {
+  content: "🔍";
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  z-index: 1;
+}
+
+/* Listas de insumos */
+.insumos-list {
+  max-height: 400px;
+  max-width: 820px;
+  overflow-y: auto;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 10px;
+  background: #f8f9fa;
+}
+
+.available-list {
+  background: linear-gradient(145deg, #f0f8ff, #e6f3ff);
+}
+
+.assigned-list {
+  background: linear-gradient(145deg, #f0fff0, #e6ffe6);
+}
+
+/* Items de insumo */
+.insumo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.insumo-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.available-item {
+  border-left: 4px solid #007bff;
+}
+
+.assigned-item {
+  border-left: 4px solid #28a745;
+}
+
+.insumo-info {
+  flex: 1;
+}
+
+.insumo-name {
+  font-size: 1.05rem;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.insumo-details {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.categoria-badge {
+  background: linear-gradient(135deg, #ffecd2, #fcb69f);
+  color: #8b4513;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.unidad-medida {
+  background: linear-gradient(135deg, #a8edea, #fed6e3);
+  color: #495057;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Acciones de insumo */
+.insumo-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.insumo-actions .form-select {
+  min-width: 120px;
+}
+
+/* Estados vacíos */
+.empty-state {
+  text-align: center;
+  padding: 30px;
+  color: #6c757d;
+}
+
+.empty-state p {
+  margin: 0;
+  font-style: italic;
+}
+
+/* Acciones del formulario */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.form-actions .btn {
+  min-width: 120px;
+  font-weight: 500;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.form-actions .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.insumo-item {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .asignar-insumos-form {
+    padding: 15px;
+  }
+  
+  .insumo-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .insumo-actions {
+    justify-content: space-between;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+
+/* Mejoras en el scroll */
+.insumos-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.insumos-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.insumos-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.insumos-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }

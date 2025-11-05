@@ -8,7 +8,7 @@ const rolesSchema = z.object({
     descripcionRol: z.string({
         required_error: 'La descripción del rol es requerida',
         invalid_type_error: 'La descripción debe ser un texto'
-    }).min(1, 'La descripción no puede estar vacía').max(100, 'La descripción no puede tener más de 100 caracteres'),
+    }).min(1, 'La descripción no puede estar vacía').max(255, 'La descripción no puede tener más de 255 caracteres'),
     habilitaCuentaUsuario: z.enum(['Si', 'No'], {
         invalid_type_error: 'Valor inválido para habilita cuenta usuario'
     }).default('No'),

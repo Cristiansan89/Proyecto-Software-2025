@@ -1,4 +1,5 @@
 import { connection } from './db.js'
+import crypto from 'crypto'
 
 export class ReemplazoDocenteModel {
     static async getAll() {
@@ -149,20 +150,16 @@ export class ReemplazoDocenteModel {
                 throw new Error('Ya existe un reemplazo activo para este docente en el período especificado')
             }
 
+            // Generar un UUID manualmente para el reemplazo
+            const newId = crypto.randomUUID()
+
             const [result] = await connection.query(
-                `INSERT INTO ReemplazoDocente (id_persona, id_docenteTitular, nombreGrado, cicloLectivo, fechaInicio, fechaFin, motivo, estado)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
-                [idPersona, idDocenteTitular, nombreGrado, fechaCiclo, fechaInicio, fechaFin, motivo, estado]
+                `INSERT INTO ReemplazoDocente (id_reemplazoDocente, id_persona, id_docenteTitular, nombreGrado, cicloLectivo, fechaInicio, fechaFin, motivo, estado)
+                 VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?);`,
+                [newId, idPersona, idDocenteTitular, nombreGrado, fechaCiclo, fechaInicio, fechaFin, motivo, estado]
             )
 
-            // Obtener el UUID generado
-            const [newReemplazo] = await connection.query(
-                `SELECT BIN_TO_UUID(id_reemplazoDocente) as id 
-                 FROM ReemplazoDocente 
-                 WHERE id_reemplazoDocente = LAST_INSERT_ID();`
-            )
-
-            return this.getById({ id: newReemplazo[0].id })
+            return this.getById({ id: newId })
         } catch (error) {
             console.error('ReemplazoDocenteModel: Error al crear reemplazo:', error);
             throw new Error('Error al crear el reemplazo: ' + error.message)

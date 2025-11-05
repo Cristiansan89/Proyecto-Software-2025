@@ -1,50 +1,6 @@
 import { useState, useEffect } from 'react';
 import InsumoForm from '../../components/InsumoForm';
-
-
-// Datos de ejemplo - en producción vendrían del backend
-const mockInsumos = [
-    {
-        idInsumo: '1',
-        nombreInsumo: 'Arroz',
-        descripcion: 'Arroz blanco de grano largo',
-        unidadDeMedida: 'kg',
-        stockMinimo: 50,
-        stockActual: 120
-    },
-    {
-        idInsumo: '2',
-        nombreInsumo: 'Aceite de Cocina',
-        descripcion: 'Aceite vegetal para cocinar',
-        unidadDeMedida: 'litros',
-        stockMinimo: 20,
-        stockActual: 45
-    },
-    {
-        idInsumo: '3',
-        nombreInsumo: 'Sal',
-        descripcion: 'Sal de mesa refinada',
-        unidadDeMedida: 'kg',
-        stockMinimo: 10,
-        stockActual: 25
-    },
-    {
-        idInsumo: '4',
-        nombreInsumo: 'Azúcar',
-        descripcion: 'Azúcar blanca refinada',
-        unidadDeMedida: 'kg',
-        stockMinimo: 30,
-        stockActual: 8
-    },
-    {
-        idInsumo: '5',
-        nombreInsumo: 'Cebolla',
-        descripcion: 'Cebolla blanca fresca',
-        unidadDeMedida: 'kg',
-        stockMinimo: 15,
-        stockActual: 22
-    }
-];
+import insumoService from '../../services/insumoService';
 
 const ListaInsumos = () => {
     const [insumos, setInsumos] = useState([]);
@@ -53,7 +9,7 @@ const ListaInsumos = () => {
     const [selectedInsumo, setSelectedInsumo] = useState(null);
     const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
     const [searchTerm, setSearchTerm] = useState('');
-    const [filteredInsumos, setFilteredInsumos] = useState([]);
+    const [statusFilter, setStatusFilter] = useState('todos');
 
 
 
@@ -61,34 +17,30 @@ const ListaInsumos = () => {
         loadInsumos();
     }, []);
 
-    useEffect(() => {
-        filterInsumos();
-    }, [insumos, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
-
     const loadInsumos = async () => {
+        console.log('ListaInsumos: Iniciando loadInsumos');
         try {
-            // Simular llamada a API
-            await new Promise(resolve => setTimeout(resolve, 500));
-            setInsumos(mockInsumos);
+            setLoading(true);
+            const data = await insumoService.getAll();
+            console.log('ListaInsumos: Datos recibidos:', data);
+            setInsumos(data);
         } catch (error) {
             console.error('Error al cargar insumos:', error);
+            alert('Error al cargar los insumos');
         } finally {
             setLoading(false);
         }
     };
 
-    const filterInsumos = () => {
-        if (!searchTerm.trim()) {
-            setFilteredInsumos(insumos);
-        } else {
-            const filtered = insumos.filter(insumo =>
-                insumo.nombreInsumo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                insumo.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                insumo.unidadDeMedida.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            setFilteredInsumos(filtered);
-        }
-    };
+    // Filtrar insumos
+    const filteredInsumos = insumos.filter(insumo => {
+        const matchesSearch = insumo.nombreInsumo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (insumo.descripcion && insumo.descripcion.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            insumo.unidadMedida.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            insumo.categoria.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'todos' || insumo.estado === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
 
     const handleCreate = () => {
         setSelectedInsumo(null);
@@ -108,47 +60,42 @@ const ListaInsumos = () => {
         setShowModal(true);
     };
 
-    const handleDelete = async (insumoId) => {
-        if (window.confirm('¿Está seguro de que desea eliminar este insumo?')) {
+    const handleDelete = async (insumo) => {
+        if (window.confirm(`¿Está seguro de eliminar el insumo "${insumo.nombreInsumo}"?`)) {
             try {
-                // Simular llamada a API
-                await new Promise(resolve => setTimeout(resolve, 500));
-                setInsumos(prev => prev.filter(insumo => insumo.idInsumo !== insumoId));
-                console.log('Insumo eliminado exitosamente');
+                await insumoService.delete(insumo.idInsumo);
+                alert('Insumo eliminado correctamente');
+                loadInsumos();
             } catch (error) {
                 console.error('Error al eliminar insumo:', error);
+                if (error.response?.data?.message) {
+                    alert(`Error: ${error.response.data.message}`);
+                } else {
+                    alert('Error al eliminar el insumo');
+                }
             }
         }
     };
 
-    const handleSaveInsumo = async (insumoData) => {
+    const handleChangeStatus = async (insumo, nuevoEstado) => {
         try {
-            // Simular llamada a API
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            if (modalMode === 'create') {
-                const newInsumo = {
-                    ...insumoData,
-                    idInsumo: Date.now().toString()
-                };
-                setInsumos(prev => [newInsumo, ...prev]);
-                console.log('Insumo creado exitosamente');
-            } else if (modalMode === 'edit') {
-                setInsumos(prev => prev.map(insumo =>
-                    insumo.idInsumo === selectedInsumo.idInsumo
-                        ? { ...insumo, ...insumoData }
-                        : insumo
-                ));
-                console.log('Insumo actualizado exitosamente');
-            }
-
-            setShowModal(false);
+            await insumoService.cambiarEstado(insumo.idInsumo, nuevoEstado);
+            alert(`Insumo ${nuevoEstado.toLowerCase()} correctamente`);
+            loadInsumos();
         } catch (error) {
-            console.error('Error al guardar insumo:', error);
+            console.error('Error al cambiar estado:', error);
+            alert('Error al cambiar el estado del insumo');
         }
     };
 
-    const handleCloseModal = () => {
+    const handleSave = () => {
+        setShowModal(false);
+        setSelectedInsumo(null);
+        loadInsumos();
+        alert(`Insumo ${modalMode === 'create' ? 'creado' : 'actualizado'} correctamente`);
+    };
+
+    const handleCancel = () => {
         setShowModal(false);
         setSelectedInsumo(null);
     };
@@ -193,7 +140,7 @@ const ListaInsumos = () => {
                 <div className="header-actions">
                     <button
                         className="btn btn-primary-new"
-                        onClick={() => handleCreate('create')}
+                        onClick={handleCreate}
                     >
                         <i className="fas fa-plus me-2"></i>
                         Nuevo Insumo
@@ -202,131 +149,176 @@ const ListaInsumos = () => {
             </div>
             <div className="page-header">
                 <div className="header-stats">
-                    <div className="stat-card-stock">
-
-                        <div className="summary-number-stock mx-1">
-                            <i className="fas fa-boxes text-primary mx-1"></i>
-                            {insumos.length}
-                        </div>
-                        <div className="summary-label-stock">Total Insumos</div>
+                    <div className="stat-card-users">
+                        <div className="stat-number-users">{insumos.length}</div>
+                        <div className="stat-label-users">Total</div>
                     </div>
-
+                    <div className="stat-card-stock">
+                        <div className="summary-number-stock">{insumos.filter(i => i.estado === 'Activo').length}</div>
+                        <div className="summary-label-stock">Activos</div>
+                    </div>
                     <div className="stat-card-alert">
-
-                        <div className="summary-number-alert mx-1">
-                            <i className="fas fa-exclamation-triangle text-danger mx-1"></i>
-                            {insumos.filter(i => i.stockActual <= i.stockMinimo).length}
-
-                        </div>
+                        <div className="summary-number-alert">{insumos.filter(i => i.stockActual <= i.stockMinimo).length}</div>
                         <div className="summary-label-alert">Stock Bajo</div>
+                    </div>
+                    <div className="stat-card-users">
+                        <div className="stat-number-users">{insumos.filter(i => i.estado === 'Inactivo').length}</div>
+                        <div className="stat-label-users">Inactivos</div>
                     </div>
                 </div>
             </div>
             {/* Filtros y búsqueda */}
-            <div className="filters-section">
+            <div className="search-filters">
                 <div className="search-bar">
-                    <i className="fas fa-search"></i>
                     <input
                         type="text"
                         className="search-input"
-                        placeholder="Buscar por nombre, descripción o unidad..."
+                        placeholder="Buscar por nombre, descripción, unidad o categoría..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-            </div>
-            <div >
-                <div className="vista-insumos">
-                    <div className="table-responsive">
-                        <table className="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Nombre del Insumo</th>
-                                    <th>Descripción</th>
-                                    <th>Unidad de Medida</th>
-                                    <th>Stock Mínimo</th>
-                                    <th>Stock Actual</th>
-                                    <th>Estado</th>
-                                    <th >Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredInsumos.map((insumo) => {
-                                    const stockStatus = getStockStatus(insumo);
-                                    return (
-                                        <tr key={insumo.idInsumo}>
-                                            <td>
-                                                <div className="item-info">
-
-                                                    <div>
-                                                        <div className="item-name">{insumo.nombreInsumo}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="text-muted">
-                                                    {insumo.descripcion || 'Sin descripción'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span className="bd-indigo-500">
-                                                    {insumo.unidadDeMedida}
-                                                </span>
-                                            </td>
-                                            <td>{insumo.stockMinimo}</td>
-                                            <td>
-                                                <span className={`fw-bold ${stockStatus.color}`}>
-                                                    {insumo.stockActual}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <i className={`fas ${stockStatus.icon} ${stockStatus.color} me-1`}></i>
-                                                <span className={stockStatus.color}>
-                                                    {stockStatus.status === 'low' ? 'Stock Bajo' :
-                                                        stockStatus.status === 'medium' ? 'Stock Medio' : 'Stock Bueno'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="action-buttons">
-                                                    <button
-                                                        className="btn-action btn-view"
-                                                        onClick={() => handleView(insumo)}
-                                                        title="Ver detalles"
-                                                    >
-                                                        <i className="fas fa-eye"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-edit"
-                                                        onClick={() => handleEdit(insumo)}
-                                                        title="Editar"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-delete"
-                                                        onClick={() => handleDelete(insumo.idInsumo)}
-                                                        title="Eliminar"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {filteredInsumos.length === 0 && (
-                        <div className="empty-state">
-                            <i className="fas fa-search empty-icon"></i>
-                            <h5>No se encontraron insumos</h5>
-                            <p>No hay insumos que coincidan con tu búsqueda.</p>
-                        </div>
-                    )}
+                <div className="filter-actions">
+                    <select
+                        className="filter-select"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                        <option value="todos">Todos los estados</option>
+                        <option value="Activo">Activos</option>
+                        <option value="Inactivo">Inactivos</option>
+                    </select>
                 </div>
             </div>
+
+            {/* Información de resultados */}
+            <div className="results-info">
+                <div className="results-count">
+                    <span>Mostrando {filteredInsumos.length} de {insumos.length} insumos</span>
+                    {searchTerm && <span className="filter-indicator">filtrado por "{searchTerm}"</span>}
+                </div>
+            </div>
+
+
+
+            <div className="table-container">
+                {loading ? (
+                    <div className="loading-spinner">
+                        <i className="fas fa-spinner fa-spin"></i>
+                        <p>Cargando grados...</p>
+                    </div>
+                ) : (
+                    <div className="scrollable-table">
+                        <div className="table-body-scroll">
+                            <table className="data-table">
+                                <thead className="table-header-fixed">
+                                    <tr>
+                                        <th>Insumo</th>
+                                        <th>Descripción</th>
+                                        <th>Categoría</th>
+                                        <th>Unidad Medida</th>
+                                        <th>Stock Mínimo</th>
+                                        <th>Stock Actual</th>
+                                        <th>Estado del Stock</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredInsumos.length === 0 && (
+                                        <tr>
+                                            <td colSpan="9" className="no-data">
+                                                <p>No se encontraron insumos</p>
+                                            </td>
+                                        </tr>
+
+                                    )}
+                                    {filteredInsumos.map((insumo) => {
+                                        const stockStatus = getStockStatus(insumo);
+                                        return (
+                                            <tr key={insumo.idInsumo}>
+                                                <td>
+                                                    <div className="insumo-name">
+                                                        <i className="fas fa-box me-2"></i>
+                                                        {insumo.nombreInsumo}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="insumo-description">
+                                                        {insumo.descripcion || 'Sin descripción'}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="categoria-badge">
+                                                        {insumo.categoria}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className="unidad-medida">
+                                                        {insumo.unidadMedida}
+                                                    </span>
+                                                </td>
+                                                <td>{insumo.stockMinimo}</td>
+                                                <td>
+                                                    <span className={`fw-bold ${stockStatus.color}`}>
+                                                        {insumo.stockActual}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <i className={`fas ${stockStatus.icon} ${stockStatus.color} me-1`}></i>
+                                                    <span className={stockStatus.color}>
+                                                        {stockStatus.status === 'low' ? 'Stock Bajo' :
+                                                            stockStatus.status === 'medium' ? 'Stock Medio' : 'Stock Bueno'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className={`status-badge-insumo ${insumo.estado.toLowerCase()}`}>
+                                                        {insumo.estado}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="action-buttons">
+                                                        <button
+                                                            className="btn-action btn-view"
+                                                            onClick={() => handleView(insumo)}
+                                                            title="Ver detalles"
+                                                        >
+                                                            <i className="fas fa-eye"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn-action btn-edit"
+                                                            onClick={() => handleEdit(insumo)}
+                                                            title="Editar"
+                                                        >
+                                                            <i className="fas fa-edit"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn-action btn-delete"
+                                                            onClick={() => handleDelete(insumo)}
+                                                            title="Eliminar"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                        <button
+                                                            className={`btn-action ${insumo.estado === 'Activo' ? 'btn-delete' : 'btn-assign'}`}
+                                                            onClick={() => handleChangeStatus(insumo, insumo.estado === 'Activo' ? 'Inactivo' : 'Activo')}
+                                                            title={insumo.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                                                        >
+                                                            <i className={`fas ${insumo.estado === 'Activo' ? 'fa-times' : 'fa-check'}`}></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                )
+                };
+            </div >
             {/* Modal */}
             {
                 showModal && (
@@ -342,7 +334,7 @@ const ListaInsumos = () => {
                                 <button
                                     type="button"
                                     className="modal-close"
-                                    onClick={handleCloseModal}
+                                    onClick={handleCancel}
                                 >
                                     <i className="fas fa-times"></i>
                                 </button>
@@ -351,8 +343,8 @@ const ListaInsumos = () => {
                                 <InsumoForm
                                     insumo={selectedInsumo}
                                     mode={modalMode}
-                                    onSave={handleSaveInsumo}
-                                    onCancel={handleCloseModal}
+                                    onSave={handleSave}
+                                    onCancel={handleCancel}
                                 />
                             </div>
                         </div>

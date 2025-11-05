@@ -1,12 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
+    const navigate = useNavigate();
+    const { login, isAuthenticated, loading: authLoading } = useAuth();
+
     const [formData, setFormData] = useState({
         nombreUsuario: '',
         contrasena: ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Redirigir si ya está autenticado
+    useEffect(() => {
+        if (isAuthenticated && !authLoading) {
+            navigate('/admin', { replace: true });
+        }
+    }, [isAuthenticated, authLoading, navigate]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -37,18 +49,26 @@ const Login = () => {
         }
 
         try {
-            // Aquí irá la lógica de autenticación con el backend
-            console.log('Datos de login:', formData);
+            const user = await login(formData.nombreUsuario, formData.contrasena);
 
-            // Simulación de petición (reemplazar con llamada real a la API)
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // Por ahora solo mostramos en consola
-            alert('Login exitoso (simulado)');
+            // Redirigir según el rol del usuario
+            if (user.rol === 'Administrador') {
+                navigate('/admin', { replace: true });
+            } else if (user.rol === 'Docente' || user.rol === 'Docente Titular' || user.rol === 'Docente Suplente') {
+                // Por ahora redirigir al admin, después crearemos la interfaz de docente
+                alert('Interfaz de docente en desarrollo. Redirigiendo a administración...');
+                navigate('/admin', { replace: true });
+            } else if (user.rol === 'Cocinera') {
+                // Por ahora redirigir al admin, después crearemos la interfaz de cocinera
+                alert('Interfaz de cocinera en desarrollo. Redirigiendo a administración...');
+                navigate('/admin', { replace: true });
+            } else {
+                setError('Rol de usuario no reconocido');
+            }
 
         } catch (error) {
             console.error('Error en login:', error);
-            setError('Usuario o contraseña incorrectos');
+            setError(error.message || 'Usuario o contraseña incorrectos');
         } finally {
             setLoading(false);
         }

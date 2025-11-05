@@ -31,8 +31,11 @@ const PersonaGrado = () => {
         <div className="persona-grado-container">
             {/* Header */}
             <div className="page-header">
-                <div className="header-content">
-                    <h2><i className="fas fa-user-clock"></i> Asignación de Personas a Grados</h2>
+                <div className="header-left">
+                    <h3>
+                        <i className="fas fa-user-clock me-2"> </i>
+                        Asignación de Personas a Grados
+                    </h3>
                     <p>Administra la asignación de personas a grados</p>
                 </div>
             </div>

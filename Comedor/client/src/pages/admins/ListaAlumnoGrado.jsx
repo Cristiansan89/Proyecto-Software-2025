@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AlumnoGradoForm from '../../components/AlumnoGradoForm';
 import alumnoGradoService from '../../services/alumnoGradoService.js';
+import { formatCicloLectivo } from '../../utils/dateUtils.js';
 
 const ListaAlumnosGrados = () => {
     const [alumnos, setAlumnos] = useState([]);
@@ -54,7 +55,10 @@ const ListaAlumnosGrados = () => {
 
         // Filtro por ciclo lectivo
         if (cicloFilter) {
-            filtered = filtered.filter(alumno => alumno.cicloLectivo.toString() === cicloFilter);
+            filtered = filtered.filter(alumno => {
+                const ciclo = formatCicloLectivo(alumno.cicloLectivo).toString();
+                return ciclo === cicloFilter;
+            });
         }
 
         setFilteredAlumnos(filtered);
@@ -164,7 +168,6 @@ const ListaAlumnosGrados = () => {
             {/* Filtros y búsqueda */}
             <div className="filters-section">
                 <div className="search-bar">
-                    <i className="fas fa-search"></i>
                     <input
                         type="text"
                         placeholder="Buscar por nombre, apellido, DNI o grado..."
@@ -244,88 +247,90 @@ const ListaAlumnosGrados = () => {
 
             {/* Tabla */}
             <div className="table-container">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Información del Alumno</th>
-                            <th>Grado Asignado</th>
-                            <th>Ciclo Lectivo</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredAlumnos.length === 0 ? (
-                            <tr>
-                                <td colSpan="6" className="no-data">
-                                    <p>No se encontraron asignaciones de alumnos</p>
-                                </td>
-                            </tr>
-                        ) : (
-                            filteredAlumnos.map((alumno) => (
-                                <tr key={alumno.idAlumnoGrado}>
-                                    <td>
-                                        <div className="user-info">
-                                            <div className="user-avatar">
-                                                <i className="fas fa-user-graduate"></i>
-                                            </div>
-                                            <div>
-                                                <strong>{alumno.nombre} {alumno.apellido}</strong>
-                                                <small className="d-block">DNI: {alumno.dni}</small>
-                                                <small className="d-block">
-                                                    {alumno.genero} - {alumno.fechaNacimiento ?
-                                                        new Date(alumno.fechaNacimiento).toLocaleDateString() :
-                                                        'Sin fecha'
-                                                    }
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className="type-badge student">
-                                            {alumno.nombreGrado}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className="badge bg-primary">
-                                            {alumno.cicloLectivo}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`status-badge ${alumno.estadoPersona ? alumno.estadoPersona.toLowerCase() : 'activo'}`}>
-                                            {alumno.estadoPersona || 'Activo'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button
-                                                className="btn-action btn-view"
-                                                onClick={() => handleView(alumno)}
-                                                title="Ver detalles"
-                                            >
-                                                <i className="fas fa-eye"></i>
-                                            </button>
-                                            <button
-                                                className="btn-action btn-edit"
-                                                onClick={() => handleEdit(alumno)}
-                                                title="Editar asignación"
-                                            >
-                                                <i className="fas fa-edit"></i>
-                                            </button>
-                                            <button
-                                                className="btn-action btn-delete"
-                                                onClick={() => handleDelete(alumno.idAlumnoGrado)}
-                                                title="Eliminar asignación"
-                                            >
-                                                <i className="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                {filteredAlumnos.length === 0 ? (
+                    <div className="no-data">
+                        <p>No se encontraron asignaciones de alumnos</p>
+                    </div>
+                ) : (
+                    <div className="scrollable-table">
+                        <div className="table-body-scroll">
+                            <table className="data-table" style={{ width: '100%' }}>
+                                <thead className="table-header-fixed">
+                                    <tr>
+                                        <th>Información del Alumno</th>
+                                        <th>Grado Asignado</th>
+                                        <th>Ciclo Lectivo</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredAlumnos.map((alumno) => (
+                                        <tr key={alumno.idAlumnoGrado}>
+                                            <td>
+                                                <div className="user-info">
+                                                    <div className="user-avatar">
+                                                        <i className="fas fa-user-graduate"></i>
+                                                    </div>
+                                                    <div>
+                                                        <strong><h6>{alumno.nombre} {alumno.apellido}</h6></strong>
+                                                        <small className="d-block">DNI: {alumno.dni}</small>
+                                                        <small className="d-block">
+                                                            {alumno.genero} - {alumno.fechaNacimiento ?
+                                                                new Date(alumno.fechaNacimiento).toLocaleDateString() :
+                                                                'Sin fecha'
+                                                            }
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="type-badge student">
+                                                    {alumno.nombreGrado}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className="badge-anual">
+                                                    {formatCicloLectivo(alumno.cicloLectivo)}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`status-badge ${alumno.estadoPersona ? alumno.estadoPersona.toLowerCase() : 'activo'}`}>
+                                                    {alumno.estadoPersona || 'Activo'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        className="btn-action btn-view"
+                                                        onClick={() => handleView(alumno)}
+                                                        title="Ver detalles"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-edit"
+                                                        onClick={() => handleEdit(alumno)}
+                                                        title="Editar asignación"
+                                                    >
+                                                        <i className="fas fa-edit"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-delete"
+                                                        onClick={() => handleDelete(alumno.idAlumnoGrado)}
+                                                        title="Eliminar asignación"
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Modal para AsignarAlumno */}

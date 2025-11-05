@@ -20,6 +20,7 @@ import { createRecetaRouter } from './routes/recetas.js'
 import { createRegistroAsistenciaRouter } from './routes/registrosasistencias.js'
 import { createRolPermisoRouter } from './routes/rolpermisos.js'
 import { createServicioRouter } from './routes/servicios.js'
+import { createServicioTurnoRouter } from './routes/servicioturnos.js'
 import { createTurnoRouter } from './routes/turnos.js'
 import { createUsuarioRouter } from './routes/usuarios.js'
 import { createConsumoRouter } from './routes/consumos.js'
@@ -51,6 +52,7 @@ export const createApp = ({
     registroAsistenciaModel,
     rolPermisoModel,
     servicioModel,
+    servicioTurnoModel,
     turnoModel
 }) => {
     const app = express()
@@ -86,6 +88,7 @@ export const createApp = ({
     app.use('/registros-asistencias', createRegistroAsistenciaRouter({ registroAsistenciaModel }))
     app.use('/rol-permisos', createRolPermisoRouter({ rolPermisoModel }))
     app.use('/servicios', createServicioRouter({ servicioModel }))
+    app.use('/servicio-turnos', createServicioTurnoRouter({ servicioTurnoModel }))
     app.use('/turnos', createTurnoRouter({ turnoModel }))
     app.use('/proveedor-insumos', createProveedorInsumoRouter({ proveedorInsumoModel }))
     app.use('/alumno-grados', alumnoGradoRouter)

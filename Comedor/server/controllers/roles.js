@@ -32,11 +32,28 @@ export class RolController {
         }
     }
 
+    // Función para normalizar los datos de entrada
+    normalizeRolData = (data) => {
+        const normalized = { ...data }
+
+        // Normalizar habilitaCuentaUsuario: convertir "Sí" a "Si"
+        if (normalized.habilitaCuentaUsuario === 'Sí') {
+            normalized.habilitaCuentaUsuario = 'Si'
+        }
+
+        return normalized
+    }
+
     // Crea un nuevo rol después de validar los datos recibidos
     create = async (req, res) => {
         try {
             console.log('RolController: Datos recibidos:', req.body)
-            const result = validateRol(req.body)
+
+            // Normalizar datos antes de validar
+            const normalizedData = this.normalizeRolData(req.body)
+            console.log('RolController: Datos normalizados:', normalizedData)
+
+            const result = validateRol(normalizedData)
             console.log('RolController: Resultado de validación:', result)
 
             if (!result.success) {
@@ -80,7 +97,9 @@ export class RolController {
     // Actualiza un rol parcialmente después de validar los datos recibidos
     update = async (req, res) => {
         try {
-            const result = validatePartialRol(req.body)
+            // Normalizar datos antes de validar
+            const normalizedData = this.normalizeRolData(req.body)
+            const result = validatePartialRol(normalizedData)
 
             if (!result.success) {
                 return res.status(400).json({

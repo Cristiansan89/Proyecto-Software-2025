@@ -240,12 +240,14 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = 'create' }) => {
                         onClick={onCancel}
                         className="btn btn-secondary"
                     >
+                        <i className="fas fa-times mr-1"></i>
                         Cancelar
                     </button>
                     <button
                         type="submit"
                         className="btn btn-primary"
                     >
+                        <i className="fas fa-save mr-1"></i>
                         {mode === 'create' ? 'Crear Permiso' : 'Actualizar Permiso'}
                     </button>
                 </div>
@@ -258,6 +260,7 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = 'create' }) => {
                         onClick={onCancel}
                         className="btn btn-secondary"
                     >
+                        <i className="fas fa-times mr-1"></i>
                         Cerrar
                     </button>
                 </div>

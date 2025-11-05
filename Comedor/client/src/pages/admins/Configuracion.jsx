@@ -17,7 +17,7 @@ const Configuracion = () => {
             label: 'Servicios',
             icon: 'fas fa-utensils',
             component: <ListaServicios />
-        }
+        },
     ];
 
     return (

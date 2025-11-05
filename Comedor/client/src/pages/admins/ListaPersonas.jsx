@@ -89,22 +89,6 @@ const ListaPersonas = () => {
         setFilterEstado('');
     };
 
-    const handleSelectPersona = (personaId) => {
-        setSelectedPersonas(prev =>
-            prev.includes(personaId)
-                ? prev.filter(id => id !== personaId)
-                : [...prev, personaId]
-        );
-    };
-
-    const handleSelectAll = (e) => {
-        if (e.target.checked) {
-            setSelectedPersonas(currentPersonas.map(p => p.idPersona));
-        } else {
-            setSelectedPersonas([]);
-        }
-    };
-
     const openModal = (mode, persona = null) => {
         setModalMode(mode);
         setSelectedPersona(persona);
@@ -126,11 +110,7 @@ const ListaPersonas = () => {
             // Si se creó un usuario también, mostrar mensaje de éxito
             if (usuarioData) {
                 alert(`✅ Persona creada exitosamente!\n\n` +
-                    `👤 Persona: ${personaData.nombre} ${personaData.apellido}\n` +
-                    `👨‍🏫 Usuario: ${usuarioData.nombreUsuario}\n` +
-                    `📧 Email: ${usuarioData.email}\n` +
-                    `🔑 Rol: ${usuarioData.rol}\n\n` +
-                    `La persona ya puede acceder al sistema con su cuenta de usuario.`);
+                    `👤 Persona: ${personaData.nombre} ${personaData.apellido}\n`);
             } else {
                 alert(`✅ Persona creada exitosamente!\n\n` +
                     `👤 ${personaData.nombre} ${personaData.apellido}`);
@@ -198,7 +178,6 @@ const ListaPersonas = () => {
             {/* Filtros y búsqueda */}
             <div className="filters-section">
                 <div className="search-bar">
-                    <i className="fas fa-search"></i>
                     <input
                         type="text"
                         placeholder="Buscar por nombre, apellido, documento o rol..."
@@ -281,94 +260,98 @@ const ListaPersonas = () => {
                         <p>Cargando personas...</p>
                     </div>
                 ) : (
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Información Personal</th>
-                                <th>Documento</th>
-                                <th>Fecha Nacimiento</th>
-                                <th>Género</th>
-                                <th>Rol</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {currentPersonas.length === 0 ? (
-                                <tr>
-                                    <td colSpan="8" className="no-data">
-                                        <p>No se encontraron personas</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                currentPersonas.map((persona) => (
-                                    <tr key={persona.idPersona}>
-                                        <td>
-                                            <div className="user-info">
-                                                <div className="user-avatar">
-                                                    <i className="fas fa-user"></i>
-                                                </div>
-                                                <div>
-                                                    <strong>{persona.nombre} {persona.apellido}</strong>
-                                                    <small className="d-block">{persona.email}</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {persona.dni}
-                                        </td>
-                                        <td>
-                                            {persona.fechaNacimiento ?
-                                                new Date(persona.fechaNacimiento).toLocaleDateString() :
-                                                'No registrada'
-                                            }
-                                        </td>
-                                        <td>
-                                            <span className="badge bg-secondary">
-                                                {persona.genero || 'No especificado'}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`type-badge ${persona.habilitaCuentaUsuario === 'Sí' ? 'teacher' : 'student'}`}>
-                                                {persona.nombreRol || 'Sin rol'}
-                                            </span>
-                                        </td>
-
-                                        <td>
-                                            <span className={`status-badge ${persona.estado.toLowerCase()}`}>
-                                                {persona.estado}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div className="action-buttons">
-                                                <button
-                                                    className="btn-action btn-view"
-                                                    onClick={() => openModal('view', persona)}
-                                                    title="Ver detalles"
-                                                >
-                                                    <i className="fas fa-eye"></i>
-                                                </button>
-                                                <button
-                                                    className="btn-action btn-edit"
-                                                    onClick={() => openModal('edit', persona)}
-                                                    title="Editar"
-                                                >
-                                                    <i className="fas fa-edit"></i>
-                                                </button>
-                                                <button
-                                                    className="btn-action btn-delete"
-                                                    onClick={() => handleDelete(persona.idPersona)}
-                                                    title="Eliminar"
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
+                    <div className="scrollable-table">
+                        <div className="table-body-scroll">
+                            <table className="data-table">
+                                <thead className="table-header-fixed">
+                                    <tr>
+                                        <th>Información Personal</th>
+                                        <th>Documento</th>
+                                        <th>Fecha Nacimiento</th>
+                                        <th>Género</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    {currentPersonas.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="8" className="no-data">
+                                                <p>No se encontraron personas</p>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        currentPersonas.map((persona) => (
+                                            <tr key={persona.idPersona}>
+                                                <td>
+                                                    <div className="user-info">
+                                                        <div className="user-avatar">
+                                                            <i className="fas fa-user"></i>
+                                                        </div>
+                                                        <div>
+                                                            <strong>{persona.nombre} {persona.apellido}</strong>
+                                                            <small className="d-block">{persona.email}</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {persona.dni}
+                                                </td>
+                                                <td>
+                                                    {persona.fechaNacimiento ?
+                                                        new Date(persona.fechaNacimiento).toLocaleDateString() :
+                                                        'No registrada'
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <span className="badge bg-secondary">
+                                                        {persona.genero || 'No especificado'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className={`type-badge ${persona.habilitaCuentaUsuario === 'Sí' ? 'teacher' : 'student'}`}>
+                                                        {persona.nombreRol || 'Sin rol'}
+                                                    </span>
+                                                </td>
+
+                                                <td>
+                                                    <span className={`status-badge ${persona.estado.toLowerCase()}`}>
+                                                        {persona.estado}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="action-buttons">
+                                                        <button
+                                                            className="btn-action btn-view"
+                                                            onClick={() => openModal('view', persona)}
+                                                            title="Ver detalles"
+                                                        >
+                                                            <i className="fas fa-eye"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn-action btn-edit"
+                                                            onClick={() => openModal('edit', persona)}
+                                                            title="Editar"
+                                                        >
+                                                            <i className="fas fa-edit"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn-action btn-delete"
+                                                            onClick={() => handleDelete(persona.idPersona)}
+                                                            title="Eliminar"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 )}
             </div>
 

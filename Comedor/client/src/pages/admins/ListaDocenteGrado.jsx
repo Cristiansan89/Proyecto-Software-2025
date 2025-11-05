@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DocenteGradoForm from '../../components/DocenteGradoForm';
 import docenteGradoService from '../../services/docenteGradoService.js';
+import { formatCicloLectivo } from '../../utils/dateUtils.js';
 
 const ListaDocentesGrados = () => {
     const [docentes, setDocentes] = useState([]);
@@ -53,7 +54,10 @@ const ListaDocentesGrados = () => {
 
         // Filtro por ciclo lectivo
         if (cicloFilter) {
-            filtered = filtered.filter(docente => docente.cicloLectivo.toString() === cicloFilter);
+            filtered = filtered.filter(docente => {
+                const ciclo = formatCicloLectivo(docente.cicloLectivo).toString();
+                return ciclo === cicloFilter;
+            });
         }
 
         setFilteredDocentes(filtered);
@@ -149,7 +153,6 @@ const ListaDocentesGrados = () => {
             {/* Filtros y búsqueda */}
             <div className="filters-section">
                 <div className="search-bar">
-                    <i className="fas fa-search"></i>
                     <input
                         type="text"
                         placeholder="Buscar por nombre, apellido, DNI o grado..."
@@ -211,98 +214,94 @@ const ListaDocentesGrados = () => {
 
             {/* Tabla */}
             <div className="table-container">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Información del Docente</th>
-                            <th>Grado Asignado</th>
-                            <th>Fecha Asignación</th>
-                            <th>Ciclo Lectivo</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredDocentes.length === 0 ? (
-                            <tr>
-                                <td colSpan="7" className="no-data">
-                                    <p>No se encontraron asignaciones de docentes</p>
-                                </td>
-                            </tr>
-                        ) : (
-                            filteredDocentes.map((docente) => (
-                                <tr key={`${docente.idDocenteTitular}-${docente.idPersona}-${docente.nombreGrado}`}>
-                                    <td>
-                                        <div className="user-info">
-                                            <div className="user-avatar">
-                                                <i className="fas fa-chalkboard-teacher"></i>
-                                            </div>
-                                            <div>
-                                                <strong>{docente.nombre} {docente.apellido}</strong>
-                                                <small className="d-block">DNI: {docente.dni}</small>
-                                                <small className="d-block">
-                                                    {docente.genero} - {docente.fechaNacimiento ?
-                                                        new Date(docente.fechaNacimiento).toLocaleDateString() :
-                                                        'Sin fecha'
-                                                    }
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className="type-badge teacher">
-                                            {docente.nombreGrado}
-                                        </span>
-                                        <small className="d-block text-muted">
-                                            ID Titular: {docente.idDocenteTitular}
-                                        </small>
-                                    </td>
-                                    <td>
-                                        {docente.fechaAsignado ?
-                                            new Date(docente.fechaAsignado).toLocaleDateString() :
-                                            'No registrada'
-                                        }
-                                    </td>
-                                    <td>
-                                        <span className="badge bg-primary">
-                                            {docente.cicloLectivo}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`status-badge ${docente.estadoPersona ? docente.estadoPersona.toLowerCase() : 'activo'}`}>
-                                            {docente.estadoPersona || 'Activo'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button
-                                                className="btn-action btn-view"
-                                                onClick={() => handleView(docente)}
-                                                title="Ver detalles"
-                                            >
-                                                <i className="fas fa-eye"></i>
-                                            </button>
-                                            <button
-                                                className="btn-action btn-edit"
-                                                onClick={() => handleEdit(docente)}
-                                                title="Editar asignación"
-                                            >
-                                                <i className="fas fa-edit"></i>
-                                            </button>
-                                            <button
-                                                className="btn-action btn-delete"
-                                                onClick={() => handleDelete(docente)}
-                                                title="Eliminar asignación"
-                                            >
-                                                <i className="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                {filteredDocentes.length === 0 ? (
+                    <div className="no-data">
+                        <p>No se encontraron asignaciones de docentes</p>
+                    </div>
+                ) : (
+                    <div className="scrollable-table">
+                        <div className="table-body-scroll">
+                            <table className="data-table" style={{ width: '100%' }}>
+                                <thead className="table-header-fixed">
+                                    <tr>
+                                        <th>Información del Docente</th>
+                                        <th>Grado Asignado</th>
+                                        <th>Fecha Asignación</th>
+                                        <th>Ciclo Lectivo</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredDocentes.map((docente) => (
+                                        <tr key={`${docente.idDocenteTitular}-${docente.idPersona}-${docente.nombreGrado}`}>
+                                            <td>
+                                                <div className="user-info">
+                                                    <div>
+                                                        <strong><h6>{docente.nombre} {docente.apellido}</h6></strong>
+                                                        <small className="d-block">DNI: {docente.dni}</small>
+                                                        <small className="d-block">
+                                                            {docente.genero} - {docente.fechaNacimiento ?
+                                                                new Date(docente.fechaNacimiento).toLocaleDateString() :
+                                                                'Sin fecha'
+                                                            }
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="type-badge teacher">
+                                                    {docente.nombreGrado}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {docente.fechaAsignado ?
+                                                    new Date(docente.fechaAsignado).toLocaleDateString() :
+                                                    'No registrada'
+                                                }
+                                            </td>
+                                            <td>
+                                                <span className="badge-anual">
+                                                    {formatCicloLectivo(docente.cicloLectivo)}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`status-badge ${docente.estadoPersona ? docente.estadoPersona.toLowerCase() : 'activo'}`}>
+                                                    {docente.estadoPersona || 'Activo'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="action-buttons">
+                                                    <button
+                                                        className="btn-action btn-view"
+                                                        onClick={() => handleView(docente)}
+                                                        title="Ver detalles"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-edit"
+                                                        onClick={() => handleEdit(docente)}
+                                                        title="Editar asignación"
+                                                    >
+                                                        <i className="fas fa-edit"></i>
+                                                    </button>
+                                                    <button
+                                                        className="btn-action btn-delete"
+                                                        onClick={() => handleDelete(docente)}
+                                                        title="Eliminar asignación"
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Modal para AsignarDocente */}
