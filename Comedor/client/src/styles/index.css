@@ -2862,7 +2862,7 @@ html {
 
 /* ===== NAVEGACIÓN POR PESTAÑAS ===== */
 .navigation-tabs {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .tabs-header {
@@ -3848,4 +3848,122 @@ html {
 
 .insumos-list::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* Estilos para Gestión de Asistencias */
+.gestion-asistencias {
+  padding: 20px;
+}
+
+.header-section {
+  margin-bottom: 30px;
+}
+
+.header-section h2 {
+  color: #2d3748;
+  margin-bottom: 10px;
+}
+
+.header-section p {
+  color: #718096;
+  font-size: 1rem;
+}
+
+.form-card, .enlaces-card {
+  margin-bottom: 30px;
+  border: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+}
+
+.form-card .card-header, .enlaces-card .card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  padding: 20px;
+}
+
+.form-card .card-header h3, .enlaces-card .card-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.form-card .card-body, .enlaces-card .card-body {
+  padding: 30px;
+}
+
+.enlace-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.enlace-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.enlace-info {
+  flex: 1;
+  margin-right: 15px;
+}
+
+.enlace-details {
+  margin-bottom: 10px;
+}
+
+.enlace-details .badge {
+  font-size: 0.75rem;
+}
+
+.enlace-url input {
+  font-size: 0.85rem;
+  font-family: 'Courier New', monospace;
+  background: white;
+}
+
+.enlace-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.enlace-actions .btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+/* Responsive para gestión de asistencias */
+@media (max-width: 768px) {
+  .gestion-asistencias {
+    padding: 15px;
+  }
+  
+  .enlace-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .enlace-info {
+    margin-right: 0;
+  }
+  
+  .enlace-actions {
+    justify-content: center;
+  }
+  
+  .form-card .card-body, .enlaces-card .card-body {
+    padding: 20px;
+  }
 }

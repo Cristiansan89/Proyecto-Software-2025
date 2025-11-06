@@ -123,19 +123,16 @@ const ListaInsumos = () => {
     }
 
     return (
-        <div>
-            {/* Header */}
+        <div className="page-content">
             <div className="page-header">
-                <div className="header-content">
-                    <div className="title-section">
-                        <h1 className="page-title">
-                            <i className="fas fa-boxes me-2"></i>
-                            Gestión de Insumos
-                        </h1>
-                        <p className="page-subtitle">
-                            Administra los insumos disponibles en el comedor
-                        </p>
-                    </div>
+                <div className="header-left">
+                    <h1 className="page-title">
+                        <i className="fas fa-boxes me-2"></i>
+                        Gestión de Insumos
+                    </h1>
+                    <p className="page-subtitle">
+                        Administra los insumos disponibles en el comedor
+                    </p>
                 </div>
                 <div className="header-actions">
                     <button

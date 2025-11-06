@@ -172,19 +172,16 @@ const ListaProveedores = () => {
     }
 
     return (
-        <div>
-            {/* Header */}
+        <div className="page-content">
             <div className="page-header">
-                <div className="header-content">
-                    <div className="title-section">
-                        <h1 className="page-title">
-                            <i className="fas fa-truck me-2"></i>
-                            Gestión de Proveedores
-                        </h1>
-                        <p className="page-subtitle">
-                            Administra los proveedores y sus insumos disponibles
-                        </p>
-                    </div>
+                <div className="header-left">
+                    <h1 className="page-title">
+                        <i className="fas fa-truck me-2"></i>
+                        Gestión de Proveedores
+                    </h1>
+                    <p className="page-subtitle">
+                        Administra los proveedores y sus insumos disponibles
+                    </p>
                 </div>
                 <div className="header-actions">
                     <button
@@ -195,7 +192,6 @@ const ListaProveedores = () => {
                         Nuevo Proveedor
                     </button>
                 </div>
-
             </div>
             <div className="page-header">
                 <div className="header-stats">

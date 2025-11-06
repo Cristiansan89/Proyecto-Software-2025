@@ -154,10 +154,9 @@ const ListaPersonas = () => {
     };
 
     return (
-        <div>
-            {/* Header */}
+        <div className="page-content">
             <div className="page-header">
-                <div className="header-content">
+                <div className="header-left">
                     <h1 className="page-title">
                         <i className="fas fa-users me-2"></i>
                         Gestión de Personas

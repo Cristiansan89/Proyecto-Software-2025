@@ -288,4 +288,28 @@ export class DocenteGradoModel {
         )
         return grados
     }
+
+    // Obtener grados asignados a un docente específico
+    static async getGradosByDocente({ idPersona }) {
+        const [grados] = await connection.query(
+            `SELECT 
+                dg.id_docenteTitular as idDocenteTitular,
+                dg.nombreGrado,
+                dg.fechaAsignado,
+                dg.cicloLectivo,
+                g.id_grado as idGrado,
+                g.estado as estadoGrado,
+                t.nombre as turno,
+                t.horaInicio,
+                t.horaFin,
+                'Docente Titular' as tipoDocente
+             FROM DocenteGrado dg
+             LEFT JOIN Grados g ON dg.nombreGrado = g.nombreGrado
+             LEFT JOIN Turnos t ON g.id_turno = t.id_turno
+             WHERE dg.id_persona = ?
+             ORDER BY dg.cicloLectivo DESC, dg.nombreGrado;`,
+            [idPersona]
+        )
+        return grados
+    }
 }

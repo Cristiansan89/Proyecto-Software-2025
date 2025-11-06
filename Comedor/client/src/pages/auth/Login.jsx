@@ -16,7 +16,7 @@ const Login = () => {
     // Redirigir si ya está autenticado
     useEffect(() => {
         if (isAuthenticated && !authLoading) {
-            navigate('/admin', { replace: true });
+            navigate('/dashboard', { replace: true });
         }
     }, [isAuthenticated, authLoading, navigate]);
 
@@ -52,18 +52,18 @@ const Login = () => {
             const user = await login(formData.nombreUsuario, formData.contrasena);
 
             // Redirigir según el rol del usuario
-            if (user.rol === 'Administrador') {
-                navigate('/admin', { replace: true });
-            } else if (user.rol === 'Docente' || user.rol === 'Docente Titular' || user.rol === 'Docente Suplente') {
-                // Por ahora redirigir al admin, después crearemos la interfaz de docente
-                alert('Interfaz de docente en desarrollo. Redirigiendo a administración...');
-                navigate('/admin', { replace: true });
-            } else if (user.rol === 'Cocinera') {
+            const userRole = user.rol || user.nombre_rol;
+            if (userRole === 'Administrador') {
+                navigate('/admin/dashboard', { replace: true });
+            } else if (userRole === 'Docente' || userRole === 'Docente Titular' || userRole === 'Docente Suplente') {
+                navigate('/docente/dashboard', { replace: true });
+            } else if (userRole === 'Cocinera') {
                 // Por ahora redirigir al admin, después crearemos la interfaz de cocinera
                 alert('Interfaz de cocinera en desarrollo. Redirigiendo a administración...');
-                navigate('/admin', { replace: true });
+                navigate('/admin/dashboard', { replace: true });
             } else {
-                setError('Rol de usuario no reconocido');
+                // Usar el redireccionador automático
+                navigate('/dashboard', { replace: true });
             }
 
         } catch (error) {

@@ -3,6 +3,7 @@ import { corsMiddleware } from './middlewares/cors.js'
 import { createAuthRouter } from './routes/auth.js'
 
 // Importar todas las rutas
+import { createAsistenciaRouter } from './routes/asistencias.js'
 import { createRolRouter } from './routes/roles.js'
 import { createGradoRouter } from './routes/grados.js'
 import { createInsumoRouter } from './routes/insumos.js'
@@ -33,6 +34,7 @@ import reemplazoDocenteRouter from './routes/reemplazodocente.js'
 
 export const createApp = ({
     usuarioModel,
+    asistenciaModel,
     consumoModel,
     rolModel,
     gradoModel,
@@ -64,6 +66,7 @@ export const createApp = ({
 
     // Rutas públicas (no requieren autenticación)
     app.use('/auth', createAuthRouter({ usuarioModel }))
+    app.use('/asistencias', createAsistenciaRouter({ asistenciaModel }))
 
     // Comentamos temporalmente el middleware de autenticación
     // app.use(authRequired)
@@ -94,6 +97,29 @@ export const createApp = ({
     app.use('/alumno-grados', alumnoGradoRouter)
     app.use('/docente-grados', docenteGradoRouter)
     app.use('/reemplazo-docentes', reemplazoDocenteRouter)
+
+    // Endpoint específico para obtener alumnos de un grado
+    app.get('/alumnos-grado', async (req, res) => {
+        try {
+            const { nombreGrado } = req.query;
+
+            if (!nombreGrado) {
+                return res.status(400).json({
+                    message: 'El parámetro nombreGrado es requerido'
+                });
+            }
+
+            const { AlumnoGradoModel } = await import('./models/alumnogrado.js');
+            const alumnos = await AlumnoGradoModel.getByGrado({ nombreGrado });
+            res.json(alumnos);
+        } catch (error) {
+            console.error('Error al obtener alumnos por grado:', error);
+            res.status(500).json({
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    });
 
     return app
 }

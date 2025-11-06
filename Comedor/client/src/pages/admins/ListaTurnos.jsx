@@ -119,34 +119,35 @@ const ListaTurnos = () => {
 
     return (
         <div className="turnos-container">
-            {/* Header */}
-            <div className="page-header">
-                <div className="header-content">
-                    <h2>Gestión de Turnos</h2>
-                    <p>Administra los turnos de atención del comedor</p>
-                    <div className="header-stats">
-                        <div className="stat-card-users">
-                            <div className="stat-number-users">{turnos.length}</div>
-                            <div className="stat-label-users">Total</div>
-                        </div>
-                        <div className="stat-card-stock">
-                            <div className="summary-number-stock">{turnos.filter(t => t.estado === 'Activo').length}</div>
-                            <div className="summary-label-stock">Activos</div>
-                        </div>
-                        <div className="stat-card-alert">
-                            <div className="summary-number-alert">{turnos.filter(t => t.estado === 'Inactivo').length}</div>
-                            <div className="summary-label-alert">Inactivos</div>
-                        </div>
+            <div className="page-content">
+                <div className="page-header">
+                    <div className="header-left">
+                        <h2 className="page-title">Gestión de Turnos</h2>
+                    </div>
+                    <div className="header-actions">
+                        <button className="btn btn-primary-new" onClick={handleCreate}>
+                            <i className="fas fa-plus"></i>
+                            Nuevo Turno
+                        </button>
                     </div>
                 </div>
-                <div className="header-actions">
-                    <button className="btn btn-primary-new" onClick={handleCreate}>
-                        <i className="fas fa-plus"></i>
-                        Nuevo Turno
-                    </button>
+            </div>
+            <div className="page-header">
+                <div className="header-stats">
+                    <div className="stat-card-users">
+                        <div className="stat-number-users">{turnos.length}</div>
+                        <div className="stat-label-users">Total</div>
+                    </div>
+                    <div className="stat-card-stock">
+                        <div className="summary-number-stock">{turnos.filter(t => t.estado === 'Activo').length}</div>
+                        <div className="summary-label-stock">Activos</div>
+                    </div>
+                    <div className="stat-card-alert">
+                        <div className="summary-number-alert">{turnos.filter(t => t.estado === 'Inactivo').length}</div>
+                        <div className="summary-label-alert">Inactivos</div>
+                    </div>
                 </div>
             </div>
-
             {/* Filtros */}
             <div className="search-filters">
                 <div className="search-bar">

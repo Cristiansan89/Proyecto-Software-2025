@@ -28,14 +28,14 @@ const PersonaGrado = () => {
     ];
 
     return (
-        <div className="persona-grado-container">
+        <div className="page-content">
             {/* Header */}
             <div className="page-header">
                 <div className="header-left">
-                    <h3>
+                    <h1 className="page-title">
                         <i className="fas fa-user-clock me-2"> </i>
                         Asignación de Personas a Grados
-                    </h3>
+                    </h1>
                     <p>Administra la asignación de personas a grados</p>
                 </div>
             </div>

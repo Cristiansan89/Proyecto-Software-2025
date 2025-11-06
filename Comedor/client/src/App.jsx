@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/auth/Login'
 import AdminDashboard from './pages/admins/Dashboard'
 import ListaPersonas from './pages/admins/ListaPersonas'
@@ -9,9 +9,36 @@ import ListaInsumos from './pages/admins/ListaInsumos'
 import ListaProveedores from './pages/admins/ListaProveedores'
 import Configuracion from './pages/admins/Configuracion'
 import PersonaGrado from './pages/admins/PersonaGrado'
+import GestionAsistencias from './pages/docente/GestionAsistencias'
+import RegistroAsistenciasMovil from './pages/movil/RegistroAsistenciasMovil'
+import DocenteDashboard from './pages/docente/DocenteDashboard'
+import DocenteAsistencias from './pages/docente/DocenteAsistencias'
+import MisAlumnos from './pages/docente/MisAlumnos'
+import Horarios from './pages/docente/Horarios'
 import AdminLayout from './layouts/AdminLayout'
+import DocenteLayout from './layouts/DocenteLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import './styles/App.css'
+
+// Componente para redireccionar según el rol del usuario
+const DashboardRedirect = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redireccionar según el rol del usuario
+  const userRole = user.rol || user.nombre_rol;
+  if (userRole === 'Administrador') {
+    return <Navigate to="/admin/dashboard" replace />;
+  } else if (userRole === 'Docente') {
+    return <Navigate to="/docente/dashboard" replace />;
+  } else {
+    // Para otros roles, redirigir a admin por defecto
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+};
 
 function App() {
   return (
@@ -22,11 +49,14 @@ function App() {
             {/* Ruta pública de login */}
             <Route path="/login" element={<Login />} />
 
+            {/* Ruta pública para registro de asistencias móvil */}
+            <Route path="/asistencias/registro/:token" element={<RegistroAsistenciasMovil />} />
+
             {/* Rutas protegidas del panel administrativo */}
             <Route
               path="/admin/*"
               element={
-                <ProtectedRoute requireAuth={true}>
+                <ProtectedRoute requireAuth={true} allowedRoles={['Administrador']}>
                   <AdminLayout>
                     <Routes>
                       <Route path="/" element={<AdminDashboard />} />
@@ -37,6 +67,7 @@ function App() {
                       <Route path="/insumos" element={<ListaInsumos />} />
                       <Route path="/proveedores" element={<ListaProveedores />} />
                       <Route path="/personasgrados" element={<PersonaGrado />} />
+                      <Route path="/asistencias" element={<GestionAsistencias />} />
                       <Route path="/configuracion" element={<Configuracion />} />
                     </Routes>
                   </AdminLayout>
@@ -44,12 +75,40 @@ function App() {
               }
             />
 
-            {/* Ruta raíz - redirige según autenticación */}
+            {/* Rutas protegidas del panel docente */}
+            <Route
+              path="/docente/*"
+              element={
+                <ProtectedRoute requireAuth={true} allowedRoles={['Docente']}>
+                  <DocenteLayout>
+                    <Routes>
+                      <Route path="/" element={<DocenteDashboard />} />
+                      <Route path="/dashboard" element={<DocenteDashboard />} />
+                      <Route path="/asistencias" element={<DocenteAsistencias />} />
+                      <Route path="/mis-alumnos" element={<MisAlumnos />} />
+                      <Route path="/horarios" element={<Horarios />} />
+                    </Routes>
+                  </DocenteLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Ruta raíz - redirige según autenticación y rol */}
             <Route
               path="/"
               element={
                 <ProtectedRoute>
-                  <Navigate to="/admin/dashboard" replace />
+                  <Navigate to="/dashboard" replace />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Ruta dashboard - redirige según rol del usuario */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <DashboardRedirect />
                 </ProtectedRoute>
               }
             />

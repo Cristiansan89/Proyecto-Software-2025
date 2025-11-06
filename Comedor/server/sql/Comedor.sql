@@ -38,7 +38,7 @@ CREATE TABLE Asistencias(
     id_servicio       INT                        NOT NULL,
     id_alumnoGrado    INT                        NOT NULL,
     fecha             DATE                       DEFAULT '2025-01-01',
-    estado            ENUM('Ausente', 'Presente', 'No Registrado')    NOT NULL DEFAULT 'No Registrado',
+    estado            ENUM('Ausente', 'Si', 'No')    NOT NULL DEFAULT 'No',
     PRIMARY KEY (id_asistencia)
 )ENGINE=INNODB;
 
@@ -413,7 +413,7 @@ CREATE TABLE ReemplazoDocente(
 CREATE TABLE Roles(
     id_rol                   INT                        AUTO_INCREMENT,
     nombreRol                VARCHAR(100)               NOT NULL,
-    descripcionRol           VARCHAR(100)               NOT NULL,
+    descripcionRol           VARCHAR(255)               NOT NULL,
     habilitaCuentaUsuario    ENUM('Si', 'No')    	NOT NULL DEFAULT 'No',
     estado                   ENUM('Activo', 'Inactivo')	NOT NULL DEFAULT 'Activo',
     PRIMARY KEY (id_rol)

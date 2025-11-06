@@ -1,4 +1,5 @@
 import { createApp } from "./app.js"
+import { AsistenciaModel } from './models/asistencia.js'
 import { ConsumoModel } from './models/consumo.js'
 
 // Configurar JWT_SECRET si no existe
@@ -30,6 +31,7 @@ import { UsuarioModel } from './models/usuario.js'
 const PORT = process.env.PORT ?? 3000
 
 const app = createApp({
+    asistenciaModel: AsistenciaModel,
     consumoModel: ConsumoModel,
     rolModel: RolModel,
     gradoModel: GradoModel,

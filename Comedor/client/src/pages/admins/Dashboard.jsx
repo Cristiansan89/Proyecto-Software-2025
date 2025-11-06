@@ -122,32 +122,6 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon alumnos">
-                        <i className="fas fa-graduation-cap"></i>
-                    </div>
-                    <div className="stat-info">
-                        <h3>{dashboardStats.alumnosActivos}</h3>
-                        <p>Alumnos Activos</p>
-                        <small className="stat-description">
-                            <i className="fas fa-info-circle"></i> Estudiantes registrados
-                        </small>
-                    </div>
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon docentes">
-                        <i className="fas fa-chalkboard-teacher"></i>
-                    </div>
-                    <div className="stat-info">
-                        <h3>{dashboardStats.docentesActivos}</h3>
-                        <p>Docentes Activos</p>
-                        <small className="stat-description">
-                            <i className="fas fa-info-circle"></i> Personal docente
-                        </small>
-                    </div>
-                </div>
-
-                <div className="stat-card">
                     <div className="stat-icon insumos">
                         <i className="fas fa-boxes"></i>
                     </div>

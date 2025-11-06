@@ -126,42 +126,44 @@ const ListaServicios = () => {
 
     return (
         <div className="servicios-container">
-            {/* Header */}
-            <div className="page-header">
-                <div className="header-content">
-                    <h2>Gestión de Servicios</h2>
-
-                    <div className="header-stats">
-                        <div className="stat-card-users">
-                            <div className="stat-number-users">{servicios.length}</div>
-                            <div className="stat-label-users">Total</div>
-                        </div>
-                        <div className="stat-card-stock">
-                            <div className="summary-number-stock">{servicios.filter(s => s.estado === 'Activo').length}</div>
-                            <div className="summary-label-stock">Activos</div>
-                        </div>
-                        <div className="stat-card-alert">
-                            <div className="summary-number-alert">{servicios.filter(s => s.estado === 'Inactivo').length}</div>
-                            <div className="summary-label-alert">Inactivos</div>
-                        </div>
-                        <div className="stat-card-users">
-                            <div className="stat-number-users">
-                                {Object.values(servicioTurnos).reduce((total, turnos) => total + turnos.length, 0)}
-                            </div>
-                            <div className="stat-label-users">Turnos Asignados</div>
-                        </div>
+            <div className="page-content">
+                <div className="page-header">
+                    <div className="header-left">
+                        <h2 className="page-title">Gestión de Servicios</h2>
+                    </div>
+                    <div className="header-actions">
+                        <button className="btn btn-primary-new" onClick={handleCreate}>
+                            <i className="fas fa-plus"></i>
+                            Nuevo Servicio
+                        </button>
                     </div>
                 </div>
-                <div className="header-actions">
-                    <button className="btn btn-primary-new" onClick={handleCreate}>
-                        <i className="fas fa-plus"></i>
-                        Nuevo Servicio
-                    </button>
+            </div>
+            <div className="page-header">
+                <div className="header-stats">
+                    <div className="stat-card-users">
+                        <div className="stat-number-users">{servicios.length}</div>
+                        <div className="stat-label-users">Total</div>
+                    </div>
+                    <div className="stat-card-stock">
+                        <div className="summary-number-stock">{servicios.filter(s => s.estado === 'Activo').length}</div>
+                        <div className="summary-label-stock">Activos</div>
+                    </div>
+                    <div className="stat-card-alert">
+                        <div className="summary-number-alert">{servicios.filter(s => s.estado === 'Inactivo').length}</div>
+                        <div className="summary-label-alert">Inactivos</div>
+                    </div>
+                    <div className="stat-card-users">
+                        <div className="stat-number-users">
+                            {Object.values(servicioTurnos).reduce((total, turnos) => total + turnos.length, 0)}
+                        </div>
+                        <div className="stat-label-users">Turnos Asignados</div>
+                    </div>
                 </div>
             </div>
 
             {/* Filtros */}
-            <div className="search-filters">
+            <div div className="search-filters" >
                 <div className="search-bar">
                     <input
                         type="text"
@@ -185,7 +187,7 @@ const ListaServicios = () => {
             </div>
 
             {/* Información de resultados */}
-            <div className="results-info">
+            <div div className="results-info" >
                 <div className="results-count">
                     <span>Mostrando {filteredServicios.length} de {servicios.length} servicios</span>
                     {searchTerm && <span className="filter-indicator">filtrado por "{searchTerm}"</span>}
@@ -193,133 +195,137 @@ const ListaServicios = () => {
             </div>
 
             {/* Tabla de servicios */}
-            <div className="table-container">
-                {filteredServicios.length === 0 ? (
-                    <div className="no-data">
-                        <p>No se encontraron servicios</p>
-                    </div>
-                ) : (
-                    <div className="scrollable-table">
-                        <div className="table-body-scroll">
-                            <table className="data-table" style={{ width: '100%' }}>
-                                <thead className="table-header-fixed">
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Descripción</th>
-                                        <th>Turno</th>
-                                        <th>Estado</th>
-                                        <th>Fecha Alta</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredServicios.map(servicio => (
-                                        <tr key={servicio.idServicio}>
-                                            <td>
-                                                <div className="servicio-name">
-                                                    <i className="fas fa-utensils"></i>
-                                                    <strong>{servicio.nombre}</strong>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="servicio-description">
-                                                    {servicio.descripcion}
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="servicio-turno">
-                                                    {servicioTurnos[servicio.idServicio] && servicioTurnos[servicio.idServicio].length > 0 ? (
-                                                        <div className="turnos-list">
-                                                            {servicioTurnos[servicio.idServicio].map((turno) => (
-                                                                <span
-                                                                    key={turno.idTurno}
-                                                                    className="turno-badge"
-                                                                    title={`${turno.nombreTurno}: ${turno.horaInicio} - ${turno.horaFin}`}
-                                                                >
-                                                                    {turno.nombreTurno}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="no-turnos">Sin turnos asignados</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className={`status-badge ${servicio.estado.toLowerCase()}`}>
-                                                    {servicio.estado}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {servicio.fechaAlta ? new Date(servicio.fechaAlta).toLocaleDateString() : '-'}
-                                            </td>
-                                            <td>
-                                                <div className="action-buttons">
-                                                    <button
-                                                        className="btn-action btn-view"
-                                                        onClick={() => handleView(servicio)}
-                                                        title="Ver detalles"
-                                                    >
-                                                        <i className="fas fa-eye"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-edit"
-                                                        onClick={() => handleEdit(servicio)}
-                                                        title="Editar"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-delete"
-                                                        onClick={() => handleDelete(servicio)}
-                                                        title="Eliminar"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                    <button
-                                                        className={`btn-action ${servicio.estado === 'Activo' ? 'btn-delete' : 'btn-assign'}`}
-                                                        onClick={() => handleChangeStatus(servicio, servicio.estado === 'Activo' ? 'Inactivo' : 'Activo')}
-                                                        title={servicio.estado === 'Activo' ? 'Desactivar' : 'Activar'}
-                                                    >
-                                                        <i className={`fas ${servicio.estado === 'Activo' ? 'fa-times' : 'fa-check'}`}></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+            <div div className="table-container" >
+                {
+                    filteredServicios.length === 0 ? (
+                        <div className="no-data">
+                            <p>No se encontraron servicios</p>
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <div className="scrollable-table">
+                            <div className="table-body-scroll">
+                                <table className="data-table" style={{ width: '100%' }}>
+                                    <thead className="table-header-fixed">
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Descripción</th>
+                                            <th>Turno</th>
+                                            <th>Estado</th>
+                                            <th>Fecha Alta</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredServicios.map(servicio => (
+                                            <tr key={servicio.idServicio}>
+                                                <td>
+                                                    <div className="servicio-name">
+                                                        <i className="fas fa-utensils"></i>
+                                                        <strong>{servicio.nombre}</strong>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="servicio-description">
+                                                        {servicio.descripcion}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="servicio-turno">
+                                                        {servicioTurnos[servicio.idServicio] && servicioTurnos[servicio.idServicio].length > 0 ? (
+                                                            <div className="turnos-list">
+                                                                {servicioTurnos[servicio.idServicio].map((turno) => (
+                                                                    <span
+                                                                        key={turno.idTurno}
+                                                                        className="turno-badge"
+                                                                        title={`${turno.nombreTurno}: ${turno.horaInicio} - ${turno.horaFin}`}
+                                                                    >
+                                                                        {turno.nombreTurno}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="no-turnos">Sin turnos asignados</span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className={`status-badge ${servicio.estado.toLowerCase()}`}>
+                                                        {servicio.estado}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {servicio.fechaAlta ? new Date(servicio.fechaAlta).toLocaleDateString() : '-'}
+                                                </td>
+                                                <td>
+                                                    <div className="action-buttons">
+                                                        <button
+                                                            className="btn-action btn-view"
+                                                            onClick={() => handleView(servicio)}
+                                                            title="Ver detalles"
+                                                        >
+                                                            <i className="fas fa-eye"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn-action btn-edit"
+                                                            onClick={() => handleEdit(servicio)}
+                                                            title="Editar"
+                                                        >
+                                                            <i className="fas fa-edit"></i>
+                                                        </button>
+                                                        <button
+                                                            className="btn-action btn-delete"
+                                                            onClick={() => handleDelete(servicio)}
+                                                            title="Eliminar"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                        <button
+                                                            className={`btn-action ${servicio.estado === 'Activo' ? 'btn-delete' : 'btn-assign'}`}
+                                                            onClick={() => handleChangeStatus(servicio, servicio.estado === 'Activo' ? 'Inactivo' : 'Activo')}
+                                                            title={servicio.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                                                        >
+                                                            <i className={`fas ${servicio.estado === 'Activo' ? 'fa-times' : 'fa-check'}`}></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )
+                }
             </div>
 
             {/* Modal */}
-            {showModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content servicio-modal">
-                        <div className="modal-header">
-                            <h3>
-                                {modalMode === 'create' && 'Crear Nuevo Servicio'}
-                                {modalMode === 'edit' && 'Editar Servicio'}
-                                {modalMode === 'view' && 'Ver Servicio'}
-                            </h3>
-                            <button className="modal-close" onClick={handleCancel}>
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <ServicioForm
-                                servicio={selectedServicio}
-                                mode={modalMode}
-                                onSave={handleSave}
-                                onCancel={handleCancel}
-                            />
+            {
+                showModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content servicio-modal">
+                            <div className="modal-header">
+                                <h3>
+                                    {modalMode === 'create' && 'Crear Nuevo Servicio'}
+                                    {modalMode === 'edit' && 'Editar Servicio'}
+                                    {modalMode === 'view' && 'Ver Servicio'}
+                                </h3>
+                                <button className="modal-close" onClick={handleCancel}>
+                                    <i className="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                <ServicioForm
+                                    servicio={selectedServicio}
+                                    mode={modalMode}
+                                    onSave={handleSave}
+                                    onCancel={handleCancel}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

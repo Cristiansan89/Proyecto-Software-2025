@@ -223,4 +223,27 @@ export class DocenteGradoController {
             })
         }
     }
+
+    static async getGradosByDocente(req, res) {
+        try {
+            const { idPersona } = req.query
+
+            if (!idPersona) {
+                return res.status(400).json({
+                    message: 'El parámetro idPersona es requerido'
+                })
+            }
+
+            const grados = await DocenteGradoModel.getGradosByDocente({
+                idPersona: parseInt(idPersona)
+            })
+            res.json(grados)
+        } catch (error) {
+            console.error('Error al obtener grados por docente:', error)
+            res.status(500).json({
+                message: 'Error interno del servidor',
+                error: error.message
+            })
+        }
+    }
 }

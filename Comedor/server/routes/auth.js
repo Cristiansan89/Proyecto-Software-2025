@@ -43,11 +43,13 @@ export const createAuthRouter = ({ usuarioModel }) => {
 
             const userData = {
                 idUsuario: usuario.idUsuario,
+                idPersona: usuario.idPersona,
                 nombreUsuario: usuario.nombreUsuario,
                 nombres: usuario.nombres,
                 nombre: usuario.nombre,
                 apellido: usuario.apellido,
                 rol: usuario.nombreRol,
+                nombre_rol: usuario.nombreRol, // Para compatibilidad
                 mail: usuario.mail,
                 telefono: usuario.telefono
             }

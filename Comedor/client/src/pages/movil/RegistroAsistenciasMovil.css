@@ -1,0 +1,329 @@
+/* Estilos para Registro de Asistencias Móvil */
+
+.movil-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    padding-bottom: 80px; /* Espacio para el botón fijo */
+}
+
+/* Header */
+.header-movil {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 20px 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+.header-content h1 {
+    font-size: 1.5rem;
+    margin: 0 0 15px 0;
+    color: #4a5568;
+    text-align: center;
+    font-weight: 700;
+}
+
+.info-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-item {
+    background: rgba(102, 126, 234, 0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #4a5568;
+    text-align: center;
+}
+
+/* Estadísticas */
+.stats-movil {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 15px 20px 15px;
+    gap: 10px;
+}
+
+.stat-item {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 15px 10px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.stat-si .stat-number { color: #48bb78; }
+.stat-no .stat-number { color: #ed8936; }
+.stat-ausente .stat-number { color: #e53e3e; }
+
+/* Lista de Alumnos */
+.alumnos-lista {
+    padding: 0 15px;
+    margin-bottom: 20px;
+}
+
+.alumno-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.alumno-info {
+    margin-bottom: 15px;
+}
+
+.alumno-info h3 {
+    font-size: 1.1rem;
+    margin: 0 0 5px 0;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.alumno-dni {
+    font-size: 0.85rem;
+    color: #718096;
+    margin: 0;
+}
+
+/* Opciones de Asistencia */
+.opciones-asistencia {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.opcion-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f7fafc;
+    color: #4a5568;
+    max-width: 80px;
+}
+
+.opcion-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.opcion-si {
+    border-color: #c6f6d5;
+}
+
+.opcion-si.active {
+    background: #48bb78;
+    color: white;
+    border-color: #48bb78;
+}
+
+.opcion-no {
+    border-color: #fed7cc;
+}
+
+.opcion-no.active {
+    background: #ed8936;
+    color: white;
+    border-color: #ed8936;
+}
+
+.opcion-ausente {
+    border-color: #fed7d7;
+}
+
+.opcion-ausente.active {
+    background: #e53e3e;
+    color: white;
+    border-color: #e53e3e;
+}
+
+/* Botón de Guardar */
+.footer-movil {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 15px;
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+}
+
+.btn-guardar {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-guardar:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-guardar:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Mensajes */
+.mensaje-error {
+    margin: 15px;
+    padding: 15px;
+    background: rgba(254, 178, 178, 0.9);
+    color: #742a2a;
+    border-radius: 12px;
+    border-left: 4px solid #e53e3e;
+    font-weight: 500;
+}
+
+.mensaje-success {
+    margin: 15px;
+    padding: 15px;
+    background: rgba(198, 246, 213, 0.9);
+    color: #22543d;
+    border-radius: 12px;
+    border-left: 4px solid #48bb78;
+    font-weight: 500;
+}
+
+/* Loading States */
+.loading-movil {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    color: white;
+}
+
+.spinner-movil {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+.spinner-btn {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-movil {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    padding: 20px;
+    color: white;
+    text-align: center;
+}
+
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.error-movil h3 {
+    font-size: 1.5rem;
+    margin: 0 0 15px 0;
+}
+
+.error-movil p {
+    font-size: 1rem;
+    margin: 0 0 20px 0;
+    opacity: 0.9;
+}
+
+.btn-retry {
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-retry:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive para pantallas muy pequeñas */
+@media (max-width: 350px) {
+    .opciones-asistencia {
+        flex-direction: column;
+    }
+    
+    .opcion-btn {
+        max-width: none;
+    }
+    
+    .stats-movil {
+        flex-direction: column;
+    }
+    
+    .header-content h1 {
+        font-size: 1.3rem;
+    }
+}
+
+/* Responsive para pantallas más grandes (tablets) */
+@media (min-width: 768px) {
+    .movil-container {
+        max-width: 500px;
+        margin: 0 auto;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+    }
+}

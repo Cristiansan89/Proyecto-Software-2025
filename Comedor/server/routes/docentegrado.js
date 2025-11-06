@@ -12,6 +12,9 @@ router.get('/docentes-disponibles', DocenteGradoController.getDocentesDisponible
 // Obtener grados disponibles (sin docente asignado)
 router.get('/grados-disponibles', DocenteGradoController.getGradosDisponibles)
 
+// Obtener grados asignados a un docente específico
+router.get('/grados-by-docente', DocenteGradoController.getGradosByDocente)
+
 // Obtener docentes por grado específico
 router.get('/grado/:nombreGrado', DocenteGradoController.getByGrado)
 

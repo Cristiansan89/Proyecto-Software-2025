@@ -1049,24 +1049,9 @@ const GestionRolesPermisos = () => {
     }
 
     return (
-        <div className="gestion-roles-container">
-            {/* Alerta de error no crítico */}
-            {error && (roles.length > 0 || permisos.length > 0) && (
-                <div className="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i className="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Advertencia:</strong> {error}
-                    <button
-                        type="button"
-                        className="btn-close"
-                        onClick={() => setError(null)}
-                        aria-label="Close"
-                    ></button>
-                </div>
-            )}
-
-            {/* Header */}
+        <div className="page-content">
             <div className="page-header">
-                <div className="header-content">
+                <div className="header-left">
                     <h1 className="page-title">
                         <i className="fas fa-shield-alt me-2"></i>
                         Gestión de Seguridad

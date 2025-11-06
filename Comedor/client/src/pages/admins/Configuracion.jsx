@@ -21,12 +21,13 @@ const Configuracion = () => {
     ];
 
     return (
-        <div className="configuracion-container">
-            {/* Header */}
+        <div className="page-content">
             <div className="page-header">
-                <div className="header-content">
-
-                    <h2><i className="fas fa-cog"></i> Configuración del Sistema</h2>
+                <div className="header-left">
+                    <h1 className='page-title'>
+                        <i className="fas fa-cog me-2"></i>
+                        Configuración del Sistema
+                    </h1>
                     <p>Administra la configuración básica del comedor</p>
                 </div>
             </div>
