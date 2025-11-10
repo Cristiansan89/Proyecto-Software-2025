@@ -194,6 +194,8 @@ CREATE TABLE ItemsRecetas(
     id_receta             BINARY(16)        NOT NULL,
     id_insumo             INT               NOT NULL,
     cantidadPorPorcion    DECIMAL(10, 3)    NOT NULL,
+    unidadPorPorcion ENUM(
+    'Gramo', 'Kilogramo', 'Mililitro', 'Litro', 'Unidad', 'Pizca', 'Cucharadita', 'Cucharada', 'Taza') NOT NULL DEFAULT 'Unidad';
     PRIMARY KEY (idItemReceta)
 )ENGINE=INNODB;
 
@@ -376,7 +378,6 @@ CREATE TABLE ProveedorInsumo(
 
 CREATE TABLE Recetas(
     id_receta        BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_servicio      INT                        NOT NULL,
     nombreReceta     VARCHAR(100)               NOT NULL,
     instrucciones    TEXT                       NOT NULL,
     unidadSalida     ENUM('Bandeja', 'Gramo', 'Litro', 'Plato', 'Porcion', 'Racion', 'Unidad')    	NOT NULL DEFAULT 'Porcion',
@@ -830,12 +831,6 @@ CREATE UNIQUE INDEX uk_receta ON Recetas(nombreReceta)
 -- INDEX: Ref2682 
 --
 
-CREATE INDEX Ref2682 ON Recetas(id_servicio)
-;
--- 
--- INDEX: Ref3295 
---
-
 CREATE INDEX Ref3295 ON ReemplazoDocente(nombreGrado, id_docenteTitular, id_persona)
 ;
 -- 
@@ -1179,16 +1174,6 @@ ALTER TABLE ProveedorInsumo ADD CONSTRAINT RefProveedores544
 ALTER TABLE ProveedorInsumo ADD CONSTRAINT RefInsumos554 
     FOREIGN KEY (id_insumo)
     REFERENCES Insumos(id_insumo)
-;
-
-
--- 
--- TABLE: Recetas 
---
-
-ALTER TABLE Recetas ADD CONSTRAINT RefServicios824 
-    FOREIGN KEY (id_servicio)
-    REFERENCES Servicios(id_servicio)
 ;
 
 

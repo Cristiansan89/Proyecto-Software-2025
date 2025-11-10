@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { ForgotPassword } from '../../components/auth/ForgotPassword';
+import { ChangePassword } from '../../components/auth/ChangePassword';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -12,6 +14,8 @@ const Login = () => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [showChangePassword, setShowChangePassword] = useState(false);
 
     // Redirigir si ya está autenticado
     useEffect(() => {
@@ -58,9 +62,7 @@ const Login = () => {
             } else if (userRole === 'Docente' || userRole === 'Docente Titular' || userRole === 'Docente Suplente') {
                 navigate('/docente/dashboard', { replace: true });
             } else if (userRole === 'Cocinera') {
-                // Por ahora redirigir al admin, después crearemos la interfaz de cocinera
-                alert('Interfaz de cocinera en desarrollo. Redirigiendo a administración...');
-                navigate('/admin/dashboard', { replace: true });
+                navigate('/cocinera/dashboard', { replace: true });
             } else {
                 // Usar el redireccionador automático
                 navigate('/dashboard', { replace: true });
@@ -156,6 +158,18 @@ const Login = () => {
                                 )}
                             </button>
                         </div>
+
+                        <div className="text-center mt-3">
+                            <button
+                                type="button"
+                                className="btn btn-link p-0 text-decoration-none"
+                                onClick={() => setShowForgotPassword(true)}
+                                disabled={loading}
+                            >
+                                <i className="fas fa-question-circle me-1"></i>
+                                ¿Olvidaste tu contraseña?
+                            </button>
+                        </div>
                     </form>
                 </div>
 
@@ -166,6 +180,25 @@ const Login = () => {
                     </small>
                 </div>
             </div>
+
+            {/* Modal de Recuperar Contraseña */}
+            {showForgotPassword && (
+                <ForgotPassword
+                    onBack={() => setShowForgotPassword(false)}
+                />
+            )}
+
+            {/* Modal de Cambiar Contraseña */}
+            {showChangePassword && (
+                <ChangePassword
+                    onClose={() => setShowChangePassword(false)}
+                    onSuccess={() => {
+                        setShowChangePassword(false);
+                        // Opcionalmente cerrar sesión para que use la nueva contraseña
+                        // logout();
+                    }}
+                />
+            )}
         </div>
     );
 };

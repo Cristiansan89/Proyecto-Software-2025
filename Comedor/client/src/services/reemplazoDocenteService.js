@@ -1,10 +1,10 @@
-import api from './api.js';
+import API from './api.js';
 
 const reemplazoDocenteService = {
     // Obtener todos los reemplazos
     async getAll() {
         try {
-            const response = await api.get('/reemplazo-docentes');
+            const response = await API.get('/reemplazo-docentes');
             return response.data;
         } catch (error) {
             console.error('Error al obtener reemplazos:', error);
@@ -15,7 +15,7 @@ const reemplazoDocenteService = {
     // Obtener reemplazo específico por ID
     async getById(id) {
         try {
-            const response = await api.get(`/reemplazo-docentes/${id}`);
+            const response = await API.get(`/reemplazo-docentes/${id}`);
             return response.data;
         } catch (error) {
             console.error('Error al obtener reemplazo:', error);
@@ -26,7 +26,7 @@ const reemplazoDocenteService = {
     // Obtener reemplazos por grado
     async getByGrado(nombreGrado) {
         try {
-            const response = await api.get(`/reemplazo-docentes/grado/${nombreGrado}`);
+            const response = await API.get(`/reemplazo-docentes/grado/${nombreGrado}`);
             return response.data;
         } catch (error) {
             console.error('Error al obtener reemplazos por grado:', error);
@@ -37,7 +37,7 @@ const reemplazoDocenteService = {
     // Obtener docentes suplentes disponibles
     async getDocentesSupletesDisponibles() {
         try {
-            const response = await api.get('/reemplazo-docentes/suplentes-disponibles');
+            const response = await API.get('/reemplazo-docentes/suplentes-disponibles');
             return response.data;
         } catch (error) {
             console.error('Error al obtener docentes suplentes disponibles:', error);
@@ -48,7 +48,7 @@ const reemplazoDocenteService = {
     // Obtener docentes titulares
     async getDocentesTitulares(cicloLectivo = new Date().getFullYear()) {
         try {
-            const response = await api.get(`/reemplazo-docentes/docentes-titulares?cicloLectivo=${cicloLectivo}`);
+            const response = await API.get(`/reemplazo-docentes/docentes-titulares?cicloLectivo=${cicloLectivo}`);
             return response.data;
         } catch (error) {
             console.error('Error al obtener docentes titulares:', error);
@@ -59,7 +59,7 @@ const reemplazoDocenteService = {
     // Obtener opciones (motivos y estados)
     async getOptions() {
         try {
-            const response = await api.get('/reemplazo-docentes/options');
+            const response = await API.get('/reemplazo-docentes/options');
             return response.data;
         } catch (error) {
             console.error('Error al obtener opciones:', error);
@@ -70,7 +70,7 @@ const reemplazoDocenteService = {
     // Crear nuevo reemplazo
     async create(data) {
         try {
-            const response = await api.post('/reemplazo-docentes', data);
+            const response = await API.post('/reemplazo-docentes', data);
             return response.data;
         } catch (error) {
             console.error('Error al crear reemplazo:', error);
@@ -81,7 +81,7 @@ const reemplazoDocenteService = {
     // Actualizar reemplazo existente
     async update(id, data) {
         try {
-            const response = await api.put(`/reemplazo-docentes/${id}`, data);
+            const response = await API.put(`/reemplazo-docentes/${id}`, data);
             return response.data;
         } catch (error) {
             console.error('Error al actualizar reemplazo:', error);
@@ -92,7 +92,7 @@ const reemplazoDocenteService = {
     // Finalizar reemplazo
     async finalizar(id, fechaFin = null) {
         try {
-            const response = await api.patch(`/reemplazo-docentes/${id}/finalizar`, {
+            const response = await API.patch(`/reemplazo-docentes/${id}/finalizar`, {
                 fechaFin: fechaFin || new Date().toISOString().split('T')[0]
             });
             return response.data;
@@ -105,7 +105,7 @@ const reemplazoDocenteService = {
     // Eliminar reemplazo
     async delete(id) {
         try {
-            const response = await api.delete(`/reemplazo-docentes/${id}`);
+            const response = await API.delete(`/reemplazo-docentes/${id}`);
             return response.data;
         } catch (error) {
             console.error('Error al eliminar reemplazo:', error);

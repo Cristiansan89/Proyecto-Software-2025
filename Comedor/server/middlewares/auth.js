@@ -1,7 +1,11 @@
 import jwt from 'jsonwebtoken'
 
 export const authRequired = (req, res, next) => {
-    const token = req.headers['x-access-token']
+    // Verificar el header Authorization
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.substring(7)
+        : req.headers['x-access-token']
 
     if (!token) {
         return res.status(401).json({

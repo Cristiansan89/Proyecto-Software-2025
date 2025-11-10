@@ -8,17 +8,23 @@ const itemRecetaSchema = z.object({
         required_error: 'El ID de la receta es requerido',
         invalid_type_error: 'El ID de la receta debe ser un texto'
     }).regex(uuidRegex, 'El ID de la receta debe ser un UUID válido'),
-    id_insumo: z.string({
+    id_insumo: z.union([
+        z.number().positive('El ID del insumo debe ser un número positivo'),
+        z.string().transform(val => parseInt(val)).refine(val => !isNaN(val) && val > 0, 'El ID del insumo debe ser un número positivo')
+    ], {
         required_error: 'El ID del insumo es requerido',
-        invalid_type_error: 'El ID del insumo debe ser un texto'
-    }).regex(uuidRegex, 'El ID del insumo debe ser un UUID válido'),
-    cantidadUtilizar: z.number({
-        required_error: 'La cantidad a utilizar es requerida',
-        invalid_type_error: 'La cantidad a utilizar debe ser un número'
-    }).positive('La cantidad a utilizar debe ser positiva'),
-    observaciones: z.string({
-        invalid_type_error: 'Las observaciones deben ser un texto'
-    }).max(255, 'Las observaciones no pueden tener más de 255 caracteres').optional().nullable()
+        invalid_type_error: 'El ID del insumo debe ser un número'
+    }),
+    cantidadPorPorcion: z.number({
+        required_error: 'La cantidad por porción es requerida',
+        invalid_type_error: 'La cantidad por porción debe ser un número'
+    }).positive('La cantidad por porción debe ser positiva'),
+    unidadPorPorcion: z.enum([
+        'Gramo', 'Kilogramo', 'Mililitro', 'Litro', 'Unidad', 'Pizca', 'Cucharadita', 'Cucharada', 'Taza'
+    ], {
+        required_error: 'La unidad por porción es requerida',
+        invalid_type_error: 'La unidad por porción no es válida'
+    })
 })
 
 export function validateItemsReceta(input) {

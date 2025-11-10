@@ -10,8 +10,8 @@ export class ItemRecetaModel {
                     ir.id_insumo,
                     r.nombrePlato,
                     i.nombre as nombreInsumo,
-                    i.unidadMedida,
-                    ir.cantidadPorPorcion
+                    ir.cantidadPorPorcion,
+                    ir.unidadPorPorcion
                  FROM ItemsRecetas ir
                  JOIN Recetas r ON ir.id_receta = r.id_receta
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
@@ -33,8 +33,8 @@ export class ItemRecetaModel {
                     ir.id_insumo,
                     r.nombrePlato,
                     i.nombre as nombreInsumo,
-                    i.unidadMedida,
-                    ir.cantidadPorPorcion
+                    ir.cantidadPorPorcion,
+                    ir.unidadPorPorcion
                  FROM ItemsRecetas ir
                  JOIN Recetas r ON ir.id_receta = r.id_receta
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
@@ -53,7 +53,8 @@ export class ItemRecetaModel {
         const {
             id_receta,
             id_insumo,
-            cantidadPorPorcion
+            cantidadPorPorcion,
+            unidadPorPorcion
         } = input
 
         try {
@@ -61,9 +62,10 @@ export class ItemRecetaModel {
                 `INSERT INTO ItemsRecetas (
                     id_receta, 
                     id_insumo, 
-                    cantidadPorPorcion
-                ) VALUES (UUID_TO_BIN(?), ?, ?);`,
-                [id_receta, id_insumo, cantidadPorPorcion]
+                    cantidadPorPorcion,
+                    unidadPorPorcion
+                ) VALUES (UUID_TO_BIN(?), ?, ?, ?);`,
+                [id_receta, id_insumo, cantidadPorPorcion, unidadPorPorcion]
             )
 
             const newId = result.insertId
@@ -93,15 +95,16 @@ export class ItemRecetaModel {
 
     static async update({ id, input }) {
         const {
-            cantidadPorPorcion
+            cantidadPorPorcion,
+            unidadPorPorcion
         } = input
 
         try {
             await connection.query(
                 `UPDATE ItemsRecetas
-                 SET cantidadPorPorcion = ?
+                 SET cantidadPorPorcion = ?, unidadPorPorcion = ?
                  WHERE idItemReceta = ?;`,
-                [cantidadPorPorcion, id]
+                [cantidadPorPorcion, unidadPorPorcion, id]
             )
 
             return this.getById({ id })
@@ -120,8 +123,8 @@ export class ItemRecetaModel {
                     ir.id_insumo,
                     r.nombrePlato,
                     i.nombre as nombreInsumo,
-                    i.unidadMedida,
-                    ir.cantidadPorPorcion
+                    ir.cantidadPorPorcion,
+                    ir.unidadPorPorcion
                  FROM ItemsRecetas ir
                  JOIN Recetas r ON ir.id_receta = r.id_receta
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo

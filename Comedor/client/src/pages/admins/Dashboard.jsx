@@ -36,10 +36,14 @@ const AdminDashboard = () => {
             // Calcular estadísticas
             const usuariosActivos = usuarios.filter(u => u.estado === 'Activo').length;
             const personasActivas = personas.filter(p => p.estado === 'Activo').length;
-            const alumnosActivos = personas.filter(p => p.estado === 'Activo' && p.tipoPersona === 'Alumno').length;
-            const docentesActivos = personas.filter(p => p.estado === 'Activo' && p.tipoPersona === 'Docente').length;
+
+            // Obtener alumnos y docentes únicos de personas
+            const alumnosActivos = personas.filter(p => p.rol === 'Alumno' && p.estado === 'Activo').length;
+            const docentesActivos = personas.filter(p => p.rol === 'Docente' && p.estado === 'Activo').length;
+
             const insumosStock = insumos.filter(i => i.estado === 'Activo').length;
             const proveedoresActivos = proveedores.filter(p => p.estado === 'Activo').length;
+
 
             setDashboardStats({
                 usuariosActivos,
@@ -71,7 +75,7 @@ const AdminDashboard = () => {
     return (
         <div>
             <div className="dashboard-header">
-                <div className="header-content">
+                <div className="page-header">
                     <div className="header-text">
                         <h2>Panel de Administración</h2>
                         <p>Resumen general del sistema de comedor</p>
@@ -93,57 +97,41 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
-
             <div className="dashboard-stats">
-                <div className="stat-card">
-                    <div className="stat-icon users">
+                <div className="stat-card users">
+                    <div className="stat-icon">
                         <i className="fas fa-users"></i>
                     </div>
                     <div className="stat-info">
                         <h3>{dashboardStats.usuariosActivos}</h3>
                         <p>Usuarios Activos</p>
-                        <small className="stat-description">
-                            <i className="fas fa-info-circle"></i> Total en sistema
-                        </small>
                     </div>
                 </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon personas">
+                <div className="stat-card personas">
+                    <div className="stat-icon">
                         <i className="fas fa-address-book"></i>
                     </div>
                     <div className="stat-info">
                         <h3>{dashboardStats.personasActivas}</h3>
                         <p>Personas Activas</p>
-                        <small className="stat-description">
-                            <i className="fas fa-info-circle"></i> Personal y estudiantes
-                        </small>
                     </div>
                 </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon insumos">
+                <div className="stat-card insumos">
+                    <div className="stat-icon">
                         <i className="fas fa-boxes"></i>
                     </div>
                     <div className="stat-info">
                         <h3>{dashboardStats.insumosStock}</h3>
                         <p>Insumos en Stock</p>
-                        <small className="stat-description">
-                            <i className="fas fa-info-circle"></i> Productos disponibles
-                        </small>
                     </div>
                 </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon proveedores">
+                <div className="stat-card proveedores">
+                    <div className="stat-icon">
                         <i className="fas fa-truck"></i>
                     </div>
                     <div className="stat-info">
                         <h3>{dashboardStats.proveedoresActivos}</h3>
                         <p>Proveedores Activos</p>
-                        <small className="stat-description">
-                            <i className="fas fa-info-circle"></i> Suministradores registrados
-                        </small>
                     </div>
                 </div>
             </div>
@@ -190,12 +178,14 @@ const AdminDashboard = () => {
                                             <p>Sistema de proveedores e insumos operativo</p>
                                             <div className="resource-stats">
                                                 <div className="resource-stat">
-                                                    <span className="stat-label">Proveedores:</span>
-                                                    <span className="stat-value">{dashboardStats.proveedoresActivos}</span>
+                                                    <i className="fas fa-truck"></i>
+                                                    <span>Proveedores:</span>
+                                                    <span>{dashboardStats.proveedoresActivos}</span>
                                                 </div>
                                                 <div className="resource-stat">
-                                                    <span className="stat-label">Insumos:</span>
-                                                    <span className="stat-value">{dashboardStats.insumosStock}</span>
+                                                    <i className="fas fa-boxes"></i>
+                                                    <span>Insumos:</span>
+                                                    <span>{dashboardStats.insumosStock}</span>
                                                 </div>
                                             </div>
                                         </div>

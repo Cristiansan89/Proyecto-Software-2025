@@ -52,6 +52,62 @@ export const formatDateTime = (fecha) => {
 };
 
 /**
+ * Formatea la última actividad del usuario de manera más legible
+ * @param {string|Date} fecha - La fecha de última actividad
+ * @returns {object} - Objeto con fecha, hora y mensaje de tiempo relativo
+ */
+export const formatLastActivity = (fecha) => {
+    if (!fecha) {
+        return {
+            fecha: null,
+            hora: null,
+            relativeTime: 'Nunca',
+            isNever: true
+        };
+    }
+
+    try {
+        const fechaObj = new Date(fecha);
+        const now = new Date();
+        const diffMs = now - fechaObj;
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        let relativeTime;
+        if (diffMins < 1) {
+            relativeTime = 'Hace un momento';
+        } else if (diffMins < 60) {
+            relativeTime = `Hace ${diffMins} min`;
+        } else if (diffHours < 24) {
+            relativeTime = `Hace ${diffHours}h`;
+        } else if (diffDays < 7) {
+            relativeTime = `Hace ${diffDays}d`;
+        } else {
+            relativeTime = fechaObj.toLocaleDateString('es-ES');
+        }
+
+        return {
+            fecha: fechaObj.toLocaleDateString('es-ES'),
+            hora: fechaObj.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            relativeTime,
+            isNever: false,
+            isRecent: diffHours < 24
+        };
+    } catch {
+        return {
+            fecha: null,
+            hora: null,
+            relativeTime: 'Error',
+            isNever: true
+        };
+    }
+};
+
+/**
  * Normaliza una fecha de timestamp a formato YYYY-MM-DD para envío al backend
  * @param {string|Date} fecha - La fecha a normalizar
  * @returns {string} - Fecha en formato YYYY-MM-DD

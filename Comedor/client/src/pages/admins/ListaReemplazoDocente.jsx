@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ReemplazoDocenteForm from '../../components/ReemplazoDocenteForm';
 import reemplazoDocenteService from '../../services/reemplazoDocenteService.js';
+import { gradoService } from '../../services/gradoService.js';
 import { formatCicloLectivo } from '../../utils/dateUtils.js';
 
 const ListaReemplazosGrados = () => {
@@ -15,10 +16,30 @@ const ListaReemplazosGrados = () => {
     const [estadoFilter, setEstadoFilter] = useState('');
     const [motivoFilter, setMotivoFilter] = useState('');
 
+    // Estados para filtros dinámicos
+    const [grados, setGrados] = useState([]);
+    const [loadingGrados, setLoadingGrados] = useState(false);
+
     // Cargar reemplazos al montar el componente
     useEffect(() => {
         loadReemplazos();
+        loadGrados();
     }, []);
+
+    const loadGrados = async () => {
+        try {
+            setLoadingGrados(true);
+            console.log('ListaReemplazosGrados: Cargando grados...');
+            const gradosData = await gradoService.getActivos();
+            console.log('ListaReemplazosGrados: Grados cargados:', gradosData);
+            setGrados(Array.isArray(gradosData) ? gradosData : []);
+        } catch (error) {
+            console.error('Error al cargar grados:', error);
+            setGrados([]);
+        } finally {
+            setLoadingGrados(false);
+        }
+    };
 
     const loadReemplazos = async () => {
         try {
@@ -140,7 +161,7 @@ const ListaReemplazosGrados = () => {
     };
 
     // Obtener listas únicas para los filtros
-    const gradosUnicos = [...new Set(reemplazos.map(reemplazo => reemplazo.nombreGrado))].sort();
+    // const gradosUnicos = [...new Set(reemplazos.map(reemplazo => reemplazo.nombreGrado))].sort();
     const estadosUnicos = [...new Set(reemplazos.map(reemplazo => reemplazo.estado))].sort();
     const motivosUnicos = [...new Set(reemplazos.map(reemplazo => reemplazo.motivo))].sort();
 
@@ -187,11 +208,18 @@ const ListaReemplazosGrados = () => {
                         className="filter-select"
                         value={gradoFilter}
                         onChange={(e) => setGradoFilter(e.target.value)}
+                        disabled={loadingGrados}
                     >
                         <option value="">Todos los grados</option>
-                        {gradosUnicos.map(grado => (
-                            <option key={grado} value={grado}>{grado}</option>
-                        ))}
+                        {loadingGrados ? (
+                            <option disabled>Cargando grados...</option>
+                        ) : (
+                            grados.map(grado => (
+                                <option key={grado.idGrado || grado.id} value={grado.nombre}>
+                                    {grado.nombre}
+                                </option>
+                            ))
+                        )}
                     </select>
 
                     <select
@@ -253,7 +281,7 @@ const ListaReemplazosGrados = () => {
                 ) : (
                     <div className="scrollable-table">
                         <div className="table-body-scroll">
-                            <table className="data-table">
+                            <table className="table table-striped data-table">
                                 <thead className="table-header-fixed">
                                     <tr>
                                         <th>Docente Suplente</th>

@@ -1,11 +1,11 @@
-import api from './api.js';
+import API from './api.js';
 
 const insumoService = {
     // Obtener todos los insumos
     getAll: async () => {
         console.log('InsumoService: Haciendo petición a /insumos');
         try {
-            const response = await api.get('/insumos');
+            const response = await API.get('/insumos');
             console.log('InsumoService: Respuesta recibida:', response.data);
             return response.data;
         } catch (error) {
@@ -16,7 +16,7 @@ const insumoService = {
 
     // Obtener un insumo por ID
     getById: async (id) => {
-        const response = await api.get(`/insumos/${id}`);
+        const response = await API.get(`/insumos/${id}`);
         return response.data;
     },
 
@@ -24,7 +24,7 @@ const insumoService = {
     create: async (insumoData) => {
         console.log('InsumoService: Creando insumo:', insumoData);
         try {
-            const response = await api.post('/insumos', insumoData);
+            const response = await API.post('/insumos', insumoData);
             console.log('InsumoService: Insumo creado:', response.data);
             return response.data;
         } catch (error) {
@@ -37,7 +37,7 @@ const insumoService = {
     update: async (id, insumoData) => {
         console.log('InsumoService: Actualizando insumo:', id, insumoData);
         try {
-            const response = await api.patch(`/insumos/${id}`, insumoData);
+            const response = await API.patch(`/insumos/${id}`, insumoData);
             console.log('InsumoService: Insumo actualizado:', response.data);
             return response.data;
         } catch (error) {
@@ -50,7 +50,7 @@ const insumoService = {
     delete: async (id) => {
         console.log('InsumoService: Eliminando insumo con ID:', id);
         try {
-            const response = await api.delete(`/insumos/${id}`);
+            const response = await API.delete(`/insumos/${id}`);
             console.log('InsumoService: Respuesta de eliminación:', response.data);
             return response.data;
         } catch (error) {
@@ -61,25 +61,25 @@ const insumoService = {
 
     // Obtener insumos por categoría
     getByCategoria: async (categoria) => {
-        const response = await api.get(`/insumos/categoria/${categoria}`);
+        const response = await API.get(`/insumos/categoria/${categoria}`);
         return response.data;
     },
 
     // Obtener insumos con stock bajo
     getBajoStock: async () => {
-        const response = await api.get('/insumos/bajo-stock');
+        const response = await API.get('/insumos/bajo-stock');
         return response.data;
     },
 
     // Actualizar stock de un insumo
     updateStock: async (id, cantidad) => {
-        const response = await api.patch(`/insumos/${id}/stock`, { cantidad });
+        const response = await API.patch(`/insumos/${id}/stock`, { cantidad });
         return response.data;
     },
 
     // Cambiar estado de un insumo
     cambiarEstado: async (id, estado) => {
-        const response = await api.patch(`/insumos/${id}/estado`, { estado });
+        const response = await API.patch(`/insumos/${id}/estado`, { estado });
         return response.data;
     }
 };

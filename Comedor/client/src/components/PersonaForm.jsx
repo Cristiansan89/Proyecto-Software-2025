@@ -79,12 +79,13 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
     }, [roles, persona, mode, formData.idRol, rolSeleccionado]);
 
 
-
+    // Generar nombre de usuario basado en nombre y apellido
     const generateUsername = (nombre, apellido) => {
         if (!nombre || !apellido) return '';
         return `${nombre.toLowerCase().trim()}.${apellido.toLowerCase().trim()}`.replace(/\s+/g, '');
     };
 
+    // Manejar cambios en los campos del formulario
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
@@ -150,6 +151,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
         }
     };
 
+    // Manejar cambios en los campos del formulario de usuario
     const handleUserInputChange = (e) => {
         const { name, value } = e.target;
         setUserFormData(prev => ({

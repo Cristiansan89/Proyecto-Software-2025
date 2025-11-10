@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+import { forgotPassword, changePassword } from '../controllers/passwordController.js'
+import { authRequired } from '../middlewares/auth.js'
 
 export const createAuthRouter = ({ usuarioModel }) => {
     const authRouter = Router()
@@ -30,6 +32,9 @@ export const createAuthRouter = ({ usuarioModel }) => {
                     message: 'Usuario o contraseña incorrectos'
                 })
             }
+
+            // Actualizar la última actividad del usuario
+            await usuarioModel.updateLastActivity({ id: usuario.idUsuario })
 
             const token = jwt.sign(
                 {
@@ -64,6 +69,16 @@ export const createAuthRouter = ({ usuarioModel }) => {
                 message: 'Error al intentar iniciar sesión'
             })
         }
+    })
+
+    // Rutas para recuperación de contraseña
+    authRouter.post('/forgot-password', async (req, res) => {
+        await forgotPassword(req, res, usuarioModel)
+    })
+
+    // Ruta para cambiar contraseña (requiere autenticación)
+    authRouter.post('/change-password', authRequired, async (req, res) => {
+        await changePassword(req, res, usuarioModel)
     })
 
     return authRouter

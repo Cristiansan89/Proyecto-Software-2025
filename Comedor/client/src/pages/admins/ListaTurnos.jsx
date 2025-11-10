@@ -187,7 +187,7 @@ const ListaTurnos = () => {
                         <p>No se encontraron turnos</p>
                     </div>
                 ) : (
-                    <table className="data-table">
+                    <table className="table table-striped data-table">
                         <thead>
                             <tr>
                                 <th>Nombre</th>

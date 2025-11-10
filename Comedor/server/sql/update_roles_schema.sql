@@ -14,3 +14,16 @@ MODIFY COLUMN habilitaCuentaUsuario ENUM('Si', 'No') NOT NULL DEFAULT 'No';
 
 ALTER TABLE Asistencias
 MODIFY COLUMN estado ENUM('Ausente', 'Si', 'No') NOT NULL DEFAULT 'No';
+
+ALTER TABLE ItemsRecetas
+ADD unidadPorPorcion ENUM(
+    'Gramo',
+    'Kilogramo',
+    'Mililitro',
+    'Litro',
+    'Unidad',
+    'Pizca',
+    'Cucharadita',
+    'Cucharada',
+    'Taza'
+) NOT NULL DEFAULT 'Unidad';

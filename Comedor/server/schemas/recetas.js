@@ -4,10 +4,6 @@ import z from 'zod'
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const recetaSchema = z.object({
-    id_servicio: z.string({
-        required_error: 'El ID del servicio es requerido',
-        invalid_type_error: 'El ID del servicio debe ser un texto'
-    }).regex(uuidRegex, 'El ID del servicio debe ser un UUID válido'),
     nombreReceta: z.string({
         required_error: 'El nombre de la receta es requerido',
         invalid_type_error: 'El nombre de la receta debe ser un texto'

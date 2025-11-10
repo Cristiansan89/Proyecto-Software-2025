@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AlumnoGradoForm from '../../components/AlumnoGradoForm';
 import alumnoGradoService from '../../services/alumnoGradoService.js';
+import { gradoService } from '../../services/gradoService.js';
 import { formatCicloLectivo } from '../../utils/dateUtils.js';
 
 const ListaAlumnosGrados = () => {
@@ -15,10 +16,30 @@ const ListaAlumnosGrados = () => {
     const [gradoFilter, setGradoFilter] = useState('');
     const [cicloFilter, setCicloFilter] = useState(new Date().getFullYear().toString());
 
+    // Estados para filtros dinámicos
+    const [grados, setGrados] = useState([]);
+    const [loadingGrados, setLoadingGrados] = useState(false);
+
     // Cargar alumnos al montar el componente
     useEffect(() => {
         loadAlumnos();
+        loadGrados();
     }, []);
+
+    const loadGrados = async () => {
+        try {
+            setLoadingGrados(true);
+            console.log('ListaAlumnosGrados: Cargando grados...');
+            const gradosData = await gradoService.getActivos();
+            console.log('ListaAlumnosGrados: Grados cargados:', gradosData);
+            setGrados(Array.isArray(gradosData) ? gradosData : []);
+        } catch (error) {
+            console.error('Error al cargar grados:', error);
+            setGrados([]);
+        } finally {
+            setLoadingGrados(false);
+        }
+    };
 
     const loadAlumnos = async () => {
         try {
@@ -111,7 +132,7 @@ const ListaAlumnosGrados = () => {
                 await Promise.all(selectedAlumnos.map(id => alumnoGradoService.delete(id)));
                 setSelectedAlumnos([]);
                 loadAlumnos();
-                alert('✅ Asignaciones eliminadas correctamente');
+                alert('Asignaciones eliminadas correctamente');
             } catch (error) {
                 console.error('Error al eliminar asignaciones:', error);
                 alert('Error al eliminar algunas asignaciones');
@@ -125,9 +146,9 @@ const ListaAlumnosGrados = () => {
         loadAlumnos();
 
         if (modalMode === 'create') {
-            alert(`✅ Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`);
+            alert(`Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`);
         } else {
-            alert('✅ Asignación actualizada correctamente!');
+            alert('Asignación actualizada correctamente!');
         }
     };
 
@@ -137,7 +158,7 @@ const ListaAlumnosGrados = () => {
     };
 
     // Obtener lista única de grados para el filtro
-    const gradosUnicos = [...new Set(alumnos.map(alumno => alumno.nombreGrado))].sort();
+    // const gradosUnicos = [...new Set(alumnos.map(alumno => alumno.nombreGrado))].sort();
 
     if (loading) {
         return (
@@ -182,11 +203,18 @@ const ListaAlumnosGrados = () => {
                         className="filter-select"
                         value={gradoFilter}
                         onChange={(e) => setGradoFilter(e.target.value)}
+                        disabled={loadingGrados}
                     >
                         <option value="">Todos los grados</option>
-                        {gradosUnicos.map(grado => (
-                            <option key={grado} value={grado}>{grado}</option>
-                        ))}
+                        {loadingGrados ? (
+                            <option disabled>Cargando grados...</option>
+                        ) : (
+                            grados.map(grado => (
+                                <option key={grado.idGrado || grado.id} value={grado.nombreGrado}>
+                                    {grado.nombreGrado}
+                                </option>
+                            ))
+                        )}
                     </select>
 
                     <select
@@ -195,6 +223,7 @@ const ListaAlumnosGrados = () => {
                         onChange={(e) => setCicloFilter(e.target.value)}
                     >
                         <option value="">Todos los ciclos</option>
+                        {/* TODO: Aplicar filtro por ciclo en service */}
                         <option value="2024">2024</option>
                         <option value="2025">2025</option>
                         <option value="2026">2026</option>
@@ -254,7 +283,7 @@ const ListaAlumnosGrados = () => {
                 ) : (
                     <div className="scrollable-table">
                         <div className="table-body-scroll">
-                            <table className="data-table" style={{ width: '100%' }}>
+                            <table className="table table-striped data-table" style={{ width: '100%' }}>
                                 <thead className="table-header-fixed">
                                     <tr>
                                         <th>Información del Alumno</th>
@@ -269,9 +298,6 @@ const ListaAlumnosGrados = () => {
                                         <tr key={alumno.idAlumnoGrado}>
                                             <td>
                                                 <div className="user-info">
-                                                    <div className="user-avatar">
-                                                        <i className="fas fa-user-graduate"></i>
-                                                    </div>
                                                     <div>
                                                         <strong><h6>{alumno.nombre} {alumno.apellido}</h6></strong>
                                                         <small className="d-block">DNI: {alumno.dni}</small>

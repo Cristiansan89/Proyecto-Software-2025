@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import API from "../../services/api.js";
 import './RegistroAsistenciasMovil.css';
 
 const RegistroAsistenciasMovil = () => {
@@ -27,7 +27,7 @@ const RegistroAsistenciasMovil = () => {
             setLoading(true);
             setError('');
 
-            const response = await axios.get(`http://localhost:3000/asistencias/registro/${token}`);
+            const response = await API.get(`/asistencias/registro/${token}`);
             const { tokenData, servicio, alumnos } = response.data;
 
             setDatosRegistro({ tokenData, servicio, alumnos });
@@ -72,7 +72,7 @@ const RegistroAsistenciasMovil = () => {
                 estado
             }));
 
-            const response = await axios.post(`http://localhost:3000/asistencias/registro/${token}`, {
+            const response = await API.post(`/asistencias/registro/${token}`, {
                 asistencias: asistenciasArray
             });
 

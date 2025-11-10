@@ -6,15 +6,12 @@ export class RecetaModel {
             const [recetas] = await connection.query(
                 `SELECT 
                     BIN_TO_UUID(r.id_receta) as id_receta,
-                    r.id_servicio,
-                    s.nombreServicio,
                     r.nombreReceta,
                     r.instrucciones,
                     r.unidadSalida,
                     r.fechaAlta,
                     r.estado
                  FROM Recetas r
-                 JOIN Servicios s ON r.id_servicio = s.id_servicio
                  ORDER BY r.nombreReceta;`
             )
             return recetas
@@ -29,15 +26,12 @@ export class RecetaModel {
             const [recetas] = await connection.query(
                 `SELECT 
                     BIN_TO_UUID(r.id_receta) as id_receta,
-                    r.id_servicio,
-                    s.nombreServicio,
                     r.nombreReceta,
                     r.instrucciones,
                     r.unidadSalida,
                     r.fechaAlta,
                     r.estado
                  FROM Recetas r
-                 JOIN Servicios s ON r.id_servicio = s.id_servicio
                  WHERE r.id_receta = UUID_TO_BIN(?);`,
                 [id]
             )
@@ -51,7 +45,6 @@ export class RecetaModel {
 
     static async create({ input }) {
         const {
-            id_servicio,
             nombreReceta,
             instrucciones,
             unidadSalida = 'Porcion',
@@ -61,28 +54,27 @@ export class RecetaModel {
         try {
             const [result] = await connection.query(
                 `INSERT INTO Recetas (
-                    id_servicio,
                     nombreReceta,
                     instrucciones,
                     unidadSalida,
                     estado
-                ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?);`,
-                [id_servicio, nombreReceta, instrucciones, unidadSalida, estado]
+                ) VALUES (?, ?, ?, ?);`,
+                [nombreReceta, instrucciones, unidadSalida, estado]
             )
 
             const [newReceta] = await connection.query(
                 `SELECT BIN_TO_UUID(id_receta) as id_receta 
                  FROM Recetas 
-                 WHERE nombreReceta = ? AND id_servicio = UUID_TO_BIN(?)
-                 ORDER BY fecha_creacion DESC LIMIT 1;`,
-                [nombreReceta, id_servicio]
+                 WHERE nombreReceta = ?
+                 ORDER BY fechaAlta DESC LIMIT 1;`,
+                [nombreReceta]
             )
 
             return this.getById({ id: newReceta[0].id_receta })
         } catch (error) {
             console.error('Error al crear la receta:', error)
             if (error.code === 'ER_DUP_ENTRY') {
-                throw new Error('Ya existe una receta con este nombre para este servicio')
+                throw new Error('Ya existe una receta con este nombre')
             }
             throw new Error('Error al crear la receta')
         }
@@ -96,19 +88,19 @@ export class RecetaModel {
 
             // Eliminar primero los items de la receta
             await conn.query(
-                `DELETE FROM ItemsRecetas WHERE id_receta = UUID_TO_BIN(?);`,
+                `DELETE FROM ItemsRecetas WHERE id_receta = UUID_TO_BIN(?); `,
                 [id]
             )
 
             // Eliminar asignaciones en planificaciones
             await conn.query(
-                `DELETE FROM PlanificacionServicioReceta WHERE id_receta = UUID_TO_BIN(?);`,
+                `DELETE FROM PlanificacionServicioReceta WHERE id_receta = UUID_TO_BIN(?); `,
                 [id]
             )
 
             // Eliminar la receta
             await conn.query(
-                `DELETE FROM Recetas WHERE id_receta = UUID_TO_BIN(?);`,
+                `DELETE FROM Recetas WHERE id_receta = UUID_TO_BIN(?); `,
                 [id]
             )
 
@@ -123,13 +115,13 @@ export class RecetaModel {
         }
     }
 
-    static async update({ id, id_servicio, nombreReceta, instrucciones, unidadSalida, estado }) {
+    static async update({ id, nombreReceta, instrucciones, unidadSalida, estado }) {
         try {
             await connection.query(
                 `UPDATE Recetas
-                 SET id_servicio = UUID_TO_BIN(?), nombreReceta = ?, instrucciones = ?, unidadSalida = ?, estado = ?
-                 WHERE id_receta = UUID_TO_BIN(?);`,
-                [id_servicio, nombreReceta, instrucciones, unidadSalida, estado, id]
+                 SET nombreReceta = ?, instrucciones = ?, unidadSalida = ?, estado = ?
+                WHERE id_receta = UUID_TO_BIN(?); `,
+                [nombreReceta, instrucciones, unidadSalida, estado, id]
             )
             return true
         } catch (error) {
@@ -143,7 +135,7 @@ export class RecetaModel {
             await connection.query(
                 `UPDATE Recetas
                  SET estado = ?
-                 WHERE id_receta = UUID_TO_BIN(?);`,
+                WHERE id_receta = UUID_TO_BIN(?); `,
                 [estado, id]
             )
             return true
@@ -159,16 +151,12 @@ export class RecetaModel {
             const [recetaRows] = await connection.query(
                 `SELECT 
                     BIN_TO_UUID(r.id_receta) as id_receta,
-                    BIN_TO_UUID(r.id_servicio) as id_servicio,
-                    s.nombreServicio,
                     r.nombreReceta,
                     r.instrucciones,
                     r.unidadSalida,
                     r.estado,
-                    r.fecha_creacion,
-                    r.fecha_actualizacion
+                    r.fechaAlta
                  FROM Recetas r
-                 LEFT JOIN Servicios s ON r.id_servicio = s.id_servicio
                  WHERE r.id_receta = UUID_TO_BIN(?);`,
                 [id]
             )
@@ -179,13 +167,13 @@ export class RecetaModel {
 
             const [insumosRows] = await connection.query(
                 `SELECT 
-                    BIN_TO_UUID(ir.id_item) as id_item,
+                    ir.idItemReceta as id_item,
                     BIN_TO_UUID(ir.id_receta) as id_receta,
-                    BIN_TO_UUID(ir.id_insumo) as id_insumo,
+                    ir.id_insumo,
                     i.nombreInsumo,
                     i.unidadMedida,
-                    ir.cantidadUtilizar,
-                    ir.observaciones
+                    ir.cantidadPorPorcion,
+                    ir.unidadPorPorcion
                  FROM ItemsRecetas ir
                  INNER JOIN Insumos i ON ir.id_insumo = i.id_insumo
                  WHERE ir.id_receta = UUID_TO_BIN(?);`,
@@ -200,50 +188,129 @@ export class RecetaModel {
         }
     }
 
-    static async getRecetasByServicio({ id_servicio }) {
-        try {
-            const [rows] = await connection.query(
-                `SELECT 
-                    BIN_TO_UUID(r.id_receta) as id_receta,
-                    BIN_TO_UUID(r.id_servicio) as id_servicio,
-                    s.nombreServicio,
-                    r.nombreReceta,
-                    r.unidadSalida,
-                    r.estado,
-                    r.fecha_creacion
-                 FROM Recetas r
-                 INNER JOIN Servicios s ON r.id_servicio = s.id_servicio
-                 WHERE r.id_servicio = UUID_TO_BIN(?)
-                 ORDER BY r.nombreReceta;`,
-                [id_servicio]
-            )
-            return rows
-        } catch (error) {
-            console.error('Error al obtener recetas por servicio:', error)
-            return []
-        }
-    }
-
     static async getRecetasActivas() {
         try {
             const [rows] = await connection.query(
                 `SELECT 
                     BIN_TO_UUID(r.id_receta) as id_receta,
-                    BIN_TO_UUID(r.id_servicio) as id_servicio,
-                    s.nombreServicio,
                     r.nombreReceta,
                     r.unidadSalida,
                     r.estado,
-                    r.fecha_creacion
+                    r.fechaAlta
                  FROM Recetas r
-                 INNER JOIN Servicios s ON r.id_servicio = s.id_servicio
                  WHERE r.estado = 'Activo'
-                 ORDER BY s.nombreServicio, r.nombreReceta;`
+                 ORDER BY r.nombreReceta;`
             )
             return rows
         } catch (error) {
             console.error('Error al obtener recetas activas:', error)
             return []
+        }
+    }
+
+    // Método para buscar recetas por nombre
+    static async searchByNombre({ nombre }) {
+        try {
+            const [rows] = await connection.query(
+                `SELECT 
+                    BIN_TO_UUID(r.id_receta) as id_receta,
+                    r.nombreReceta,
+                    r.instrucciones,
+                    r.unidadSalida,
+                    r.estado,
+                    r.fechaAlta
+                 FROM Recetas r
+                 WHERE r.nombreReceta LIKE ?
+                 ORDER BY r.nombreReceta;`,
+                [`%${nombre}%`]
+            )
+            return rows
+        } catch (error) {
+            console.error('Error al buscar recetas por nombre:', error)
+            return []
+        }
+    }
+
+    // Método para obtener recetas con el conteo de insumos
+    static async getAllWithInsumoCount() {
+        try {
+            const [rows] = await connection.query(
+                `SELECT 
+                    BIN_TO_UUID(r.id_receta) as id_receta,
+                    r.nombreReceta,
+                    r.instrucciones,
+                    r.unidadSalida,
+                    r.estado,
+                    r.fechaAlta,
+                    COUNT(ir.idItemReceta) as totalInsumos
+                 FROM Recetas r
+                 LEFT JOIN ItemsRecetas ir ON r.id_receta = ir.id_receta
+                 GROUP BY r.id_receta, r.nombreReceta, r.instrucciones, r.unidadSalida, r.estado, r.fechaAlta
+                 ORDER BY r.nombreReceta;`
+            )
+            return rows
+        } catch (error) {
+            console.error('Error al obtener recetas con conteo de insumos:', error)
+            return []
+        }
+    }
+
+    // Método para agregar insumo a una receta
+    static async addInsumo({ id_receta, id_insumo, cantidadPorPorcion, unidadPorPorcion }) {
+        try {
+            const [result] = await connection.query(
+                `INSERT INTO ItemsRecetas (id_receta, id_insumo, cantidadPorPorcion, unidadPorPorcion)
+                 VALUES (UUID_TO_BIN(?), ?, ?, ?);`,
+                [id_receta, id_insumo, cantidadPorPorcion, unidadPorPorcion]
+            )
+
+            return {
+                id_item: result.insertId,
+                success: true,
+                message: 'Insumo agregado exitosamente a la receta'
+            }
+        } catch (error) {
+            console.error('Error al agregar insumo a receta:', error)
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new Error('Este insumo ya está agregado a la receta')
+            }
+            throw new Error('Error al agregar insumo a la receta')
+        }
+    }
+
+    // Método para actualizar insumo en una receta
+    static async updateInsumo({ id_item, cantidadPorPorcion, unidadPorPorcion }) {
+        try {
+            await connection.query(
+                `UPDATE ItemsRecetas 
+                 SET cantidadPorPorcion = ?, unidadPorPorcion = ?
+                 WHERE idItemReceta = ?;`,
+                [cantidadPorPorcion, unidadPorPorcion, id_item]
+            )
+
+            return { success: true, message: 'Insumo actualizado exitosamente' }
+        } catch (error) {
+            console.error('Error al actualizar insumo en receta:', error)
+            throw new Error('Error al actualizar insumo en la receta')
+        }
+    }
+
+    // Método para remover insumo de una receta
+    static async removeInsumo({ id_item }) {
+        try {
+            const [result] = await connection.query(
+                `DELETE FROM ItemsRecetas WHERE idItemReceta = ?;`,
+                [id_item]
+            )
+
+            if (result.affectedRows === 0) {
+                return { success: false, message: 'Insumo no encontrado' }
+            }
+
+            return { success: true, message: 'Insumo removido exitosamente de la receta' }
+        } catch (error) {
+            console.error('Error al remover insumo de receta:', error)
+            throw new Error('Error al remover insumo de la receta')
         }
     }
 }

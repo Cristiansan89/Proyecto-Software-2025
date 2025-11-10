@@ -1,5 +1,6 @@
 // Importa las funciones de validación para los datos del Usuario
 import { validateUsuario, validatePartialUsuario } from '../schemas/usuarios.js'
+import { sendWelcomeEmail } from '../services/emailService.js'
 
 // Controlador para manejar las operaciones relacionadas con los Usuarios
 export class UsuarioController {
@@ -49,8 +50,25 @@ export class UsuarioController {
                 })
             }
 
+            // Guardar la contraseña original antes de hashearla
+            const originalPassword = result.data.contrasena;
+
             // Crea el nuevo Usuario y responde con el objeto creado
             const newUsuario = await this.usuarioModel.create({ input: result.data })
+
+            // Enviar correo de bienvenida con el usuario y contraseña creados
+            try {
+                await sendWelcomeEmail(
+                    newUsuario.mail || '',
+                    newUsuario.nombreUsuario,
+                    originalPassword // Usar la contraseña original antes del hash
+                );
+                console.log('Correo de bienvenida enviado a:', newUsuario.mail);
+            } catch (emailError) {
+                console.error('Error enviando correo de bienvenida:', emailError);
+                // No interrumpir el flujo si falla el email
+            }
+
             res.status(201).json(newUsuario)
         } catch (error) {
             console.error('Error al crear usuario:', error)

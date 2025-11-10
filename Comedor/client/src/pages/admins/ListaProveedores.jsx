@@ -231,113 +231,113 @@ const ListaProveedores = () => {
                 </div>
             </div>
             {/* Tabla de Proveedores */}
-            <div className="vista-proveedores">
-                <div className="table-container">
-                    <div className="scrollable-table">
-                        <div className="table-body-scroll">
-                            <table className="data-table" >
-                                <thead className="table-header-fixed">
-                                    <tr>
-                                        <th>Proveedor</th>
-                                        <th>Contacto</th>
-                                        <th>Insumos Asignados</th>
-                                        <th>Estado</th>
-                                        <th className="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredProveedores.map((proveedor) => (
-                                        <tr key={proveedor.idProveedor}>
-                                            <td>
-                                                <div className="item-info">
-                                                    <div>
-                                                        <div className="item-name"><h5>{proveedor.razonSocial}</h5></div>
-                                                        <div>
-                                                            <i className="fas fa-id-card me-1"></i>
-                                                            {proveedor.CUIT}
-                                                        </div>
-                                                        <div className="item-detail text-muted">
-                                                            <i className="fas fa-map-marker-alt me-1"></i>
-                                                            {proveedor.direccion}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="contact-info">
-                                                    <div>
-                                                        {proveedor.telefono}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div >
-                                                    {proveedor.insumos.length > 0 ? (
-                                                        <div>
-                                                            {proveedor.insumos.slice(0, 5).map((insumo, index) => (
-                                                                <div key={index} >
-                                                                    <span className="insumo-name">{insumo.nombreInsumo}
-                                                                        <span className={`badge ms-2 ${getCalificacionBadge(insumo.calificacion)}`}>
-                                                                            {insumo.calificacion}
-                                                                        </span>
-                                                                    </span>
-                                                                </div>
-                                                            ))}
-                                                            {proveedor.insumos.length > 5 && (
-                                                                <small className="text-muted">
-                                                                    +{proveedor.insumos.length - 5} más
-                                                                </small>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-muted">Sin insumos asignados</span>
-                                                    )}
-                                                </div>
-                                            </td>
 
-                                            <td>
-                                                <span className={`status-badge ${getEstadoBadge(proveedor.estado)}`}>
-                                                    {proveedor.estado}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="action-buttons">
-                                                    <button
-                                                        className="btn-action btn-view"
-                                                        onClick={() => handleView(proveedor)}
-                                                        title="Ver detalles"
-                                                    >
-                                                        <i className="fas fa-eye"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-edit"
-                                                        onClick={() => handleEdit(proveedor)}
-                                                        title="Editar"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-assign"
-                                                        onClick={() => handleAssignInsumos(proveedor)}
-                                                        title="Asignar Insumos"
-                                                    >
-                                                        <i className="fas fa-boxes"></i>
-                                                    </button>
-                                                    <button
-                                                        className="btn-action btn-delete"
-                                                        onClick={() => handleDelete(proveedor.idProveedor)}
-                                                        title="Eliminar"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
+            <div className="table-container">
+                <div className="scrollable-table">
+                    <div className="table-body-scroll">
+                        <table className="table table-striped data-table" >
+                            <thead className="table-header-fixed">
+                                <tr>
+                                    <th>Proveedor</th>
+                                    <th>Contacto</th>
+                                    <th>Insumos Asignados</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredProveedores.map((proveedor) => (
+                                    <tr key={proveedor.idProveedor}>
+                                        <td>
+                                            <div className="item-info">
+                                                <div>
+                                                    <div className="item-name"><h5>{proveedor.razonSocial}</h5></div>
+                                                    <div>
+                                                        <i className="fas fa-id-card me-1"></i>
+                                                        {proveedor.CUIT}
+                                                    </div>
+                                                    <div className="item-detail text-muted">
+                                                        <i className="fas fa-map-marker-alt me-1"></i>
+                                                        {proveedor.direccion}
+                                                    </div>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="contact-info">
+                                                <div>
+                                                    {proveedor.telefono}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div >
+                                                {proveedor.insumos.length > 0 ? (
+                                                    <div>
+                                                        {proveedor.insumos.slice(0, 5).map((insumo, index) => (
+                                                            <div key={index} >
+                                                                <span className="insumo-name">{insumo.nombreInsumo}
+                                                                    <span className={`badge ms-2 ${getCalificacionBadge(insumo.calificacion)}`}>
+                                                                        {insumo.calificacion}
+                                                                    </span>
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                        {proveedor.insumos.length > 5 && (
+                                                            <small className="text-muted">
+                                                                +{proveedor.insumos.length - 5} más
+                                                            </small>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted">Sin insumos asignados</span>
+                                                )}
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <span className={`status-badge ${getEstadoBadge(proveedor.estado)}`}>
+                                                {proveedor.estado}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button
+                                                    className="btn-action btn-view"
+                                                    onClick={() => handleView(proveedor)}
+                                                    title="Ver detalles"
+                                                >
+                                                    <i className="fas fa-eye"></i>
+                                                </button>
+                                                <button
+                                                    className="btn-action btn-edit"
+                                                    onClick={() => handleEdit(proveedor)}
+                                                    title="Editar"
+                                                >
+                                                    <i className="fas fa-edit"></i>
+                                                </button>
+                                                <button
+                                                    className="btn-action btn-assign"
+                                                    onClick={() => handleAssignInsumos(proveedor)}
+                                                    title="Asignar Insumos"
+                                                >
+                                                    <i className="fas fa-boxes"></i>
+                                                </button>
+                                                <button
+                                                    className="btn-action btn-delete"
+                                                    onClick={() => handleDelete(proveedor.idProveedor)}
+                                                    title="Eliminar"
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
+
 
                     {filteredProveedores.length === 0 && (
                         <div className="empty-state">

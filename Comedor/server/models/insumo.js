@@ -4,7 +4,7 @@ export class InsumoModel {
     static async getAll() {
         const [insumos] = await connection.query(
             `SELECT 
-                i.id_insumo as idInsumo,
+                i.id_insumo,
                 i.nombreInsumo,
                 i.descripcion,
                 i.unidadMedida,

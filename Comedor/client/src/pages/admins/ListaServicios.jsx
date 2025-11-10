@@ -204,7 +204,7 @@ const ListaServicios = () => {
                     ) : (
                         <div className="scrollable-table">
                             <div className="table-body-scroll">
-                                <table className="data-table" style={{ width: '100%' }}>
+                                <table className="table table-striped data-table" style={{ width: '100%' }}>
                                     <thead className="table-header-fixed">
                                         <tr>
                                             <th>Nombre</th>

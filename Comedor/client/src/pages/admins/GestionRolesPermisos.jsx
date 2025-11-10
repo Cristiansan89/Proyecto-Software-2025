@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { permisoService } from '../../services/permisoService';
 import { rolService } from '../../services/rolService';
 import { rolPermisoService } from '../../services/rolPermisoService';
+import API from '../../services/api.js';
 import PermisoForm from '../../components/PermisoForm';
 import AsignarPermisosForm from '../../components/AsignarPermisosForm';
 import ErrorBoundary from '../../components/ErrorBoundary';
@@ -223,7 +224,7 @@ const GestionRolesPermisos = () => {
             setLoading(true);
 
             // Usar el endpoint que devuelve todas las relaciones rol-permiso
-            const response = await fetch('http://localhost:3000/rol-permisos');
+            const response = await API.get('/rol-permisos');
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
             }
@@ -426,7 +427,7 @@ const GestionRolesPermisos = () => {
         const handleDelete = async (permisoId) => {
             try {
                 // Verificar si el permiso está siendo usado
-                const asignacionesActuales = await fetch('http://localhost:3000/rol-permisos');
+                const asignacionesActuales = await API.get('/rol-permisos');
                 const asignaciones = await asignacionesActuales.json();
                 const usosPermiso = asignaciones.filter(a => a.id_permiso === permisoId).length;
 
@@ -973,7 +974,7 @@ const GestionRolesPermisos = () => {
                 </div>
                 <div className="debug-info">
                     <small className="text-muted">
-                        Debug info: Backend should be running on http://localhost:3000
+                        Debug info: Backend should be running on 192.168.100.10:3000
                         <br />
                         Frontend running on: {window.location.origin}
                     </small>

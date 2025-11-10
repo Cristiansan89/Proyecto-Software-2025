@@ -7,7 +7,6 @@ const ListaGrados = () => {
     const [grados, setGrados] = useState([]);
     const [filteredGrados, setFilteredGrados] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedGrados, setSelectedGrados] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
     const [selectedGrado, setSelectedGrado] = useState(null);
@@ -112,22 +111,6 @@ const ListaGrados = () => {
         }
     };
 
-    const handleBulkDelete = async () => {
-        if (window.confirm(`¿Está seguro de que desea eliminar ${selectedGrados.length} grado(s)?`)) {
-            try {
-                // Eliminar cada grado seleccionado
-                await Promise.all(selectedGrados.map(id => gradoService.delete(id)));
-                alert(`${selectedGrados.length} grado(s) eliminado(s) correctamente`);
-                setSelectedGrados([]);
-                loadGrados();
-            } catch (error) {
-                console.error('Error al eliminar grados:', error);
-                alert('Error al eliminar algunos grados');
-                loadGrados(); // Recargar para ver cuáles se eliminaron
-            }
-        }
-    };
-
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
@@ -145,7 +128,6 @@ const ListaGrados = () => {
                     </p>
 
                 </div>
-
                 <div className="header-actions">
                     <button
                         className="btn btn-primary-new"
@@ -168,7 +150,6 @@ const ListaGrados = () => {
                         onChange={handleSearch}
                     />
                 </div>
-
                 <div className="filter-actions">
                     <select
                         className="filter-select"
@@ -179,7 +160,6 @@ const ListaGrados = () => {
                         <option value="Activo">Activo</option>
                         <option value="Inactivo">Inactivo</option>
                     </select>
-
                     {(searchQuery || filterEstado) && (
                         <button
                             className="btn btn-outline-secondary btn-sm"
@@ -192,24 +172,6 @@ const ListaGrados = () => {
                     )}
                 </div>
             </div>
-
-            {/* Acciones en lote */}
-            {selectedGrados.length > 0 && (
-                <div className="bulk-actions">
-                    <span className="selected-count">
-                        {selectedGrados.length} grado(s) seleccionado(s)
-                    </span>
-                    <div className="bulk-buttons">
-                        <button
-                            className="btn btn-danger btn-sm"
-                            onClick={handleBulkDelete}
-                        >
-                            <i className="fas fa-trash"></i>
-                            Eliminar Seleccionados
-                        </button>
-                    </div>
-                </div>
-            )}
 
             {/* Indicador de resultados */}
             <div className="results-info">
@@ -231,7 +193,7 @@ const ListaGrados = () => {
                 ) : (
                     <div className="scrollable-table">
                         <div className="table-body-scroll">
-                            <table className="data-table" style={{ width: '100%' }}>
+                            <table className="table table-striped data-table" style={{ width: '100%' }}>
                                 <thead className="table-header-fixed">
                                     <tr>
                                         <th>Grado</th>
@@ -252,7 +214,6 @@ const ListaGrados = () => {
                                             <tr key={grado.idGrado}>
                                                 <td>
                                                     <div className="grado-name">
-                                                        <i className="fas fa-graduation-cap"></i>
                                                         <strong>{grado.nombreGrado}</strong>
                                                     </div>
                                                 </td>

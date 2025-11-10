@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import PersonaForm from '../../components/PersonaForm';
+import PersonaEditForm from '../../components/PersonaEditForm.jsx';
 import personaService from '../../services/personaService.js';
+import { rolService } from '../../services/rolService.js';
 
 const ListaPersonas = () => {
     const [personas, setPersonas] = useState([]);
     const [filteredPersonas, setFilteredPersonas] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedPersonas, setSelectedPersonas] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
     const [selectedPersona, setSelectedPersona] = useState(null);
@@ -16,21 +17,47 @@ const ListaPersonas = () => {
     const [filterTipo, setFilterTipo] = useState('');
     const [filterEstado, setFilterEstado] = useState('');
 
+    // Estados para filtros dinámicos
+    const [roles, setRoles] = useState([]);
+    const [loadingRoles, setLoadingRoles] = useState(false);
+
     useEffect(() => {
         loadPersonas();
+        loadRoles();
     }, []);
+
+    const loadRoles = async () => {
+        try {
+            setLoadingRoles(true);
+            console.log('ListaPersonas: Cargando roles...');
+            const rolesData = await rolService.getActivos();
+            console.log('ListaPersonas: Roles cargados:', rolesData);
+            setRoles(Array.isArray(rolesData) ? rolesData : []);
+        } catch (error) {
+            console.error('Error al cargar roles:', error);
+            setRoles([]);
+        } finally {
+            setLoadingRoles(false);
+        }
+    };
 
     const loadPersonas = async () => {
         try {
             setLoading(true);
+            console.log('ListaPersonas: Iniciando carga de personas...');
             const data = await personaService.getAll();
-            setPersonas(data);
-            setFilteredPersonas(data);
+            console.log('ListaPersonas: Datos recibidos:', data);
+
+            // Asegurar que data es un array
+            const personas = Array.isArray(data) ? data : [];
+            setPersonas(personas);
+            setFilteredPersonas(personas);
+            console.log('ListaPersonas: Estado actualizado con', personas.length, 'personas');
         } catch (error) {
             console.error('Error al cargar personas:', error);
-
-
-
+            alert('Error al cargar personas: ' + error.message);
+            setPersonas([]);
+            setFilteredPersonas([]);
         } finally {
             setLoading(false);
         }
@@ -38,26 +65,36 @@ const ListaPersonas = () => {
 
     // Búsqueda y filtros
     useEffect(() => {
-        let filtered = personas;
+        // Asegurar que personas es un array
+        let filtered = Array.isArray(personas) ? personas : [];
 
         // Filtro por búsqueda de texto
-        if (searchQuery.trim()) {
-            filtered = filtered.filter(persona =>
-                persona.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                persona.apellido.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                persona.numeroDocumento.includes(searchQuery) ||
-                (persona.nombreRol && persona.nombreRol.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (persona.genero && persona.genero.toLowerCase().includes(searchQuery.toLowerCase()))
-            );
+        if (searchQuery && searchQuery.trim()) {
+            const searchLower = searchQuery.toLowerCase();
+            filtered = filtered.filter(persona => {
+                try {
+                    return (
+                        (persona.nombre && persona.nombre.toLowerCase().includes(searchLower)) ||
+                        (persona.apellido && persona.apellido.toLowerCase().includes(searchLower)) ||
+                        (persona.dni && persona.dni.toString().includes(searchQuery)) ||
+                        (persona.numeroDocumento && persona.numeroDocumento.toString().includes(searchQuery)) ||
+                        (persona.nombreRol && persona.nombreRol.toLowerCase().includes(searchLower)) ||
+                        (persona.genero && persona.genero.toLowerCase().includes(searchLower))
+                    );
+                } catch (error) {
+                    console.error('Error al filtrar persona:', persona, error);
+                    return false;
+                }
+            });
         }
 
         // Filtro por rol
-        if (filterTipo) {
+        if (filterTipo && filterTipo !== '') {
             filtered = filtered.filter(persona => persona.nombreRol === filterTipo);
         }
 
         // Filtro por estado
-        if (filterEstado) {
+        if (filterEstado && filterEstado !== '') {
             filtered = filtered.filter(persona => persona.estado === filterEstado);
         }
 
@@ -68,8 +105,18 @@ const ListaPersonas = () => {
     // Paginación
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentPersonas = filteredPersonas.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(filteredPersonas.length / itemsPerPage);
+    const currentPersonas = Array.isArray(filteredPersonas) ? filteredPersonas.slice(indexOfFirstItem, indexOfLastItem) : [];
+    const totalPages = Array.isArray(filteredPersonas) ? Math.ceil(filteredPersonas.length / itemsPerPage) : 0;
+
+    console.log('ListaPersonas: Estado actual -', {
+        personas: personas.length,
+        filteredPersonas: filteredPersonas.length,
+        currentPersonas: currentPersonas.length,
+        searchQuery,
+        filterTipo,
+        filterEstado,
+        loading
+    });
 
     const handleSearch = (e) => {
         setSearchQuery(e.target.value);
@@ -100,28 +147,24 @@ const ListaPersonas = () => {
         setSelectedPersona(null);
     };
 
-    const handleSavePersona = (personaData, usuarioData = null) => {
-        // La lógica de guardado ya se maneja en PersonaForm
-        // Aquí solo actualizamos la lista local y cerramos el modal
-        if (modalMode === 'create') {
-            // Agregar nueva persona a la lista local
-            setPersonas(prev => [...prev, personaData]);
+    const handleSavePersona = async (personaData, usuarioData = null) => {
+        // Recargar la lista desde el servidor para obtener datos actualizados
+        await loadPersonas();
 
-            // Si se creó un usuario también, mostrar mensaje de éxito
+        // Mostrar mensaje de éxito
+        if (modalMode === 'create') {
             if (usuarioData) {
-                alert(`✅ Persona creada exitosamente!\n\n` +
-                    `👤 Persona: ${personaData.nombre} ${personaData.apellido}\n`);
+                alert(`Persona creada exitosamente!\n\n` +
+                    `Persona: ${personaData.nombre} ${personaData.apellido}\n` +
+                    `Usuario: ${usuarioData.nombreUsuario}`);
             } else {
-                alert(`✅ Persona creada exitosamente!\n\n` +
-                    `👤 ${personaData.nombre} ${personaData.apellido}`);
+                alert(`Persona creada exitosamente!\n\n` +
+                    `${personaData.nombre} ${personaData.apellido}`);
             }
         } else if (modalMode === 'edit') {
-            // Actualizar persona en la lista local
-            setPersonas(prev => prev.map(p =>
-                p.idPersona === personaData.idPersona ? personaData : p
-            ));
-            alert('✅ Persona actualizada exitosamente!');
+            alert('Persona actualizada exitosamente!');
         }
+
         closeModal();
     };
 
@@ -130,8 +173,7 @@ const ListaPersonas = () => {
             try {
                 await personaService.delete(personaId);
                 setPersonas(prev => prev.filter(p => p.idPersona !== personaId));
-                setSelectedPersonas(prev => prev.filter(id => id !== personaId));
-                alert('✅ Persona eliminada exitosamente!');
+                alert('Persona eliminada exitosamente!');
             } catch (error) {
                 console.error('Error al eliminar persona:', error);
                 if (error.response?.data?.message) {
@@ -141,16 +183,6 @@ const ListaPersonas = () => {
                 }
             }
         }
-    }; const handleBulkDelete = () => {
-        if (selectedPersonas.length === 0) {
-            alert('Seleccione al menos una persona para eliminar');
-            return;
-        }
-
-        if (window.confirm(`¿Está seguro de que desea eliminar ${selectedPersonas.length} persona(s)?`)) {
-            setPersonas(prev => prev.filter(p => !selectedPersonas.includes(p.idPersona)));
-            setSelectedPersonas([]);
-        }
     };
 
     return (
@@ -158,10 +190,8 @@ const ListaPersonas = () => {
             <div className="page-header">
                 <div className="header-left">
                     <h1 className="page-title">
-                        <i className="fas fa-users me-2"></i>
-                        Gestión de Personas
+                        Lista de Personas
                     </h1>
-                    <p>Gestión de personas registradas en el sistema</p>
                 </div>
                 <div className="header-actions">
                     <button
@@ -191,13 +221,18 @@ const ListaPersonas = () => {
                         className="filter-select"
                         value={filterTipo}
                         onChange={handleFilterTipo}
+                        disabled={loadingRoles}
                     >
                         <option value="">Todos los roles</option>
-                        {/* TODO: Cargar roles dinámicamente desde el servicio */}
-                        <option value="Alumno">Alumno</option>
-                        <option value="Docente">Docente</option>
-                        <option value="Administrador General">Administrador General</option>
-                        <option value="Secretario Académico">Secretario Académico</option>
+                        {loadingRoles ? (
+                            <option disabled>Cargando roles...</option>
+                        ) : (
+                            roles.map(rol => (
+                                <option key={rol.idRol || rol.id} value={rol.nombreRol}>
+                                    {rol.nombreRol}
+                                </option>
+                            ))
+                        )}
                     </select>
 
                     <select
@@ -223,24 +258,6 @@ const ListaPersonas = () => {
                 </div>
             </div>
 
-            {/* Acciones en lote */}
-            {selectedPersonas.length > 0 && (
-                <div className="bulk-actions">
-                    <span className="selected-count">
-                        {selectedPersonas.length} persona(s) seleccionada(s)
-                    </span>
-                    <div className="bulk-buttons">
-                        <button
-                            className="btn btn-danger btn-sm"
-                            onClick={handleBulkDelete}
-                        >
-                            <i className="fas fa-trash"></i>
-                            Eliminar seleccionadas
-                        </button>
-                    </div>
-                </div>
-            )}
-
             {/* Indicador de resultados */}
             <div className="results-info">
                 <span className="results-count">
@@ -261,10 +278,10 @@ const ListaPersonas = () => {
                 ) : (
                     <div className="scrollable-table">
                         <div className="table-body-scroll">
-                            <table className="data-table">
+                            <table className="table table-striped data-table" style={{ width: '100%' }}>
                                 <thead className="table-header-fixed">
                                     <tr>
-                                        <th>Información Personal</th>
+                                        <th>Nombre y Apellido</th>
                                         <th>Documento</th>
                                         <th>Fecha Nacimiento</th>
                                         <th>Género</th>
@@ -281,25 +298,21 @@ const ListaPersonas = () => {
                                             </td>
                                         </tr>
                                     ) : (
-                                        currentPersonas.map((persona) => (
-                                            <tr key={persona.idPersona}>
+                                        currentPersonas.map((persona, index) => (
+                                            <tr key={persona.idPersona || persona.id_persona || `persona-${index}`}>
                                                 <td>
-                                                    <div className="user-info">
-                                                        <div className="user-avatar">
-                                                            <i className="fas fa-user"></i>
-                                                        </div>
+                                                    <div>
                                                         <div>
-                                                            <strong>{persona.nombre} {persona.apellido}</strong>
-                                                            <small className="d-block">{persona.email}</small>
+                                                            <strong>{(persona.nombre || '') + ' ' + (persona.apellido || '')}</strong>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    {persona.dni}
+                                                    {persona.dni || persona.numeroDocumento || 'Sin documento'}
                                                 </td>
                                                 <td>
                                                     {persona.fechaNacimiento ?
-                                                        new Date(persona.fechaNacimiento).toLocaleDateString() :
+                                                        new Date(persona.fechaNacimiento).toLocaleDateString('es-ES') :
                                                         'No registrada'
                                                     }
                                                 </td>
@@ -315,8 +328,8 @@ const ListaPersonas = () => {
                                                 </td>
 
                                                 <td>
-                                                    <span className={`status-badge ${persona.estado.toLowerCase()}`}>
-                                                        {persona.estado}
+                                                    <span className={`status-badge ${persona.estado ? persona.estado.toLowerCase() : 'unknown'}`}>
+                                                        {persona.estado || 'Desconocido'}
                                                     </span>
                                                 </td>
                                                 <td>
@@ -379,18 +392,37 @@ const ListaPersonas = () => {
                 </div>
             )}
 
-            {/* Modal para Persona */}
-            {showModal && (
+            {/* Modal para crear nueva Persona */}
+            {showModal && modalMode === 'create' && (
                 <div className="modal-overlay">
                     <div className="modal-content persona-modal">
                         <div className="modal-header">
                             <h3>
-                                {modalMode === 'create' && (
-                                    <>
-                                        <i className="fas fa-user-plus me-2"></i>
-                                        Nueva Persona
-                                    </>
-                                )}
+                                <i className="fas fa-user-plus me-2"></i>
+                                Nueva Persona
+                            </h3>
+                            <button className="modal-close" onClick={closeModal}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <PersonaForm
+                                persona={selectedPersona}
+                                mode={modalMode}
+                                onSave={handleSavePersona}
+                                onCancel={closeModal}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal para ver/editar Persona existente */}
+            {showModal && (modalMode === 'edit' || modalMode === 'view') && (
+                <div className="modal-overlay">
+                    <div className="modal-content persona-modal">
+                        <div className="modal-header">
+                            <h3>
                                 {modalMode === 'edit' && (
                                     <>
                                         <i className="fas fa-user-edit me-2"></i>
@@ -409,7 +441,7 @@ const ListaPersonas = () => {
                             </button>
                         </div>
                         <div className="modal-body">
-                            <PersonaForm
+                            <PersonaEditForm
                                 persona={selectedPersona}
                                 mode={modalMode}
                                 onSave={handleSavePersona}

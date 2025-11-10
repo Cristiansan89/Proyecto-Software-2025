@@ -1,12 +1,34 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000';
+// Función para detectar la URL base correcta (igual que en api.js)
+const getApiBaseUrl = () => {
+    // Si estamos en desarrollo y tenemos VITE_API_URL definida
+    if (import.meta.env.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL;
+    }
+
+    // Detectar automáticamente la URL base según el host actual
+    const currentHost = window.location.hostname;
+    const currentProtocol = window.location.protocol;
+
+    // Si estamos en localhost, usar localhost para el API
+    if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+        return `${currentProtocol}//localhost:3000`;
+    }
+
+    // Si estamos en una IP de red local, usar la misma IP para el API
+    return `${currentProtocol}//${currentHost}:3000`;
+};
+
+const API_URL = `${getApiBaseUrl()}/api`;
 
 // Crear instancia de axios
 const axiosInstance = axios.create({
     baseURL: API_URL,
     timeout: 10000,
 });
+
+console.log('🔐 Auth Service API URL:', API_URL);
 
 // Configurar axios para incluir el token en todas las peticiones
 axiosInstance.interceptors.request.use(

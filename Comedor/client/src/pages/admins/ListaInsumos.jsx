@@ -207,7 +207,7 @@ const ListaInsumos = () => {
                 ) : (
                     <div className="scrollable-table">
                         <div className="table-body-scroll">
-                            <table className="data-table">
+                            <table className="table table-striped data-table">
                                 <thead className="table-header-fixed">
                                     <tr>
                                         <th>Insumo</th>
@@ -236,7 +236,6 @@ const ListaInsumos = () => {
                                             <tr key={insumo.idInsumo}>
                                                 <td>
                                                     <div className="insumo-name">
-                                                        <i className="fas fa-box me-2"></i>
                                                         {insumo.nombreInsumo}
                                                     </div>
                                                 </td>

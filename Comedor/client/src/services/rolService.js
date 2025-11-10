@@ -1,19 +1,13 @@
-const API_URL = 'http://localhost:3000/roles';
+import API from './api.js';
 
 export const rolService = {
     // Obtener todos los roles
     async getAll() {
         try {
             console.log('rolService: Obteniendo todos los roles...');
-            const response = await fetch(API_URL);
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const roles = await response.json();
-            console.log('rolService: Roles obtenidos:', roles.length);
-            return roles;
+            const response = await API.get('/roles');
+            console.log('rolService: Roles obtenidos:', response.data.length);
+            return response.data;
         } catch (error) {
             console.error('rolService: Error al obtener roles:', error);
             throw error;
@@ -24,93 +18,51 @@ export const rolService = {
     async getById(id) {
         try {
             console.log('rolService: Obteniendo rol con ID:', id);
-            const response = await fetch(`${API_URL}/${id}`);
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    return null;
-                }
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const rol = await response.json();
-            console.log('rolService: Rol obtenido:', rol);
-            return rol;
+            const response = await API.get(`/roles/${id}`);
+            console.log('rolService: Rol obtenido:', response.data);
+            return response.data;
         } catch (error) {
-            console.error('rolService: Error al obtener rol:', error);
+            if (error.response && error.response.status === 404) {
+                return null;
+            }
+            console.error(`rolService: Error al obtener rol ${id}:`, error);
             throw error;
         }
     },
 
-    // Crear nuevo rol
+    // Crear un nuevo rol
     async create(rolData) {
         try {
             console.log('rolService: Creando rol:', rolData);
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(rolData),
-            });
-
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                console.error('rolService: Error en respuesta:', responseData);
-                throw new Error(responseData.message || `Error HTTP: ${response.status}`);
-            }
-
-            console.log('rolService: Rol creado exitosamente:', responseData);
-            return responseData;
+            const response = await API.post('/roles', rolData);
+            console.log('rolService: Rol creado exitosamente:', response.data);
+            return response.data;
         } catch (error) {
             console.error('rolService: Error al crear rol:', error);
             throw error;
         }
     },
 
-    // Actualizar rol
+    // Actualizar un rol
     async update(id, rolData) {
         try {
-            console.log('rolService: Actualizando rol ID:', id, rolData);
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(rolData),
-            });
-
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                console.error('rolService: Error en respuesta:', responseData);
-                throw new Error(responseData.message || `Error HTTP: ${response.status}`);
-            }
-
-            console.log('rolService: Rol actualizado exitosamente:', responseData);
-            return responseData;
+            console.log('rolService: Actualizando rol ID:', id, 'con datos:', rolData);
+            const response = await API.put(`/roles/${id}`, rolData);
+            console.log('rolService: Rol actualizado exitosamente:', response.data);
+            return response.data;
         } catch (error) {
             console.error('rolService: Error al actualizar rol:', error);
             throw error;
         }
     },
 
-    // Eliminar rol
+    // Eliminar un rol
     async delete(id) {
         try {
-            console.log('rolService: Eliminando rol con ID:', id);
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: 'DELETE',
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Error HTTP: ${response.status}`);
-            }
-
+            console.log('rolService: Eliminando rol ID:', id);
+            const response = await API.delete(`/roles/${id}`);
             console.log('rolService: Rol eliminado exitosamente');
-            return true;
+            return response.data;
         } catch (error) {
             console.error('rolService: Error al eliminar rol:', error);
             throw error;
@@ -121,85 +73,27 @@ export const rolService = {
     async getActivos() {
         try {
             console.log('rolService: Obteniendo roles activos...');
-            const response = await fetch(`${API_URL}/activos/list`);
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const roles = await response.json();
-            console.log('rolService: Roles activos obtenidos:', roles.length);
-            return roles;
+            const response = await API.get('/roles/activos/list');
+            console.log('rolService: Roles activos obtenidos:', response.data.length);
+            return response.data;
         } catch (error) {
             console.error('rolService: Error al obtener roles activos:', error);
             throw error;
         }
     },
 
-    // Buscar roles por nombre
-    async searchByNombre(nombre) {
-        try {
-            console.log('rolService: Buscando roles por nombre:', nombre);
-            const response = await fetch(`${API_URL}/search/by-nombre?nombre=${encodeURIComponent(nombre)}`);
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const roles = await response.json();
-            console.log('rolService: Roles encontrados:', roles.length);
-            return roles;
-        } catch (error) {
-            console.error('rolService: Error al buscar roles:', error);
-            throw error;
-        }
-    },
-
-    // Obtener rol con sus permisos
-    async getConPermisos(id) {
-        try {
-            console.log('rolService: Obteniendo rol con permisos ID:', id);
-            const response = await fetch(`${API_URL}/${id}/permisos`);
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    return null;
-                }
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const rolConPermisos = await response.json();
-            console.log('rolService: Rol con permisos obtenido:', rolConPermisos);
-            return rolConPermisos;
-        } catch (error) {
-            console.error('rolService: Error al obtener rol con permisos:', error);
-            throw error;
-        }
-    },
-
-    // Cambiar estado del rol
+    // Cambiar estado de un rol
     async cambiarEstado(id, estado) {
         try {
             console.log('rolService: Cambiando estado del rol ID:', id, 'a:', estado);
-            const response = await fetch(`${API_URL}/${id}/estado`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ estado }),
-            });
-
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                throw new Error(responseData.message || `Error HTTP: ${response.status}`);
-            }
-
-            console.log('rolService: Estado cambiado exitosamente:', responseData);
-            return responseData;
+            const response = await API.patch(`/roles/${id}/estado`, { estado });
+            console.log('rolService: Estado cambiado exitosamente:', response.data);
+            return response.data;
         } catch (error) {
             console.error('rolService: Error al cambiar estado:', error);
             throw error;
         }
     }
 };
+
+export default rolService;

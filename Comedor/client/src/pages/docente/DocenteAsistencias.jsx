@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import axios from 'axios';
+import API from '../../services/api.js';
 
 const DocenteAsistencias = () => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
-    const [grados, setGrados] = useState([]);
+    const [gradoDocente, setGradoDocente] = useState(null);
     const [servicios, setServicios] = useState([]);
     const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date().toISOString().split('T')[0]);
 
@@ -17,13 +17,17 @@ const DocenteAsistencias = () => {
         try {
             setLoading(true);
 
-            // Cargar grados asignados al docente
-            const gradosRes = await axios.get(`http://localhost:3000/docente-grados?idPersona=${user.idPersona || user.id_persona}`);
+            // Cargar grado principal asignado al docente
+            const gradosRes = await API.get(`/docente-grados?idPersona=${user.idPersona || user.id_persona}`);
+            const gradosDocente = gradosRes.data || [];
+
+            // Tomar el primer grado como principal
+            const gradoPrincipal = gradosDocente.length > 0 ? gradosDocente[0] : null;
 
             // Cargar servicios disponibles
-            const serviciosRes = await axios.get('http://localhost:3000/servicios');
+            const serviciosRes = await API.get('/servicios');
 
-            setGrados(gradosRes.data || []);
+            setGradoDocente(gradoPrincipal);
             setServicios(serviciosRes.data.filter(s => s.estado === 'Activo') || []);
 
         } catch (error) {
@@ -35,7 +39,7 @@ const DocenteAsistencias = () => {
 
     const generarEnlaceAsistencia = async (nombreGrado, servicio) => {
         try {
-            const response = await axios.post('http://localhost:3000/asistencias/generar-token', {
+            const response = await API.post('/asistencias/generar-token', {
                 idPersonaDocente: user.idPersona || user.id_persona,
                 nombreGrado,
                 fecha: fechaSeleccionada,
@@ -72,8 +76,13 @@ const DocenteAsistencias = () => {
     return (
         <div className="docente-asistencias">
             <div className="page-header">
-                <h2>📋 Gestión de Asistencias</h2>
-                <p>Registra la asistencia de tus alumnos para los servicios de comedor</p>
+                <div className="header-left">
+                    <h1 className="page-title">
+                        📋 Gestión de Asistencias
+                    </h1>
+                    <p className="page-subtitle">Registra la asistencia de tus alumnos para los servicios de comedor</p>
+
+                </div>
             </div>
 
             {/* Selector de Fecha */}
@@ -109,58 +118,56 @@ const DocenteAsistencias = () => {
                 </div>
             </div>
 
-            {/* Grados y Servicios */}
-            {grados.length === 0 ? (
+            {/* Grado Asignado y Servicios */}
+            {!gradoDocente ? (
                 <div className="card">
                     <div className="card-body text-center">
                         <i className="fas fa-info-circle fa-3x text-muted mb-3"></i>
-                        <h4>No tienes grados asignados</h4>
-                        <p>Contacta al administrador para que te asigne grados</p>
+                        <h4>No tienes un grado asignado</h4>
+                        <p>Contacta al administrador para que te asigne un grado</p>
                     </div>
                 </div>
             ) : (
-                <div className="grados-container">
-                    {grados.map((gradoData, index) => (
-                        <div key={index} className="card grado-card mb-4">
-                            <div className="card-header">
-                                <div className="grado-header-content">
-                                    <h4>📚 {gradoData.nombreGrado}</h4>
-                                    <div className="grado-badges">
-                                        <span className="badge bg-info me-2">
-                                            Ciclo {new Date(gradoData.cicloLectivo).getFullYear()}
-                                        </span>
-                                        <span className="badge bg-success">
-                                            {gradoData.tipoDocente || 'Docente'}
-                                        </span>
-                                    </div>
+                <div className="grado-container">
+                    <div className="card grado-card mb-4">
+                        <div className="card-header">
+                            <div className="grado-header-content">
+                                <h4>📚 {gradoDocente.nombreGrado}</h4>
+                                <div className="grado-badges">
+                                    <span className="badge bg-info me-2">
+                                        Ciclo {new Date(gradoDocente.cicloLectivo).getFullYear()}
+                                    </span>
+                                    <span className="badge bg-success">
+                                        {gradoDocente.tipoDocente || 'Docente'}
+                                    </span>
                                 </div>
                             </div>
-                            <div className="card-body">
-                                <h5 className="mb-3">🍽️ Servicios Disponibles</h5>
-
-                                {servicios.length === 0 ? (
-                                    <p className="text-muted">No hay servicios disponibles</p>
-                                ) : (
-                                    <div className="servicios-grid">
-                                        {servicios.map(servicio => (
-                                            <div key={servicio.id_servicio} className="servicio-item">
-                                                <div className="servicio-info">
-                                                    <h6>{servicio.nombre}</h6>
-                                                    <p className="text-muted mb-2">{servicio.descripcion}</p>
-                                                </div>
-                                                <button
-                                                    className="btn btn-primary"
-                                                    onClick={() => generarEnlaceAsistencia(gradoData.nombreGrado, servicio)}
-                                                >
-                                                    📱 Registrar Asistencia
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
                         </div>
-                    ))}
+                        <div className="card-body">
+                            <h5 className="mb-3">🍽️ Servicios Disponibles</h5>
+
+                            {servicios.length === 0 ? (
+                                <p className="text-muted">No hay servicios disponibles</p>
+                            ) : (
+                                <div className="servicios-grid">
+                                    {servicios.map(servicio => (
+                                        <div key={servicio.id_servicio} className="servicio-item">
+                                            <div className="servicio-info">
+                                                <h6>{servicio.nombre}</h6>
+                                                <p className="text-muted mb-2">{servicio.descripcion}</p>
+                                            </div>
+                                            <button
+                                                className="btn btn-primary"
+                                                onClick={() => generarEnlaceAsistencia(gradoDocente.nombreGrado, servicio)}
+                                            >
+                                                📱 Registrar Asistencia
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 

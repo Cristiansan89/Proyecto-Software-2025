@@ -1,5 +1,6 @@
 // Importa las funciones de validación para los datos del Receta
 import { validateReceta, validatePartialReceta } from '../schemas/recetas.js'
+import { validateItemsReceta, validatePartialItemsReceta } from '../schemas/itemsrecetas.js'
 
 // Controlador para manejar las operaciones relacionadas con los Recetas
 export class RecetaController {
@@ -40,11 +41,12 @@ export class RecetaController {
 
             // Si la validación falla, responde con error 400
             if (!result.success) {
+                const errors = result.error.errors || result.error.issues || [];
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
-                        field: err.path.join('.'),
-                        message: err.message
+                    errors: errors.map(err => ({
+                        field: err.path?.join('.') || 'campo desconocido',
+                        message: err.message || 'Error de validación'
                     }))
                 })
             }
@@ -86,22 +88,32 @@ export class RecetaController {
 
             // Si la validación falla, responde con error 400
             if (!result.success) {
+                const errors = result.error.errors || result.error.issues || [];
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
-                        field: err.path.join('.'),
-                        message: err.message
+                    errors: errors.map(err => ({
+                        field: err.path?.join('.') || 'campo desconocido',
+                        message: err.message || 'Error de validación'
                     }))
                 })
             }
 
             const { id } = req.params
-            const updatedReceta = await this.recetaModel.update({ id, input: result.data })
+            const { nombreReceta, instrucciones, unidadSalida, estado } = result.data
+            const updated = await this.recetaModel.update({
+                id,
+                nombreReceta,
+                instrucciones,
+                unidadSalida,
+                estado
+            })
 
-            if (!updatedReceta) {
+            if (!updated) {
                 return res.status(404).json({ message: 'Receta no encontrada' })
             }
 
+            // Obtener la receta actualizada
+            const updatedReceta = await this.recetaModel.getById({ id })
             return res.json(updatedReceta)
         } catch (error) {
             console.error('Error al actualizar receta:', error)
@@ -113,6 +125,9 @@ export class RecetaController {
     searchByNombre = async (req, res) => {
         try {
             const { nombre } = req.query
+            if (!nombre) {
+                return res.status(400).json({ message: 'El parámetro nombre es requerido' })
+            }
             const recetas = await this.recetaModel.searchByNombre({ nombre })
             res.json(recetas)
         } catch (error) {
@@ -121,22 +136,10 @@ export class RecetaController {
         }
     }
 
-    // Obtener recetas por tipo
-    getByTipo = async (req, res) => {
-        try {
-            const { tipo } = req.params
-            const recetas = await this.recetaModel.getByTipo({ tipo })
-            res.json(recetas)
-        } catch (error) {
-            console.error('Error al obtener recetas por tipo:', error)
-            res.status(500).json({ message: 'Error interno del servidor' })
-        }
-    }
-
     // Obtener recetas activas
     getActivas = async (req, res) => {
         try {
-            const recetas = await this.recetaModel.getActivas()
+            const recetas = await this.recetaModel.getRecetasActivas()
             res.json(recetas)
         } catch (error) {
             console.error('Error al obtener recetas activas:', error)
@@ -144,15 +147,118 @@ export class RecetaController {
         }
     }
 
-    // Obtener receta con sus ingredientes
-    getConIngredientes = async (req, res) => {
+    // Obtener recetas con conteo de insumos
+    getAllWithInsumoCount = async (req, res) => {
+        try {
+            const recetas = await this.recetaModel.getAllWithInsumoCount()
+            res.json(recetas)
+        } catch (error) {
+            console.error('Error al obtener recetas con conteo de insumos:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Obtener receta con sus insumos
+    getWithInsumos = async (req, res) => {
         try {
             const { id } = req.params
-            const receta = await this.recetaModel.getConIngredientes({ id })
-            if (receta) return res.json(receta)
-            res.status(404).json({ message: 'Receta no encontrada' })
+            const receta = await this.recetaModel.getRecetaWithInsumos({ id })
+
+            if (!receta) {
+                return res.status(404).json({ message: 'Receta no encontrada' })
+            }
+
+            res.json(receta)
         } catch (error) {
-            console.error('Error al obtener receta con ingredientes:', error)
+            console.error('Error al obtener receta con insumos:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Agregar insumo a una receta
+    addInsumo = async (req, res) => {
+        try {
+            const { id } = req.params
+            const inputData = { ...req.body, id_receta: id }
+
+            // Validar los datos de entrada
+            const result = validateItemsReceta(inputData)
+            if (!result.success) {
+                const errors = result.error.errors || result.error.issues || [];
+                return res.status(400).json({
+                    message: 'Datos de entrada inválidos',
+                    errors: errors.map(err => ({
+                        field: err.path?.join('.') || 'campo desconocido',
+                        message: err.message || 'Error de validación'
+                    }))
+                })
+            }
+
+            const { id_insumo, cantidadPorPorcion, unidadPorPorcion } = result.data
+
+            const resultAdd = await this.recetaModel.addInsumo({
+                id_receta: id,
+                id_insumo,
+                cantidadPorPorcion,
+                unidadPorPorcion
+            })
+
+            res.status(201).json(resultAdd)
+        } catch (error) {
+            console.error('Error al agregar insumo a receta:', error)
+            if (error.message.includes('ya está agregado')) {
+                return res.status(409).json({ message: error.message })
+            }
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Actualizar insumo en una receta
+    updateInsumo = async (req, res) => {
+        try {
+            const { id_item } = req.params
+
+            // Validar los datos de entrada
+            const result = validatePartialItemsReceta(req.body)
+            if (!result.success) {
+                const errors = result.error.errors || result.error.issues || [];
+                return res.status(400).json({
+                    message: 'Datos de entrada inválidos',
+                    errors: errors.map(err => ({
+                        field: err.path?.join('.') || 'campo desconocido',
+                        message: err.message || 'Error de validación'
+                    }))
+                })
+            }
+
+            const { cantidadPorPorcion, unidadPorPorcion } = result.data
+
+            const resultUpdate = await this.recetaModel.updateInsumo({
+                id_item,
+                cantidadPorPorcion,
+                unidadPorPorcion
+            })
+
+            res.json(resultUpdate)
+        } catch (error) {
+            console.error('Error al actualizar insumo en receta:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
+    // Remover insumo de una receta
+    removeInsumo = async (req, res) => {
+        try {
+            const { id_item } = req.params
+            const result = await this.recetaModel.removeInsumo({ id_item })
+
+            if (!result.success) {
+                return res.status(404).json({ message: result.message })
+            }
+
+            res.json(result)
+        } catch (error) {
+            console.error('Error al remover insumo de receta:', error)
             res.status(500).json({ message: 'Error interno del servidor' })
         }
     }

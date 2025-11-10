@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import DocenteSidebar from '../components/DocenteSidebar';
 import Navbar from '../components/Navbar';
+import '../styles/DocenteLayout.css';
 
 const DocenteLayout = ({ children }) => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -16,8 +17,9 @@ const DocenteLayout = ({ children }) => {
         const path = location.pathname;
         if (path.includes('/dashboard')) return 'dashboard';
         if (path.includes('/asistencias')) return 'asistencias';
+        if (path.includes('/gestionasistencias')) return 'gestionasistencias';
         if (path.includes('/horarios')) return 'horarios';
-        if (path.includes('/alumnos')) return 'alumnos';
+        if (path.includes('/mis-alumnos')) return 'alumnos';
         return 'dashboard';
     };
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import axios from 'axios';
+import '../../styles/DocenteHorarios.css';
+import API from "../../services/api.js";
 
 const Horarios = () => {
     const { user } = useAuth();
@@ -15,11 +16,11 @@ const Horarios = () => {
                 setLoading(true);
 
                 // Cargar servicios
-                const serviciosRes = await axios.get('http://localhost:3000/servicios');
+                const serviciosRes = await API.get('/servicios');
                 setServicios(serviciosRes.data || []);
 
                 // Cargar grados asignados al docente
-                const gradosRes = await axios.get(`http://localhost:3000/docente-grados?idPersona=${user.idPersona || user.id_persona}`);
+                const gradosRes = await API.get(`/docente-grados?idPersona=${user.idPersona || user.id_persona}`);
                 setGrados(gradosRes.data || []);
 
                 // Cargar horarios (simulados por ahora)
@@ -245,107 +246,6 @@ const Horarios = () => {
                 </div>
             </div>
 
-            <style jsx>{`
-                .loading-container {
-                    text-align: center;
-                    padding: 3rem;
-                }
-
-                .dia-actual {
-                    border-left: 4px solid #0d6efd;
-                    box-shadow: 0 0.125rem 0.25rem rgba(13, 110, 253, 0.25);
-                }
-
-                .horario-item {
-                    background: #f8f9fa;
-                    border: 1px solid #e9ecef;
-                    border-radius: 8px;
-                    padding: 1rem;
-                    height: 100%;
-                    transition: all 0.3s ease;
-                }
-
-                .horario-item:hover {
-                    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
-                    transform: translateY(-2px);
-                }
-
-                .horario-item.activo {
-                    background: linear-gradient(45deg, #d4edda, #c3e6cb);
-                    border-color: #28a745;
-                    box-shadow: 0 0.25rem 0.5rem rgba(40, 167, 69, 0.25);
-                }
-
-                .horario-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    margin-bottom: 0.5rem;
-                }
-
-                .horario-servicio {
-                    margin: 0;
-                    color: #2c3e50;
-                    font-weight: 600;
-                }
-
-                .horario-tiempo {
-                    font-size: 0.875rem;
-                    color: #6c757d;
-                    font-weight: 500;
-                }
-
-                .horario-descripcion {
-                    margin: 0;
-                    font-size: 0.875rem;
-                    color: #6c757d;
-                    line-height: 1.4;
-                }
-
-                .hora-actual-card {
-                    background: linear-gradient(45deg, #e3f2fd, #bbdefb);
-                    padding: 1rem;
-                    border-radius: 8px;
-                    text-align: center;
-                }
-
-                .hora-actual {
-                    font-weight: 600;
-                    color: #1976d2;
-                    margin: 0;
-                    font-size: 1.1rem;
-                }
-
-                .grados-badges {
-                    display: flex;
-                    flex-wrap: wrap;
-                }
-
-                .servicio-resumen {
-                    background: #f8f9fa;
-                    border: 1px solid #e9ecef;
-                    border-radius: 8px;
-                    padding: 1rem;
-                    text-align: center;
-                    height: 100%;
-                }
-
-                .servicio-icono {
-                    font-size: 2rem;
-                    margin-bottom: 0.5rem;
-                }
-
-                .servicio-horario {
-                    margin-top: auto;
-                    padding-top: 0.5rem;
-                    border-top: 1px solid #e9ecef;
-                }
-
-                .card {
-                    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-                    border: 1px solid rgba(0, 0, 0, 0.125);
-                }
-            `}</style>
         </div>
     );
 };

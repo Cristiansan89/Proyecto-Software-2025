@@ -2,21 +2,28 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/auth/Login'
 import AdminDashboard from './pages/admins/Dashboard'
-import ListaPersonas from './pages/admins/ListaPersonas'
 import ListaGrados from './pages/admins/ListaGrados'
 import GestionRolesPermisos from './pages/admins/GestionRolesPermisos'
 import ListaInsumos from './pages/admins/ListaInsumos'
 import ListaProveedores from './pages/admins/ListaProveedores'
 import Configuracion from './pages/admins/Configuracion'
+import Persona from './pages/admins/Personas'
 import PersonaGrado from './pages/admins/PersonaGrado'
-import GestionAsistencias from './pages/docente/GestionAsistencias'
 import RegistroAsistenciasMovil from './pages/movil/RegistroAsistenciasMovil'
+import GestionAsistencias from './pages/docente/GestionAsistencias'
 import DocenteDashboard from './pages/docente/DocenteDashboard'
 import DocenteAsistencias from './pages/docente/DocenteAsistencias'
 import MisAlumnos from './pages/docente/MisAlumnos'
 import Horarios from './pages/docente/Horarios'
 import AdminLayout from './layouts/AdminLayout'
 import DocenteLayout from './layouts/DocenteLayout'
+import CocineraLayout from './layouts/CocineraLayout'
+import CocineraDashboard from './pages/cocinera/CocineraDashboard'
+import CocineraGestionAsistencias from './pages/cocinera/CocineraGestionAsistencias'
+import CocineraMenu from './pages/cocinera/CocineraMenu'
+import CocineraInventario from './pages/cocinera/CocineraInventario'
+import CocineraReportes from './pages/cocinera/CocineraReportes'
+import CocineraRecetas from './pages/cocinera/CocineraRecetas'
 import ProtectedRoute from './components/ProtectedRoute'
 import './styles/App.css'
 
@@ -34,6 +41,8 @@ const DashboardRedirect = () => {
     return <Navigate to="/admin/dashboard" replace />;
   } else if (userRole === 'Docente') {
     return <Navigate to="/docente/dashboard" replace />;
+  } else if (userRole === 'Cocinera') {
+    return <Navigate to="/cocinera/dashboard" replace />;
   } else {
     // Para otros roles, redirigir a admin por defecto
     return <Navigate to="/admin/dashboard" replace />;
@@ -61,13 +70,13 @@ function App() {
                     <Routes>
                       <Route path="/" element={<AdminDashboard />} />
                       <Route path="/dashboard" element={<AdminDashboard />} />
-                      <Route path="/personas" element={<ListaPersonas />} />
+                      <Route path="/personas" element={<Persona />} />
                       <Route path="/grados" element={<ListaGrados />} />
                       <Route path="/roles" element={<GestionRolesPermisos />} />
                       <Route path="/insumos" element={<ListaInsumos />} />
                       <Route path="/proveedores" element={<ListaProveedores />} />
                       <Route path="/personasgrados" element={<PersonaGrado />} />
-                      <Route path="/asistencias" element={<GestionAsistencias />} />
+
                       <Route path="/configuracion" element={<Configuracion />} />
                     </Routes>
                   </AdminLayout>
@@ -85,10 +94,31 @@ function App() {
                       <Route path="/" element={<DocenteDashboard />} />
                       <Route path="/dashboard" element={<DocenteDashboard />} />
                       <Route path="/asistencias" element={<DocenteAsistencias />} />
+                      <Route path="/gestionasistencias" element={<GestionAsistencias />} />
                       <Route path="/mis-alumnos" element={<MisAlumnos />} />
                       <Route path="/horarios" element={<Horarios />} />
                     </Routes>
                   </DocenteLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Rutas protegidas del panel cocinera */}
+            <Route
+              path="/cocinera/*"
+              element={
+                <ProtectedRoute requireAuth={true} allowedRoles={['Cocinera']}>
+                  <CocineraLayout>
+                    <Routes>
+                      <Route path="/" element={<CocineraDashboard />} />
+                      <Route path="/dashboard" element={<CocineraDashboard />} />
+                      <Route path="/gestion-asistencias" element={<CocineraGestionAsistencias />} />
+                      <Route path="/recetas" element={<CocineraRecetas />} />
+                      <Route path="/menu" element={<CocineraMenu />} />
+                      <Route path="/inventario" element={<CocineraInventario />} />
+                      <Route path="/reportes" element={<CocineraReportes />} />
+                    </Routes>
+                  </CocineraLayout>
                 </ProtectedRoute>
               }
             />

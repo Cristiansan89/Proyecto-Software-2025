@@ -20,7 +20,13 @@ const DocenteSidebar = ({ collapsed }) => {
             id: 'alumnos',
             label: 'Mis Alumnos',
             icon: 'fas fa-users',
-            path: '/docente/alumnos'
+            path: '/docente/mis-alumnos'
+        },
+        {
+            id: 'gestionasistencias',
+            label: 'Gestión de Asistencias',
+            icon: 'fas fa-calendar-check',
+            path: '/docente/gestionasistencias'
         },
         {
             id: 'horarios',

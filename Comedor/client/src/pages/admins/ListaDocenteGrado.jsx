@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DocenteGradoForm from '../../components/DocenteGradoForm';
 import docenteGradoService from '../../services/docenteGradoService.js';
+import { gradoService } from '../../services/gradoService.js';
 import { formatCicloLectivo } from '../../utils/dateUtils.js';
 
 const ListaDocentesGrados = () => {
@@ -14,10 +15,30 @@ const ListaDocentesGrados = () => {
     const [gradoFilter, setGradoFilter] = useState('');
     const [cicloFilter, setCicloFilter] = useState(new Date().getFullYear().toString());
 
+    // Estados para filtros dinámicos
+    const [grados, setGrados] = useState([]);
+    const [loadingGrados, setLoadingGrados] = useState(false);
+
     // Cargar docentes al montar el componente
     useEffect(() => {
         loadDocentes();
+        loadGrados();
     }, []);
+
+    const loadGrados = async () => {
+        try {
+            setLoadingGrados(true);
+            console.log('ListaDocentesGrados: Cargando grados...');
+            const gradosData = await gradoService.getActivos();
+            console.log('ListaDocentesGrados: Grados cargados:', gradosData);
+            setGrados(Array.isArray(gradosData) ? gradosData : []);
+        } catch (error) {
+            console.error('Error al cargar grados:', error);
+            setGrados([]);
+        } finally {
+            setLoadingGrados(false);
+        }
+    };
 
     const loadDocentes = async () => {
         try {
@@ -91,7 +112,7 @@ const ListaDocentesGrados = () => {
                     docente.nombreGrado
                 );
                 loadDocentes();
-                alert('✅ Asignación eliminada correctamente');
+                alert('Asignación eliminada correctamente');
             } catch (error) {
                 console.error('Error al eliminar la asignación:', error);
                 if (error.response?.data?.message) {
@@ -109,9 +130,9 @@ const ListaDocentesGrados = () => {
         loadDocentes();
 
         if (modalMode === 'create') {
-            alert(`✅ Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`);
+            alert(`Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`);
         } else {
-            alert('✅ Asignación actualizada correctamente!');
+            alert('Asignación actualizada correctamente!');
         }
     };
 
@@ -121,7 +142,7 @@ const ListaDocentesGrados = () => {
     };
 
     // Obtener lista única de grados para el filtro
-    const gradosUnicos = [...new Set(docentes.map(docente => docente.nombreGrado))].sort();
+    // const gradosUnicos = [...new Set(docentes.map(docente => docente.nombreGrado))].sort();
 
     if (loading) {
         return (
@@ -167,11 +188,18 @@ const ListaDocentesGrados = () => {
                         className="filter-select"
                         value={gradoFilter}
                         onChange={(e) => setGradoFilter(e.target.value)}
+                        disabled={loadingGrados}
                     >
                         <option value="">Todos los grados</option>
-                        {gradosUnicos.map(grado => (
-                            <option key={grado} value={grado}>{grado}</option>
-                        ))}
+                        {loadingGrados ? (
+                            <option disabled>Cargando grados...</option>
+                        ) : (
+                            grados.map(grado => (
+                                <option key={grado.idGrado || grado.id} value={grado.nombre}>
+                                    {grado.nombre}
+                                </option>
+                            ))
+                        )}
                     </select>
 
                     <select
@@ -221,7 +249,7 @@ const ListaDocentesGrados = () => {
                 ) : (
                     <div className="scrollable-table">
                         <div className="table-body-scroll">
-                            <table className="data-table" style={{ width: '100%' }}>
+                            <table className="table table-striped data-table" style={{ width: '100%' }}>
                                 <thead className="table-header-fixed">
                                     <tr>
                                         <th>Información del Docente</th>

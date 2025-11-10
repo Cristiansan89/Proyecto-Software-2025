@@ -1,0 +1,224 @@
+/* CocineraMenu.css - Estilos para gestión de menús */
+
+.cocinera-menu {
+  padding: 1rem;
+}
+
+/* Modal personalizado */
+.modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+}
+
+/* Estilos para planificación semanal */
+.weekly-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.day-menu-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.day-menu-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.day-header {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.day-name {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.day-date {
+  color: #6c757d;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.meals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.meal-item {
+  padding: 0.75rem;
+  border-radius: 8px;
+  border-left: 4px solid;
+  font-size: 0.8rem;
+}
+
+.meal-desayuno {
+  background: rgba(255, 193, 7, 0.1);
+  border-left-color: #ffc107;
+  color: #856404;
+}
+
+.meal-almuerzo {
+  background: rgba(40, 167, 69, 0.1);
+  border-left-color: #28a745;
+  color: #155724;
+}
+
+.meal-cena {
+  background: rgba(102, 126, 234, 0.1);
+  border-left-color: #667eea;
+  color: #4c63d2;
+}
+
+.meal-merienda {
+  background: rgba(220, 53, 69, 0.1);
+  border-left-color: #dc3545;
+  color: #721c24;
+}
+
+.meal-name {
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.recipe-name {
+  color: #6c757d;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.empty-meal {
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  color: #6c757d;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.empty-meal:hover {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+  color: #667eea;
+}
+
+/* Controles de fecha */
+.menu-controls {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.week-navigator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-nav {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.btn-nav:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.2);
+}
+
+.btn-nav:disabled {
+  background: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.current-week {
+  color: #2c3e50;
+  font-weight: 600;
+  min-width: 200px;
+  text-align: center;
+}
+
+.menu-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Estados vacíos */
+.no-menus {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.no-menus i {
+  font-size: 3rem;
+  color: #dee2e6;
+  margin-bottom: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .weekly-menu-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .week-navigator {
+    justify-content: center;
+  }
+  
+  .menu-actions {
+    justify-content: center;
+  }
+}

@@ -4,6 +4,7 @@ import ListaDocentesGrados from './ListaDocenteGrado';
 import ListaReemplazosGrados from './ListaReemplazoDocente';
 
 const PersonaGrado = () => {
+    // Estado para la pestaña activa
     const [activeTab, setActiveTab] = useState('alumnos');
 
     const tabs = [

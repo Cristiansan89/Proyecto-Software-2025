@@ -545,6 +545,116 @@ html {
   background: rgba(220, 53, 69, 0.1);
 }
 
+/* Estilos para el dropdown del usuario */
+.user-menu-container {
+  position: relative;
+}
+
+.user-menu-button {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.user-menu-button:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.user-menu-button .user-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  color: #667eea;
+}
+
+.user-menu-button .user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.user-menu-button .fa-chevron-down {
+  transition: transform 0.2s ease;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.user-menu-button .fa-chevron-down.rotate {
+  transform: rotate(180deg);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 1000;
+  animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #333;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item.dropdown-button {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-item.dropdown-button:hover {
+  background: #f8f9fa;
+}
+
+.dropdown-item.dropdown-button.logout {
+  color: #dc3545;
+}
+
+.dropdown-item.dropdown-button.logout:hover {
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e1e5e9;
+  margin: 0.5rem 0;
+}
+
 /* Área de contenido */
 .content-area {
   flex: 1;
@@ -958,6 +1068,14 @@ html {
   border-bottom: 1px solid #e9ecef;
 }
 
+.page-header-cocinera {
+  display: flex;
+  flex-direction:column;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
 .header-content h2 {
   color: #333;
   margin: 0 0 0.25rem 0;
@@ -1218,7 +1336,7 @@ html {
 .table-body-scroll .action-buttons {
   display: flex;
   gap: 0.25rem;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: nowrap;
 }
 
@@ -1462,7 +1580,7 @@ html {
 .data-table {
   /*width: 100%;*/
   border-collapse: collapse;
-  table-layout: fixed; /* Para mantener anchos consistentes */
+  table-layout: auto; /* Para mantener anchos consistentes */
 }
 
 
@@ -1491,7 +1609,7 @@ html {
 /* Tabla con más columnas (como ListaPersonas con 7 columnas) */
 .data-table th:nth-child(1):nth-last-child(7),
 .data-table td:nth-child(1):nth-last-child(7) {
-  width: 25%;
+  width: 15%;
 }
 
 .data-table th:nth-child(2):nth-last-child(6),
@@ -1527,7 +1645,7 @@ html {
 /* Tabla con 9 columnas (como ListaInsumos) */
 .data-table th:nth-child(1):nth-last-child(9),
 .data-table td:nth-child(1):nth-last-child(9) {
-  width: 20%;
+  width: 10%;
 }
 
 .data-table th:nth-child(2):nth-last-child(8),
@@ -1547,12 +1665,12 @@ html {
 
 .data-table th:nth-child(5):nth-last-child(5),
 .data-table td:nth-child(5):nth-last-child(5) {
-  width: 8%;
+  width: 15%;
 }
 
 .data-table th:nth-child(6):nth-last-child(4),
 .data-table td:nth-child(6):nth-last-child(4) {
-  width: 8%;
+  width: 15%;
 }
 
 .data-table th:nth-child(7):nth-last-child(3),
@@ -1562,38 +1680,38 @@ html {
 
 .data-table th:nth-child(8):nth-last-child(2),
 .data-table td:nth-child(8):nth-last-child(2) {
-  width: 8%;
+  width: 10%;
 }
 
 .data-table th:nth-child(9):nth-last-child(1),
 .data-table td:nth-child(9):nth-last-child(1) {
-  width: 11%;
+  width: 15%;
 }
 
 /* Tabla con 5 columnas (como ListaProveedores) */
 .data-table th:nth-child(1):nth-last-child(5),
 .data-table td:nth-child(1):nth-last-child(5) {
-  width: 30%;
+  width: 20%;
 }
 
 .data-table th:nth-child(2):nth-last-child(4),
 .data-table td:nth-child(2):nth-last-child(4) {
-  width: 15%;
+  width: 20%;
 }
 
 .data-table th:nth-child(3):nth-last-child(3),
 .data-table td:nth-child(3):nth-last-child(3) {
-  width: 25%;
+  width: 20%;
 }
 
 .data-table th:nth-child(4):nth-last-child(2),
 .data-table td:nth-child(4):nth-last-child(2) {
-  width: 15%;
+  width: 20%;
 }
 
 .data-table th:nth-child(5):nth-last-child(1),
 .data-table td:nth-child(5):nth-last-child(1) {
-  width: 15%;
+  width: 20%;
 }
 
 .data-table td {
@@ -1804,7 +1922,7 @@ html {
 
 .action-buttons {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.5rem;
 }
 
@@ -1857,6 +1975,24 @@ html {
 
 .btn-assign:hover {
   background: rgba(40, 167, 69, 0.2);
+}
+
+.btn-disable {
+  background: rgba(255, 87, 34, 0.1); /* naranja para deshabilitar */
+  color: #ff5722;
+}
+
+.btn-disable:hover {
+  background: rgba(255, 87, 34, 0.2);
+}
+
+.btn-enable {
+  background: rgba(76, 175, 80, 0.1); /* verde para habilitar */
+  color: #4caf50;
+}
+
+.btn-enable:hover {
+  background: rgba(76, 175, 80, 0.2);
 }
 
 /* Estado sin datos */
@@ -3966,4 +4102,294 @@ html {
   .form-card .card-body, .enlaces-card .card-body {
     padding: 20px;
   }
+}
+
+/* ===== BOTONES ESTÁNDAR GLOBALES ===== */
+
+/* Clase base para todos los botones */
+.btn-custom {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  min-width: 120px;
+}
+
+.btn-custom:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Botón primario - acciones principales */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Botón secundario - acciones secundarias */
+.btn-secondary {
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* Botón de éxito - confirmaciones */
+.btn-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+}
+
+/* Botón de peligro - eliminaciones */
+.btn-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
+}
+
+/* Botón de advertencia */
+.btn-warning {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: #212529;
+}
+
+.btn-warning:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 193, 7, 0.3);
+}
+
+/* Botón de información */
+.btn-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+  color: white;
+}
+
+.btn-info:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(23, 162, 184, 0.3);
+}
+
+/* Tamaños de botones */
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  min-width: 100px;
+}
+
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  min-width: 150px;
+}
+
+/* Contenedor de botones */
+.button-group {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 1rem;
+}
+
+.button-group.center {
+  justify-content: center;
+}
+
+.button-group.end {
+  justify-content: flex-end;
+}
+
+.button-group.full-width .btn-custom {
+  flex: 1;
+}
+
+/* Media queries para responsividad */
+@media (max-width: 768px) {
+  .button-group {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .button-group .btn-custom {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-custom {
+    padding: 0.65rem 1.2rem;
+    font-size: 0.9rem;
+    min-width: 100px;
+  }
+}
+
+/* Estilos específicos para modales - MÁXIMA PRIORIDAD */
+.modal {
+  z-index: 999999 !important; /* Z-index extremadamente alto */
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+}
+
+.modal-backdrop {
+  z-index: 999998 !important; /* Backdrop con z-index muy alto */
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  pointer-events: all !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+.modal.show {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.modal-dialog {
+  z-index: 1000000 !important; /* Dialog con z-index máximo */
+  margin: 0 auto !important;
+  position: relative !important;
+  width: 90% !important;
+  max-width: 1000px !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  pointer-events: all !important;
+}
+
+.modal-content {
+  z-index: 1000001 !important; /* Contenido con el z-index más alto */
+  background: white !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+  position: relative !important;
+  width: 100% !important;
+  min-height: 400px !important;
+}
+
+/* Específicos para modal de recetas */
+.modal-xl .modal-dialog {
+  width: 95% !important;
+  max-width: 1200px !important;
+}
+
+.modal-header {
+  padding: 1.5rem !important;
+  border-bottom: 1px solid #dee2e6 !important;
+  border-radius: 12px 12px 0 0 !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+}
+
+.modal-header .modal-title {
+  color: white !important;
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+}
+
+.modal-header .btn-close {
+  filter: invert(1) !important;
+}
+
+.modal-body {
+  padding: 1.5rem !important;
+  max-height: 75vh !important;
+  overflow-y: auto !important;
+  background: #f8f9fa !important;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem !important;
+  border-top: 1px solid #dee2e6 !important;
+  border-radius: 0 0 12px 12px !important;
+  background: white !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+/* Mejorar el formulario dentro del modal */
+.receta-form-section {
+  background: white !important;
+  border-radius: 10px !important;
+  padding: 1.2rem !important;
+  margin-bottom: 1rem !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.receta-form-section h6 {
+  color: #495057 !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.8rem !important;
+  padding-bottom: 0.4rem !important;
+  border-bottom: 2px solid #e9ecef !important;
+}
+
+/* Evitar que elementos detrás del modal sean clickeables */
+.modal-open {
+  overflow: hidden !important;
+}
+
+.modal-open .sidebar,
+.modal-open .navbar,
+.modal-open .main-content {
+  pointer-events: none !important; /* Desactivar interacciones cuando modal está abierto */
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.modal-content {
+  position: relative;
+  z-index: 100001;
+  pointer-events: all; /* Reactivar interacciones para el contenido del modal */
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* Asegurar que el modal sea completamente funcional */
+.modal-header,
+.modal-body,
+.modal-footer {
+  position: relative;
+  z-index: 100002;
+  z-index: 10003;
 }
