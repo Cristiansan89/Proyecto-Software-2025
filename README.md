@@ -2,13 +2,13 @@
 
 Desarrollo de un sistema de gestión para el comedor de una escuela primaria. El proyecto busca optimizar la administración de menús, el control de inventario y el registro de alumnos.
 
-# Backend
-
 # Sistema de Gestión de Comedor Escolar
+
+# Backend
 
 ## 📋 Descripción
 
-Sistema web completo para la gestión integral de un comedor escolar, desarrollado con **Node.js**, **Express** y **MySQL/MariaDB**. Permite administrar inventarios, planificar menús, controlar asistencias y generar reportes detallados del funcionamiento del comedor.
+Sistema web completo para la gestión integral de un comedor escolar, desarrollado con **Node.js v22.12.0**, **Express v5.1.0** y **MySQL 8.0.42**. Permite administrar inventarios, planificar menús, controlar asistencias y generar reportes detallados del funcionamiento del comedor.
 
 ## 🎯 Características Principales
 
@@ -57,6 +57,7 @@ El sistema cuenta con 15+ tablas relacionales que gestionan:
 │   ├── models/          # Modelos de datos
 │   ├── routes/          # Rutas de la API
 │   ├── schemas/         # Validaciones de los datos (nivel de aplicación)
+│   ├── services/        # Servicio de mensajería (mailtrap y telegram)
 │   └── sql/             # Scripts de base de datos
 └── README.md
 ```
@@ -83,4 +84,20 @@ Proyecto en desarrollo activo con funcionalidades core implementadas y en proces
 
 # Frontend
 
-- No se realizaron avances en lo que respecta a la interfaz del usuario pero estan creada las base de lo que será el frontend con el framework de react.
+## 📋 Descripción
+
+
+
+## 🛠️ Tecnologías Utilizadas
+
+## 📊 Estructura de la Base de Datos
+
+## 🚀 Instalación y Uso
+
+1. Clonar el repositorio
+2. Instalar dependencias: `npm install`
+3. Configurar variables de entorno
+4. Iniciar el cliente: `npm start` o `pnpm run dev`
+
+## 📁 Estructura del Proyecto
+
