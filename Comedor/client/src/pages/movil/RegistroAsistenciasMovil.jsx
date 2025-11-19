@@ -27,8 +27,18 @@ const RegistroAsistenciasMovil = () => {
             setLoading(true);
             setError('');
 
+            console.log('🔄 Iniciando carga de datos con token:', token);
             const response = await API.get(`/asistencias/registro/${token}`);
+            console.log('📥 Respuesta recibida:', response.data);
+            
             const { tokenData, servicio, alumnos } = response.data;
+
+            console.log('📊 Datos extraídos:', { 
+                tokenData: tokenData, 
+                servicio: servicio, 
+                alumnosCount: alumnos?.length || 0,
+                alumnos: alumnos 
+            });
 
             setDatosRegistro({ tokenData, servicio, alumnos });
 
@@ -38,13 +48,21 @@ const RegistroAsistenciasMovil = () => {
                 asistenciasIniciales[alumno.id_alumnoGrado] = alumno.estado || 'No';
             });
             setAsistencias(asistenciasIniciales);
+            
+            console.log('✅ Datos cargados exitosamente');
 
         } catch (error) {
-            console.error('Error al cargar datos:', error);
+            console.error('❌ Error al cargar datos:', error);
+            console.error('🔍 Error details:', {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+            
             if (error.response?.status === 401) {
                 setError('El enlace ha expirado o es inválido. Contacte al administrador.');
             } else {
-                setError('Error al cargar los datos. Intente nuevamente.');
+                setError(`Error al cargar los datos: ${error.message}. Intente nuevamente.`);
             }
         } finally {
             setLoading(false);
@@ -66,29 +84,49 @@ const RegistroAsistenciasMovil = () => {
             setError('');
             setSuccess('');
 
+            // Validar que hay asistencias para guardar
+            if (Object.keys(asistencias).length === 0) {
+                setError('No hay asistencias para guardar.');
+                return;
+            }
+
             // Preparar datos para enviar
             const asistenciasArray = Object.entries(asistencias).map(([idAlumnoGrado, estado]) => ({
                 idAlumnoGrado: parseInt(idAlumnoGrado),
                 estado
             }));
 
+            console.log('💾 Guardando asistencias:', asistenciasArray);
+
             const response = await API.post(`/asistencias/registro/${token}`, {
                 asistencias: asistenciasArray
             });
+
+            console.log('✅ Respuesta del servidor:', response.data);
 
             setSuccess(`✅ Asistencias guardadas correctamente. ${response.data.registradas} registros actualizados.`);
 
             // Opcional: recargar datos para mostrar el estado actualizado
             setTimeout(() => {
                 cargarDatosRegistro();
-            }, 1000);
+            }, 1500);
 
         } catch (error) {
-            console.error('Error al guardar asistencias:', error);
+            console.error('❌ Error al guardar asistencias:', error);
+            console.error('🔍 Error details:', {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+            
             if (error.response?.status === 401) {
                 setError('El enlace ha expirado. Contacte al administrador para obtener un nuevo enlace.');
+            } else if (error.response?.status === 400) {
+                setError(`Error en los datos: ${error.response.data.message || 'Datos inválidos'}`);
+            } else if (error.response?.status === 500) {
+                setError('Error interno del servidor. Intente nuevamente en unos momentos.');
             } else {
-                setError('Error al guardar las asistencias. Intente nuevamente.');
+                setError(`Error al guardar las asistencias: ${error.message}. Intente nuevamente.`);
             }
         } finally {
             setGuardando(false);
@@ -133,11 +171,23 @@ const RegistroAsistenciasMovil = () => {
     }
 
     const conteos = contarAsistencias();
-    const fechaFormateada = new Date(datosRegistro.tokenData?.fecha + 'T00:00:00').toLocaleDateString('es-ES', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+    const fechaFormateada = datosRegistro.tokenData?.fecha 
+        ? new Date(datosRegistro.tokenData.fecha + 'T00:00:00').toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        })
+        : 'Fecha no disponible';
+
+    // Debug logs para renderizado
+    console.log('🎨 Renderizando componente:', {
+        loading,
+        error,
+        datosRegistroKeys: Object.keys(datosRegistro),
+        alumnosLength: datosRegistro.alumnos?.length || 0,
+        servicioNombre: datosRegistro.servicio?.nombre,
+        tokenDataGrado: datosRegistro.tokenData?.nombreGrado
     });
 
     return (
@@ -241,6 +291,7 @@ const RegistroAsistenciasMovil = () => {
                     )}
                 </button>
             </div>
+           
         </div>
     );
 };

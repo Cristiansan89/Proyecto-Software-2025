@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import CocineraSidebar from '../components/CocineraSidebar';
+import CocineraSidebar from '../components/cocinera/CocineraSidebar';
 import Navbar from '../components/Navbar';
 import '../styles/CocineraLayout.css';
 

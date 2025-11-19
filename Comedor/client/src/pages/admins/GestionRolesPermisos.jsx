@@ -3,8 +3,8 @@ import { permisoService } from '../../services/permisoService';
 import { rolService } from '../../services/rolService';
 import { rolPermisoService } from '../../services/rolPermisoService';
 import API from '../../services/api.js';
-import PermisoForm from '../../components/PermisoForm';
-import AsignarPermisosForm from '../../components/AsignarPermisosForm';
+import PermisoForm from '../../components/admin/PermisoForm';
+import AsignarPermisosForm from '../../components/admin/AsignarPermisosForm';
 import ErrorBoundary from '../../components/ErrorBoundary';
 
 const GestionRolesPermisos = () => {
@@ -472,11 +472,11 @@ const GestionRolesPermisos = () => {
         };
 
         return (
-            <div className="vista-permisos">
+            <div>
                 {/* Header */}
                 <div className="page-header">
-                    <div className="header-content">
-                        <h1 className="page-title">
+                    <div className="header-left">
+                        <h1 className="page-title-sub">
                             Lista de Permisos
                         </h1>
                     </div>
@@ -488,26 +488,6 @@ const GestionRolesPermisos = () => {
                             <i className="fas fa-plus me-2"></i>
                             Nuevo Permiso
                         </button>
-                    </div>
-                </div>
-
-                {/* Stats */}
-                <div className="page-header">
-                    <div className="header-stats">
-                        <div className="stat-card-users">
-                            <div className="stat-number-users mx-1">{permisos.length}</div>
-                            <div className="stat-label-users">Total Permisos</div>
-                        </div>
-                        <div className="stat-card-users">
-                            <div className="stat-number-users">
-                                {permisos.filter(p => p.estado === 'Activo').length}
-                            </div>
-                            <div className="stat-label-users">Activos</div>
-                        </div>
-                        <div className="stat-card-users">
-                            <div className="stat-number-users">{modulosUnicos.length}</div>
-                            <div className="stat-label-users">Módulos</div>
-                        </div>
                     </div>
                 </div>
 
@@ -751,14 +731,20 @@ const GestionRolesPermisos = () => {
     const renderVistaRoles = () => (
 
         <div className="vista-roles">
-            <div className="table-header">
-                <h4>Lista de Roles</h4>
-                <button
-                    className="btn btn-primary-new"
-                    onClick={handleNuevoRol}
-                >
-                    <i className="fas fa-plus"></i> Nuevo Rol
-                </button>
+            <div className="page-header">
+                <div className="header-left">
+                    <h2 className="page-title-sub">
+                        Lista de Roles
+                    </h2>
+                </div>
+               <div className="header-actions">
+                    <button
+                        className="btn btn-primary-new"
+                        onClick={handleNuevoRol}
+                    >
+                        <i className="fas fa-plus"></i> Nuevo Rol
+                    </button>
+               </div>
             </div>
 
             <div className="table-responsive">
@@ -811,40 +797,24 @@ const GestionRolesPermisos = () => {
     // Renderizar vista de asignaciones
     const renderVistaAsignaciones = () => (
         <div className="vista-asignaciones">
-            <div className="table-header">
-                <h4>Asignación de Permisos a Roles</h4>
-                <button
-                    className="btn btn-primary-new"
-                    onClick={() => {
-                        console.log('Abriendo formulario para nueva asignación');
-                        setRolSeleccionadoParaEditar(null);
-                        setShowAsignarPermisosForm(true);
-                    }}
-                >
-                    <i className="fas fa-plus"></i>
-                    Asignar Permisos
-                </button>
-            </div>
-
-            {/* Estadísticas */}
             <div className="page-header">
-                <div className="header-stats">
-                    <div className="stat-card-users">
-                        <div className="stat-number-users">{rolesConPermisos.length}</div>
-                        <div className="stat-label-users">Total Roles</div>
-                    </div>
-                    <div className="stat-card-users">
-                        <div className="stat-number-users">
-                            {rolesConPermisos.filter(r => r.permisos && r.permisos.length > 0).length}
-                        </div>
-                        <div className="stat-label-users">Con Permisos</div>
-                    </div>
-                    <div className="stat-card-users">
-                        <div className="stat-number-users">
-                            {rolesConPermisos.reduce((total, rol) => total + (rol.permisos?.length || 0), 0)}
-                        </div>
-                        <div className="stat-label-users">Total Asignaciones</div>
-                    </div>
+                <div className="header-left">
+                    <h2 className="page-title-sub">
+                        Asignación de Permisos a Roles
+                    </h2>
+                </div>
+                <div className="header-actions">
+                    <button
+                        className="btn btn-primary-new"
+                        onClick={() => {
+                            console.log('Abriendo formulario para nueva asignación');
+                            setRolSeleccionadoParaEditar(null);
+                        setShowAsignarPermisosForm(true);
+                        }}
+                    >
+                    <i className="fas fa-plus"></i>
+                        Asignar Permisos
+                    </button>
                 </div>
             </div>
 
@@ -1050,7 +1020,7 @@ const GestionRolesPermisos = () => {
     }
 
     return (
-        <div className="page-content">
+        <div>
             <div className="page-header">
                 <div className="header-left">
                     <h1 className="page-title">

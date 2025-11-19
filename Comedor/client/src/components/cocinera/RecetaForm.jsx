@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import API from '../services/api';
+import API from '../../services/api';
 
 const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
@@ -29,8 +29,12 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
     const loadRecetaIngredientes = async () => {
         try {
-            const response = await API.get(`/itemsrecetas/receta/${receta.id_receta}`);
-            setIngredientes(response.data || []);
+            const response = await API.get(`/recetas/${receta.id_receta}/insumos`);
+            if (response.data && response.data.insumos) {
+                setIngredientes(response.data.insumos);
+            } else {
+                setIngredientes([]);
+            }
         } catch (error) {
             console.error('Error al cargar ingredientes:', error);
             setIngredientes([]);
@@ -154,48 +158,89 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
                 // Agregar ingredientes
                 for (const ingrediente of ingredientes) {
-                    await API.post('/itemsrecetas', {
-                        idReceta: savedReceta.id_receta,
-                        idInsumo: ingrediente.id_insumo,
+                    await API.post(`/recetas/${savedReceta.id_receta}/insumos`, {
+                        id_insumo: ingrediente.id_insumo,
                         cantidadPorPorcion: ingrediente.cantidadPorPorcion,
                         unidadPorPorcion: ingrediente.unidadPorPorcion
                     });
                 }
             } else {
                 // Actualizar receta
-                await API.put(`/recetas/${receta.id_receta}`, recetaData);
+                console.log('🔄 Actualizando receta:', receta.id_receta, recetaData);
+                await API.patch(`/recetas/${receta.id_receta}`, recetaData);
 
-                // Eliminar ingredientes existentes
-                await API.delete(`/itemsrecetas/receta/${receta.id_receta}`);
+                // Primero obtenemos los ingredientes existentes para eliminarlos uno por uno
+                try {
+                    console.log('🗑️ Obteniendo ingredientes existentes para eliminar...');
+                    const existingIngredients = await API.get(`/recetas/${receta.id_receta}/insumos`);
+                    console.log('📋 Ingredientes existentes completos:', existingIngredients.data);
+                    
+                    if (existingIngredients.data && existingIngredients.data.insumos) {
+                        console.log(`🗑️ Eliminando ${existingIngredients.data.insumos.length} ingredientes existentes...`);
+                        for (const ingrediente of existingIngredients.data.insumos) {
+                            console.log('🗑️ Eliminando ingrediente:', ingrediente);
+                            try {
+                                await API.delete(`/recetas/insumos/${ingrediente.id_item}`);
+                                console.log('✅ Ingrediente eliminado exitosamente:', ingrediente.id_item);
+                            } catch (delError) {
+                                console.error('❌ Error eliminando ingrediente individual:', delError);
+                                // Continuar con el siguiente ingrediente
+                            }
+                        }
+                    } else {
+                        console.log('ℹ️ No hay ingredientes existentes para eliminar');
+                    }
+                } catch (deleteError) {
+                    console.error('❌ Error general al eliminar ingredientes existentes:', deleteError);
+                    // Continuar con la adición de nuevos ingredientes
+                }
 
                 // Agregar ingredientes actualizados
+                console.log(`➕ Agregando ${ingredientes.length} ingredientes actualizados...`);
                 for (const ingrediente of ingredientes) {
-                    await API.post('/itemsrecetas', {
-                        idReceta: receta.id_receta,
-                        idInsumo: ingrediente.id_insumo,
-                        cantidadPorPorcion: ingrediente.cantidadPorPorcion,
-                        unidadPorPorcion: ingrediente.unidadPorPorcion
-                    });
+                    console.log('➕ Agregando ingrediente:', ingrediente);
+                    try {
+                        await API.post(`/recetas/${receta.id_receta}/insumos`, {
+                            id_insumo: ingrediente.id_insumo,
+                            cantidadPorPorcion: ingrediente.cantidadPorPorcion,
+                            unidadPorPorcion: ingrediente.unidadPorPorcion
+                        });
+                        console.log('✅ Ingrediente agregado exitosamente');
+                    } catch (addError) {
+                        console.error('❌ Error agregando ingrediente:', addError);
+                        throw addError; // Re-lanzar para abortar el proceso
+                    }
                 }
 
                 savedReceta = { ...receta, ...recetaData };
+                console.log('✅ Receta actualizada exitosamente');
             }
 
             onSave(savedReceta);
         } catch (error) {
-            console.error('Error al guardar receta:', error);
+            console.error('❌ Error completo al guardar receta:', error);
 
             // Mostrar errores específicos
             if (error.response?.data?.errors) {
+                console.error('❌ Errores de validación:', error.response.data.errors);
                 const apiErrors = {};
                 error.response.data.errors.forEach(err => {
                     apiErrors[err.field] = err.message;
                 });
                 setErrors(apiErrors);
+                alert('Error de validación. Revise los campos marcados en rojo.');
             } else if (error.response?.data?.message) {
+                console.error('❌ Mensaje de error de la API:', error.response.data.message);
                 alert(`Error: ${error.response.data.message}`);
+            } else if (error.response) {
+                console.error('❌ Error de respuesta HTTP:', error.response.status, error.response.data);
+                alert(`Error del servidor (${error.response.status}): ${error.response.statusText}`);
+            } else if (error.request) {
+                console.error('❌ Error de red - sin respuesta:', error.request);
+                alert('Error de conexión. Verifique su conexión a internet.');
             } else {
-                alert('Error al guardar la receta. Por favor, intente nuevamente.');
+                console.error('❌ Error desconocido:', error.message);
+                alert(`Error inesperado: ${error.message}`);
             }
         } finally {
             setLoading(false);

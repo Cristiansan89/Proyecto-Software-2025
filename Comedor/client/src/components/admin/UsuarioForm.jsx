@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import usuarioService from '../services/usuarioService';
+import usuarioService from '../../services/usuarioService';
 
 const UsuarioForm = ({ usuario, mode, onCancel }) => {
     const [formData, setFormData] = useState({

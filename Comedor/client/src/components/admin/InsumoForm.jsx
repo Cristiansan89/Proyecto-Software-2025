@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import insumoService from '../services/insumoService.js';
+import insumoService from '../../services/insumoService.js';
 
 const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({

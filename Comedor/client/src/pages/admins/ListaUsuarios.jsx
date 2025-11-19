@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import UsuarioForm from '../../components/UsuarioForm.jsx';
+import UsuarioForm from '../../components/admin/UsuarioForm.jsx';
 import usuarioService from '../../services/usuarioService.js';
 import { rolService } from '../../services/rolService.js';
 import { formatLastActivity } from '../../utils/dateUtils.js';
@@ -160,10 +160,10 @@ const ListaUsuarios = () => {
     }
 
     return (
-        <div className="page-content">
+        <div >
             <div className="page-header">
-                <div className="header-left">
-                    <h1 className="page-title">
+                <div className="header-left mt-2 mx-2">
+                    <h1 className="page-title-sub">
                         Lista de Usuarios
                     </h1>
                 </div>

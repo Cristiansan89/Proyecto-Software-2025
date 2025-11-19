@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import DocenteSidebar from '../components/DocenteSidebar';
+import DocenteSidebar from '../components/docente/DocenteSidebar';
 import Navbar from '../components/Navbar';
 import '../styles/DocenteLayout.css';
 
@@ -16,6 +16,7 @@ const DocenteLayout = ({ children }) => {
     const getCurrentPage = () => {
         const path = location.pathname;
         if (path.includes('/dashboard')) return 'dashboard';
+        if (path.includes('/registro-asistencias')) return 'registro-asistencias';
         if (path.includes('/asistencias')) return 'asistencias';
         if (path.includes('/gestionasistencias')) return 'gestionasistencias';
         if (path.includes('/horarios')) return 'horarios';

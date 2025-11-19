@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import reemplazoDocenteService from '../services/reemplazoDocenteService.js';
+import reemplazoDocenteService from '../../services/reemplazoDocenteService.js';
 
 const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import servicioService from '../services/servicioService.js';
-import turnoService from '../services/turnoService.js';
-import servicioTurnoService from '../services/servicioTurnoService.js';
+import servicioService from '../../services/servicioService.js';
+import turnoService from '../../services/turnoService.js';
+import servicioTurnoService from '../../services/servicioTurnoService.js';
 
 const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
@@ -15,6 +15,8 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
     const [loading, setLoading] = useState(false);
     const [turnos, setTurnos] = useState([]);
     const [turnosAsignados, setTurnosAsignados] = useState([]);
+    const [mostrarTurnos, setMostrarTurnos] = useState(false);
+    const [turnosSeleccionados, setTurnosSeleccionados] = useState([]); // Para modo create
 
     // Función para cargar los turnos disponibles
     const loadTurnos = async () => {
@@ -34,6 +36,28 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
         } catch (error) {
             console.error('Error al cargar turnos asignados:', error);
         }
+    };
+
+    // Función para agregar turno en modo create
+    const handleAgregarTurnoCreate = () => {
+        if (!formData.idTurno) return;
+
+        const turnoSeleccionado = turnos.find(t => t.idTurno === parseInt(formData.idTurno));
+        if (!turnoSeleccionado) return;
+
+        // Verificar que no esté ya seleccionado
+        if (turnosSeleccionados.some(t => t.idTurno === turnoSeleccionado.idTurno)) {
+            alert('Este turno ya está seleccionado');
+            return;
+        }
+
+        setTurnosSeleccionados(prev => [...prev, turnoSeleccionado]);
+        setFormData(prev => ({ ...prev, idTurno: '' }));
+    };
+
+    // Función para quitar turno en modo create
+    const handleQuitarTurnoCreate = (idTurno) => {
+        setTurnosSeleccionados(prev => prev.filter(t => t.idTurno !== idTurno));
     };
 
     // Función para asignar un turno al servicio
@@ -78,9 +102,26 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
         }
     };
 
+    // Función para verificar si se pueden mostrar los turnos
+    const checkMostrarTurnos = (nombre, descripcion) => {
+        const nombreCompleto = nombre && nombre.trim().length > 0;
+        const descripcionCompleta = descripcion && descripcion.trim().length > 0;
+        return nombreCompleto && descripcionCompleta;
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const newFormData = { ...formData, [name]: value };
+        setFormData(newFormData);
+
+        // Verificar si se deben mostrar los turnos
+        if (name === 'nombre' || name === 'descripcion') {
+            const shouldMostrarTurnos = checkMostrarTurnos(
+                name === 'nombre' ? value : newFormData.nombre,
+                name === 'descripcion' ? value : newFormData.descripcion
+            );
+            setMostrarTurnos(shouldMostrarTurnos);
+        }
 
         // Limpiar error del campo cuando el usuario empiece a escribir
         if (errors[name]) {
@@ -130,6 +171,20 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
             // Crear o actualizar servicio
             if (mode === 'create') {
                 savedServicio = await servicioService.create(servicioData);
+                
+                // Si hay turnos seleccionados, asignarlos al servicio recién creado
+                if (turnosSeleccionados.length > 0) {
+                    for (const turno of turnosSeleccionados) {
+                        try {
+                            await servicioTurnoService.create({
+                                idServicio: savedServicio.idServicio,
+                                idTurno: turno.idTurno
+                            });
+                        } catch (error) {
+                            console.error('Error al asignar turno:', error);
+                        }
+                    }
+                }
             } else {
                 savedServicio = await servicioService.update(servicio.idServicio, servicioData);
             }
@@ -160,17 +215,26 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
         loadTurnos();
 
         if (servicio) {
-            setFormData({
+            const newFormData = {
                 nombre: servicio.nombre || '',
                 descripcion: servicio.descripcion || '',
                 estado: servicio.estado || 'Activo',
                 idTurno: ''
-            });
+            };
+            setFormData(newFormData);
+
+            // Verificar si se deben mostrar los turnos al cargar
+            const shouldMostrarTurnos = checkMostrarTurnos(newFormData.nombre, newFormData.descripcion);
+            setMostrarTurnos(shouldMostrarTurnos);
 
             // Si estamos editando un servicio existente, cargar sus turnos asignados
             if (servicio.idServicio && mode !== 'create') {
                 loadTurnosAsignados(servicio.idServicio);
             }
+        } else {
+            // Si no hay servicio (modo create nuevo), verificar campos vacíos
+            setMostrarTurnos(false);
+            setTurnosSeleccionados([]);
         }
     }, [servicio, mode]); return (
         <div className="servicio-form">
@@ -227,22 +291,23 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
                         </div>
 
                         {/* Gestión de Turnos */}
-                        <div className="form-group">
-                            <label className="form-label mt-3">
-                                <i className="fas fa-clock me-2"></i>
-                                Gestión de Turnos
-                            </label>
+                        {(mostrarTurnos || mode !== 'create') && (
+                            <div className="form-group">
+                                <label className="form-label mt-3">
+                                    <i className="fas fa-clock me-2"></i>
+                                    Gestión de Turnos
+                                </label>
 
-                            {/* Mostrar turnos ya asignados */}
-                            {mode !== 'create' && turnosAsignados.length > 0 && (
+                            {/* Mostrar turnos ya asignados o seleccionados */}
+                            {((mode !== 'create' && turnosAsignados.length > 0) || (mode === 'create' && turnosSeleccionados.length > 0)) && (
                                 <div className="mb-3">
-                                    <h6>Turnos Asignados:</h6>
+                                    <h6>{mode === 'create' ? 'Turnos Seleccionados:' : 'Turnos Asignados:'}</h6>
                                     <div className="row">
-                                        {turnosAsignados.map((turno) => (
+                                        {(mode === 'create' ? turnosSeleccionados : turnosAsignados).map((turno) => (
                                             <div key={turno.idTurno} className="col-md-6 mb-2">
                                                 <div className="card card-body p-2 d-flex flex-row justify-content-between align-items-center">
                                                     <span>
-                                                        <strong>{turno.nombreTurno}</strong><br />
+                                                        <strong>{mode === 'create' ? turno.nombre : turno.nombreTurno}</strong><br />
                                                         <small className="text-muted">
                                                             {turno.horaInicio} - {turno.horaFin}
                                                         </small>
@@ -251,8 +316,8 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
                                                         <button
                                                             type="button"
                                                             className="btn btn-sm btn-outline-danger"
-                                                            onClick={() => handleDesasignarTurno(turno.idTurno)}
-                                                            title="Desasignar turno"
+                                                            onClick={() => mode === 'create' ? handleQuitarTurnoCreate(turno.idTurno) : handleDesasignarTurno(turno.idTurno)}
+                                                            title={mode === 'create' ? 'Quitar turno' : 'Desasignar turno'}
                                                         >
                                                             <i className="fas fa-times"></i>
                                                         </button>
@@ -265,7 +330,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
                             )}
 
                             {/* Asignar nuevo turno */}
-                            {!isViewMode && mode !== 'create' && (
+                            {!isViewMode && mostrarTurnos && (
                                 <div className="row">
                                     <div className="col-md-8">
                                         <select
@@ -275,9 +340,15 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
                                             value={formData.idTurno}
                                             onChange={handleInputChange}
                                         >
-                                            <option value="">Seleccione un turno para asignar</option>
+                                            <option value="">{mode === 'create' ? 'Seleccione un turno para agregar' : 'Seleccione un turno para asignar'}</option>
                                             {turnos
-                                                .filter(turno => !turnosAsignados.some(ta => ta.idTurno === turno.idTurno))
+                                                .filter(turno => {
+                                                    if (mode === 'create') {
+                                                        return !turnosSeleccionados.some(ts => ts.idTurno === turno.idTurno);
+                                                    } else {
+                                                        return !turnosAsignados.some(ta => ta.idTurno === turno.idTurno);
+                                                    }
+                                                })
                                                 .map((turno) => (
                                                     <option key={turno.idTurno} value={turno.idTurno}>
                                                         {turno.nombre} ({turno.horaInicio} - {turno.horaFin})
@@ -289,22 +360,37 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
                                         <button
                                             type="button"
                                             className="btn btn-outline-success"
-                                            onClick={handleAsignarTurno}
+                                            onClick={mode === 'create' ? handleAgregarTurnoCreate : handleAsignarTurno}
                                             disabled={!formData.idTurno}
                                         >
-                                            <i className="fas fa-plus"></i> Asignar
+                                            <i className="fas fa-plus"></i> {mode === 'create' ? 'Agregar' : 'Asignar'}
                                         </button>
                                     </div>
                                 </div>
                             )}
 
-                            {mode === 'create' && (
-                                <div className="alert alert-info">
+                                {mode === 'create' && mostrarTurnos && (
+                                    <div className="alert alert-info">
+                                        <i className="fas fa-info-circle me-2"></i>
+                                        Seleccione los turnos que desea asignar a este servicio. Se crearán automáticamente al guardar.
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Mensaje cuando no se muestran turnos en modo create */}
+                        {mode === 'create' && !mostrarTurnos && (
+                            <div className="form-group">
+                                <label className="form-label mt-3">
+                                    <i className="fas fa-clock me-2"></i>
+                                    Gestión de Turnos
+                                </label>
+                                <div className="alert alert-secondary">
                                     <i className="fas fa-info-circle me-2"></i>
-                                    Primero cree el servicio, luego podrá asignar turnos.
+                                    Complete el nombre y descripción del servicio para ver los turnos disponibles.
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
                         {/* Estado */}
                         <div className="form-group">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import InsumoForm from '../../components/InsumoForm';
+import InsumoForm from '../../components/admin/InsumoForm';
 import insumoService from '../../services/insumoService';
 
 const ListaInsumos = () => {
@@ -123,7 +123,7 @@ const ListaInsumos = () => {
     }
 
     return (
-        <div className="page-content">
+        <div>
             <div className="page-header">
                 <div className="header-left">
                     <h1 className="page-title">
@@ -158,9 +158,9 @@ const ListaInsumos = () => {
                         <div className="summary-number-alert">{insumos.filter(i => i.stockActual <= i.stockMinimo).length}</div>
                         <div className="summary-label-alert">Stock Bajo</div>
                     </div>
-                    <div className="stat-card-users">
-                        <div className="stat-number-users">{insumos.filter(i => i.estado === 'Inactivo').length}</div>
-                        <div className="stat-label-users">Inactivos</div>
+                    <div className="stat-card-inactivo">
+                        <div className="summary-number-alert">{insumos.filter(i => i.estado === 'Inactivo').length}</div>
+                        <div className="summary-label-alert">Inactivos</div>
                     </div>
                 </div>
             </div>

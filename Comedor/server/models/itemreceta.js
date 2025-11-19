@@ -8,14 +8,14 @@ export class ItemRecetaModel {
                     ir.idItemReceta,
                     BIN_TO_UUID(ir.id_receta) as id_receta,
                     ir.id_insumo,
-                    r.nombrePlato,
-                    i.nombre as nombreInsumo,
+                    r.nombreReceta,
+                    i.nombreInsumo as nombreInsumo,
                     ir.cantidadPorPorcion,
                     ir.unidadPorPorcion
                  FROM ItemsRecetas ir
                  JOIN Recetas r ON ir.id_receta = r.id_receta
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
-                 ORDER BY r.nombrePlato, i.nombre;`
+                 ORDER BY r.nombreReceta, i.nombreInsumo;`
             )
             return items
         } catch (error) {
@@ -31,8 +31,8 @@ export class ItemRecetaModel {
                     ir.idItemReceta,
                     BIN_TO_UUID(ir.id_receta) as id_receta,
                     ir.id_insumo,
-                    r.nombrePlato,
-                    i.nombre as nombreInsumo,
+                    r.nombreReceta,
+                    i.nombreInsumo as nombreInsumo,
                     ir.cantidadPorPorcion,
                     ir.unidadPorPorcion
                  FROM ItemsRecetas ir
@@ -121,15 +121,15 @@ export class ItemRecetaModel {
                     ir.idItemReceta,
                     BIN_TO_UUID(ir.id_receta) as id_receta,
                     ir.id_insumo,
-                    r.nombrePlato,
-                    i.nombre as nombreInsumo,
+                    r.nombreReceta,
+                    i.nombreInsumo as nombreInsumo,
                     ir.cantidadPorPorcion,
                     ir.unidadPorPorcion
                  FROM ItemsRecetas ir
                  JOIN Recetas r ON ir.id_receta = r.id_receta
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
                  WHERE ir.id_receta = UUID_TO_BIN(?)
-                 ORDER BY i.nombre;`,
+                 ORDER BY i.nombreInsumo;`,
                 [id_receta]
             )
             return items
@@ -145,7 +145,7 @@ export class ItemRecetaModel {
             const [costo] = await connection.query(
                 `SELECT 
                     BIN_TO_UUID(ir.id_receta) as id_receta,
-                    r.nombrePlato,
+                    r.nombreReceta,
                     SUM(ir.cantidadPorPorcion * COALESCE(pi.precio, 0)) as costoTotal,
                     COUNT(ir.idItemReceta) as totalInsumos
                  FROM ItemsRecetas ir
@@ -153,7 +153,7 @@ export class ItemRecetaModel {
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
                  LEFT JOIN ProveedorInsumo pi ON i.id_insumo = pi.id_insumo
                  WHERE ir.id_receta = UUID_TO_BIN(?)
-                 GROUP BY ir.id_receta, r.nombrePlato;`,
+                 GROUP BY ir.id_receta, r.nombreReceta;`,
                 [id_receta]
             )
 
@@ -172,7 +172,7 @@ export class ItemRecetaModel {
                 `SELECT 
                     ir.idItemReceta,
                     ir.id_insumo,
-                    i.nombre as nombreInsumo,
+                    i.nombreInsumo as nombreInsumo,
                     ir.cantidadPorPorcion,
                     (ir.cantidadPorPorcion * ?) as cantidadRequerida,
                     inv.cantidadActual,
@@ -186,7 +186,7 @@ export class ItemRecetaModel {
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
                  LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
                  WHERE ir.id_receta = UUID_TO_BIN(?)
-                 ORDER BY disponibilidad DESC, i.nombre;`,
+                 ORDER BY disponibilidad DESC, i.nombreInsumo;`,
                 [porciones, porciones, id_receta]
             )
             return disponibilidad

@@ -1,4 +1,4 @@
-import API from './api.js'
+import api from './api.js'
 
 const PERSONAS_ENDPOINT = '/personas'
 
@@ -6,7 +6,7 @@ export const personaService = {
     // Obtener todas las personas
     getAll: async () => {
         try {
-            const response = await API.get(PERSONAS_ENDPOINT)
+            const response = await api.get(PERSONAS_ENDPOINT)
             return response.data
         } catch (error) {
             console.error('Error al obtener personas:', error)
@@ -17,7 +17,7 @@ export const personaService = {
     // Obtener persona por ID
     getById: async (id) => {
         try {
-            const response = await API.get(`${PERSONAS_ENDPOINT}/${id}`)
+            const response = await api.get(`${PERSONAS_ENDPOINT}/${id}`)
             return response.data
         } catch (error) {
             console.error(`Error al obtener persona ${id}:`, error)
@@ -28,7 +28,7 @@ export const personaService = {
     // Crear nueva persona
     create: async (personaData) => {
         try {
-            const response = await API.post(PERSONAS_ENDPOINT, personaData)
+            const response = await api.post(PERSONAS_ENDPOINT, personaData)
             return response.data
         } catch (error) {
             console.error('Error al crear persona:', error)
@@ -39,7 +39,7 @@ export const personaService = {
     // Actualizar persona
     update: async (id, personaData) => {
         try {
-            const response = await API.patch(`${PERSONAS_ENDPOINT}/${id}`, personaData)
+            const response = await api.patch(`${PERSONAS_ENDPOINT}/${id}`, personaData)
             return response.data
         } catch (error) {
             console.error(`Error al actualizar persona ${id}:`, error)
@@ -50,7 +50,7 @@ export const personaService = {
     // Eliminar persona
     delete: async (id) => {
         try {
-            const response = await API.delete(`${PERSONAS_ENDPOINT}/${id}`)
+            const response = await api.delete(`${PERSONAS_ENDPOINT}/${id}`)
             return response.data
         } catch (error) {
             console.error(`Error al eliminar persona ${id}:`, error)
@@ -61,7 +61,7 @@ export const personaService = {
     // Obtener personas activas
     getActivas: async () => {
         try {
-            const response = await API.get(`${PERSONAS_ENDPOINT}/activas/list`)
+            const response = await api.get(`${PERSONAS_ENDPOINT}/activas/list`)
             return response.data
         } catch (error) {
             console.error('Error al obtener personas activas:', error)
@@ -72,7 +72,7 @@ export const personaService = {
     // Buscar personas por nombre
     searchByNombre: async (nombre) => {
         try {
-            const response = await API.get(`${PERSONAS_ENDPOINT}/search/by-nombre`, {
+            const response = await api.get(`${PERSONAS_ENDPOINT}/search/by-nombre`, {
                 params: { nombre }
             })
             return response.data
@@ -85,7 +85,7 @@ export const personaService = {
     // Obtener personas por grado
     getByGrado: async (idGrado) => {
         try {
-            const response = await API.get(`${PERSONAS_ENDPOINT}/grado/${idGrado}`)
+            const response = await api.get(`${PERSONAS_ENDPOINT}/grado/${idGrado}`)
             return response.data
         } catch (error) {
             console.error(`Error al obtener personas por grado ${idGrado}:`, error)
@@ -96,7 +96,7 @@ export const personaService = {
     // Obtener personas por servicio
     getByServicio: async (idServicio) => {
         try {
-            const response = await API.get(`${PERSONAS_ENDPOINT}/servicio/${idServicio}`)
+            const response = await api.get(`${PERSONAS_ENDPOINT}/servicio/${idServicio}`)
             return response.data
         } catch (error) {
             console.error(`Error al obtener personas por servicio ${idServicio}:`, error)
@@ -107,7 +107,7 @@ export const personaService = {
     // Cambiar estado de persona
     cambiarEstado: async (id, estado) => {
         try {
-            const response = await API.patch(`${PERSONAS_ENDPOINT}/${id}/estado`, { estado })
+            const response = await api.patch(`${PERSONAS_ENDPOINT}/${id}/estado`, { estado })
             return response.data
         } catch (error) {
             console.error(`Error al cambiar estado de persona ${id}:`, error)

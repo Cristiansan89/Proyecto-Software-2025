@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import insumoService from '../services/insumoService';
-import proveedorService from '../services/proveedorService';
-import '../styles/index.css';
+import insumoService from '../../services/insumoService';
+import proveedorService from '../../services/proveedorService';
+import '../../styles/index.css';
 
 const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
     const [availableInsumos, setAvailableInsumos] = useState([]);

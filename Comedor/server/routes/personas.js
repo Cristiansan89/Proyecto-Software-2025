@@ -6,6 +6,7 @@ export const createPersonaRouter = ({ personaModel }) => {
     const personaController = new PersonaController({ personaModel })
 
     personasRouter.get('/', personaController.getAll)
+    personasRouter.get('/perfil', personaController.getPerfil) // Debe ir antes de /:id
     personasRouter.get('/:id', personaController.getById)
     personasRouter.post('/', personaController.create)
     personasRouter.delete('/:id', personaController.delete)

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import ReemplazoDocenteForm from '../../components/ReemplazoDocenteForm';
+import ReemplazoDocenteForm from '../../components/admin/ReemplazoDocenteForm';
 import reemplazoDocenteService from '../../services/reemplazoDocenteService.js';
 import { gradoService } from '../../services/gradoService.js';
 import { formatCicloLectivo } from '../../utils/dateUtils.js';
@@ -178,8 +178,8 @@ const ListaReemplazosGrados = () => {
         <div className="reemplazos-page">
             {/* Header */}
             <div className="page-header">
-                <div className="header-content">
-                    <h1 className="page-title">
+                <div className="header-left">
+                    <h1 className="page-title-sub">
                         Reemplazos de Docentes
                     </h1>
                 </div>

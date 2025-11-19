@@ -195,4 +195,56 @@ export class PersonaController {
             res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
+
+    // Obtener perfil del usuario autenticado
+    getPerfil = async (req, res) => {
+        try {
+            // Asumir que el middleware de autenticación añade req.user
+            const userId = req.user?.id_persona
+
+            if (!userId) {
+                return res.status(401).json({ message: 'Usuario no autenticado' })
+            }
+
+            // Obtener datos de la persona
+            const persona = await this.personaModel.getById({ id: userId })
+
+            if (!persona) {
+                return res.status(404).json({ message: 'Persona no encontrada' })
+            }
+
+            // Obtener grados asignados si es docente
+            let gradosAsignados = []
+            try {
+                // Asumimos que existe un método para obtener grados del docente
+                const { connection } = await import('../models/db.js')
+                
+                const [rows] = await connection.query(
+                    `SELECT dg.nombreGrado, dg.id_docenteTitular, dg.fechaAsignado, dg.cicloLectivo
+                     FROM DocenteGrado dg 
+                     WHERE dg.id_persona = ?`,
+                    [userId]
+                )
+                
+                gradosAsignados = rows.map(row => ({
+                    nombreGrado: row.nombreGrado,
+                    idGrado: row.nombreGrado, // Para compatibilidad
+                    id_docenteTitular: row.id_docenteTitular,
+                    fechaAsignado: row.fechaAsignado,
+                    cicloLectivo: row.cicloLectivo
+                }))
+                
+            } catch (error) {
+                console.warn('Error obteniendo grados asignados:', error)
+            }
+
+            res.json({
+                ...persona,
+                gradosAsignados
+            })
+        } catch (error) {
+            console.error('Error al obtener perfil:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
 }

@@ -202,6 +202,22 @@ export class GradoController {
         }
     }
 
+    // Obtiene grados por turno específico
+    getByTurno = async (req, res) => {
+        try {
+            const { idTurno } = req.params
+            console.log('GradoController: Obteniendo grados para turno ID:', idTurno)
+            
+            const grados = await this.gradoModel.getByTurno({ idTurno })
+            console.log('GradoController: Grados encontrados:', grados)
+            
+            res.json(grados)
+        } catch (error) {
+            console.error('Error al obtener grados por turno:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
+
     // Cambiar estado del grado (método alternativo)
     changeStatus = async (req, res) => {
         try {

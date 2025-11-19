@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import PersonaForm from '../../components/PersonaForm';
-import PersonaEditForm from '../../components/PersonaEditForm.jsx';
+import PersonaForm from '../../components/admin/PersonaForm';
+import PersonaEditForm from '../../components/admin/PersonaEditForm.jsx';
 import personaService from '../../services/personaService.js';
 import { rolService } from '../../services/rolService.js';
 
@@ -186,10 +186,10 @@ const ListaPersonas = () => {
     };
 
     return (
-        <div className="page-content">
+        <div>
             <div className="page-header">
-                <div className="header-left">
-                    <h1 className="page-title">
+                <div className="header-left mt-2 mx-2">
+                    <h1 className="page-title-sub">
                         Lista de Personas
                     </h1>
                 </div>

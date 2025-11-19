@@ -29,7 +29,7 @@ const PersonaGrado = () => {
     ];
 
     return (
-        <div className="page-content">
+        <div>
             {/* Header */}
             <div className="page-header">
                 <div className="header-left">

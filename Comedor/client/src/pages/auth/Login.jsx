@@ -79,7 +79,7 @@ const Login = () => {
     return (
         <div className="login-container">
             <div className="card login-card">
-                <div className="card-header login-header text-center py-4">
+                <div className="card-header-login login-header text-center py-4">
                     <div className="login-logo">
                         <i className="fas fa-utensils"></i>
                     </div>

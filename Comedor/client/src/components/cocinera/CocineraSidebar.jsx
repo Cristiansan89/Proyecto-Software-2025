@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 
-const DocenteSidebar = ({ collapsed }) => {
+const CocineraSidebar = ({ collapsed }) => {
     const location = useLocation();
 
     const menuItems = [
@@ -8,44 +8,50 @@ const DocenteSidebar = ({ collapsed }) => {
             id: 'dashboard',
             label: 'Dashboard',
             icon: 'fas fa-tachometer-alt',
-            path: '/docente/dashboard'
+            path: '/cocinera/dashboard'
         },
         {
-            id: 'asistencias',
-            label: 'Asistencias',
-            icon: 'fas fa-clipboard-check',
-            path: '/docente/asistencias'
-        },
-        {
-            id: 'alumnos',
-            label: 'Mis Alumnos',
-            icon: 'fas fa-users',
-            path: '/docente/mis-alumnos'
-        },
-        {
-            id: 'gestionasistencias',
+            id: 'gestion-asistencias',
             label: 'Gestión de Asistencias',
-            icon: 'fas fa-calendar-check',
-            path: '/docente/gestionasistencias'
+            icon: 'fas fa-clipboard-check',
+            path: '/cocinera/gestion-asistencias'
         },
         {
-            id: 'horarios',
-            label: 'Horarios',
-            icon: 'fas fa-clock',
-            path: '/docente/horarios'
+            id: 'recetas',
+            label: 'Gestión de Recetas',
+            icon: 'fas fa-book-open',
+            path: '/cocinera/recetas'
+        },
+        {
+            id: 'menu',
+            label: 'Planificación de Menús',
+            icon: 'fas fa-utensils',
+            path: '/cocinera/menu'
+        },
+        {
+            id: 'inventario',
+            label: 'Control de Inventario',
+            icon: 'fas fa-boxes',
+            path: '/cocinera/inventario'
+        },
+        {
+            id: 'reportes',
+            label: 'Reportes',
+            icon: 'fas fa-chart-line',
+            path: '/cocinera/reportes'
         }
     ];
 
     const isActive = (path) => {
-        return location.pathname === path || (path === '/docente/dashboard' && location.pathname === '/docente');
+        return location.pathname === path || (path === '/cocinera/dashboard' && location.pathname === '/cocinera');
     };
 
     return (
-        <div className={`sidebar docente-sidebar ${collapsed ? 'collapsed' : ''}`}>
+        <div className={`sidebar cocinera-sidebar ${collapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-header">
                 <div className="sidebar-logo">
-                    <i className="fas fa-chalkboard-teacher"></i>
-                    {!collapsed && <span>Panel Docente</span>}
+                    <i className="fa-solid fa-kitchen-set"></i>
+                    {!collapsed && <span>Panel Cocinera</span>}
                 </div>
             </div>
             <div className="sidebar-menu">
@@ -64,16 +70,16 @@ const DocenteSidebar = ({ collapsed }) => {
                 ))}
             </div>
 
-            {/* Información del docente */}
+            {/* Información de ayuda */}
             {!collapsed && (
                 <div className="sidebar-info">
                     <div className="info-card">
                         <div className="info-icon">
-                            <i className="fas fa-info-circle"></i>
+                            <i className="fas fa-lightbulb"></i>
                         </div>
                         <div className="info-content">
-                            <h6>¿Necesitas ayuda?</h6>
-                            <p>Contacta al administrador para soporte técnico</p>
+                            <h6>Centro de Ayuda</h6>
+                            <p>Gestiona asistencias y planifica menús de forma eficiente</p>
                         </div>
                     </div>
                 </div>
@@ -82,4 +88,5 @@ const DocenteSidebar = ({ collapsed }) => {
     );
 };
 
-export default DocenteSidebar;
+export default CocineraSidebar;
+

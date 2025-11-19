@@ -1,10 +1,10 @@
-import API from './api.js';
+import api from './api.js';
 
 const docenteGradoService = {
     // Obtener todas las asignaciones de docentes a grados
     async getAll() {
         try {
-            const response = await API.get('/docente-grados');
+            const response = await api.get('/docente-grados');
             return response.data;
         } catch (error) {
             console.error('Error al obtener asignaciones docente-grado:', error);
@@ -15,7 +15,7 @@ const docenteGradoService = {
     // Obtener asignación específica por clave compuesta
     async getById(idDocenteTitular, idPersona, nombreGrado) {
         try {
-            const response = await API.get(`/docente-grados/${idDocenteTitular}/${idPersona}/${nombreGrado}`);
+            const response = await api.get(`/docente-grados/${idDocenteTitular}/${idPersona}/${nombreGrado}`);
             return response.data;
         } catch (error) {
             console.error('Error al obtener asignación:', error);
@@ -26,7 +26,7 @@ const docenteGradoService = {
     // Obtener docentes por grado
     async getByGrado(nombreGrado) {
         try {
-            const response = await API.get(`/docente-grados/grado/${nombreGrado}`);
+            const response = await api.get(`/docente-grados/grado/${nombreGrado}`);
             return response.data;
         } catch (error) {
             console.error('Error al obtener docentes por grado:', error);
@@ -37,7 +37,7 @@ const docenteGradoService = {
     // Obtener docentes disponibles para asignar
     async getDocentesDisponibles(cicloLectivo = new Date().getFullYear()) {
         try {
-            const response = await API.get(`/docente-grados/docentes-disponibles?cicloLectivo=${cicloLectivo}`);
+            const response = await api.get(`/docente-grados/docentes-disponibles?cicloLectivo=${cicloLectivo}`);
             return response.data;
         } catch (error) {
             console.error('Error al obtener docentes disponibles:', error);
@@ -48,7 +48,7 @@ const docenteGradoService = {
     // Obtener grados disponibles (sin docente asignado)
     async getGradosDisponibles(cicloLectivo = new Date().getFullYear()) {
         try {
-            const response = await API.get(`/docente-grados/grados-disponibles?cicloLectivo=${cicloLectivo}`);
+            const response = await api.get(`/docente-grados/grados-disponibles?cicloLectivo=${cicloLectivo}`);
             return response.data;
         } catch (error) {
             console.error('Error al obtener grados disponibles:', error);
@@ -59,7 +59,7 @@ const docenteGradoService = {
     // Crear nueva asignación
     async create(data) {
         try {
-            const response = await API.post('/docente-grados', data);
+            const response = await api.post('/docente-grados', data);
             return response.data;
         } catch (error) {
             console.error('Error al crear asignación docente-grado:', error);
@@ -70,7 +70,7 @@ const docenteGradoService = {
     // Actualizar asignación existente
     async update(idDocenteTitular, idPersona, nombreGrado, data) {
         try {
-            const response = await API.put(`/docente-grados/${idDocenteTitular}/${idPersona}/${nombreGrado}`, data);
+            const response = await api.put(`/docente-grados/${idDocenteTitular}/${idPersona}/${nombreGrado}`, data);
             return response.data;
         } catch (error) {
             console.error('Error al actualizar asignación:', error);
@@ -81,7 +81,7 @@ const docenteGradoService = {
     // Eliminar asignación
     async delete(idDocenteTitular, idPersona, nombreGrado) {
         try {
-            const response = await API.delete(`/docente-grados/${idDocenteTitular}/${idPersona}/${nombreGrado}`);
+            const response = await api.delete(`/docente-grados/${idDocenteTitular}/${idPersona}/${nombreGrado}`);
             return response.data;
         } catch (error) {
             console.error('Error al eliminar asignación:', error);

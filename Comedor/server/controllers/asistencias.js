@@ -200,4 +200,48 @@ export class AsistenciaController {
             res.status(500).json({ message: 'Error interno del servidor' })
         }
     }
+
+    registrarAsistenciasDocente = async (req, res) => {
+        try {
+            const { asistencias, fecha, idServicio, nombreGrado } = req.body
+
+            // Validar que se enviaron los datos requeridos
+            if (!asistencias || !Array.isArray(asistencias) || !fecha || !idServicio || !nombreGrado) {
+                return res.status(400).json({ 
+                    message: 'Datos requeridos: asistencias (array), fecha, idServicio, nombreGrado' 
+                })
+            }
+
+            const resultados = []
+
+            // Procesar cada asistencia
+            for (const asistencia of asistencias) {
+                const { idAlumnoGrado, estado } = asistencia
+
+                if (!['Si', 'No', 'Ausente'].includes(estado)) {
+                    return res.status(400).json({
+                        message: `Estado inválido: ${estado}. Debe ser 'Si', 'No' o 'Ausente'`
+                    })
+                }
+
+                const resultado = await this.asistenciaModel.upsertAsistencia({
+                    idServicio,
+                    idAlumnoGrado,
+                    fecha,
+                    estado
+                })
+
+                resultados.push(resultado)
+            }
+
+            res.json({
+                message: 'Asistencias registradas correctamente',
+                registradas: resultados.length,
+                asistencias: resultados
+            })
+        } catch (error) {
+            console.error('Error en registrarAsistenciasDocente:', error)
+            res.status(500).json({ message: 'Error interno del servidor' })
+        }
+    }
 }

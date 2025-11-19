@@ -56,7 +56,7 @@ const app = createApp({
     usuarioModel: UsuarioModel
 })
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, 'localhost', () => {
     console.log(`El Servidor esta corriendo en el puerto http://localhost:${PORT}`)
-    console.log(`También disponible en la red local: http://192.168.100.10:${PORT}`)
+    console.log(`Servidor configurado solo para conexiones locales`)
 })

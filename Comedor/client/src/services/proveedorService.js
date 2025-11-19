@@ -1,11 +1,11 @@
-import API from './api.js';
+import api from './api.js';
 
 const proveedorService = {
     // Obtener todos los proveedores
     getAll: async () => {
         console.log('ProveedorService: Haciendo petición a /proveedores');
         try {
-            const response = await API.get('/proveedores');
+            const response = await api.get('/proveedores');
             console.log('ProveedorService: Respuesta recibida:', response.data);
             return response.data;
         } catch (error) {
@@ -17,7 +17,7 @@ const proveedorService = {
     // Obtener calificaciones disponibles para insumos
     getCalificaciones: async () => {
         try {
-            const response = await API.get('/proveedores/calificaciones');
+            const response = await api.get('/proveedores/calificaciones');
             return response.data;
         } catch (error) {
             console.error('ProveedorService: Error en getCalificaciones:', error);
@@ -27,7 +27,7 @@ const proveedorService = {
 
     // Obtener un proveedor por ID
     getById: async (id) => {
-        const response = await API.get(`/proveedores/${id}`);
+        const response = await api.get(`/proveedores/${id}`);
         return response.data;
     },
 
@@ -35,7 +35,7 @@ const proveedorService = {
     create: async (proveedorData) => {
         console.log('ProveedorService: Creando proveedor:', proveedorData);
         try {
-            const response = await API.post('/proveedores', proveedorData);
+            const response = await api.post('/proveedores', proveedorData);
             console.log('ProveedorService: Proveedor creado:', response.data);
             return response.data;
         } catch (error) {
@@ -48,7 +48,7 @@ const proveedorService = {
     update: async (id, proveedorData) => {
         console.log('ProveedorService: Actualizando proveedor:', id, proveedorData);
         try {
-            const response = await API.patch(`/proveedores/${id}`, proveedorData);
+            const response = await api.patch(`/proveedores/${id}`, proveedorData);
             console.log('ProveedorService: Proveedor actualizado:', response.data);
             return response.data;
         } catch (error) {
@@ -61,7 +61,7 @@ const proveedorService = {
     delete: async (id) => {
         console.log('ProveedorService: Eliminando proveedor con ID:', id);
         try {
-            const response = await API.delete(`/proveedores/${id}`);
+            const response = await api.delete(`/proveedores/${id}`);
             console.log('ProveedorService: Respuesta de eliminación:', response.data);
             return response.data;
         } catch (error) {
@@ -72,13 +72,13 @@ const proveedorService = {
 
     // Cambiar estado de un proveedor
     cambiarEstado: async (id, estado) => {
-        const response = await API.patch(`/proveedores/${id}/estado`, { estado });
+        const response = await api.patch(`/proveedores/${id}/estado`, { estado });
         return response.data;
     },
 
     // Obtener insumos asignados a un proveedor
     getInsumosAsignados: async (id) => {
-        const response = await API.get(`/proveedores/${id}/insumos`);
+        const response = await api.get(`/proveedores/${id}/insumos`);
         return response.data;
     },
 
@@ -86,7 +86,7 @@ const proveedorService = {
     asignarInsumos: async (id, insumosData) => {
         console.log('ProveedorService: Asignando insumos:', id, insumosData);
         try {
-            const response = await API.post(`/proveedores/${id}/insumos`, insumosData);
+            const response = await api.post(`/proveedores/${id}/insumos`, insumosData);
             console.log('ProveedorService: Insumos asignados:', response.data);
             return response.data;
         } catch (error) {
@@ -97,13 +97,13 @@ const proveedorService = {
 
     // Obtener proveedores activos
     getActivos: async () => {
-        const response = await API.get('/proveedores/activos/list');
+        const response = await api.get('/proveedores/activos/list');
         return response.data;
     },
 
     // Buscar proveedores por nombre
     searchByName: async (nombre) => {
-        const response = await API.get(`/proveedores/search/by-nombre?nombre=${encodeURIComponent(nombre)}`);
+        const response = await api.get(`/proveedores/search/by-nombre?nombre=${encodeURIComponent(nombre)}`);
         return response.data;
     }
 };

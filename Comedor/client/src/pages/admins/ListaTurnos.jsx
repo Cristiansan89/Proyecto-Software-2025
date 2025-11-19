@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import TurnoForm from '../../components/TurnoForm';
+import TurnoForm from '../../components/admin/TurnoForm';
 import turnoService from '../../services/turnoService';
 
 const ListaTurnos = () => {
@@ -119,10 +119,12 @@ const ListaTurnos = () => {
 
     return (
         <div className="turnos-container">
-            <div className="page-content">
+            <div>
                 <div className="page-header">
                     <div className="header-left">
-                        <h2 className="page-title">Gestión de Turnos</h2>
+                        <h2 className="page-title-sub">
+                            Gestión de Turnos
+                        </h2>
                     </div>
                     <div className="header-actions">
                         <button className="btn btn-primary-new" onClick={handleCreate}>
@@ -131,24 +133,8 @@ const ListaTurnos = () => {
                         </button>
                     </div>
                 </div>
-            </div>
-            <div className="page-header">
-                <div className="header-stats">
-                    <div className="stat-card-users">
-                        <div className="stat-number-users">{turnos.length}</div>
-                        <div className="stat-label-users">Total</div>
-                    </div>
-                    <div className="stat-card-stock">
-                        <div className="summary-number-stock">{turnos.filter(t => t.estado === 'Activo').length}</div>
-                        <div className="summary-label-stock">Activos</div>
-                    </div>
-                    <div className="stat-card-alert">
-                        <div className="summary-number-alert">{turnos.filter(t => t.estado === 'Inactivo').length}</div>
-                        <div className="summary-label-alert">Inactivos</div>
-                    </div>
-                </div>
-            </div>
-            {/* Filtros */}
+
+                {/* Filtros */}
             <div className="search-filters">
                 <div className="search-bar">
                     <input
@@ -256,6 +242,7 @@ const ListaTurnos = () => {
                         </tbody>
                     </table>
                 )}
+            </div>
             </div>
 
             {/* Modal */}

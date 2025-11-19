@@ -208,16 +208,16 @@
   .weekly-menu-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .controls-row {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .week-navigator {
     justify-content: center;
   }
-  
+
   .menu-actions {
     justify-content: center;
   }

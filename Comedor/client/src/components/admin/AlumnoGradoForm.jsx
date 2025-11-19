@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import alumnoGradoService from '../services/alumnoGradoService.js';
-import { gradoService } from '../services/gradoService.js';
+import alumnoGradoService from '../../services/alumnoGradoService.js';
+import { gradoService } from '../../services/gradoService.js';
 
 const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({

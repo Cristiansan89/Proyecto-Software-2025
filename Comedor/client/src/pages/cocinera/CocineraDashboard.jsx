@@ -130,7 +130,7 @@ const CocineraDashboard = () => {
 
     return (
         <div>
-            <div className="dashboard-header">
+            <div>
                 <div className="page-header">
                     <h2>🍳 Bienvenida, {user.nombre} {user.apellido}</h2>
                 </div>

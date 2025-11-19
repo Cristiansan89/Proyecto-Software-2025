@@ -8,6 +8,7 @@ export const createGradoRouter = ({ gradoModel }) => {
     // Endpoints especializados (deben ir ANTES de las rutas con parámetros)
     gradosRouter.get('/activos/list', gradoController.getActivos)
     gradosRouter.get('/search/by-nombre', gradoController.searchByNombre)
+    gradosRouter.get('/turno/:idTurno', gradoController.getByTurno)
 
     // Rutas básicas CRUD
     gradosRouter.get('/', gradoController.getAll)

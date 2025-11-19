@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import ListaTurnos from './ListaTurnos';
 import ListaServicios from './ListaServicios';
+//import ListaTipoMerma from './ListaTipoMerma';
+//import ListaEstadoPedido from './ListaEstadoPedido';
 
 const Configuracion = () => {
     const [activeTab, setActiveTab] = useState('turnos');
@@ -17,11 +19,23 @@ const Configuracion = () => {
             label: 'Servicios',
             icon: 'fas fa-utensils',
             component: <ListaServicios />
+        },/*
+        {
+            id: 'tipo-merma',
+            label: 'Tipo Merma',
+            icon: 'fas fa-tags',
+            component: <ListaTipoMerma />
         },
+        {
+            id: 'estado-pedido',
+            label: 'Estado Pedido',
+            icon: 'fas fa-clipboard-check',
+            component: <ListaEstadoPedido />
+        },*/
     ];
 
     return (
-        <div className="page-content">
+        <div>
             <div className="page-header">
                 <div className="header-left">
                     <h1 className='page-title'>

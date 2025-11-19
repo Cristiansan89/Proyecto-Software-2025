@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import GradoForm from '../../components/GradoForm';
+import GradoForm from '../../components/admin/GradoForm';
 import gradoService from '../../services/gradoService';
 
 
@@ -116,7 +116,7 @@ const ListaGrados = () => {
     };
 
     return (
-        <div className="page-content">
+        <div>
             <div className="page-header">
                 <div className="header-left">
                     <h1 className="page-title">

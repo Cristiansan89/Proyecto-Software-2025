@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import personaService from '../services/personaService.js';
-import { rolService } from '../services/rolService.js';
-import usuarioService from '../services/usuarioService.js';
+import personaService from '../../services/personaService.js';
+import { rolService } from '../../services/rolService.js';
+import usuarioService from '../../services/usuarioService.js';
 
 const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({

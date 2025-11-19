@@ -1,11 +1,11 @@
-import API from './api.js';
+import api from './api.js';
 
 export const rolService = {
     // Obtener todos los roles
     async getAll() {
         try {
             console.log('rolService: Obteniendo todos los roles...');
-            const response = await API.get('/roles');
+            const response = await api.get('/roles');
             console.log('rolService: Roles obtenidos:', response.data.length);
             return response.data;
         } catch (error) {
@@ -18,7 +18,7 @@ export const rolService = {
     async getById(id) {
         try {
             console.log('rolService: Obteniendo rol con ID:', id);
-            const response = await API.get(`/roles/${id}`);
+            const response = await api.get(`/roles/${id}`);
             console.log('rolService: Rol obtenido:', response.data);
             return response.data;
         } catch (error) {
@@ -34,7 +34,7 @@ export const rolService = {
     async create(rolData) {
         try {
             console.log('rolService: Creando rol:', rolData);
-            const response = await API.post('/roles', rolData);
+            const response = await api.post('/roles', rolData);
             console.log('rolService: Rol creado exitosamente:', response.data);
             return response.data;
         } catch (error) {
@@ -47,7 +47,7 @@ export const rolService = {
     async update(id, rolData) {
         try {
             console.log('rolService: Actualizando rol ID:', id, 'con datos:', rolData);
-            const response = await API.put(`/roles/${id}`, rolData);
+            const response = await api.patch(`/roles/${id}`, rolData);
             console.log('rolService: Rol actualizado exitosamente:', response.data);
             return response.data;
         } catch (error) {
@@ -60,7 +60,7 @@ export const rolService = {
     async delete(id) {
         try {
             console.log('rolService: Eliminando rol ID:', id);
-            const response = await API.delete(`/roles/${id}`);
+            const response = await api.delete(`/roles/${id}`);
             console.log('rolService: Rol eliminado exitosamente');
             return response.data;
         } catch (error) {
@@ -73,7 +73,7 @@ export const rolService = {
     async getActivos() {
         try {
             console.log('rolService: Obteniendo roles activos...');
-            const response = await API.get('/roles/activos/list');
+            const response = await api.get('/roles/activos/list');
             console.log('rolService: Roles activos obtenidos:', response.data.length);
             return response.data;
         } catch (error) {
@@ -86,7 +86,7 @@ export const rolService = {
     async cambiarEstado(id, estado) {
         try {
             console.log('rolService: Cambiando estado del rol ID:', id, 'a:', estado);
-            const response = await API.patch(`/roles/${id}/estado`, { estado });
+            const response = await api.patch(`/roles/${id}/estado`, { estado });
             console.log('rolService: Estado cambiado exitosamente:', response.data);
             return response.data;
         } catch (error) {

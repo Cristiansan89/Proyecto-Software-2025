@@ -9,10 +9,12 @@ import ListaProveedores from './pages/admins/ListaProveedores'
 import Configuracion from './pages/admins/Configuracion'
 import Persona from './pages/admins/Personas'
 import PersonaGrado from './pages/admins/PersonaGrado'
-import RegistroAsistenciasMovil from './pages/movil/RegistroAsistenciasMovil'
+import RegistroAsistenciasMovil from './pages/movil/RegistroAsistenciasMovil.jsx';
+import TestAsistencias from './pages/movil/TestAsistencias.jsx';
 import GestionAsistencias from './pages/docente/GestionAsistencias'
 import DocenteDashboard from './pages/docente/DocenteDashboard'
 import DocenteAsistencias from './pages/docente/DocenteAsistencias'
+import RegistroAsistenciasDocente from './pages/docente/RegistroAsistenciasDocente'
 import MisAlumnos from './pages/docente/MisAlumnos'
 import Horarios from './pages/docente/Horarios'
 import AdminLayout from './layouts/AdminLayout'
@@ -20,6 +22,7 @@ import DocenteLayout from './layouts/DocenteLayout'
 import CocineraLayout from './layouts/CocineraLayout'
 import CocineraDashboard from './pages/cocinera/CocineraDashboard'
 import CocineraGestionAsistencias from './pages/cocinera/CocineraGestionAsistencias'
+import TestPage from './pages/TestPage'
 import CocineraMenu from './pages/cocinera/CocineraMenu'
 import CocineraInventario from './pages/cocinera/CocineraInventario'
 import CocineraReportes from './pages/cocinera/CocineraReportes'
@@ -55,11 +58,17 @@ function App() {
       <AuthProvider>
         <div className="App">
           <Routes>
+            {/* Ruta de prueba temporal */}
+            <Route path="/test" element={<TestPage />} />
+
             {/* Ruta pública de login */}
             <Route path="/login" element={<Login />} />
 
             {/* Ruta pública para registro de asistencias móvil */}
             <Route path="/asistencias/registro/:token" element={<RegistroAsistenciasMovil />} />
+            
+            {/* Ruta de prueba para debuggear asistencias */}
+            <Route path="/test/asistencias/:token" element={<TestAsistencias />} />
 
             {/* Rutas protegidas del panel administrativo */}
             <Route
@@ -94,6 +103,7 @@ function App() {
                       <Route path="/" element={<DocenteDashboard />} />
                       <Route path="/dashboard" element={<DocenteDashboard />} />
                       <Route path="/asistencias" element={<DocenteAsistencias />} />
+                      <Route path="/registro-asistencias" element={<RegistroAsistenciasDocente />} />
                       <Route path="/gestionasistencias" element={<GestionAsistencias />} />
                       <Route path="/mis-alumnos" element={<MisAlumnos />} />
                       <Route path="/horarios" element={<Horarios />} />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import AlumnoGradoForm from '../../components/AlumnoGradoForm';
+import AlumnoGradoForm from '../../components/admin/AlumnoGradoForm';
 import alumnoGradoService from '../../services/alumnoGradoService.js';
 import { gradoService } from '../../services/gradoService.js';
 import { formatCicloLectivo } from '../../utils/dateUtils.js';
@@ -173,11 +173,11 @@ const ListaAlumnosGrados = () => {
         <div className="alumnos-grados-page">
             {/* Header */}
             <div className="page-header">
-                <div className="header-content">
-                    <h1 className="page-title">
-                        Alumnos por Grado
-                    </h1>
-                </div>
+                    <div className="header-left">
+                        <h2 className="page-title-sub">
+                            Alumnos por Grado
+                        </h2>
+                    </div>
                 <div className="header-actions">
                     <button className="btn btn-primary-new" onClick={handleCreate}>
                         <i className="fas fa-plus"></i>

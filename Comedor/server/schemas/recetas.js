@@ -12,8 +12,8 @@ const recetaSchema = z.object({
         required_error: 'Las instrucciones son requeridas',
         invalid_type_error: 'Las instrucciones deben ser texto'
     }).min(10, 'Las instrucciones deben tener al menos 10 caracteres'),
-    unidadSalida: z.enum(['Porcion', 'Litro', 'Kilogramo', 'Unidad'], {
-        invalid_type_error: 'Unidad de salida inválida'
+    unidadSalida: z.enum(['Bandeja', 'Gramo', 'Litro', 'Plato', 'Porcion', 'Racion', 'Unidad'], {
+        invalid_type_error: 'Unidad de salida inválida. Debe ser: Bandeja, Gramo, Litro, Plato, Porcion, Racion o Unidad'
     }).default('Porcion'),
     estado: z.enum(['Activo', 'Inactivo'], {
         invalid_type_error: 'Estado inválido'

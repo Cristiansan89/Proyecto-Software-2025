@@ -4,6 +4,51 @@
   padding: 1rem;
 }
 
+/* WhatsApp Status Card */
+.whatsapp-status-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  min-width: 200px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.whatsapp-status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.header-right {
+  flex-shrink: 0;
+}
+
+.status-indicator .badge {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.6rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .whatsapp-status-card {
+    width: 100%;
+  }
+}
+
 .page-header-asistencias {
   margin-bottom: 2rem;
 }
@@ -505,43 +550,190 @@
   .asistencias-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .fecha-form {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .form-group-fecha input {
     min-width: auto;
   }
-  
+
   .enlaces-header {
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
   }
-  
+
   .enlace-header {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
   }
-  
+
   .enlace-actions {
     justify-content: flex-start;
   }
-  
+
   .stats-resumen {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .grado-header {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
   }
-  
+
   .grado-progreso {
     justify-content: space-between;
+  }
+}
+
+/* Estilos para los nuevos checkboxes de grados */
+.grado-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 120px;
+}
+
+.grado-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.grado-card.border-primary {
+  border-width: 2px !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-check-input-lg {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0;
+  margin-right: 0.75rem;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.grado-info {
+  flex: 1;
+}
+
+.grado-header {
+  margin-bottom: 0.5rem;
+}
+
+.grado-nombre {
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.docente-info {
+  padding: 0.5rem 0;
+  border-left: 3px solid transparent;
+  padding-left: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+.grado-card.border-primary .docente-info {
+  border-left-color: #0d6efd;
+  background: rgba(13, 110, 253, 0.05);
+  border-radius: 0 4px 4px 0;
+}
+
+.docente-asignado .text-success {
+  font-weight: 500;
+}
+
+/* Estilos para la tabla de enlaces mejorada */
+.table th {
+  background-color: #c9c9c9;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #000000;
+  white-space: nowrap;
+}
+
+.docente-info .fw-bold {
+  font-size: 0.9rem;
+}
+
+.font-monospace {
+  font-family: "Courier New", Courier, monospace;
+}
+
+.enlace-container {
+  max-width: 300px;
+}
+
+.enlace-preview {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Animaciones para WhatsApp */
+.btn-outline-success:hover {
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+.btn-outline-success .fab.fa-whatsapp {
+  color: #25d366;
+}
+
+/* Badge de seleccionados */
+.badge.bg-info {
+  background-color: #0dcaf0 !important;
+  font-weight: 500;
+}
+
+/* Cards de resumen */
+.card.bg-primary.bg-opacity-10 {
+  background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.card.bg-success.bg-opacity-10 {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.card.bg-warning.bg-opacity-10 {
+  background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+/* Mejoras responsivas para checkboxes */
+@media (max-width: 768px) {
+  .grado-card {
+    min-height: 100px;
+  }
+
+  .grado-nombre {
+    font-size: 0.9rem;
+  }
+
+  .docente-asignado .small {
+    font-size: 0.8rem;
+  }
+
+  .form-check-input-lg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .btn-group-vertical .btn {
+    font-size: 0.8rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .enlace-container {
+    max-width: 200px;
   }
 }

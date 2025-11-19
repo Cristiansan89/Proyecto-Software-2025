@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import gradoService from '../services/gradoService';
-import turnoService from '../services/turnoService';
+import gradoService from '../../services/gradoService';
+import turnoService from '../../services/turnoService';
 
 const GradoForm = ({ grado, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({

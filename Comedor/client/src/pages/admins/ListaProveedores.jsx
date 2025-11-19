@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import ProveedorForm from '../../components/ProveedorForm';
-import AsignarInsumosForm from '../../components/AsignarInsumosForm';
+import ProveedorForm from '../../components/admin/ProveedorForm';
+import AsignarInsumosForm from '../../components/admin/AsignarInsumosForm';
 import proveedorService from '../../services/proveedorService';
 
 const ListaProveedores = () => {
@@ -172,7 +172,7 @@ const ListaProveedores = () => {
     }
 
     return (
-        <div className="page-content">
+        <div>
             <div className="page-header">
                 <div className="header-left">
                     <h1 className="page-title">
@@ -193,22 +193,9 @@ const ListaProveedores = () => {
                     </button>
                 </div>
             </div>
-            <div className="page-header">
-                <div className="header-stats">
-                    <div className="stat-card-proveedor">
-                        <div>
-                            <div className="summary-number-proveedor mx-1">
-                                <i className="fas fa-truck mx-1" style={{ color: '#1F48F9' }}></i>
-                                {proveedores.length}
-                            </div>
-                            <div className="summary-label-proveedor">Total Proveedores</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+           
             {/* Filtros y Búsqueda */}
             <div className="filters-section">
-
                 <div className="search-bar">
                     <input
                         type="text"
@@ -218,9 +205,9 @@ const ListaProveedores = () => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="col-md-3">
+                <div className="filter-actions">
                     <select
-                        className="form-control"
+                        className="filter-select"
                         value={estadoFilter}
                         onChange={(e) => setEstadoFilter(e.target.value)}
                     >

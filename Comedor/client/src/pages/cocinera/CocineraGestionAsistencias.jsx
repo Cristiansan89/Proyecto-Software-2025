@@ -1,489 +1,973 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import API from '../../services/api';
-import '../../styles/CocineraGestionAsistencias.css';
+import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import api from "../../services/api";
+import "../../styles/CocineraGestionAsistencias.css";
 
 const CocineraGestionAsistencias = () => {
-    const { user } = useAuth();
-    const [loading, setLoading] = useState(false);
-    const [servicios, setServicios] = useState([]);
-    const [grados, setGrados] = useState([]);
-    const [docentes, setDocentes] = useState([]);
-    const [formulario, setFormulario] = useState({
-        fecha: new Date().toISOString().split('T')[0],
-        idServicio: '',
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [servicios, setServicios] = useState([]);
+  const [grados, setGrados] = useState([]);
+  const [gradosFiltrados, setGradosFiltrados] = useState([]);
+  const [turnosServicio, setTurnosServicio] = useState([]);
+  const [docentes, setDocentes] = useState([]);
+  const [formulario, setFormulario] = useState({
+    fecha: new Date().toISOString().split("T")[0],
+    idServicio: "",
+    gradosSeleccionados: [],
+    mensaje: "",
+  });
+  const [enlaces, setEnlaces] = useState([]);
+  const [mostrarEnlaces, setMostrarEnlaces] = useState(false);
+
+  // Función para cargar grados filtrados por servicio
+  const cargarGradosPorServicio = async (idServicio) => {
+    try {
+      if (!idServicio) {
+        // Si no hay servicio seleccionado, mostrar todos los grados
+        setGradosFiltrados(grados);
+        setTurnosServicio([]);
+        return;
+      }
+
+      // Obtener turnos asociados al servicio
+      const turnosResponse = await api.get(
+        `/servicio-turnos/servicio/${idServicio}/turnos`
+      );
+      const turnosDelServicio = turnosResponse.data || [];
+      setTurnosServicio(turnosDelServicio);
+
+      if (turnosDelServicio.length === 0) {
+        // Si no hay turnos específicos, mostrar todos los grados disponibles
+        setGradosFiltrados(grados);
+        return;
+      }
+
+      // Obtener grados por cada turno del servicio
+      const gradosPorTurno = [];
+
+      for (const turno of turnosDelServicio) {
+        try {
+          const gradosResponse = await api.get(
+            `/grados/turno/${turno.idTurno}`
+          );
+          const gradosDelTurno = gradosResponse.data || [];
+
+          // Agregar información del turno a cada grado
+          const gradosConTurno = gradosDelTurno.map((grado) => ({
+            ...grado,
+            turnoInfo: {
+              idTurno: turno.idTurno,
+              nombreTurno: turno.nombreTurno || turno.nombre,
+              horaInicio: turno.horaInicio,
+              horaFin: turno.horaFin,
+            },
+          }));
+
+          gradosPorTurno.push(...gradosConTurno);
+        } catch (error) {
+          console.error(
+            `Error al cargar grados del turno ${
+              turno.nombreTurno || turno.nombre
+            }:`,
+            error
+          );
+        }
+      }
+
+      // Si no se encontraron grados en los turnos, mostrar todos los grados como fallback
+      if (gradosPorTurno.length === 0) {
+        setGradosFiltrados(grados);
+      } else {
+        setGradosFiltrados(gradosPorTurno);
+      }
+
+      // Limpiar selección de grados cuando cambia el servicio
+      setFormulario((prev) => ({
+        ...prev,
         gradosSeleccionados: [],
-        mensaje: ''
-    });
-    const [enlaces, setEnlaces] = useState([]);
-    const [mostrarEnlaces, setMostrarEnlaces] = useState(false);
-    const [enviandoWhatsApp, setEnviandoWhatsApp] = useState(false);
+      }));
+    } catch (error) {
+      console.error("❌ Error al cargar grados por servicio:", error);
+      // En caso de error, mostrar todos los grados como fallback
+      setGradosFiltrados(grados);
+      setTurnosServicio([]);
+    }
+  };
 
-    useEffect(() => {
-        cargarDatosIniciales();
-    }, []);
+  // Configuración de Telegram
+  const TELEGRAM_BOT_URL = "https://t.me/your_bot_username"; // Reemplazar con tu bot
+  const TELEGRAM_CHAT_DISPLAY = "Bot Comedor Escolar";
 
-    const cargarDatosIniciales = async () => {
-        try {
-            setLoading(true);
-            const [serviciosRes, gradosRes, docentesRes, docenteGradosRes] = await Promise.all([
-                API.get('/servicios'),
-                API.get('/grados'),
-                API.get('/personas'),
-                API.get('/docente-grados')
-            ]);
+  useEffect(() => {
+    cargarDatosIniciales();
+  }, []);
 
-            setServicios(serviciosRes.data?.filter(s => s.estado === 'Activo') || []);
-            setGrados(gradosRes.data?.filter(g => g.estado === 'Activo') || []);
+  const cargarDatosIniciales = async () => {
+    try {
+      setLoading(true);
+      const [
+        serviciosRes,
+        gradosRes,
+        docentesRes,
+        docenteGradosRes,
+        usuariosRes,
+      ] = await Promise.all([
+        api.get("/servicios"),
+        api.get("/grados"),
+        api.get("/personas"),
+        api.get("/docente-grados"),
+        api.get("/usuarios"),
+      ]);
 
-            // Filtrar solo los docentes y agregar información de grados asignados
-            const docentesFiltrados = docentesRes.data?.filter(
-                p => p.nombreRol === 'Docente' && p.estado === 'Activo'
-            ) || [];
+      setServicios(
+        serviciosRes.data?.filter((s) => s.estado === "Activo") || []
+      );
 
-            // Mapear docentes con sus grados asignados
-            const docentesConGrados = docentesFiltrados.map(docente => {
-                const gradosAsignados = docenteGradosRes.data?.filter(
-                    dg => dg.idPersona === docente.id_persona || dg.idPersona === docente.idPersona
-                ) || [];
+      // Normalizar la estructura de grados para usar id_grado consistentemente
+      const gradosActivos =
+        gradosRes.data
+          ?.filter((g) => g.estado === "Activo")
+          .map((grado) => ({
+            ...grado,
+            id_grado: grado.idGrado || grado.id_grado, // Asegurar que id_grado esté disponible
+            idGrado: grado.idGrado || grado.id_grado, // Mantener ambas por compatibilidad
+          })) || [];
 
-                return {
-                    ...docente,
-                    gradosAsignados
-                };
-            });
+      setGrados(gradosActivos);
+      setGradosFiltrados(gradosActivos); // Inicialmente mostrar todos
 
-            setDocentes(docentesConGrados);
+      // Filtrar solo los docentes y agregar información de grados asignados
+      const docentesFiltrados =
+        docentesRes.data?.filter(
+          (p) => p.nombreRol === "Docente" && p.estado === "Activo"
+        ) || [];
 
-        } catch (error) {
-            console.error('Error al cargar datos:', error);
-            alert('Error al cargar datos iniciales');
-        } finally {
-            setLoading(false);
-        }
-    };
+      // Mapear docentes con sus grados asignados y datos de usuario (teléfono)
+      const docentesConGrados = docentesFiltrados.map((docente) => {
+        // Usar idPersona en lugar de id_persona para compatibilidad con la API
+        const idPersonaDocente = docente.idPersona || docente.id_persona;
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormulario(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+        // Buscar grados asignados usando el ID de persona correctamente
+        const gradosAsignados =
+          docenteGradosRes.data
+            ?.filter((dg) => dg.idPersona === idPersonaDocente)
+            .map((dg) => ({
+              idGrado: dg.idGrado,
+              id_grado: dg.idGrado, // Normalizar para compatibilidad
+              nombreGrado: dg.nombreGrado,
+            })) || [];
 
-    const handleGradoSelection = (gradoId) => {
-        setFormulario(prev => ({
-            ...prev,
-            gradosSeleccionados: prev.gradosSeleccionados.includes(gradoId)
-                ? prev.gradosSeleccionados.filter(id => id !== gradoId)
-                : [...prev.gradosSeleccionados, gradoId]
-        }));
-    };
-
-    const seleccionarTodosGrados = () => {
-        const todosIds = grados.map(g => g.id_grado);
-        setFormulario(prev => ({
-            ...prev,
-            gradosSeleccionados: prev.gradosSeleccionados.length === grados.length ? [] : todosIds
-        }));
-    };
-
-    const generarEnlaces = async () => {
-        try {
-            setLoading(true);
-
-            if (!formulario.fecha || !formulario.idServicio || formulario.gradosSeleccionados.length === 0) {
-                alert('Por favor complete todos los campos requeridos');
-                return;
-            }
-
-            // Generar enlaces para cada grado seleccionado
-            const enlacesGenerados = [];
-
-            for (const gradoId of formulario.gradosSeleccionados) {
-                const grado = grados.find(g => g.id_grado === gradoId);
-                const servicio = servicios.find(s => s.id_servicio === formulario.idServicio);
-
-                // Crear un token único para este enlace
-                const tokenData = {
-                    fecha: formulario.fecha,
-                    idServicio: formulario.idServicio,
-                    idGrado: gradoId,
-                    generadoPor: user.idPersona || user.id_persona,
-                    timestamp: new Date().getTime()
-                };
-
-                // En una implementación real, esto debería generar un JWT o token seguro
-                const token = btoa(JSON.stringify(tokenData));
-                const enlace = `${window.location.origin}/asistencias/registro/${token}`;
-
-                // Encontrar al docente asignado a este grado
-                const docenteGrado = docentes.find(docente => {
-                    return docente.gradosAsignados?.some(grad =>
-                        grad.idGrado === gradoId || grad.id_grado === gradoId
-                    );
-                });
-
-                enlacesGenerados.push({
-                    id: `${gradoId}-${formulario.idServicio}`,
-                    grado: grado?.nombreGrado || `Grado ${gradoId}`,
-                    servicio: servicio?.nombre || 'Servicio',
-                    enlace,
-                    token,
-                    docente: docenteGrado ? {
-                        nombre: `${docenteGrado.nombre} ${docenteGrado.apellido}`,
-                        telefono: docenteGrado.telefono || '000000000',
-                        email: docenteGrado.email || docenteGrado.correo
-                    } : null,
-                    fecha: formulario.fecha
-                });
-            }
-
-            setEnlaces(enlacesGenerados);
-            setMostrarEnlaces(true);
-
-        } catch (error) {
-            console.error('Error al generar enlaces:', error);
-            alert('Error al generar enlaces');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const copiarEnlace = (enlace) => {
-        navigator.clipboard.writeText(enlace).then(() => {
-            alert('Enlace copiado al portapapeles');
-        });
-    };
-
-    const enviarWhatsAppIndividual = (telefono, mensaje, grado, servicio) => {
-        const mensajeCompleto = `Hola! 📝
-
-${mensaje || `Te envío el enlace para registrar asistencias del ${grado} para el servicio de ${servicio}.`}
-
-Fecha: ${new Date(formulario.fecha).toLocaleDateString('es-ES')}
-Servicio: ${servicio}
-Grado: ${grado}
-
-Por favor registra las asistencias en el siguiente enlace:
-${enlaces.find(e => e.grado === grado && e.servicio === servicio)?.enlace}
-
-Saludos,
-${user.nombre} ${user.apellido}
-🍳 Comedor Escolar`;
-
-        const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensajeCompleto)}`;
-        window.open(urlWhatsApp, '_blank');
-    };
-
-    const enviarWhatsAppTodos = async () => {
-        if (enlaces.length === 0) {
-            alert('Primero debe generar los enlaces');
-            return;
-        }
-
-        setEnviandoWhatsApp(true);
-
-        try {
-            for (let i = 0; i < enlaces.length; i++) {
-                const enlace = enlaces[i];
-                if (enlace.docente?.telefono) {
-                    enviarWhatsAppIndividual(
-                        enlace.docente.telefono,
-                        formulario.mensaje,
-                        enlace.grado,
-                        enlace.servicio
-                    );
-
-                    // Espera de 2 segundos entre envíos para no saturar
-                    if (i < enlaces.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                    }
-                }
-            }
-
-            alert('Enlaces enviados exitosamente por WhatsApp');
-        } catch (error) {
-            console.error('Error al enviar WhatsApp:', error);
-            alert('Error al enviar algunos enlaces por WhatsApp');
-        } finally {
-            setEnviandoWhatsApp(false);
-        }
-    };
-
-    const limpiarFormulario = () => {
-        setFormulario({
-            fecha: new Date().toISOString().split('T')[0],
-            idServicio: '',
-            gradosSeleccionados: [],
-            mensaje: ''
-        });
-        setEnlaces([]);
-        setMostrarEnlaces(false);
-    };
-
-    if (loading) {
-        return (
-            <div className="loading-container">
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Generando enlaces...</span>
-                </div>
-                <p className="mt-3">Cargando gestión de asistencias...</p>
-            </div>
+        // Buscar el usuario asociado para obtener el teléfono
+        const usuarioAsociado = usuariosRes.data?.find(
+          (u) => u.idPersona === idPersonaDocente
         );
+
+        return {
+          ...docente,
+          id_persona: idPersonaDocente, // Normalizar para uso interno
+          gradosAsignados,
+          telefono: usuarioAsociado?.telefono || docente.telefono || null,
+        };
+      });
+
+      setDocentes(docentesConGrados);
+    } catch (error) {
+      console.error("Error al cargar datos:", error);
+      alert("Error al cargar datos iniciales");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormulario((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Si cambió el servicio, filtrar grados por turnos del servicio
+    if (name === "idServicio") {
+      cargarGradosPorServicio(value);
+    }
+  };
+
+  const handleGradoSelection = (gradoId) => {
+    setFormulario((prev) => ({
+      ...prev,
+      gradosSeleccionados: prev.gradosSeleccionados.includes(gradoId)
+        ? prev.gradosSeleccionados.filter((id) => id !== gradoId)
+        : [...prev.gradosSeleccionados, gradoId],
+    }));
+  };
+
+  const seleccionarTodosGrados = () => {
+    const gradosDisponibles = formulario.idServicio ? gradosFiltrados : grados;
+    const todosIds = gradosDisponibles.map((g) => g.id_grado || g.idGrado);
+    setFormulario((prev) => ({
+      ...prev,
+      gradosSeleccionados:
+        prev.gradosSeleccionados.length === gradosDisponibles.length
+          ? []
+          : todosIds,
+    }));
+  };
+
+  const generarEnlaces = async () => {
+    try {
+      setLoading(true);
+
+      if (
+        !formulario.fecha ||
+        !formulario.idServicio ||
+        formulario.gradosSeleccionados.length === 0
+      ) {
+        alert("Por favor complete todos los campos requeridos");
+        return;
+      }
+
+      // Generar enlaces para cada grado seleccionado
+      const enlacesGenerados = [];
+
+      for (const gradoId of formulario.gradosSeleccionados) {
+        const grado = grados.find((g) => (g.id_grado || g.idGrado) === gradoId);
+        const servicio = servicios.find(
+          (s) => s.idServicio === formulario.idServicio
+        );
+
+        // Encontrar al docente asignado a este grado específico
+        const docenteGrado = docentes.find((docente) => {
+          const tieneGradoAsignado = docente.gradosAsignados?.some((grad) => {
+            const gradoIdNormalizado = grad.idGrado || grad.id_grado;
+            const coincide = gradoIdNormalizado === gradoId;
+            return coincide;
+          });
+          return tieneGradoAsignado;
+        });
+
+        if (!docenteGrado) {
+          console.warn(
+            `⚠️ No se encontró docente asignado para el grado ${grado?.nombreGrado}`
+          );
+          continue; // Saltar este grado si no tiene docente asignado
+        }
+
+        // Crear token con la estructura que espera el backend
+        const tokenData = {
+          idPersonaDocente: docenteGrado.id_persona,
+          nombreGrado: grado.nombreGrado,
+          fecha: formulario.fecha,
+          idServicio: formulario.idServicio,
+          timestamp: Date.now(),
+          expires: Date.now() + 24 * 60 * 60 * 1000, // 24 horas
+        };
+
+        // Generar token compatible con el backend usando Buffer para manejar caracteres especiales
+        const tokenString = JSON.stringify(tokenData);
+        const token = btoa(unescape(encodeURIComponent(tokenString))); // Maneja caracteres UTF-8
+        const enlace = `${window.location.origin}/asistencias/registro/${token}`;
+
+        enlacesGenerados.push({
+          id: `${gradoId}-${formulario.idServicio}`,
+          grado: grado?.nombreGrado || `Grado ${gradoId}`,
+          servicio: servicio?.nombre || "Servicio",
+          enlace,
+          token,
+          docente: {
+            nombre: `${docenteGrado.nombre} ${docenteGrado.apellido}`,
+            telefono: docenteGrado.telefono || null,
+            email: docenteGrado.email || docenteGrado.correo,
+          },
+          fecha: formulario.fecha,
+        });
+      }
+
+      setEnlaces(enlacesGenerados);
+      setMostrarEnlaces(true);
+    } catch (error) {
+      console.error("Error al generar enlaces:", error);
+      alert("Error al generar enlaces");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copiarEnlace = (enlace) => {
+    navigator.clipboard.writeText(enlace).then(() => {
+      alert("Enlace copiado al portapapeles");
+    });
+  };
+
+  const formatearTelefonoTelegram = (telefono) => {
+    if (!telefono) {
+      console.warn("⚠️ No se proporcionó teléfono");
+      return null;
     }
 
+    // Remover cualquier carácter que no sea número
+    let numeroLimpio = telefono.toString().replace(/\D/g, "");
+
+    // Si el número empieza con 0, removerlo (formato local argentino)
+    if (numeroLimpio.startsWith("0")) {
+      numeroLimpio = numeroLimpio.substring(1);
+    }
+
+    // Si el número empieza con 15, removerlo (prefijo de celular argentino)
+    if (numeroLimpio.startsWith("15")) {
+      numeroLimpio = numeroLimpio.substring(2);
+    }
+
+    // Si el número ya tiene el código de país completo +549
+    if (numeroLimpio.startsWith("549")) {
+      return numeroLimpio;
+    }
+
+    // Si el número empieza con 54, agregar el 9
+    if (numeroLimpio.startsWith("54") && !numeroLimpio.startsWith("549")) {
+      const resultado = "549" + numeroLimpio.substring(2);
+      return resultado;
+    }
+
+    // Para números de 10 dígitos (formato argentino estándar: ej 3764239133)
+    if (numeroLimpio.length === 10) {
+      const resultado = "549" + numeroLimpio;
+      return resultado;
+    }
+
+    // Para cualquier otro caso, agregar 549 al inicio
+    const resultado = "549" + numeroLimpio;
+    return resultado;
+  };
+
+  const enviarTelegramIndividual = async (
+    telefono,
+    mensaje,
+    grado,
+    servicio
+  ) => {
+    if (!telefono) {
+      alert("No hay información de teléfono para este docente");
+      return;
+    }
+
+    try {
+      const enlace = enlaces.find(
+        (e) => e.grado === grado && e.servicio === servicio
+      );
+
+      const mensajeCompleto = `🏫 *Comedor Escolar* 📝
+
+¡Hola!
+
+${
+  mensaje ||
+  `Te envío el enlace para registrar las asistencias del ${grado} para el servicio de ${servicio}.`
+}
+
+📅 *Fecha:* ${new Date(formulario.fecha).toLocaleDateString("es-ES")}
+🍽️ *Servicio:* ${servicio}
+📚 *Grado:* ${grado}
+
+Por favor registra las asistencias en el siguiente enlace:
+${enlace?.enlace}
+
+Saludos cordiales,
+${user.nombre} ${user.apellido}
+🍳 *Comedor Escolar*`;
+
+      // Formatear teléfono para Telegram (usar número internacional)
+      const telefonoFormateado = formatearTelefonoTelegram(telefono);
+
+      if (telefonoFormateado) {
+        // Crear enlace de Telegram usando número de teléfono
+        const mensajeCodificado = encodeURIComponent(mensajeCompleto);
+        const telegramUrl = `https://t.me/+${telefonoFormateado}?text=${mensajeCodificado}`;
+
+        // Abrir Telegram con el mensaje
+        window.open(telegramUrl, "_blank");
+        alert(
+          `✅ Se abrió Telegram para enviar mensaje a ${grado} (+${telefonoFormateado})`
+        );
+      } else {
+        // Fallback: abrir bot general con mensaje
+        const botUrl = `https://t.me/SistemaComedor_Bot?start=mensaje`;
+        window.open(botUrl, "_blank");
+        alert(
+          `📱 Se abrió el bot de Telegram (número no válido para ${grado})`
+        );
+      }
+    } catch (error) {
+      console.error("Error al generar enlace de Telegram:", error);
+      alert(`❌ Error al generar enlace de Telegram: ${error.message}`);
+    }
+  };
+
+  const enviarTelegramTodos = async () => {
+    if (enlaces.length === 0) {
+      alert("Primero debe generar los enlaces");
+      return;
+    }
+
+    try {
+      // Enviar enlaces usando el bot de Telegram
+      const response = await api.post("/telegram/send-asistencias", {
+        enlaces: enlaces,
+        fecha: formulario.fecha,
+        mensaje: formulario.mensaje,
+      });
+
+      if (response.data.success) {
+        alert("✅ Enlaces enviados por Telegram correctamente");
+      } else {
+        throw new Error(
+          response.data.message || "Error al enviar por Telegram"
+        );
+      }
+    } catch (error) {
+      console.error("Error enviando por Telegram:", error);
+      alert(
+        "❌ Error al enviar por Telegram. Verifique la configuración del bot."
+      );
+    }
+  };
+
+  const limpiarFormulario = () => {
+    setFormulario({
+      fecha: new Date().toISOString().split("T")[0],
+      idServicio: "",
+      gradosSeleccionados: [],
+      mensaje: "",
+    });
+    setEnlaces([]);
+    setMostrarEnlaces(false);
+  };
+
+  if (loading) {
     return (
-        <div className="cocinera-gestion-asistencias">
-            <div className="page-header">
-                <div className="header-content">
-                    <div className="header-left">
-                        <h1 className="page-title">
-                            <i className="fas fa-calendar-check me-2"></i>
-                            Gestión de Asistencias
-                        </h1>
-                        <p>Generar y enviar enlaces de registro de asistencias a los docentes</p>
-                    </div>
-                </div>
-            </div>
-            <div className="page-header-cocinera">
-                <div className="card">
-                    <div className="card-header">
-                        <span className="card-title">Generar Enlaces de Asistencia</span>
-                    </div>
-                    <div className="card-body">
-                        <form onSubmit={(e) => { e.preventDefault(); generarEnlaces(); }}>
-                            <div className="row">
-                                <div className="col-md-6 mb-3">
-                                    <label htmlFor="fecha" className="form-label">
-                                        <i className="fas fa-calendar me-2"></i>
-                                        Fecha *
-                                    </label>
-                                    <input
-                                        type="date"
-                                        className="form-control"
-                                        id="fecha"
-                                        name="fecha"
-                                        value={formulario.fecha}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="col-md-6 mb-3">
-                                    <label htmlFor="idServicio" className="form-label">
-                                        <i className="fas fa-utensils me-2"></i>
-                                        Servicio *
-                                    </label>
-                                    <select
-                                        className="form-select"
-                                        id="idServicio"
-                                        name="idServicio"
-                                        value={formulario.idServicio}
-                                        onChange={handleInputChange}
-                                        required
-                                    >
-                                        <option value="">Seleccionar servicio</option>
-                                        {servicios.map(servicio => (
-                                            <option key={servicio.id_servicio} value={servicio.id_servicio}>
-                                                {servicio.nombre}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="mb-3">
-                                <div className="form-label">
-                                    <i className="fas fa-school me-2"></i>
-                                    Grados a incluir *
-                                </div>
-                                <div className="grados-selection">
-                                    <div className="mb-2">
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary btn-sm"
-                                            onClick={seleccionarTodosGrados}
-                                        >
-                                            {formulario.gradosSeleccionados.length === grados.length ?
-                                                'Deseleccionar todos' : 'Seleccionar todos'}
-                                        </button>
-                                    </div>
-                                    <div className="grados-grid">
-                                        {grados.map(grado => {
-                                            const docenteAsignado = docentes.find(docente =>
-                                                docente.gradosAsignados?.some(grad =>
-                                                    grad.idGrado === grado.id_grado || grad.id_grado === grado.id_grado
-                                                )
-                                            );
-
-                                            return (
-                                                <div key={grado.id_grado} className="grado-item">
-                                                    <div className="form-check">
-                                                        <input
-                                                            className="form-check-input"
-                                                            type="checkbox"
-                                                            id={`grado-${grado.id_grado}`}
-                                                            checked={formulario.gradosSeleccionados.includes(grado.id_grado)}
-                                                            onChange={() => handleGradoSelection(grado.id_grado)}
-                                                        />
-                                                        <label
-                                                            className="form-check-label grado-label"
-                                                            htmlFor={`grado-${grado.id_grado}`}
-                                                        >
-                                                            <div className="grado-nombre">{grado.nombreGrado}</div>
-                                                            <div className="docente-asignado">
-                                                                {docenteAsignado ? (
-                                                                    <span className="text-success">
-                                                                        <i className="fas fa-user me-1"></i>
-                                                                        {docenteAsignado.nombre} {docenteAsignado.apellido}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="text-warning">
-                                                                        <i className="fas fa-exclamation-triangle me-1"></i>
-                                                                        Sin docente asignado
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mb-3">
-                                <label htmlFor="mensaje" className="form-label">
-                                    <i className="fas fa-comment me-2"></i>
-                                    Mensaje personalizado (opcional)
-                                </label>
-                                <textarea
-                                    className="form-control"
-                                    id="mensaje"
-                                    name="mensaje"
-                                    rows="3"
-                                    placeholder="Mensaje adicional para los docentes..."
-                                    value={formulario.mensaje}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-
-                            <div className="d-flex gap-2">
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    disabled={loading}
-                                >
-                                    <i className="fas fa-link me-2"></i>
-                                    {loading ? 'Generando...' : 'Generar Enlaces'}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    onClick={limpiarFormulario}
-                                >
-                                    <i className="fas fa-broom me-2"></i>
-                                    Limpiar
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            {/* Panel de enlaces generados */}
-            {mostrarEnlaces && enlaces.length > 0 && (
-                <div className="card mt-4">
-                    <div className="card-header d-flex justify-content-between align-items-center">
-                        <h4>🔗 Enlaces Generados</h4>
-                        <div>
-                            <button
-                                className="btn btn-success me-2"
-                                onClick={enviarWhatsAppTodos}
-                                disabled={enviandoWhatsApp}
-                            >
-                                <i className="fab fa-whatsapp me-2"></i>
-                                {enviandoWhatsApp ? 'Enviando...' : 'Enviar todos por WhatsApp'}
-                            </button>
-                        </div>
-                    </div>
-                    <div className="card-body">
-                        <div className="table-responsive">
-                            <table className="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Grado</th>
-                                        <th>Servicio</th>
-                                        <th>Docente</th>
-                                        <th>Enlace</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {enlaces.map((enlace) => (
-                                        <tr key={enlace.id}>
-                                            <td>
-                                                <span className="badge bg-primary">
-                                                    {enlace.grado}
-                                                </span>
-                                            </td>
-                                            <td>{enlace.servicio}</td>
-                                            <td>
-                                                {enlace.docente ? (
-                                                    <div>
-                                                        <div>{enlace.docente.nombre}</div>
-                                                        <small className="text-muted">
-                                                            {enlace.docente.telefono}
-                                                        </small>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-muted">Sin asignar</span>
-                                                )}
-                                            </td>
-                                            <td>
-                                                <code className="enlace-preview">
-                                                    {enlace.enlace.substring(0, 50)}...
-                                                </code>
-                                            </td>
-                                            <td>
-                                                <div className="btn-group">
-                                                    <button
-                                                        className="btn btn-outline-secondary btn-sm"
-                                                        onClick={() => copiarEnlace(enlace.enlace)}
-                                                        title="Copiar enlace"
-                                                    >
-                                                        <i className="fas fa-copy"></i>
-                                                    </button>
-                                                    {enlace.docente?.telefono && (
-                                                        <button
-                                                            className="btn btn-outline-success btn-sm"
-                                                            onClick={() => enviarWhatsAppIndividual(
-                                                                enlace.docente.telefono,
-                                                                formulario.mensaje,
-                                                                enlace.grado,
-                                                                enlace.servicio
-                                                            )}
-                                                            title="Enviar por WhatsApp"
-                                                        >
-                                                            <i className="fab fa-whatsapp"></i>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            )}
-
+      <div className="loading-container">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Generando enlaces...</span>
         </div>
+        <p className="mt-3">Cargando gestión de asistencias...</p>
+      </div>
     );
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="header-left">
+          <h1 className="page-title">
+            <i className="fas fa-calendar-check me-2"></i>
+            Gestión de Asistencias
+          </h1>
+          <p className="page-subtitle">
+            Generar y enviar enlaces de registro de asistencias a los docentes
+          </p>
+        </div>
+      </div>
+      <div className="page-header-cocinera">
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Generar Enlaces de Asistencia</span>
+          </div>
+          <div className="card-body">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                generarEnlaces();
+              }}
+            >
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label htmlFor="fecha" className="form-label">
+                    <i className="fas fa-calendar me-2"></i>
+                    Fecha *
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    id="fecha"
+                    name="fecha"
+                    value={formulario.fecha}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
+                <div className="col-md-6 mb-3">
+                  <label htmlFor="idServicio" className="form-label">
+                    <i className="fas fa-utensils me-2"></i>
+                    Servicio *
+                  </label>
+                  <select
+                    className="form-select"
+                    id="idServicio"
+                    name="idServicio"
+                    value={formulario.idServicio}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Seleccionar servicio</option>
+                    {servicios.map((servicio) => (
+                      <option
+                        key={servicio.idServicio}
+                        value={servicio.idServicio}
+                      >
+                        {servicio.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <div className="form-label mb-3">
+                  <i className="fas fa-school me-2"></i>
+                  {formulario.idServicio
+                    ? "Grados disponibles para el servicio seleccionado"
+                    : "Grados a incluir"}{" "}
+                  *
+                  <span className="badge bg-info ms-2">
+                    {formulario.gradosSeleccionados.length} seleccionados
+                  </span>
+                  {formulario.idServicio && turnosServicio.length > 0 && (
+                    <span className="badge bg-secondary ms-2">
+                      Turnos:{" "}
+                      {turnosServicio.map((t) => t.nombreTurno).join(", ")}
+                    </span>
+                  )}
+                </div>
+
+                {!formulario.idServicio ? (
+                  <div className="alert alert-info">
+                    <i className="fas fa-info-circle me-2"></i>
+                    <strong>Primero selecciona un servicio</strong> para ver los
+                    grados disponibles según los turnos asociados a ese
+                    servicio.
+                  </div>
+                ) : (
+                  <div className="grados-selection">
+                    <div className="mb-3">
+                      <button
+                        type="button"
+                        className={`btn btn-sm me-2 ${
+                          formulario.gradosSeleccionados.length ===
+                          (formulario.idServicio ? gradosFiltrados : grados)
+                            .length
+                            ? "btn-outline-danger"
+                            : "btn-outline-primary"
+                        }`}
+                        onClick={seleccionarTodosGrados}
+                      >
+                        <i
+                          className={`fas ${
+                            formulario.gradosSeleccionados.length ===
+                            (formulario.idServicio ? gradosFiltrados : grados)
+                              .length
+                              ? "fa-times"
+                              : "fa-check-double"
+                          } me-2`}
+                        ></i>
+                        {formulario.gradosSeleccionados.length ===
+                        (formulario.idServicio ? gradosFiltrados : grados)
+                          .length
+                          ? "Deseleccionar todos"
+                          : "Seleccionar todos"}
+                      </button>
+                      <small className="text-muted">
+                        Total de grados{" "}
+                        {formulario.idServicio
+                          ? "disponibles para este servicio"
+                          : "disponibles"}
+                        :{" "}
+                        {
+                          (formulario.idServicio ? gradosFiltrados : grados)
+                            .length
+                        }
+                      </small>
+                    </div>
+
+                    <div className="row g-3">
+                      {(formulario.idServicio ? gradosFiltrados : grados).map(
+                        (grado) => {
+                          const gradoId = grado.id_grado || grado.idGrado;
+                          const docenteAsignado = docentes.find((docente) =>
+                            docente.gradosAsignados?.some(
+                              (grad) =>
+                                (grad.idGrado || grad.id_grado) === gradoId
+                            )
+                          );
+
+                          const isSelected =
+                            formulario.gradosSeleccionados.includes(gradoId);
+
+                          return (
+                            <div key={gradoId} className="col-md-6 col-lg-4">
+                              <div
+                                className={`card grado-card h-100 ${
+                                  isSelected
+                                    ? "border-primary bg-primary bg-opacity-10"
+                                    : "border-light"
+                                }`}
+                              >
+                                <div className="card-body p-3">
+                                  <div className="form-check mb-0">
+                                    <input
+                                      className="form-check-input form-check-input-lg"
+                                      type="checkbox"
+                                      id={`grado-${gradoId}`}
+                                      checked={isSelected}
+                                      onChange={() =>
+                                        handleGradoSelection(gradoId)
+                                      }
+                                    />
+                                    <label
+                                      className="form-check-label w-100 cursor-pointer"
+                                      htmlFor={`grado-${gradoId}`}
+                                    >
+                                      <div className="grado-info">
+                                        <div className="grado-header d-flex justify-content-between align-items-center mb-2">
+                                          <h6 className="grado-nombre mb-0 fw-bold">
+                                            <i className="fas fa-graduation-cap me-2"></i>
+                                            {grado.nombreGrado}
+                                            {grado.turnoInfo && (
+                                              <div className="small text-muted mt-1">
+                                                <i className="fas fa-clock me-1"></i>
+                                                {grado.turnoInfo.nombreTurno} (
+                                                {grado.turnoInfo.horaInicio} -{" "}
+                                                {grado.turnoInfo.horaFin})
+                                              </div>
+                                            )}
+                                          </h6>
+                                          {isSelected && (
+                                            <span className="badge bg-primary">
+                                              <i className="fas fa-check"></i>
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div className="docente-info">
+                                          {docenteAsignado ? (
+                                            <div className="docente-asignado">
+                                              <div className="d-flex align-items-center text-success mb-1">
+                                                <i className="fas fa-user me-2"></i>
+                                                <strong className="small">
+                                                  {docenteAsignado.nombre}{" "}
+                                                  {docenteAsignado.apellido}
+                                                </strong>
+                                              </div>
+                                              {docenteAsignado.telefono && (
+                                                <div className="d-flex align-items-center text-muted mb-1">
+                                                  <i className="fas fa-phone me-2"></i>
+                                                  <span className="small">
+                                                    +549
+                                                    {docenteAsignado.telefono}
+                                                  </span>
+                                                </div>
+                                              )}
+                                              {docenteAsignado.email && (
+                                                <div className="d-flex align-items-center text-muted">
+                                                  <i className="fas fa-envelope me-2"></i>
+                                                  <span className="small text-truncate">
+                                                    {docenteAsignado.email}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <div className="text-warning">
+                                              <i className="fas fa-exclamation-triangle me-2"></i>
+                                              <span className="small">
+                                                Sin docente asignado
+                                              </span>
+                                              <div className="text-muted small mt-1">
+                                                No se podrá enviar enlace por
+                                                Telegram
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+
+                    {formulario.gradosSeleccionados.length === 0 &&
+                      (formulario.idServicio ? gradosFiltrados : grados)
+                        .length > 0 && (
+                        <div className="alert alert-warning mt-3">
+                          <i className="fas fa-info-circle me-2"></i>
+                          Debe seleccionar al menos un grado para continuar.
+                        </div>
+                      )}
+
+                    {formulario.idServicio && gradosFiltrados.length === 0 && (
+                      <div className="alert alert-warning mt-3">
+                        <i className="fas fa-exclamation-triangle me-2"></i>
+                        No hay grados disponibles para el servicio seleccionado.
+                        <br />
+                        <strong>Posibles causas:</strong>
+                        <ul className="mb-0 mt-2">
+                          <li>El servicio no tiene turnos asignados</li>
+                          <li>
+                            Los turnos del servicio no tienen grados activos
+                            asociados
+                          </li>
+                          <li>
+                            Debe configurar la relación servicio-turno-grados en
+                            la administración
+                          </li>
+                        </ul>
+                      </div>
+                    )}
+
+                    {formulario.gradosSeleccionados.length > 0 && (
+                      <div className="alert alert-info mt-3">
+                        <i className="fas fa-info-circle me-2"></i>
+                        <strong>
+                          {formulario.gradosSeleccionados.length}
+                        </strong>{" "}
+                        grado(s) seleccionado(s)
+                        {formulario.idServicio && turnosServicio.length > 0 && (
+                          <span>
+                            {" "}
+                            del servicio{" "}
+                            <strong>
+                              {
+                                servicios.find(
+                                  (s) => s.idServicio === formulario.idServicio
+                                )?.nombre
+                              }
+                            </strong>
+                            (Turnos:{" "}
+                            {turnosServicio
+                              .map((t) => t.nombreTurno)
+                              .join(", ")}
+                            )
+                          </span>
+                        )}
+                        . Se generarán enlaces para enviar a los docentes
+                        correspondientes.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-3">
+                <label htmlFor="mensaje" className="form-label">
+                  <i className="fas fa-comment me-2"></i>
+                  Mensaje personalizado (opcional)
+                </label>
+                <textarea
+                  className="form-control"
+                  id="mensaje"
+                  name="mensaje"
+                  rows="3"
+                  placeholder="Mensaje adicional para los docentes..."
+                  value={formulario.mensaje}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="d-flex gap-2">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={
+                    loading ||
+                    !formulario.idServicio ||
+                    formulario.gradosSeleccionados.length === 0
+                  }
+                >
+                  <i className="fas fa-link me-2"></i>
+                  {loading ? "Generando..." : "Generar Enlaces"}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={limpiarFormulario}
+                >
+                  <i className="fas fa-broom me-2"></i>
+                  Limpiar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Panel de enlaces generados */}
+      {mostrarEnlaces && enlaces.length > 0 && (
+        <div className="card mt-4">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <h4>🔗 Enlaces Generados</h4>
+            <div>
+              <button
+                className="btn btn-primary me-2"
+                onClick={enviarTelegramTodos}
+              >
+                <i className="fab fa-telegram me-2"></i>
+                Enviar por Telegram
+              </button>
+            </div>
+          </div>
+          <div className="card-body">
+            <div className="table-responsive">
+              <table className="table table-hover">
+                <thead className="table-light">
+                  <tr>
+                    <th width="15%">
+                      <i className="fas fa-graduation-cap me-2"></i>
+                      Grado
+                    </th>
+                    <th width="15%">
+                      <i className="fas fa-utensils me-2"></i>
+                      Servicio
+                    </th>
+                    <th width="25%">
+                      <i className="fas fa-user-tie me-2"></i>
+                      Docente Asignado
+                    </th>
+                    <th width="25%">
+                      <i className="fas fa-link me-2"></i>
+                      Enlace Generado
+                    </th>
+                    <th width="20%">
+                      <i className="fas fa-cogs me-2"></i>
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {enlaces.map((enlace) => {
+                    const telefonoFormateado = enlace.docente?.telefono
+                      ? formatearTelefonoTelegram(enlace.docente.telefono)
+                      : null;
+
+                    return (
+                      <tr key={enlace.id}>
+                        <td>
+                          <span className="badge bg-primary fs-6 px-3 py-2">
+                            <i className="fas fa-school me-1"></i>
+                            {enlace.grado}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="fw-semibold text-dark">
+                            {enlace.servicio}
+                          </div>
+                          <small className="text-muted">
+                            {new Date(enlace.fecha).toLocaleDateString("es-ES")}
+                          </small>
+                        </td>
+                        <td>
+                          {enlace.docente ? (
+                            <div className="docente-info">
+                              <div className="fw-bold text-success mb-1">
+                                <i className="fas fa-user me-2"></i>
+                                {enlace.docente.nombre}
+                              </div>
+
+                              {telefonoFormateado && (
+                                <div className="d-flex align-items-center mb-1">
+                                  <i className="fab fa-telegram text-primary me-2"></i>
+                                  <span className="small font-monospace bg-light px-2 py-1 rounded">
+                                    +{telefonoFormateado}
+                                  </span>
+                                </div>
+                              )}
+
+                              {enlace.docente.email && (
+                                <div className="d-flex align-items-center">
+                                  <i className="fas fa-envelope text-muted me-2"></i>
+                                  <span className="small text-muted">
+                                    {enlace.docente.email}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-warning">
+                              <i className="fas fa-exclamation-triangle me-2"></i>
+                              <span className="fw-semibold">
+                                Sin docente asignado
+                              </span>
+                              <div className="small text-muted mt-1">
+                                No se puede enviar enlace
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <div className="enlace-container">
+                            <code className="enlace-preview d-block bg-light p-2 rounded small text-truncate">
+                              {enlace.enlace}
+                            </code>
+                            <small className="text-muted mt-1 d-block">
+                              Token: ...{enlace.token.slice(-8)}
+                            </small>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="btn-group-vertical d-grid gap-1">
+                            <button
+                              className="btn btn-outline-primary btn-sm"
+                              onClick={() => copiarEnlace(enlace.enlace)}
+                              title="Copiar enlace al portapapeles"
+                            >
+                              <i className="fas fa-copy me-2"></i>
+                              Copiar
+                            </button>
+
+                            {telefonoFormateado ? (
+                              <button
+                                className="btn btn-outline-success btn-sm"
+                                onClick={() =>
+                                  enviarTelegramIndividual(
+                                    enlace.docente.telefono,
+                                    formulario.mensaje,
+                                    enlace.grado,
+                                    enlace.servicio
+                                  )
+                                }
+                                title={`Enviar por Telegram a +${telefonoFormateado}`}
+                              >
+                                <i className="fab fa-telegram me-2"></i>
+                                Telegram
+                              </button>
+                            ) : (
+                              <button
+                                className="btn btn-outline-secondary btn-sm"
+                                disabled
+                                title="No hay teléfono disponible"
+                              >
+                                <i className="fas fa-phone-slash me-2"></i>
+                                Sin teléfono
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default CocineraGestionAsistencias;

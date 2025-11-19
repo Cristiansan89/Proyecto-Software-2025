@@ -29,6 +29,7 @@ import { createProveedorInsumoRouter } from './routes/proveedorinsumos.js'
 import alumnoGradoRouter from './routes/alumnogrado.js'
 import docenteGradoRouter from './routes/docentegrado.js'
 import reemplazoDocenteRouter from './routes/reemplazodocente.js'
+import telegramRouter from './routes/telegram.js'
 
 
 
@@ -94,6 +95,7 @@ export const createApp = ({
     app.use('/api/servicio-turnos', createServicioTurnoRouter({ servicioTurnoModel }))
     app.use('/api/turnos', createTurnoRouter({ turnoModel }))
     app.use('/api/proveedor-insumos', createProveedorInsumoRouter({ proveedorInsumoModel }))
+    app.use('/api/telegram', telegramRouter)
     app.use('/api/alumno-grados', alumnoGradoRouter)
     app.use('/api/docente-grados', docenteGradoRouter)
     app.use('/api/reemplazo-docentes', reemplazoDocenteRouter)

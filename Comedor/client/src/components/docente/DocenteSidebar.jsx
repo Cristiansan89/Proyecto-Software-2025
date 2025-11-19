@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 
-const CocineraSidebar = ({ collapsed }) => {
+const DocenteSidebar = ({ collapsed }) => {
     const location = useLocation();
 
     const menuItems = [
@@ -8,50 +8,50 @@ const CocineraSidebar = ({ collapsed }) => {
             id: 'dashboard',
             label: 'Dashboard',
             icon: 'fas fa-tachometer-alt',
-            path: '/cocinera/dashboard'
+            path: '/docente/dashboard'
         },
         {
-            id: 'gestion-asistencias',
-            label: 'Gestión de Asistencias',
+            id: 'asistencias',
+            label: 'Asistencias',
             icon: 'fas fa-clipboard-check',
-            path: '/cocinera/gestion-asistencias'
+            path: '/docente/asistencias'
         },
         {
-            id: 'recetas',
-            label: 'Gestión de Recetas',
-            icon: 'fas fa-book-open',
-            path: '/cocinera/recetas'
+            id: 'registro-asistencias',
+            label: 'Registrar Asistencias',
+            icon: 'fas fa-plus-circle',
+            path: '/docente/registro-asistencias'
         },
         {
-            id: 'menu',
-            label: 'Planificación de Menús',
-            icon: 'fas fa-utensils',
-            path: '/cocinera/menu'
+            id: 'alumnos',
+            label: 'Mis Alumnos',
+            icon: 'fas fa-users',
+            path: '/docente/mis-alumnos'
         },
         {
-            id: 'inventario',
-            label: 'Control de Inventario',
-            icon: 'fas fa-boxes',
-            path: '/cocinera/inventario'
+            id: 'gestionasistencias',
+            label: 'Gestión de Asistencias',
+            icon: 'fas fa-calendar-check',
+            path: '/docente/gestionasistencias'
         },
         {
-            id: 'reportes',
-            label: 'Reportes',
-            icon: 'fas fa-chart-line',
-            path: '/cocinera/reportes'
+            id: 'horarios',
+            label: 'Horarios',
+            icon: 'fas fa-clock',
+            path: '/docente/horarios'
         }
     ];
 
     const isActive = (path) => {
-        return location.pathname === path || (path === '/cocinera/dashboard' && location.pathname === '/cocinera');
+        return location.pathname === path || (path === '/docente/dashboard' && location.pathname === '/docente');
     };
 
     return (
-        <div className={`sidebar cocinera-sidebar ${collapsed ? 'collapsed' : ''}`}>
+        <div className={`sidebar docente-sidebar ${collapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-header">
                 <div className="sidebar-logo">
-                    <i className="fas fa-chef-hat"></i>
-                    {!collapsed && <span>Panel Cocinera</span>}
+                    <i className="fas fa-chalkboard-teacher"></i>
+                    {!collapsed && <span>Panel Docente</span>}
                 </div>
             </div>
             <div className="sidebar-menu">
@@ -70,16 +70,16 @@ const CocineraSidebar = ({ collapsed }) => {
                 ))}
             </div>
 
-            {/* Información de ayuda */}
+            {/* Información del docente */}
             {!collapsed && (
                 <div className="sidebar-info">
                     <div className="info-card">
                         <div className="info-icon">
-                            <i className="fas fa-lightbulb"></i>
+                            <i className="fas fa-info-circle"></i>
                         </div>
                         <div className="info-content">
-                            <h6>Centro de Ayuda</h6>
-                            <p>Gestiona asistencias y planifica menús de forma eficiente</p>
+                            <h6>¿Necesitas ayuda?</h6>
+                            <p>Contacta al administrador para soporte técnico</p>
                         </div>
                     </div>
                 </div>
@@ -88,5 +88,4 @@ const CocineraSidebar = ({ collapsed }) => {
     );
 };
 
-export default CocineraSidebar;
-
+export default DocenteSidebar;

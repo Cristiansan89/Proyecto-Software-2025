@@ -75,7 +75,7 @@ const AdminDashboard = () => {
     return (
         <div>
             <div className="dashboard-header">
-                <div className="page-header">
+                <div className="page-header-dashboard">
                     <div className="header-text">
                         <h2>Panel de Administración</h2>
                         <p>Resumen general del sistema de comedor</p>
@@ -193,7 +193,7 @@ const AdminDashboard = () => {
 
                                     <div className="summary-item">
                                         <div className="summary-icon">
-                                            <i className="fas fa-users text-info"></i>
+                                            <i className="fas fa-users text-dark"></i>
                                         </div>
                                         <div className="summary-content">
                                             <h5>Comunidad Educativa</h5>
@@ -213,7 +213,7 @@ const AdminDashboard = () => {
 
                                     <div className="summary-item">
                                         <div className="summary-icon">
-                                            <i className="fas fa-shield-alt text-warning"></i>
+                                            <i className="fas fa-shield-alt text-danger"></i>
                                         </div>
                                         <div className="summary-content">
                                             <h5>Seguridad y Acceso</h5>

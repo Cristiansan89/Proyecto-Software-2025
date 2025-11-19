@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import turnoService from '../services/turnoService.js';
+import turnoService from '../../services/turnoService.js';
 
 const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
     const [formData, setFormData] = useState({

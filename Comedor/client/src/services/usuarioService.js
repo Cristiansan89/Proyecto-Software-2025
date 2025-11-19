@@ -1,11 +1,11 @@
-import API from './api.js';
+import api from './api.js';
 
 export const usuarioService = {
     // Obtener todos los usuarios
     async getAll() {
         try {
             console.log('usuarioService: Obteniendo todos los usuarios...');
-            const response = await API.get('/usuarios');
+            const response = await api.get('/usuarios');
             console.log('usuarioService: Usuarios obtenidos:', response.data.length);
             return response.data;
         } catch (error) {
@@ -18,7 +18,7 @@ export const usuarioService = {
     async getById(id) {
         try {
             console.log('usuarioService: Obteniendo usuario con ID:', id);
-            const response = await API.get(`/usuarios/${id}`);
+            const response = await api.get(`/usuarios/${id}`);
             console.log('usuarioService: Usuario obtenido:', response.data);
             return response.data;
         } catch (error) {
@@ -34,7 +34,7 @@ export const usuarioService = {
     async create(usuarioData) {
         try {
             console.log('usuarioService: Creando usuario:', usuarioData);
-            const response = await API.post('/usuarios', usuarioData);
+            const response = await api.post('/usuarios', usuarioData);
             console.log('usuarioService: Usuario creado exitosamente:', response.data);
             return response.data;
         } catch (error) {
@@ -47,7 +47,7 @@ export const usuarioService = {
     async update(id, usuarioData) {
         try {
             console.log('usuarioService: Actualizando usuario ID:', id, 'con datos:', usuarioData);
-            const response = await API.put(`/usuarios/${id}`, usuarioData);
+            const response = await api.patch(`/usuarios/${id}`, usuarioData);
             console.log('usuarioService: Usuario actualizado exitosamente:', response.data);
             return response.data;
         } catch (error) {
@@ -60,7 +60,7 @@ export const usuarioService = {
     async delete(id) {
         try {
             console.log('usuarioService: Eliminando usuario ID:', id);
-            const response = await API.delete(`/usuarios/${id}`);
+            const response = await api.delete(`/usuarios/${id}`);
             console.log('usuarioService: Usuario eliminado exitosamente');
             return response.data;
         } catch (error) {
@@ -73,7 +73,7 @@ export const usuarioService = {
     async cambiarEstado(id, estado) {
         try {
             console.log('usuarioService: Cambiando estado del usuario ID:', id, 'a:', estado);
-            const response = await API.patch(`/usuarios/${id}/estado`, { estado });
+            const response = await api.patch(`/usuarios/${id}/estado`, { estado });
             console.log('usuarioService: Estado cambiado exitosamente:', response.data);
             return response.data;
         } catch (error) {

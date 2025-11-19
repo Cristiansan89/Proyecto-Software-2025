@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import DocenteGradoForm from '../../components/DocenteGradoForm';
+import DocenteGradoForm from '../../components/admin/DocenteGradoForm';
 import docenteGradoService from '../../services/docenteGradoService.js';
 import { gradoService } from '../../services/gradoService.js';
 import { formatCicloLectivo } from '../../utils/dateUtils.js';
@@ -157,10 +157,10 @@ const ListaDocentesGrados = () => {
         <div className="docentes-grados-page">
             {/* Header */}
             <div className="page-header">
-                <div className="header-content">
-                    <h1 className="page-title">
+                <div className="header-left">
+                    <h2 className="page-title-sub">
                         Docentes por Grado
-                    </h1>
+                    </h2>
 
                 </div>
                 <div className="header-actions">

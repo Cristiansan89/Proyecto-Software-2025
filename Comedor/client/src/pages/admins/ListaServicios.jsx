@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import ServicioForm from '../../components/ServicioForm';
+import ServicioForm from '../../components/admin/ServicioForm';
 import servicioService from '../../services/servicioService';
 import servicioTurnoService from '../../services/servicioTurnoService';
 
@@ -126,10 +126,12 @@ const ListaServicios = () => {
 
     return (
         <div className="servicios-container">
-            <div className="page-content">
+            <div>
                 <div className="page-header">
                     <div className="header-left">
-                        <h2 className="page-title">Gestión de Servicios</h2>
+                        <h2 className="page-title-sub">
+                            Gestión de Servicios
+                        </h2>
                     </div>
                     <div className="header-actions">
                         <button className="btn btn-primary-new" onClick={handleCreate}>
@@ -138,32 +140,9 @@ const ListaServicios = () => {
                         </button>
                     </div>
                 </div>
-            </div>
-            <div className="page-header">
-                <div className="header-stats">
-                    <div className="stat-card-users">
-                        <div className="stat-number-users">{servicios.length}</div>
-                        <div className="stat-label-users">Total</div>
-                    </div>
-                    <div className="stat-card-stock">
-                        <div className="summary-number-stock">{servicios.filter(s => s.estado === 'Activo').length}</div>
-                        <div className="summary-label-stock">Activos</div>
-                    </div>
-                    <div className="stat-card-alert">
-                        <div className="summary-number-alert">{servicios.filter(s => s.estado === 'Inactivo').length}</div>
-                        <div className="summary-label-alert">Inactivos</div>
-                    </div>
-                    <div className="stat-card-users">
-                        <div className="stat-number-users">
-                            {Object.values(servicioTurnos).reduce((total, turnos) => total + turnos.length, 0)}
-                        </div>
-                        <div className="stat-label-users">Turnos Asignados</div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Filtros */}
-            <div div className="search-filters" >
+                {/* Filtros */}
+                <div className="search-filters">
                 <div className="search-bar">
                     <input
                         type="text"
@@ -187,7 +166,7 @@ const ListaServicios = () => {
             </div>
 
             {/* Información de resultados */}
-            <div div className="results-info" >
+            <div className="results-info">
                 <div className="results-count">
                     <span>Mostrando {filteredServicios.length} de {servicios.length} servicios</span>
                     {searchTerm && <span className="filter-indicator">filtrado por "{searchTerm}"</span>}
@@ -195,7 +174,7 @@ const ListaServicios = () => {
             </div>
 
             {/* Tabla de servicios */}
-            <div div className="table-container" >
+            <div className="table-container">
                 {
                     filteredServicios.length === 0 ? (
                         <div className="no-data">
@@ -297,6 +276,7 @@ const ListaServicios = () => {
                     )
                 }
             </div>
+            </div>
 
             {/* Modal */}
             {
@@ -325,7 +305,7 @@ const ListaServicios = () => {
                     </div>
                 )
             }
-        </div >
+        </div>
     );
 };
 

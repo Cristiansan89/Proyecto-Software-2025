@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { rolService } from '../services/rolService';
-import { permisoService } from '../services/permisoService';
-import { rolPermisoService } from '../services/rolPermisoService';
+import { rolService } from '../../services/rolService';
+import { permisoService } from '../../services/permisoService';
+import { rolPermisoService } from '../../services/rolPermisoService';
 
 const AsignarPermisosForm = ({ onClose, rolSeleccionado = null }) => {
     const [roles, setRoles] = useState([]);

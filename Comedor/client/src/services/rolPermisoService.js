@@ -1,17 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import api from './api.js';
 
 export const rolPermisoService = {
     // Obtener todas las asignaciones rol-permiso
     async getAll() {
         try {
             console.log('rolPermisoService: Obteniendo todas las asignaciones...');
-            const response = await fetch(`${API_BASE_URL}/rol-permisos`);
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const asignaciones = await response.json();
+            const response = await api.get('/rol-permisos');
+            const asignaciones = response.data;
             console.log('rolPermisoService: Asignaciones obtenidas:', asignaciones.length);
             return asignaciones;
         } catch (error) {
@@ -24,13 +19,8 @@ export const rolPermisoService = {
     async getPermisosByRol(idRol) {
         try {
             console.log('rolPermisoService: Obteniendo permisos del rol ID:', idRol);
-            const response = await fetch(`${API_BASE_URL}/rol-permisos/rol/${idRol}/permisos`);
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const permisos = await response.json();
+            const response = await api.get(`/rol-permisos/rol/${idRol}/permisos`);
+            const permisos = response.data;
             console.log('rolPermisoService: Permisos del rol obtenidos:', permisos.length);
             return permisos;
         } catch (error) {
@@ -43,13 +33,8 @@ export const rolPermisoService = {
     async getRolesWithPermisos() {
         try {
             console.log('rolPermisoService: Obteniendo roles con permisos...');
-            const response = await fetch(`${API_BASE_URL}/rol-permisos/roles-with-permisos`);
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const rolesConPermisos = await response.json();
+            const response = await api.get('/rol-permisos/roles-with-permisos');
+            const rolesConPermisos = response.data;
             console.log('rolPermisoService: Roles con permisos obtenidos:', rolesConPermisos.length);
             return rolesConPermisos;
         } catch (error) {
@@ -62,21 +47,10 @@ export const rolPermisoService = {
     async asignarPermisos(idRol, idsPermisos) {
         try {
             console.log('rolPermisoService: Asignando permisos al rol:', { idRol, idsPermisos });
-            const response = await fetch(`${API_BASE_URL}/rol-permisos/rol/${idRol}/asignar-permisos`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    permisos: idsPermisos
-                })
+            const response = await api.post(`/rol-permisos/rol/${idRol}/asignar-permisos`, {
+                permisos: idsPermisos
             });
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
-            const resultado = await response.json();
+            const resultado = response.data;
             console.log('rolPermisoService: Permisos asignados exitosamente:', resultado);
             return resultado;
         } catch (error) {
@@ -89,15 +63,7 @@ export const rolPermisoService = {
     async removerPermiso(idRol, idPermiso) {
         try {
             console.log('rolPermisoService: Removiendo permiso', idPermiso, 'del rol', idRol);
-            const response = await fetch(`${API_BASE_URL}/rol-permisos/rol/${idRol}/permiso/${idPermiso}`, {
-                method: 'DELETE',
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Error HTTP: ${response.status}`);
-            }
-
+            await api.delete(`/rol-permisos/rol/${idRol}/permiso/${idPermiso}`);
             console.log('rolPermisoService: Permiso removido exitosamente');
             return true;
         } catch (error) {
@@ -112,12 +78,12 @@ export const rolPermisoService = {
             console.log('rolPermisoService: Limpiando permisos del rol ID:', idRol);
             // Obtenemos los permisos actuales del rol primero
             const permisosActuales = await this.getPermisosByRol(idRol);
-
+            
             // Removemos cada permiso individualmente
             for (const permiso of permisosActuales) {
                 await this.removerPermiso(idRol, permiso.id_permiso);
             }
-
+            
             console.log('rolPermisoService: Permisos del rol limpiados exitosamente');
             return true;
         } catch (error) {
@@ -126,19 +92,19 @@ export const rolPermisoService = {
         }
     },
 
-    // Obtener estadísticas básicas (usando datos existentes)
+    // Obtener estadísticas básicas
     async getEstadisticas() {
         try {
             console.log('rolPermisoService: Calculando estadísticas...');
-            const rolesConPermisos = await this.getRolesConPermisos();
-
+            const rolesConPermisos = await this.getRolesWithPermisos();
+            
             const estadisticas = {
                 totalRoles: rolesConPermisos.length,
                 totalAsignaciones: rolesConPermisos.reduce((total, rol) => total + (rol.permisos?.length || 0), 0),
                 rolesConPermisos: rolesConPermisos.filter(rol => rol.permisos && rol.permisos.length > 0).length,
                 rolesSinPermisos: rolesConPermisos.filter(rol => !rol.permisos || rol.permisos.length === 0).length
             };
-
+            
             console.log('rolPermisoService: Estadísticas calculadas:', estadisticas);
             return estadisticas;
         } catch (error) {
@@ -153,7 +119,7 @@ export const rolPermisoService = {
             console.log('rolPermisoService: Verificando permiso', idPermiso, 'en rol', idRol);
             const permisos = await this.getPermisosByRol(idRol);
             const tienePermiso = permisos.some(permiso => permiso.id_permiso === idPermiso);
-
+            
             console.log('rolPermisoService: Verificación completada:', tienePermiso);
             return tienePermiso;
         } catch (error) {

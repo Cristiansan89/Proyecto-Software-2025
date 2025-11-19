@@ -1,34 +1,26 @@
 import axios from 'axios';
 
-// Función para detectar la URL base correcta (igual que en api.js)
+// Función para obtener la URL base de la API (FORZADO A LOCALHOST)
 const getApiBaseUrl = () => {
-    // Si estamos en desarrollo y tenemos VITE_API_URL definida
-    if (import.meta.env.VITE_API_URL) {
-        return import.meta.env.VITE_API_URL;
-    }
-
-    // Detectar automáticamente la URL base según el host actual
-    const currentHost = window.location.hostname;
-    const currentProtocol = window.location.protocol;
-
-    // Si estamos en localhost, usar localhost para el API
-    if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
-        return `${currentProtocol}//localhost:3000`;
-    }
-
-    // Si estamos en una IP de red local, usar la misma IP para el API
-    return `${currentProtocol}//${currentHost}:3000`;
+    // FORZAR SIEMPRE LOCALHOST CON PREFIJO /api
+    const forceLocalhost = 'http://localhost:3000/api';
+    console.log('🔐 Auth - FORZANDO localhost (sin detección):', forceLocalhost);
+    return forceLocalhost;
 };
 
-const API_URL = `${getApiBaseUrl()}/api`;
+const API_URL = getApiBaseUrl();
 
 // Crear instancia de axios
 const axiosInstance = axios.create({
     baseURL: API_URL,
-    timeout: 10000,
+    timeout: 15000, // FORZAR 15 segundos
 });
 
 console.log('🔐 Auth Service API URL:', API_URL);
+console.log('🔍 VITE_API_TIMEOUT raw:', import.meta.env.VITE_API_TIMEOUT);
+console.log('🔍 VITE_API_TIMEOUT converted:', Number(import.meta.env.VITE_API_TIMEOUT));
+console.log('⏱️ Auth Service Timeout:', axiosInstance.defaults.timeout + 'ms');
+console.log('🔗 Auth Service Base URL Final:', axiosInstance.defaults.baseURL);
 
 // Configurar axios para incluir el token en todas las peticiones
 axiosInstance.interceptors.request.use(
@@ -48,11 +40,20 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        // Manejar errores de timeout y conexión específicamente para auth
+        if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
+            console.error('⏱️ Timeout en autenticación:', error.message);
+            console.log('💡 El servidor de autenticación puede estar sobrecargado');
+        } else if (error.response?.status === 401) {
             // Token expirado o inválido
+            console.log('🔐 Token expirado o inválido, redirigiendo al login');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        } else if (error.response?.status >= 500) {
+            console.error('🔥 Error interno del servidor de autenticación:', error.response.data?.message);
         }
         return Promise.reject(error);
     }

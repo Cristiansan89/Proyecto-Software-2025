@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../services/api';
-import RecetaForm from '../../components/RecetaForm';
+import RecetaForm from '../../components/cocinera/RecetaForm';
 import '../../styles/CocineraRecetas.css';
 
 const CocineraRecetas = () => {
@@ -16,7 +16,7 @@ const CocineraRecetas = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(12);
     const [loading, setLoading] = useState(false);
-    const [filterEstado, setFilterEstado] = useState('Activo');
+    const [filterEstado, setFilterEstado] = useState('');
 
     useEffect(() => {
         loadRecetas();
@@ -27,7 +27,35 @@ const CocineraRecetas = () => {
         try {
             setLoading(true);
             const response = await API.get('/recetas');
-            setRecetas(response.data || []);
+            console.log('Recetas cargadas:', response.data);
+            console.log('Primera receta instrucciones:', response.data[0]?.instrucciones);
+            
+            // Cargar ingredientes para cada receta
+            const recetasConIngredientes = await Promise.all(
+                (response.data || []).map(async (receta) => {
+                    try {
+                        const ingredientesRes = await API.get(`/recetas/${receta.id_receta}/insumos`);
+                        console.log(`Ingredientes para receta ${receta.id_receta}:`, ingredientesRes.data);
+                        
+                        // La API devuelve una receta con propiedad 'insumos'
+                        const ingredientes = ingredientesRes.data?.insumos || [];
+                        
+                        return {
+                            ...receta,
+                            ingredientes: ingredientes
+                        };
+                    } catch (error) {
+                        console.error(`Error al cargar ingredientes para receta ${receta.id_receta}:`, error);
+                        return {
+                            ...receta,
+                            ingredientes: []
+                        };
+                    }
+                })
+            );
+            
+            console.log('Recetas con ingredientes procesadas:', recetasConIngredientes);
+            setRecetas(recetasConIngredientes);
         } catch (error) {
             console.error('Error al cargar recetas:', error);
             setRecetas([]);
@@ -54,8 +82,11 @@ const CocineraRecetas = () => {
                 return; // Ya están cargados
             }
 
-            const response = await API.get(`/itemsrecetas/receta/${recetaId}`);
-            const ingredientes = response.data || [];
+            const response = await API.get(`/recetas/${recetaId}/insumos`);
+            console.log(`Cargando ingredientes para receta ${recetaId}:`, response.data);
+            
+            // La API devuelve una receta con propiedad 'insumos'
+            const ingredientes = response.data?.insumos || [];
 
             // Actualizar la receta con sus ingredientes
             setRecetas(prev => prev.map(receta =>
@@ -202,7 +233,7 @@ const CocineraRecetas = () => {
     }
 
     return (
-        <div className="page-content">
+        <div>
             {/* Header */}
             <div className="page-header">
                 <div className="header-left">
@@ -226,40 +257,45 @@ const CocineraRecetas = () => {
             </div>
 
             {/* Filtros y búsqueda */}
-            <div className="search-filters-recetas">
-                <div className="search-bar-recetas">
-                    <input
-                        type="text"
-                        className="search-input"
-                        placeholder="Buscar por nombre o instrucciones..."
-                        value={searchQuery}
-                        onChange={handleSearch}
-                    />
-                    <div className="filter-actions">
-                        <select
-                            className="filter-select"
-                            value={filterEstado}
-                            onChange={handleFilterEstado}
-                        >
-                            <option value="">Todos los estados</option>
-                            <option value="Activo">Activo</option>
-                            <option value="Inactivo">Inactivo</option>
-                        </select>
-                        {(searchQuery || filterEstado) && (
-                            <button
-                                className="btn btn-outline-secondary"
-                                onClick={clearFilters}
-                                title="Limpiar filtros"
+            <div className="card mb-4">
+                <div className="card-body">
+                    <div className="row align-items-center">
+                        <div className="col-md-8">
+                            <div className="search-bar">
+                                <input
+                                    type="text"
+                                    className="search-input"
+                                    placeholder="Buscar por nombre o instrucciones..."
+                                    value={searchQuery}
+                                    onChange={handleSearch}
+                                />
+                            </div>
+                        </div>
+                        <div className="col-md-3">
+                            <select
+                                className="form-select"
+                                value={filterEstado}
+                                onChange={handleFilterEstado}
                             >
-                                <i className="fas fa-times me-2"></i>
-                                Limpiar
-                            </button>
-                        )}
-
+                                <option value="">Todos los estados</option>
+                                <option value="Activo">Activo</option>
+                                <option value="Inactivo">Inactivo</option>
+                            </select>
+                        </div>
+                        <div className="col-md-1">
+                            {(searchQuery || filterEstado) && (
+                                <button
+                                    className="btn btn-outline-secondary w-100"
+                                    onClick={clearFilters}
+                                    title="Limpiar filtros"
+                                >
+                                    <i className="fas fa-times"></i>
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-
 
             {/* Lista de recetas en cards de acordeón */}
             {
@@ -332,6 +368,12 @@ const CocineraRecetas = () => {
                                                     >
                                                         <div className="accordion-body">
                                                             <div className="small">
+                                                                {(() => {
+                                                                    console.log('Renderizando instrucciones para receta:', receta.nombreReceta);
+                                                                    console.log('Instrucciones:', receta.instrucciones);
+                                                                    console.log('Tipo de instrucciones:', typeof receta.instrucciones);
+                                                                    return null;
+                                                                })()}
                                                                 {receta.instrucciones?.split('.').filter(step => step.trim()).map((step, stepIndex) => (
                                                                     <div key={stepIndex} className="mb-2">
                                                                         <strong>{stepIndex + 1}. </strong>

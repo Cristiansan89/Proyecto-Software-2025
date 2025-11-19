@@ -1,21 +1,89 @@
-import { Router } from 'express'
-import { PlanificacionMenuController } from '../controllers/planificacionmenus.js'
+import { Router } from "express";
+import { PlanificacionMenuController } from "../controllers/planificacionmenus.js";
+import { authRequired } from "../middlewares/auth.js";
 
 export const createPlanificacionMenuRouter = ({ planificacionMenuModel }) => {
-    const planificacionMenusRouter = Router()
-    const planificacionMenuController = new PlanificacionMenuController({ planificacionMenuModel })
+  const planificacionMenusRouter = Router();
+  const planificacionMenuController = new PlanificacionMenuController({
+    planificacionMenuModel,
+  });
 
-    planificacionMenusRouter.get('/', planificacionMenuController.getAll)
-    planificacionMenusRouter.get('/:id', planificacionMenuController.getById)
-    planificacionMenusRouter.post('/', planificacionMenuController.create)
-    planificacionMenusRouter.delete('/:id', planificacionMenuController.delete)
-    planificacionMenusRouter.patch('/:id', planificacionMenuController.update)
+  // Endpoints especializados - ANTES de las rutas con parámetros
+  planificacionMenusRouter.get(
+    "/fecha/:fecha",
+    planificacionMenuController.getByFecha
+  );
+  planificacionMenusRouter.get(
+    "/servicio/:id_servicio",
+    planificacionMenuController.getByServicio
+  );
+  planificacionMenusRouter.get(
+    "/rango-fechas/reporte",
+    planificacionMenuController.getByRangoFechas
+  );
+  planificacionMenusRouter.get(
+    "/menu-del-dia/:fecha/:id_servicio",
+    planificacionMenuController.getMenuDelDia
+  );
+  planificacionMenusRouter.get(
+    "/semana",
+    planificacionMenuController.getMenusSemana
+  );
+  planificacionMenusRouter.post(
+    "/jornadas",
+    authRequired,
+    planificacionMenuController.crearJornada
+  );
+  planificacionMenusRouter.post(
+    "/asignar-receta",
+    authRequired,
+    planificacionMenuController.asignarReceta
+  );
+  planificacionMenusRouter.delete(
+    "/eliminar-receta",
+    authRequired,
+    planificacionMenuController.eliminarReceta
+  );
+  planificacionMenusRouter.get(
+    "/jornadas/:id_jornada/recetas",
+    planificacionMenuController.getRecetasPorJornada
+  );
+  planificacionMenusRouter.get(
+    "/usuario/:id_usuario",
+    planificacionMenuController.getByUsuario
+  );
+  planificacionMenusRouter.get(
+    "/estado/:estado",
+    planificacionMenuController.getByEstado
+  );
 
-    // Endpoints especializados
-    planificacionMenusRouter.get('/fecha/:fecha', planificacionMenuController.getByFecha)
-    planificacionMenusRouter.get('/servicio/:id_servicio', planificacionMenuController.getByServicio)
-    planificacionMenusRouter.get('/rango-fechas/reporte', planificacionMenuController.getByRangoFechas)
-    planificacionMenusRouter.get('/menu-del-dia/:fecha/:id_servicio', planificacionMenuController.getMenuDelDia)
+  // Rutas principales CRUD
+  planificacionMenusRouter.get("/", planificacionMenuController.getAll);
+  planificacionMenusRouter.get("/:id", planificacionMenuController.getById);
+  planificacionMenusRouter.post(
+    "/",
+    authRequired,
+    planificacionMenuController.create
+  );
+  planificacionMenusRouter.delete(
+    "/:id",
+    authRequired,
+    planificacionMenuController.delete
+  );
+  planificacionMenusRouter.patch(
+    "/:id",
+    authRequired,
+    planificacionMenuController.update
+  );
+  planificacionMenusRouter.patch(
+    "/:id/finalizar",
+    authRequired,
+    planificacionMenuController.finalizar
+  );
+  planificacionMenusRouter.get(
+    "/:id/completa",
+    planificacionMenuController.getPlanificacionCompleta
+  );
 
-    return planificacionMenusRouter
-}
+  return planificacionMenusRouter;
+};

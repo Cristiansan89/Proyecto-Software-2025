@@ -16,6 +16,9 @@ export const createAsistenciaRouter = ({ asistenciaModel }) => {
     asistenciasRouter.patch('/:id', asistenciaController.update)
     asistenciasRouter.delete('/:id', asistenciaController.delete)
 
+    // Registro de asistencias desde panel docente
+    asistenciasRouter.post('/registro-docente', asistenciaController.registrarAsistenciasDocente)
+
     // Generar token para docente
     asistenciasRouter.post('/generar-token', asistenciaController.generateTokenForDocente)
 

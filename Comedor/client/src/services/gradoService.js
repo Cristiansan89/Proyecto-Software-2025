@@ -1,4 +1,4 @@
-import API from './api.js'
+import api from './api.js'
 
 const GRADOS_ENDPOINT = '/grados'
 
@@ -7,7 +7,7 @@ export const gradoService = {
     getAll: async () => {
         console.log('GradoService: Haciendo petición a /grados');
         try {
-            const response = await API.get(GRADOS_ENDPOINT)
+            const response = await api.get(GRADOS_ENDPOINT)
             console.log('GradoService: Respuesta recibida:', response.data);
             return response.data
         } catch (error) {
@@ -19,7 +19,7 @@ export const gradoService = {
     // Obtener grado por ID
     getById: async (id) => {
         try {
-            const response = await API.get(`${GRADOS_ENDPOINT}/${id}`)
+            const response = await api.get(`${GRADOS_ENDPOINT}/${id}`)
             return response.data
         } catch (error) {
             console.error(`Error al obtener grado ${id}:`, error)
@@ -30,7 +30,7 @@ export const gradoService = {
     // Obtener grados activos
     getActivos: async () => {
         try {
-            const response = await API.get(`${GRADOS_ENDPOINT}/activos/list`)
+            const response = await api.get(`${GRADOS_ENDPOINT}/activos/list`)
             return response.data
         } catch (error) {
             console.error('Error al obtener grados activos:', error)
@@ -41,7 +41,7 @@ export const gradoService = {
     // Buscar grados por nombre
     searchByNombre: async (nombre) => {
         try {
-            const response = await API.get(`${GRADOS_ENDPOINT}/search/by-nombre`, {
+            const response = await api.get(`${GRADOS_ENDPOINT}/search/by-nombre`, {
                 params: { nombre }
             })
             return response.data
@@ -54,7 +54,7 @@ export const gradoService = {
     // Crear nuevo grado
     create: async (gradoData) => {
         try {
-            const response = await API.post(GRADOS_ENDPOINT, gradoData)
+            const response = await api.post(GRADOS_ENDPOINT, gradoData)
             return response.data
         } catch (error) {
             console.error('Error al crear grado:', error)
@@ -65,7 +65,7 @@ export const gradoService = {
     // Actualizar grado
     update: async (id, gradoData) => {
         try {
-            const response = await API.patch(`${GRADOS_ENDPOINT}/${id}`, gradoData)
+            const response = await api.patch(`${GRADOS_ENDPOINT}/${id}`, gradoData)
             return response.data
         } catch (error) {
             console.error(`Error al actualizar grado ${id}:`, error)
@@ -77,7 +77,7 @@ export const gradoService = {
     delete: async (id) => {
         console.log('GradoService: Eliminando grado con ID:', id);
         try {
-            const response = await API.delete(`${GRADOS_ENDPOINT}/${id}`)
+            const response = await api.delete(`${GRADOS_ENDPOINT}/${id}`)
             console.log('GradoService: Respuesta de eliminación:', response.data);
             return response.data
         } catch (error) {
@@ -90,7 +90,7 @@ export const gradoService = {
     // Cambiar estado del grado
     cambiarEstado: async (id, estado) => {
         try {
-            const response = await API.patch(`${GRADOS_ENDPOINT}/${id}/estado`, { estado })
+            const response = await api.patch(`${GRADOS_ENDPOINT}/${id}/estado`, { estado })
             return response.data
         } catch (error) {
             console.error(`Error al cambiar estado del grado ${id}:`, error)
