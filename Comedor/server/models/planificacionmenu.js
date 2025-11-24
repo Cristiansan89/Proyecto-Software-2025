@@ -683,4 +683,139 @@ export class PlanificacionMenuModel {
       );
     }
   }
+
+  // Método para calcular comensales automáticamente según matrícula por grado, turno y servicio
+  static async calcularComensalesPorTurnoYServicio({ id_turno, id_servicio }) {
+    try {
+      // Validar que los parámetros requeridos estén presentes
+      if (!id_turno || !id_servicio) {
+        throw new Error("id_turno e id_servicio son requeridos");
+      }
+
+      // Verificar que el turno y servicio estén asociados
+      const [servicioTurno] = await connection.query(
+        `SELECT st.id_turno, st.id_servicio 
+         FROM ServicioTurno st 
+         WHERE st.id_turno = ? AND st.id_servicio = ?`,
+        [id_turno, id_servicio]
+      );
+
+      if (servicioTurno.length === 0) {
+        throw new Error(
+          "El servicio no está disponible para el turno especificado"
+        );
+      }
+
+      // Obtener todos los grados del turno especificado
+      const [grados] = await connection.query(
+        `SELECT g.id_grado, g.nombreGrado
+         FROM Grados g 
+         WHERE g.id_turno = ? AND g.estado = 'Activo'`,
+        [id_turno]
+      );
+
+      let totalComensales = 0;
+      const detalleComensales = [];
+
+      // Para cada grado, contar los estudiantes matriculados
+      for (const grado of grados) {
+        const [estudiantes] = await connection.query(
+          `SELECT COUNT(*) as cantidad
+           FROM AlumnoGrado ag
+           WHERE ag.nombreGrado = ?`,
+          [grado.nombreGrado]
+        );
+
+        const cantidadEstudiantes = estudiantes[0].cantidad;
+        totalComensales += cantidadEstudiantes;
+
+        detalleComensales.push({
+          grado: grado.nombreGrado,
+          cantidadEstudiantes: cantidadEstudiantes,
+        });
+      }
+
+      return {
+        id_turno,
+        id_servicio,
+        totalComensales,
+        detalleComensales,
+      };
+    } catch (error) {
+      console.error("Error al calcular comensales:", error);
+      throw new Error("Error al calcular comensales: " + error.message);
+    }
+  }
+
+  // Método para obtener todos los comensales por servicio y fecha
+  static async calcularComensalesPorServicioYFecha({ fecha }) {
+    try {
+      if (!fecha) {
+        throw new Error("La fecha es requerida");
+      }
+
+      // Obtener todos los servicios activos
+      const [servicios] = await connection.query(
+        `SELECT s.id_servicio, s.nombre 
+         FROM Servicios s 
+         WHERE s.estado = 'Activo'`
+      );
+
+      const comensalesPorServicio = [];
+
+      for (const servicio of servicios) {
+        // Obtener turnos asociados al servicio
+        const [turnos] = await connection.query(
+          `SELECT DISTINCT t.id_turno, t.nombre as nombreTurno
+           FROM Turnos t
+           JOIN ServicioTurno st ON t.id_turno = st.id_turno
+           WHERE st.id_servicio = ? AND t.estado = 'Activo'`,
+          [servicio.id_servicio]
+        );
+
+        let totalServicio = 0;
+        const detalleTurnos = [];
+
+        for (const turno of turnos) {
+          const comensales = await this.calcularComensalesPorTurnoYServicio({
+            id_turno: turno.id_turno,
+            id_servicio: servicio.id_servicio,
+          });
+
+          totalServicio += comensales.totalComensales;
+          detalleTurnos.push({
+            turno: turno.nombreTurno,
+            comensales: comensales.totalComensales,
+            grados: comensales.detalleComensales,
+          });
+        }
+
+        comensalesPorServicio.push({
+          id_servicio: servicio.id_servicio,
+          nombreServicio: servicio.nombre,
+          totalComensales: totalServicio,
+          turnos: detalleTurnos,
+        });
+      }
+
+      return {
+        fecha,
+        servicios: comensalesPorServicio,
+        resumen: {
+          totalDia: comensalesPorServicio.reduce(
+            (sum, s) => sum + s.totalComensales,
+            0
+          ),
+        },
+      };
+    } catch (error) {
+      console.error(
+        "Error al calcular comensales por servicio y fecha:",
+        error
+      );
+      throw new Error(
+        "Error al calcular comensales por servicio y fecha: " + error.message
+      );
+    }
+  }
 }

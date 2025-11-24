@@ -1,34 +1,40 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
-import Login from './pages/auth/Login'
-import AdminDashboard from './pages/admins/Dashboard'
-import ListaGrados from './pages/admins/ListaGrados'
-import GestionRolesPermisos from './pages/admins/GestionRolesPermisos'
-import ListaInsumos from './pages/admins/ListaInsumos'
-import ListaProveedores from './pages/admins/ListaProveedores'
-import Configuracion from './pages/admins/Configuracion'
-import Persona from './pages/admins/Personas'
-import PersonaGrado from './pages/admins/PersonaGrado'
-import RegistroAsistenciasMovil from './pages/movil/RegistroAsistenciasMovil.jsx';
-import TestAsistencias from './pages/movil/TestAsistencias.jsx';
-import GestionAsistencias from './pages/docente/GestionAsistencias'
-import DocenteDashboard from './pages/docente/DocenteDashboard'
-import DocenteAsistencias from './pages/docente/DocenteAsistencias'
-import RegistroAsistenciasDocente from './pages/docente/RegistroAsistenciasDocente'
-import MisAlumnos from './pages/docente/MisAlumnos'
-import Horarios from './pages/docente/Horarios'
-import AdminLayout from './layouts/AdminLayout'
-import DocenteLayout from './layouts/DocenteLayout'
-import CocineraLayout from './layouts/CocineraLayout'
-import CocineraDashboard from './pages/cocinera/CocineraDashboard'
-import CocineraGestionAsistencias from './pages/cocinera/CocineraGestionAsistencias'
-import TestPage from './pages/TestPage'
-import CocineraMenu from './pages/cocinera/CocineraMenu'
-import CocineraInventario from './pages/cocinera/CocineraInventario'
-import CocineraReportes from './pages/cocinera/CocineraReportes'
-import CocineraRecetas from './pages/cocinera/CocineraRecetas'
-import ProtectedRoute from './components/ProtectedRoute'
-import './styles/App.css'
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import Login from "./pages/auth/Login";
+import AdminDashboard from "./pages/admins/Dashboard";
+import ListaGrados from "./pages/admins/ListaGrados";
+import GestionRolesPermisos from "./pages/admins/GestionRolesPermisos";
+import ListaInsumos from "./pages/admins/ListaInsumos";
+import ListaProveedores from "./pages/admins/ListaProveedores";
+import Configuracion from "./pages/admins/Configuracion";
+import Persona from "./pages/admins/Personas";
+import PersonaGrado from "./pages/admins/PersonaGrado";
+import RegistroAsistenciasMovil from "./pages/movil/RegistroAsistenciasMovil.jsx";
+import TestAsistencias from "./pages/movil/TestAsistencias.jsx";
+import GestionAsistencias from "./pages/docente/GestionAsistencias";
+import DocenteDashboard from "./pages/docente/DocenteDashboard";
+import DocenteAsistencias from "./pages/docente/DocenteAsistencias";
+import RegistroAsistenciasDocente from "./pages/docente/RegistroAsistenciasDocente";
+import MisAlumnos from "./pages/docente/MisAlumnos";
+import Horarios from "./pages/docente/Horarios";
+import AdminLayout from "./layouts/AdminLayout";
+import DocenteLayout from "./layouts/DocenteLayout";
+import CocineraLayout from "./layouts/CocineraLayout";
+import CocineraDashboard from "./pages/cocinera/CocineraDashboard";
+import CocineraGestionAsistencias from "./pages/cocinera/CocineraGestionAsistencias";
+import TestPage from "./pages/TestPage";
+import CocineraMenu from "./pages/cocinera/CocineraMenu";
+import CocineraInventario from "./pages/cocinera/CocineraInventario";
+import CocineraReportes from "./pages/cocinera/CocineraReportes";
+import CocineraRecetas from "./pages/cocinera/CocineraRecetas";
+import PedidoInsumo from "./pages/cocinera/PedidoInsumo";
+import ProtectedRoute from "./components/ProtectedRoute";
+import "./styles/App.css";
 
 // Componente para redireccionar según el rol del usuario
 const DashboardRedirect = () => {
@@ -40,11 +46,11 @@ const DashboardRedirect = () => {
 
   // Redireccionar según el rol del usuario
   const userRole = user.rol || user.nombre_rol;
-  if (userRole === 'Administrador') {
+  if (userRole === "Administrador") {
     return <Navigate to="/admin/dashboard" replace />;
-  } else if (userRole === 'Docente') {
+  } else if (userRole === "Docente") {
     return <Navigate to="/docente/dashboard" replace />;
-  } else if (userRole === 'Cocinera') {
+  } else if (userRole === "Cocinera") {
     return <Navigate to="/cocinera/dashboard" replace />;
   } else {
     // Para otros roles, redirigir a admin por defecto
@@ -65,16 +71,25 @@ function App() {
             <Route path="/login" element={<Login />} />
 
             {/* Ruta pública para registro de asistencias móvil */}
-            <Route path="/asistencias/registro/:token" element={<RegistroAsistenciasMovil />} />
-            
+            <Route
+              path="/asistencias/registro/:token"
+              element={<RegistroAsistenciasMovil />}
+            />
+
             {/* Ruta de prueba para debuggear asistencias */}
-            <Route path="/test/asistencias/:token" element={<TestAsistencias />} />
+            <Route
+              path="/test/asistencias/:token"
+              element={<TestAsistencias />}
+            />
 
             {/* Rutas protegidas del panel administrativo */}
             <Route
               path="/admin/*"
               element={
-                <ProtectedRoute requireAuth={true} allowedRoles={['Administrador']}>
+                <ProtectedRoute
+                  requireAuth={true}
+                  allowedRoles={["Administrador"]}
+                >
                   <AdminLayout>
                     <Routes>
                       <Route path="/" element={<AdminDashboard />} />
@@ -83,10 +98,19 @@ function App() {
                       <Route path="/grados" element={<ListaGrados />} />
                       <Route path="/roles" element={<GestionRolesPermisos />} />
                       <Route path="/insumos" element={<ListaInsumos />} />
-                      <Route path="/proveedores" element={<ListaProveedores />} />
-                      <Route path="/personasgrados" element={<PersonaGrado />} />
+                      <Route
+                        path="/proveedores"
+                        element={<ListaProveedores />}
+                      />
+                      <Route
+                        path="/personasgrados"
+                        element={<PersonaGrado />}
+                      />
 
-                      <Route path="/configuracion" element={<Configuracion />} />
+                      <Route
+                        path="/configuracion"
+                        element={<Configuracion />}
+                      />
                     </Routes>
                   </AdminLayout>
                 </ProtectedRoute>
@@ -97,14 +121,23 @@ function App() {
             <Route
               path="/docente/*"
               element={
-                <ProtectedRoute requireAuth={true} allowedRoles={['Docente']}>
+                <ProtectedRoute requireAuth={true} allowedRoles={["Docente"]}>
                   <DocenteLayout>
                     <Routes>
                       <Route path="/" element={<DocenteDashboard />} />
                       <Route path="/dashboard" element={<DocenteDashboard />} />
-                      <Route path="/asistencias" element={<DocenteAsistencias />} />
-                      <Route path="/registro-asistencias" element={<RegistroAsistenciasDocente />} />
-                      <Route path="/gestionasistencias" element={<GestionAsistencias />} />
+                      <Route
+                        path="/asistencias"
+                        element={<DocenteAsistencias />}
+                      />
+                      <Route
+                        path="/registro-asistencias"
+                        element={<RegistroAsistenciasDocente />}
+                      />
+                      <Route
+                        path="/gestionasistencias"
+                        element={<GestionAsistencias />}
+                      />
                       <Route path="/mis-alumnos" element={<MisAlumnos />} />
                       <Route path="/horarios" element={<Horarios />} />
                     </Routes>
@@ -117,16 +150,25 @@ function App() {
             <Route
               path="/cocinera/*"
               element={
-                <ProtectedRoute requireAuth={true} allowedRoles={['Cocinera']}>
+                <ProtectedRoute requireAuth={true} allowedRoles={["Cocinera"]}>
                   <CocineraLayout>
                     <Routes>
                       <Route path="/" element={<CocineraDashboard />} />
-                      <Route path="/dashboard" element={<CocineraDashboard />} />
-                      <Route path="/gestion-asistencias" element={<CocineraGestionAsistencias />} />
+                      <Route
+                        path="/dashboard"
+                        element={<CocineraDashboard />}
+                      />
+                      <Route
+                        path="/gestion-asistencias"
+                        element={<CocineraGestionAsistencias />}
+                      />
                       <Route path="/recetas" element={<CocineraRecetas />} />
                       <Route path="/menu" element={<CocineraMenu />} />
-                      <Route path="/inventario" element={<CocineraInventario />} />
-                      <Route path="/reportes" element={<CocineraReportes />} />
+                      <Route
+                        path="/inventario"
+                        element={<CocineraInventario />}
+                      />
+                      <Route path="/pedidos" element={<PedidoInsumo />} />
                     </Routes>
                   </CocineraLayout>
                 </ProtectedRoute>
@@ -159,7 +201,7 @@ function App() {
         </div>
       </AuthProvider>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

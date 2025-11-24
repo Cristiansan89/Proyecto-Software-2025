@@ -236,7 +236,6 @@
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
@@ -393,21 +392,21 @@
   .inventory-summary {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .filters-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .inventory-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .summary-card {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .item-header {
     flex-direction: column;
     gap: 0.5rem;

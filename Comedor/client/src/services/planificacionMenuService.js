@@ -222,6 +222,48 @@ const planificacionMenuService = {
       throw error;
     }
   },
+
+  // Calcular comensales automáticamente por turno y servicio
+  calcularComensalesPorTurnoYServicio: async (idTurno, idServicio) => {
+    try {
+      const response = await api.get(
+        `/planificacion-menus/comensales/turno-servicio?id_turno=${idTurno}&id_servicio=${idServicio}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error al calcular comensales por turno y servicio:",
+        error
+      );
+      throw error;
+    }
+  },
+
+  // Calcular comensales automáticamente por fecha
+  calcularComensalesPorFecha: async (fecha) => {
+    try {
+      const response = await api.get(
+        `/planificacion-menus/comensales/fecha?fecha=${fecha}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error al calcular comensales por fecha:", error);
+      throw error;
+    }
+  },
+
+  // Obtener resumen de comensales para un rango de fechas
+  obtenerResumenComensales: async (fechaInicio, fechaFin) => {
+    try {
+      const response = await api.get(
+        `/planificacion-menus/comensales/resumen?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener resumen de comensales:", error);
+      throw error;
+    }
+  },
 };
 
 export default planificacionMenuService;

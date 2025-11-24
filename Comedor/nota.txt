@@ -1,0 +1,11 @@
+- Pedido manual, donde se realiza un pedido de insumos específico en cualquier momento que se necesite.
+- Pedido generado automaticamente (Proceso automatizado) que se debe generar los día viernes después de 
+la merienda en una hora predeterminada. Donde el sistema envía un aviso a la cocinera por telegram que debe generar pedido (clic en un botón).
+El aviso son tres veces en un tiempo de 10 minutos o hasta haber generado el pedido.
+- Pedido generado automaticamente debe tener en cuenta la planificación de los menús de la semana siguiente y lo que se tiene en stock actualmentes.
+Es decir si en la planificación semanal se tiene x cantidad de comensales para el día lunes que se come fideo y se debería tener en cuenta que en stock actual se tiene
+n cantidad de insumos disponible, entocnes debería tenerse en cuenta la cantidad de insumo que se necesita pedir a los proveedores.
+- Los pedido generado debera ser aprobado luego por la cocinera es decir que se pone de estado pendiente a aprobado y se le envía los proveedores la lista de insumo y cantidad necesaria.
+- Se puede clasificar en varias parte los pedido porque se tendrá pedido de fideo a un proveedor, la carne a otros proveedor. Y así con cada insumo que se necesita se tiene su proveedor.
+- También pedir según la clasificación que se tiene el insumo por proveedor. Es decir un proveedor provee arroz de mala calificación y hay otro proveedor que tiene insumo de buena calificación se le pide a este.
+- Los pedido se envía por mail a los proveedores.

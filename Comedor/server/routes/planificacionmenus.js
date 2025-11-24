@@ -85,5 +85,19 @@ export const createPlanificacionMenuRouter = ({ planificacionMenuModel }) => {
     planificacionMenuController.getPlanificacionCompleta
   );
 
+  // Rutas para cálculo automático de comensales
+  planificacionMenusRouter.get(
+    "/comensales/turno-servicio",
+    planificacionMenuController.calcularComensalesPorTurnoYServicio
+  );
+  planificacionMenusRouter.get(
+    "/comensales/fecha",
+    planificacionMenuController.calcularComensalesPorServicioYFecha
+  );
+  planificacionMenusRouter.get(
+    "/comensales/resumen",
+    planificacionMenuController.obtenerResumenComensales
+  );
+
   return planificacionMenusRouter;
 };

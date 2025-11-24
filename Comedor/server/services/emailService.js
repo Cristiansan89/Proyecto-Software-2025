@@ -1,26 +1,26 @@
-import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
 
 dotenv.config();
 
 // Configuración para Mailtrap
 const createTransporter = () => {
-    return nodemailer.createTransport({
-        host: process.env.MAIL_HOST || 'sandbox.smtp.mailtrap.io',
-        port: process.env.MAIL_PORT || 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-            user: process.env.MAIL_USERNAME,
-            pass: process.env.MAIL_PASSWORD
-        }
-    });
+  return nodemailer.createTransport({
+    host: process.env.MAIL_HOST || "sandbox.smtp.mailtrap.io",
+    port: process.env.MAIL_PORT || 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: process.env.MAIL_USERNAME,
+      pass: process.env.MAIL_PASSWORD,
+    },
+  });
 };
 
 // Plantillas de correo
 const emailTemplates = {
-    welcomeUser: (userData) => ({
-        subject: '¡Bienvenido al Sistema de Comedor Escolar!',
-        html: `
+  welcomeUser: (userData) => ({
+    subject: "¡Bienvenido al Sistema de Comedor Escolar!",
+    html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px;">
                 <div style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                     <div style="text-align: center; margin-bottom: 30px;">
@@ -38,15 +38,21 @@ const emailTemplates = {
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                                 <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Nombre:</td>
-                                <td style="padding: 8px 0; color: #2c3e50; font-weight: 500;">${userData.nombre} ${userData.apellido}</td>
+                                <td style="padding: 8px 0; color: #2c3e50; font-weight: 500;">${
+                                  userData.nombre
+                                } ${userData.apellido}</td>
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Usuario:</td>
-                                <td style="padding: 8px 0; color: #667eea; font-weight: 600; font-family: monospace;">${userData.username}</td>
+                                <td style="padding: 8px 0; color: #667eea; font-weight: 600; font-family: monospace;">${
+                                  userData.username
+                                }</td>
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Contraseña temporal:</td>
-                                <td style="padding: 8px 0; color: #dc3545; font-weight: 600; font-family: monospace; background: #fff3cd; padding: 5px 8px; border-radius: 4px; display: inline-block;">${userData.temporalPassword}</td>
+                                <td style="padding: 8px 0; color: #dc3545; font-weight: 600; font-family: monospace; background: #fff3cd; padding: 5px 8px; border-radius: 4px; display: inline-block;">${
+                                  userData.temporalPassword
+                                }</td>
                             </tr>
                         </table>
                     </div>
@@ -62,7 +68,9 @@ const emailTemplates = {
                     </div>
                     
                     <div style="text-align: center; margin-bottom: 25px;">
-                        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}" 
+                        <a href="${
+                          process.env.FRONTEND_URL || "http://localhost:5173"
+                        }" 
                            style="background: linear-gradient(135deg, #274fffff 0%, #4c0097ff 100%); 
                                   color: white; 
                                   text-decoration: none; 
@@ -85,12 +93,12 @@ const emailTemplates = {
                     </div>
                 </div>
             </div>
-        `
-    }),
+        `,
+  }),
 
-    resetPassword: (userData) => ({
-        subject: 'Recuperación de Contraseña - Sistema Comedor Escolar',
-        html: `
+  resetPassword: (userData) => ({
+    subject: "Recuperación de Contraseña - Sistema Comedor Escolar",
+    html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 15px;">
                 <div style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                     <div style="text-align: center; margin-bottom: 30px;">
@@ -108,15 +116,21 @@ const emailTemplates = {
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                                 <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Nombre:</td>
-                                <td style="padding: 8px 0; color: #2c3e50; font-weight: 500;">${userData.nombre} ${userData.apellido}</td>
+                                <td style="padding: 8px 0; color: #2c3e50; font-weight: 500;">${
+                                  userData.nombre
+                                } ${userData.apellido}</td>
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Usuario:</td>
-                                <td style="padding: 8px 0; color: #f093fb; font-weight: 600; font-family: monospace;">${userData.username}</td>
+                                <td style="padding: 8px 0; color: #f093fb; font-weight: 600; font-family: monospace;">${
+                                  userData.username
+                                }</td>
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Nueva contraseña temporal:</td>
-                                <td style="padding: 8px 0; color: #dc3545; font-weight: 600; font-family: monospace; background: #fff3cd; padding: 5px 8px; border-radius: 4px; display: inline-block;">${userData.temporalPassword}</td>
+                                <td style="padding: 8px 0; color: #dc3545; font-weight: 600; font-family: monospace; background: #fff3cd; padding: 5px 8px; border-radius: 4px; display: inline-block;">${
+                                  userData.temporalPassword
+                                }</td>
                             </tr>
                         </table>
                     </div>
@@ -132,7 +146,9 @@ const emailTemplates = {
                     </div>
                     
                     <div style="text-align: center; margin-bottom: 25px;">
-                        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}" 
+                        <a href="${
+                          process.env.FRONTEND_URL || "http://localhost:5173"
+                        }" 
                            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
                                   color: white; 
                                   text-decoration: none; 
@@ -155,84 +171,92 @@ const emailTemplates = {
                     </div>
                 </div>
             </div>
-        `
-    })
+        `,
+  }),
 };
 
 // Función para enviar correo de bienvenida
 export const sendWelcomeEmail = async (userData, temporalPassword) => {
-    try {
-        const emailAddress = userData.mail || userData.email;
+  try {
+    const emailAddress = userData.mail || userData.email;
 
-        if (!emailAddress) {
-            throw new Error('No se encontró dirección de email válida');
-        }
-
-        const transporter = createTransporter();
-        const emailData = emailTemplates.welcomeUser({
-            ...userData,
-            temporalPassword
-        });
-
-        const mailOptions = {
-            from: `"Sistema Comedor Escolar" <${process.env.MAIL_FROM || 'noreply@comedor.edu'}>`,
-            to: emailAddress,
-            subject: emailData.subject,
-            html: emailData.html
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Correo de bienvenida enviado:', info.messageId);
-        return { success: true, messageId: info.messageId };
-    } catch (error) {
-        console.error('Error al enviar correo de bienvenida:', error);
-        return { success: false, error: error.message };
+    if (!emailAddress) {
+      throw new Error(
+        `No se encontró dirección de email válida para el usuario: ${
+          userData.nombreUsuario || "Desconocido"
+        }`
+      );
     }
+
+    const transporter = createTransporter();
+    const emailData = emailTemplates.welcomeUser({
+      ...userData,
+      temporalPassword,
+    });
+
+    const mailOptions = {
+      from: `"Sistema Comedor Escolar" <${
+        process.env.MAIL_FROM || "noreply@comedor.edu"
+      }>`,
+      to: emailAddress,
+      subject: emailData.subject,
+      html: emailData.html,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Correo de bienvenida enviado:", info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error("Error al enviar correo de bienvenida:", error);
+    return { success: false, error: error.message };
+  }
 };
 
 // Función para enviar correo de recuperación
 export const sendPasswordResetEmail = async (userData, temporalPassword) => {
-    try {
-        const emailAddress = userData.mail || userData.email;
+  try {
+    const emailAddress = userData.mail || userData.email;
 
-        if (!emailAddress) {
-            throw new Error('No se encontró dirección de email válida');
-        }
-
-        const transporter = createTransporter();
-        const emailData = emailTemplates.resetPassword({
-            ...userData,
-            temporalPassword
-        });
-
-        const mailOptions = {
-            from: `"Sistema Comedor Escolar" <${process.env.MAIL_FROM || 'noreply@comedor.edu'}>`,
-            to: emailAddress,
-            subject: emailData.subject,
-            html: emailData.html
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Correo de recuperación enviado:', info.messageId);
-        return { success: true, messageId: info.messageId };
-    } catch (error) {
-        console.error('Error al enviar correo de recuperación:', error);
-        return { success: false, error: error.message };
+    if (!emailAddress) {
+      throw new Error("No se encontró dirección de email válida");
     }
+
+    const transporter = createTransporter();
+    const emailData = emailTemplates.resetPassword({
+      ...userData,
+      temporalPassword,
+    });
+
+    const mailOptions = {
+      from: `"Sistema Comedor Escolar" <${
+        process.env.MAIL_FROM || "noreply@comedor.edu"
+      }>`,
+      to: emailAddress,
+      subject: emailData.subject,
+      html: emailData.html,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Correo de recuperación enviado:", info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error("Error al enviar correo de recuperación:", error);
+    return { success: false, error: error.message };
+  }
 };
 
 // Función para generar contraseña temporal
 export const generateTemporalPassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 };
 
 export default {
-    sendWelcomeEmail,
-    sendPasswordResetEmail,
-    generateTemporalPassword
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  generateTemporalPassword,
 };

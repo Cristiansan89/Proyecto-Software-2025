@@ -143,13 +143,15 @@ const PlanificacionSemanal = () => {
           <i className="fas fa-calendar-week me-2"></i>
           Planificaciones Semanales
         </h4>
-        <button
-          className="btn btn-primary"
-          onClick={() => abrirModalNuevaPlanificacion()}
-        >
-          <i className="fas fa-plus me-2"></i>
-          Nueva Planificación
-        </button>
+        <div className="header-actions">
+          <button
+            className="btn btn-success"
+            onClick={() => abrirModalNuevaPlanificacion()}
+          >
+            <i className="fas fa-plus me-2"></i>
+            Nueva Planificación
+          </button>
+        </div>
       </div>
 
       {loading ? (

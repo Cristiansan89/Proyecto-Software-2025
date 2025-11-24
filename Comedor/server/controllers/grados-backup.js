@@ -44,7 +44,7 @@ export class GradoController {
                 console.log('GradoController: Errores de validación:', result.error.errors)
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))
@@ -97,7 +97,7 @@ export class GradoController {
             if (!result.success) {
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))

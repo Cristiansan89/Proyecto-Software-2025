@@ -42,6 +42,8 @@ const PlanificacionCalendario = () => {
   const [planificacionActiva, setPlanificacionActiva] = useState(null);
   const [finalizandoPlanificacion, setFinalizandoPlanificacion] =
     useState(false);
+  const [comensalesPorFecha, setComensalesPorFecha] = useState({});
+  const [cargandoComensales, setCargandoComensales] = useState(false);
 
   // Variables para el calendario
   const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
@@ -72,11 +74,13 @@ const PlanificacionCalendario = () => {
     cargarRecetasDisponibles();
     cargarMenusAsignados();
     verificarPlanificacionActiva();
+    cargarComensalesSemana();
   }, []);
 
   useEffect(() => {
     cargarMenusAsignados();
     verificarPlanificacionActiva();
+    cargarComensalesSemana();
   }, [semanaActual]);
 
   const verificarPlanificacionActiva = async () => {
@@ -181,6 +185,40 @@ const PlanificacionCalendario = () => {
     }
   };
 
+  // Cargar comensales para cada día de la semana
+  async function cargarComensalesSemana() {
+    setCargandoComensales(true);
+    try {
+      const semana = obtenerSemanaActual();
+      const comensalesMap = {};
+
+      for (const fecha of semana) {
+        const fechaStr = fecha.toISOString().split("T")[0];
+        try {
+          const datosComensales =
+            await planificacionMenuService.calcularComensalesPorFecha(fechaStr);
+          comensalesMap[fechaStr] = datosComensales;
+        } catch (err) {
+          console.warn(
+            `Error al cargar comensales para ${fechaStr}:`,
+            err?.message || err
+          );
+          comensalesMap[fechaStr] = {
+            fecha: fechaStr,
+            servicios: [],
+            resumen: { totalDia: 0 },
+          };
+        }
+      }
+
+      setComensalesPorFecha(comensalesMap);
+    } catch (error) {
+      console.error("Error al cargar comensales de la semana:", error);
+    } finally {
+      setCargandoComensales(false);
+    }
+  }
+
   const abrirModalAsignacion = (fecha, servicio, dia) => {
     const claveMenu = `${fecha.toISOString().split("T")[0]}_${
       servicio.id_servicio
@@ -209,9 +247,9 @@ const PlanificacionCalendario = () => {
     }
 
     console.log("Usuario actual:", user);
-    console.log("ID del usuario:", user?.id_usuario);
+    console.log("ID del usuario:", user?.idUsuario || user?.id_usuario);
 
-    if (!user?.id_usuario) {
+    if (!user?.idUsuario && !user?.id_usuario) {
       alert("Error: Usuario no autenticado");
       return;
     }
@@ -222,7 +260,7 @@ const PlanificacionCalendario = () => {
         fecha: asignacionSeleccionada.fecha.toISOString().split("T")[0],
         id_servicio: asignacionSeleccionada.servicio.id_servicio,
         id_receta: recetaSeleccionada,
-        id_usuario: user.id_usuario,
+        id_usuario: user?.idUsuario || user?.id_usuario || null,
       };
 
       console.log("Datos de asignación:", datosAsignacion);
@@ -290,6 +328,19 @@ const PlanificacionCalendario = () => {
             <span className="mx-3">
               Semana del {obtenerSemanaActual()[0].toLocaleDateString("es-ES")}{" "}
               al {obtenerSemanaActual()[4].toLocaleDateString("es-ES")}
+              {/* Mostrar resumen de comensales de la semana */}
+              {(() => {
+                const totalSemana = Object.values(comensalesPorFecha).reduce(
+                  (sum, dia) => sum + (dia.resumen?.totalDia || 0),
+                  0
+                );
+                return totalSemana > 0 ? (
+                  <div className="small text-muted d-block mt-1">
+                    <i className="fas fa-chart-line me-1"></i>
+                    Total semana: {totalSemana} comensales programados
+                  </div>
+                ) : null;
+              })()}
             </span>
             <button
               className="btn btn-outline-primary-sm btn-sm ms-2"
@@ -302,7 +353,7 @@ const PlanificacionCalendario = () => {
             {planificacionActiva && (
               <div className="d-flex align-items-center">
                 <button
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-success btn-sm"
                   onClick={finalizarPlanificacion}
                   disabled={finalizandoPlanificacion}
                 >
@@ -336,9 +387,8 @@ const PlanificacionCalendario = () => {
           <table className="table table-bordered menu-calendar-table">
             <thead className="table-light">
               <tr>
-                <th className="diagonal" width="15%">
-                  <span className="top">Días</span>
-                  <span className="bottom">Servicio</span>
+                <th>
+                  <span>Servicio</span>
                 </th>
                 {diasSemana.map((dia, index) => (
                   <th key={dia} width="17%" className="text-center">
@@ -352,6 +402,27 @@ const PlanificacionCalendario = () => {
                         }
                       )}
                     </div>
+                    {/* Información de comensales del día */}
+                    {(() => {
+                      const fechaStr = obtenerSemanaActual()
+                        [index].toISOString()
+                        .split("T")[0];
+                      const comensalesDia = comensalesPorFecha[fechaStr];
+                      return comensalesDia ? (
+                        <div className="small text-muted mt-1">
+                          <i className="fas fa-users me-1"></i>
+                          {comensalesDia.resumen?.totalDia || 0} comensales
+                        </div>
+                      ) : cargandoComensales ? (
+                        <div className="small text-muted mt-1">
+                          <span
+                            className="spinner-border spinner-border-sm"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
+                        </div>
+                      ) : null;
+                    })()}
                   </th>
                 ))}
               </tr>
@@ -378,13 +449,35 @@ const PlanificacionCalendario = () => {
                       <td key={diaIndex} className="menu-cell">
                         <div className="menu-slot">
                           {menuAsignado ? (
-                            <div className="menu-asignado">
+                            <div
+                              className={`menu-asignado servicio-${servicio.id_servicio}`}
+                            >
                               <div className="receta-nombre">
                                 <strong>{menuAsignado.nombreReceta}</strong>
                               </div>
+                              {/* Mostrar comensales específicos para este servicio y día */}
+                              {(() => {
+                                const fechaStr = fecha
+                                  .toISOString()
+                                  .split("T")[0];
+                                const comensalesDia =
+                                  comensalesPorFecha[fechaStr];
+                                const servicioComensales =
+                                  comensalesDia?.servicios?.find(
+                                    (s) =>
+                                      s.id_servicio === servicio.id_servicio
+                                  );
+                                return servicioComensales ? (
+                                  <div className="small text-dark mt-1">
+                                    <i className="fas fa-user-friends me-1"></i>
+                                    {servicioComensales.totalComensales}{" "}
+                                    comensales
+                                  </div>
+                                ) : null;
+                              })()}
                               <div className="menu-acciones mt-2">
                                 <button
-                                  className="btn-cambiar btn-sm me-1"
+                                  className="btn-action btn-edit btn-sm me-1"
                                   title="Cambiar receta"
                                   onClick={() =>
                                     abrirModalAsignacion(fecha, servicio, dia)
@@ -393,7 +486,7 @@ const PlanificacionCalendario = () => {
                                   <i className="fas fa-edit"></i>
                                 </button>
                                 <button
-                                  className="btn-eliminar btn-sm"
+                                  className="btn-action btn-delete btn-sm"
                                   title="Eliminar asignación"
                                   disabled={loading}
                                   onClick={() =>
@@ -414,6 +507,26 @@ const PlanificacionCalendario = () => {
                             </div>
                           ) : (
                             <div className="menu-placeholder">
+                              {/* Mostrar comensales específicos para este servicio y día */}
+                              {(() => {
+                                const fechaStr = fecha
+                                  .toISOString()
+                                  .split("T")[0];
+                                const comensalesDia =
+                                  comensalesPorFecha[fechaStr];
+                                const servicioComensales =
+                                  comensalesDia?.servicios?.find(
+                                    (s) =>
+                                      s.id_servicio === servicio.id_servicio
+                                  );
+                                return servicioComensales ? (
+                                  <div className="small text-muted mb-2">
+                                    <i className="fas fa-user-friends me-1"></i>
+                                    {servicioComensales.totalComensales}{" "}
+                                    comensales
+                                  </div>
+                                ) : null;
+                              })()}
                               <button
                                 className="btn btn-outline-success btn-sm w-100"
                                 onClick={() =>
@@ -498,6 +611,50 @@ const PlanificacionCalendario = () => {
                     {asignacionSeleccionada.servicio?.descripcion}
                   </label>
                 </div>
+
+                {/* Información de comensales esperados para este servicio y fecha */}
+                {(() => {
+                  if (!asignacionSeleccionada.fecha) return null;
+                  const fechaStr = asignacionSeleccionada.fecha
+                    .toISOString()
+                    .split("T")[0];
+                  const comensalesDia = comensalesPorFecha[fechaStr];
+                  const servicioComensales = comensalesDia?.servicios?.find(
+                    (s) =>
+                      s.id_servicio ===
+                      asignacionSeleccionada.servicio?.id_servicio
+                  );
+
+                  return servicioComensales ? (
+                    <div className="alert alert-info mb-3">
+                      <div className="d-flex align-items-center">
+                        <i className="fas fa-users me-2"></i>
+                        <div>
+                          <strong>Comensales esperados:</strong>{" "}
+                          {servicioComensales.totalComensales} estudiantes
+                          <div className="small mt-1">
+                            {servicioComensales.turnos?.map((turno, index) => (
+                              <span key={index} className="me-3">
+                                {turno.turno}: {turno.comensales} estudiantes
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : cargandoComensales ? (
+                    <div className="alert alert-light mb-3">
+                      <div className="d-flex align-items-center">
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        <span>Calculando comensales...</span>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
 
                 <div className="mb-4">
                   <label htmlFor="recetaSelect" className="form-label">

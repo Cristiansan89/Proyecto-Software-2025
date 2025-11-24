@@ -57,7 +57,7 @@ export class PlanificacionMenuController {
       if (!result.success) {
         return res.status(400).json({
           message: "Datos de entrada inválidos",
-          errors: result.error.errors.map((err) => ({
+          errors: result.error.issues.map((err) => ({
             field: err.path.join("."),
             message: err.message,
           })),
@@ -109,7 +109,7 @@ export class PlanificacionMenuController {
       if (!result.success) {
         return res.status(400).json({
           message: "Datos de entrada inválidos",
-          errors: result.error.errors.map((err) => ({
+          errors: result.error.issues.map((err) => ({
             field: err.path.join("."),
             message: err.message,
           })),
@@ -361,6 +361,146 @@ export class PlanificacionMenuController {
     } catch (error) {
       console.error("Error al eliminar receta:", error);
       res.status(500).json({ message: error.message });
+    }
+  };
+
+  // Calcular comensales por turno y servicio
+  calcularComensalesPorTurnoYServicio = async (req, res) => {
+    try {
+      const { id_turno, id_servicio } = req.query;
+
+      if (!id_turno || !id_servicio) {
+        return res.status(400).json({
+          message: "id_turno e id_servicio son requeridos",
+        });
+      }
+
+      const comensales =
+        await this.planificacionMenuModel.calcularComensalesPorTurnoYServicio({
+          id_turno: parseInt(id_turno),
+          id_servicio: parseInt(id_servicio),
+        });
+
+      res.json(comensales);
+    } catch (error) {
+      console.error(
+        "Error al calcular comensales por turno y servicio:",
+        error
+      );
+      res.status(500).json({
+        message: "Error interno del servidor",
+        error: error.message,
+      });
+    }
+  };
+
+  // Calcular comensales por servicio y fecha
+  calcularComensalesPorServicioYFecha = async (req, res) => {
+    try {
+      const { fecha } = req.query;
+
+      if (!fecha) {
+        return res.status(400).json({
+          message: "La fecha es requerida (formato: YYYY-MM-DD)",
+        });
+      }
+
+      // Validar formato de fecha
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+        return res.status(400).json({
+          message: "Formato de fecha inválido. Use YYYY-MM-DD",
+        });
+      }
+
+      const comensales =
+        await this.planificacionMenuModel.calcularComensalesPorServicioYFecha({
+          fecha,
+        });
+
+      res.json(comensales);
+    } catch (error) {
+      console.error(
+        "Error al calcular comensales por servicio y fecha:",
+        error
+      );
+      res.status(500).json({
+        message: "Error interno del servidor",
+        error: error.message,
+      });
+    }
+  };
+
+  // Obtener resumen de comensales para un rango de fechas
+  obtenerResumenComensales = async (req, res) => {
+    try {
+      const { fechaInicio, fechaFin } = req.query;
+
+      if (!fechaInicio || !fechaFin) {
+        return res.status(400).json({
+          message:
+            "fechaInicio y fechaFin son requeridas (formato: YYYY-MM-DD)",
+        });
+      }
+
+      // Validar formato de fechas
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(fechaInicio) ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(fechaFin)
+      ) {
+        return res.status(400).json({
+          message: "Formato de fecha inválido. Use YYYY-MM-DD",
+        });
+      }
+
+      const fechaInicioObj = new Date(fechaInicio);
+      const fechaFinObj = new Date(fechaFin);
+      const resumen = [];
+
+      // Iterar por cada fecha en el rango
+      for (
+        let fecha = new Date(fechaInicioObj);
+        fecha <= fechaFinObj;
+        fecha.setDate(fecha.getDate() + 1)
+      ) {
+        const fechaStr = fecha.toISOString().split("T")[0];
+
+        try {
+          const comensalesDia =
+            await this.planificacionMenuModel.calcularComensalesPorServicioYFecha(
+              {
+                fecha: fechaStr,
+              }
+            );
+          resumen.push(comensalesDia);
+        } catch (error) {
+          console.warn(
+            `Error calculando comensales para ${fechaStr}:`,
+            error.message
+          );
+          resumen.push({
+            fecha: fechaStr,
+            servicios: [],
+            resumen: { totalDia: 0 },
+            error: error.message,
+          });
+        }
+      }
+
+      res.json({
+        fechaInicio,
+        fechaFin,
+        resumen,
+        totalGeneral: resumen.reduce(
+          (sum, dia) => sum + (dia.resumen?.totalDia || 0),
+          0
+        ),
+      });
+    } catch (error) {
+      console.error("Error al obtener resumen de comensales:", error);
+      res.status(500).json({
+        message: "Error interno del servidor",
+        error: error.message,
+      });
     }
   };
 }

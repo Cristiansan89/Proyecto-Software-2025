@@ -1,0 +1,35 @@
+/* Estilos responsivos y truncado para la tabla de insumos */
+.table-responsive-insumos {
+  width: 100%;
+  overflow-x: auto;
+  font-size: 0.97rem;
+}
+
+.truncate-cell {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .table-responsive-insumos th,
+  .table-responsive-insumos td {
+    font-size: 0.9rem;
+    padding: 4px 6px;
+  }
+  .truncate-cell {
+    max-width: 110px;
+  }
+}
+
+@media (max-width: 600px) {
+  .table-responsive-insumos th,
+  .table-responsive-insumos td {
+    font-size: 0.85rem;
+    padding: 2px 3px;
+  }
+  .truncate-cell {
+    max-width: 70px;
+  }
+}

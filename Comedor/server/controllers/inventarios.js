@@ -40,7 +40,7 @@ export class InventarioController {
             if (!result.success) {
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))
@@ -82,7 +82,7 @@ export class InventarioController {
             if (!result.success) {
                 return res.status(400).json({
                     message: 'Datos de entrada inválidos',
-                    errors: result.error.errors.map(err => ({
+                    errors: result.error.issues.map(err => ({
                         field: err.path.join('.'),
                         message: err.message
                     }))

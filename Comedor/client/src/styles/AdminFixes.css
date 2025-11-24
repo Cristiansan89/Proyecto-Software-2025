@@ -24,11 +24,15 @@ body {
   overflow-x: hidden;
 }
 
-/* Mejorar el área de contenido */
+/* Mejorar el área de contenido (usar variables globales cuando aplique) */
 .content-area {
-  width: 100%;
-  max-width: 100%;
   box-sizing: border-box;
+  width: 100%;
+  max-width: var(--content-max-width);
+  padding: var(--content-padding);
+  gap: var(--content-gap);
+  min-height: var(--content-min-height);
+  background: var(--content-bg);
   overflow: visible;
 }
 
@@ -278,7 +282,7 @@ body {
   .content-area {
     padding: 1rem;
   }
-  
+
   .dashboard-stats {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -289,17 +293,17 @@ body {
     padding: 0.75rem;
     margin: 0.5rem;
   }
-  
+
   .modal-dialog {
     margin: 1rem;
     max-width: calc(100vw - 2rem);
   }
-  
+
   .btn {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
   }
-  
+
   .table-responsive {
     font-size: 0.85rem;
   }
@@ -310,20 +314,20 @@ body {
     padding: 0.5rem;
     margin: 0.25rem;
   }
-  
+
   .card-body {
     padding: 1rem;
   }
-  
+
   .modal-body {
     padding: 1rem;
   }
-  
+
   .btn {
     width: 100%;
     margin-bottom: 0.5rem;
   }
-  
+
   .form-control {
     font-size: 16px; /* Previene zoom en iOS */
   }
@@ -453,7 +457,7 @@ body {
 }
 
 .table-loading::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -518,27 +522,27 @@ body {
     align-items: stretch;
     text-align: center;
   }
-  
+
   .search-filters {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-filters .form-control {
     min-width: unset;
     width: 100%;
   }
-  
+
   .bulk-actions {
     flex-direction: column;
     align-items: stretch;
     text-align: center;
   }
-  
+
   .action-buttons {
     justify-content: center;
   }
-  
+
   .nav-tabs .nav-link {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;

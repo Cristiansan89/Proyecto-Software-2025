@@ -76,15 +76,6 @@ const PlanificacionMenus = () => {
             comedor escolar
           </p>
         </div>
-        <div className="header-actions">
-          <button
-            className="btn btn-success"
-            onClick={() => abrirModalNuevaPlanificacion()}
-          >
-            <i className="fas fa-plus me-2"></i>
-            Nueva Planificación
-          </button>
-        </div>
       </div>
 
       {/* Pestañas de navegación */}

@@ -5,6 +5,17 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Variables globales para medidas de content-area */
+  --content-max-width: clamp(320px, 92vw, 1200px);
+  --content-padding: 1rem;
+  --content-gap: 1rem;
+  --content-min-height: 40vh;
+  --content-bg: rgba(248, 246, 246, 0.95);
+  /* Offsets: separaciones desde navbar, sidebar y bordes */
+  --content-offset-top: 60px; /* distancia desde el navbar */
+  --content-offset-right: 1rem; /* separación del lateral derecho */
+  --content-offset-bottom: 1rem; /* separación inferior */
+  --content-offset-left: 1rem; /* separación desde la izquierda dentro del main */
 }
 
 body {
@@ -18,6 +29,24 @@ html {
   margin: 0;
   padding: 0;
   height: 100%;
+}
+
+/* Clase base reutilizable para el área de contenido principal */
+.content-area {
+  box-sizing: border-box;
+  border-radius: 12px;
+  max-width: var(--content-max-width);
+  /* márgenes: top, right, bottom, left */
+  margin: var(--content-offset-top) var(--content-offset-right)
+    var(--content-offset-bottom) var(--content-offset-left);
+  padding: var(--content-padding);
+  display: block;
+  gap: var(--content-gap);
+  /* altura mínima restando offsets para permitir scroll natural */
+  min-height: calc(
+    100vh - var(--content-offset-top) - var(--content-offset-bottom)
+  );
+  background: var(--content-bg);
 }
 
 /* Estilos globales para inputs, selects y controles de formulario */
@@ -126,7 +155,7 @@ textarea.form-control {
 
 /* Responsive para diferentes resoluciones */
 /* Para notebooks y pantallas pequeñas (1280x720 y similares) */
-@media (max-width: 1366px) {
+@media (max-width: 1280px) {
   .login-container {
     padding: 0.5rem;
   }
@@ -712,21 +741,9 @@ textarea.form-control {
   margin: 0.5rem 0;
 }
 
-/* Área de contenido */
-.content-area {
-  flex: 1;
-  padding: 1.2rem;
-  background: rgba(248, 246, 246, 0.95);
-  backdrop-filter: blur(5px);
-  margin: 0.75rem;
-  border-radius: 12px;
-  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
-  margin-top: 60px; /* Espacio para el navbar fijo */
-  min-height: calc(100vh - 85px - 1.5rem);
-  overflow-x: auto;
-  max-width: calc(100% - 1.5rem);
-  box-sizing: border-box;
-}
+/* Área de contenido centralizada: usar la definición base en la parte superior del archivo y variables globales */
+/* La implementación específica por layout puede sobrescribir propiedades puntuales usando las variables
+  definidas en `:root` (por ejemplo `--content-padding`, `--content-min-height`, `--content-bg`). */
 
 .dashboard-header {
   margin-bottom: 2rem;
@@ -1163,6 +1180,19 @@ textarea.form-control {
   margin-bottom: 1.2rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #e9ecef;
+}
+
+/* Corregir páginas que se ven demasiado anchas: centrar y limitar ancho */
+.gestion-roles-container,
+.tab-content,
+.table-container,
+.gestion-roles-container .table-container,
+.tab-content .table-container,
+.scrollable-table {
+  max-width: var(--content-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
 
 .page-header-cocinera {
@@ -1889,7 +1919,7 @@ textarea.form-control {
 .type-badge {
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  font-size: 1.2em;
+  font-size: 0.85rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -1987,7 +2017,7 @@ textarea.form-control {
   background: #ffffff;
   color: #155724;
   border-radius: 15px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 500;
 }
 
@@ -2419,11 +2449,7 @@ textarea.form-control {
   }
 }
 
-@media (max-width: 768px) {
-  .personas-container {
-    padding: 0;
-  }
-
+@media (max-width: 720px) {
   .table-container {
     overflow-x: auto;
   }
@@ -2445,7 +2471,7 @@ textarea.form-control {
 }
 
 /* Responsive para admin */
-@media (max-width: 768px) {
+@media (max-width: 720px) {
   .admin-layout {
     overflow-x: hidden;
   }
@@ -2475,7 +2501,7 @@ textarea.form-control {
   }
 
   .content-area {
-    margin: 0.5rem;
+    margin: 1rem;
     padding: 1rem;
     margin-top: 60px;
     max-width: calc(100% - 1rem);
@@ -3173,10 +3199,9 @@ textarea.form-control {
 }
 
 .tab-button {
-  display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 1rem 1.5rem;
+  padding: 0.5rem 1rem;
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
@@ -3184,7 +3209,7 @@ textarea.form-control {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  border-radius: 0;
+  border-radius: 0.25rem;
 }
 
 .tab-button:hover {
@@ -3311,7 +3336,7 @@ textarea.form-control {
 
 /* ===== ESTILOS PARA ASIGNAR PERMISOS FORM ===== */
 .asignar-permisos-form {
-  max-width: 900px;
+  max-width: 600px;
   margin: 0 auto;
   background: white;
   border-radius: 12px;
@@ -3320,9 +3345,9 @@ textarea.form-control {
 
 .asignar-permisos-form .form-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1rem;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   border-bottom: 2px solid #e5e7eb;
 }
@@ -3337,7 +3362,7 @@ textarea.form-control {
 .asignar-permisos-form .btn-close {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1rem;
   cursor: pointer;
   color: #6c757d;
   padding: 0;
@@ -3356,12 +3381,12 @@ textarea.form-control {
 }
 
 .asignar-permisos-form .form {
-  padding: 2rem;
+  padding: 0.85rem;
 }
 
 .asignar-permisos-form .form-grid {
   display: grid;
-  gap: 1.5rem;
+  gap: 0.85rem;
   margin-bottom: 2rem;
 }
 
@@ -3589,7 +3614,7 @@ textarea.form-control {
 .asignar-permisos-form .form-actions {
   display: flex;
   gap: 1rem;
-  justify-content: flex-end;
+  justify-content: center;
   padding-top: 2rem;
   border-top: 2px solid #e5e7eb;
   margin-top: 2rem;
@@ -3825,7 +3850,7 @@ textarea.form-control {
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 500;
   text-align: center;
   white-space: nowrap;
@@ -4466,7 +4491,7 @@ textarea.form-control {
   margin: 0 auto !important;
   position: relative !important;
   width: 90% !important;
-  max-width: 1000px !important;
+  max-width: 600px !important;
   max-height: 90vh !important;
   overflow-y: auto !important;
   pointer-events: all !important;

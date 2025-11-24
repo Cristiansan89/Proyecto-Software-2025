@@ -1,458 +1,544 @@
-import { useState, useEffect } from 'react';
-import PersonaForm from '../../components/admin/PersonaForm';
-import PersonaEditForm from '../../components/admin/PersonaEditForm.jsx';
-import personaService from '../../services/personaService.js';
-import { rolService } from '../../services/rolService.js';
+import { useState, useEffect } from "react";
+import PersonaForm from "../../components/admin/PersonaForm";
+import PersonaEditForm from "../../components/admin/PersonaEditForm.jsx";
+import personaService from "../../services/personaService.js";
+import { rolService } from "../../services/rolService.js";
+import "../../styles/table-insumos.css";
 
 const ListaPersonas = () => {
-    const [personas, setPersonas] = useState([]);
-    const [filteredPersonas, setFilteredPersonas] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [showModal, setShowModal] = useState(false);
-    const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'view'
-    const [selectedPersona, setSelectedPersona] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
-    const [loading, setLoading] = useState(false);
-    const [filterTipo, setFilterTipo] = useState('');
-    const [filterEstado, setFilterEstado] = useState('');
+  const [personas, setPersonas] = useState([]);
+  const [filteredPersonas, setFilteredPersonas] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState("create"); // 'create', 'edit', 'view'
+  const [selectedPersona, setSelectedPersona] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [loading, setLoading] = useState(false);
+  const [filterTipo, setFilterTipo] = useState("");
+  const [filterEstado, setFilterEstado] = useState("");
 
-    // Estados para filtros dinámicos
-    const [roles, setRoles] = useState([]);
-    const [loadingRoles, setLoadingRoles] = useState(false);
+  // Estados para filtros dinámicos
+  const [roles, setRoles] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
 
-    useEffect(() => {
-        loadPersonas();
-        loadRoles();
-    }, []);
+  useEffect(() => {
+    loadPersonas();
+    loadRoles();
+  }, []);
 
-    const loadRoles = async () => {
+  const loadRoles = async () => {
+    try {
+      setLoadingRoles(true);
+      console.log("ListaPersonas: Cargando roles...");
+      const rolesData = await rolService.getActivos();
+      console.log("ListaPersonas: Roles cargados:", rolesData);
+      setRoles(Array.isArray(rolesData) ? rolesData : []);
+    } catch (error) {
+      console.error("Error al cargar roles:", error);
+      setRoles([]);
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
+  const loadPersonas = async () => {
+    try {
+      setLoading(true);
+      console.log("ListaPersonas: Iniciando carga de personas...");
+      const data = await personaService.getAll();
+      console.log("ListaPersonas: Datos recibidos:", data);
+
+      // Asegurar que data es un array
+      let personas = Array.isArray(data) ? data : [];
+      // Ordenar por id numérico si existe (idPersona, id_persona o id)
+      personas.sort((a, b) => {
+        const ai = Number(a.idPersona ?? a.id_persona ?? a.id ?? 0);
+        const bi = Number(b.idPersona ?? b.id_persona ?? b.id ?? 0);
+        if (!Number.isNaN(ai) && !Number.isNaN(bi)) return ai - bi;
+        return String(a.idPersona ?? a.id_persona ?? a.id ?? "").localeCompare(
+          String(b.idPersona ?? b.id_persona ?? b.id ?? "")
+        );
+      });
+
+      setPersonas(personas);
+      setFilteredPersonas(personas);
+      console.log(
+        "ListaPersonas: Estado actualizado con",
+        personas.length,
+        "personas"
+      );
+    } catch (error) {
+      console.error("Error al cargar personas:", error);
+      alert("Error al cargar personas: " + error.message);
+      setPersonas([]);
+      setFilteredPersonas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Búsqueda y filtros
+  useEffect(() => {
+    // Asegurar que personas es un array
+    let filtered = Array.isArray(personas) ? personas : [];
+
+    // Filtro por búsqueda de texto
+    if (searchQuery && searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase();
+      filtered = filtered.filter((persona) => {
         try {
-            setLoadingRoles(true);
-            console.log('ListaPersonas: Cargando roles...');
-            const rolesData = await rolService.getActivos();
-            console.log('ListaPersonas: Roles cargados:', rolesData);
-            setRoles(Array.isArray(rolesData) ? rolesData : []);
+          return (
+            (persona.nombre &&
+              persona.nombre.toLowerCase().includes(searchLower)) ||
+            (persona.apellido &&
+              persona.apellido.toLowerCase().includes(searchLower)) ||
+            (persona.dni && persona.dni.toString().includes(searchQuery)) ||
+            (persona.numeroDocumento &&
+              persona.numeroDocumento.toString().includes(searchQuery)) ||
+            (persona.nombreRol &&
+              persona.nombreRol.toLowerCase().includes(searchLower)) ||
+            (persona.genero &&
+              persona.genero.toLowerCase().includes(searchLower))
+          );
         } catch (error) {
-            console.error('Error al cargar roles:', error);
-            setRoles([]);
-        } finally {
-            setLoadingRoles(false);
+          console.error("Error al filtrar persona:", persona, error);
+          return false;
         }
-    };
+      });
+    }
 
-    const loadPersonas = async () => {
-        try {
-            setLoading(true);
-            console.log('ListaPersonas: Iniciando carga de personas...');
-            const data = await personaService.getAll();
-            console.log('ListaPersonas: Datos recibidos:', data);
+    // Filtro por rol
+    if (filterTipo && filterTipo !== "") {
+      filtered = filtered.filter((persona) => persona.nombreRol === filterTipo);
+    }
 
-            // Asegurar que data es un array
-            const personas = Array.isArray(data) ? data : [];
-            setPersonas(personas);
-            setFilteredPersonas(personas);
-            console.log('ListaPersonas: Estado actualizado con', personas.length, 'personas');
-        } catch (error) {
-            console.error('Error al cargar personas:', error);
-            alert('Error al cargar personas: ' + error.message);
-            setPersonas([]);
-            setFilteredPersonas([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Filtro por estado
+    if (filterEstado && filterEstado !== "") {
+      filtered = filtered.filter((persona) => persona.estado === filterEstado);
+    }
 
-    // Búsqueda y filtros
-    useEffect(() => {
-        // Asegurar que personas es un array
-        let filtered = Array.isArray(personas) ? personas : [];
-
-        // Filtro por búsqueda de texto
-        if (searchQuery && searchQuery.trim()) {
-            const searchLower = searchQuery.toLowerCase();
-            filtered = filtered.filter(persona => {
-                try {
-                    return (
-                        (persona.nombre && persona.nombre.toLowerCase().includes(searchLower)) ||
-                        (persona.apellido && persona.apellido.toLowerCase().includes(searchLower)) ||
-                        (persona.dni && persona.dni.toString().includes(searchQuery)) ||
-                        (persona.numeroDocumento && persona.numeroDocumento.toString().includes(searchQuery)) ||
-                        (persona.nombreRol && persona.nombreRol.toLowerCase().includes(searchLower)) ||
-                        (persona.genero && persona.genero.toLowerCase().includes(searchLower))
-                    );
-                } catch (error) {
-                    console.error('Error al filtrar persona:', persona, error);
-                    return false;
-                }
-            });
-        }
-
-        // Filtro por rol
-        if (filterTipo && filterTipo !== '') {
-            filtered = filtered.filter(persona => persona.nombreRol === filterTipo);
-        }
-
-        // Filtro por estado
-        if (filterEstado && filterEstado !== '') {
-            filtered = filtered.filter(persona => persona.estado === filterEstado);
-        }
-
-        setFilteredPersonas(filtered);
-        setCurrentPage(1);
-    }, [searchQuery, personas, filterTipo, filterEstado]);
-
-    // Paginación
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentPersonas = Array.isArray(filteredPersonas) ? filteredPersonas.slice(indexOfFirstItem, indexOfLastItem) : [];
-    const totalPages = Array.isArray(filteredPersonas) ? Math.ceil(filteredPersonas.length / itemsPerPage) : 0;
-
-    console.log('ListaPersonas: Estado actual -', {
-        personas: personas.length,
-        filteredPersonas: filteredPersonas.length,
-        currentPersonas: currentPersonas.length,
-        searchQuery,
-        filterTipo,
-        filterEstado,
-        loading
+    // Ordenar resultados filtrados por id antes de guardarlos
+    filtered.sort((a, b) => {
+      const ai = Number(a.idPersona ?? a.id_persona ?? a.id ?? 0);
+      const bi = Number(b.idPersona ?? b.id_persona ?? b.id ?? 0);
+      if (!Number.isNaN(ai) && !Number.isNaN(bi)) return ai - bi;
+      return String(a.idPersona ?? a.id_persona ?? a.id ?? "").localeCompare(
+        String(b.idPersona ?? b.id_persona ?? b.id ?? "")
+      );
     });
 
-    const handleSearch = (e) => {
-        setSearchQuery(e.target.value);
-    };
+    setFilteredPersonas(filtered);
+    setCurrentPage(1);
+  }, [searchQuery, personas, filterTipo, filterEstado]);
 
-    const handleFilterTipo = (e) => {
-        setFilterTipo(e.target.value);
-    };
+  // Paginación
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPersonas = Array.isArray(filteredPersonas)
+    ? filteredPersonas.slice(indexOfFirstItem, indexOfLastItem)
+    : [];
+  const totalPages = Array.isArray(filteredPersonas)
+    ? Math.ceil(filteredPersonas.length / itemsPerPage)
+    : 0;
 
-    const handleFilterEstado = (e) => {
-        setFilterEstado(e.target.value);
-    };
+  console.log("ListaPersonas: Estado actual -", {
+    personas: personas.length,
+    filteredPersonas: filteredPersonas.length,
+    currentPersonas: currentPersonas.length,
+    searchQuery,
+    filterTipo,
+    filterEstado,
+    loading,
+  });
 
-    const clearFilters = () => {
-        setSearchQuery('');
-        setFilterTipo('');
-        setFilterEstado('');
-    };
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
-    const openModal = (mode, persona = null) => {
-        setModalMode(mode);
-        setSelectedPersona(persona);
-        setShowModal(true);
-    };
+  const handleFilterTipo = (e) => {
+    setFilterTipo(e.target.value);
+  };
 
-    const closeModal = () => {
-        setShowModal(false);
-        setSelectedPersona(null);
-    };
+  const handleFilterEstado = (e) => {
+    setFilterEstado(e.target.value);
+  };
 
-    const handleSavePersona = async (personaData, usuarioData = null) => {
-        // Recargar la lista desde el servidor para obtener datos actualizados
-        await loadPersonas();
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterTipo("");
+    setFilterEstado("");
+  };
 
-        // Mostrar mensaje de éxito
-        if (modalMode === 'create') {
-            if (usuarioData) {
-                alert(`Persona creada exitosamente!\n\n` +
-                    `Persona: ${personaData.nombre} ${personaData.apellido}\n` +
-                    `Usuario: ${usuarioData.nombreUsuario}`);
-            } else {
-                alert(`Persona creada exitosamente!\n\n` +
-                    `${personaData.nombre} ${personaData.apellido}`);
-            }
-        } else if (modalMode === 'edit') {
-            alert('Persona actualizada exitosamente!');
+  const openModal = (mode, persona = null) => {
+    setModalMode(mode);
+    setSelectedPersona(persona);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedPersona(null);
+  };
+
+  const handleSavePersona = async (personaData, usuarioData = null) => {
+    // Recargar la lista desde el servidor para obtener datos actualizados
+    await loadPersonas();
+
+    // Mostrar mensaje de éxito
+    if (modalMode === "create") {
+      if (usuarioData) {
+        alert(
+          `Persona creada exitosamente!\n\n` +
+            `Persona: ${personaData.nombre} ${personaData.apellido}\n` +
+            `Usuario: ${usuarioData.nombreUsuario}`
+        );
+      } else {
+        alert(
+          `Persona creada exitosamente!\n\n` +
+            `${personaData.nombre} ${personaData.apellido}`
+        );
+      }
+    } else if (modalMode === "edit") {
+      alert("Persona actualizada exitosamente!");
+    }
+
+    closeModal();
+  };
+
+  const handleDelete = async (personaId) => {
+    if (window.confirm("¿Está seguro de que desea eliminar esta persona?")) {
+      try {
+        await personaService.delete(personaId);
+        setPersonas((prev) => prev.filter((p) => p.idPersona !== personaId));
+        alert("Persona eliminada exitosamente!");
+      } catch (error) {
+        console.error("Error al eliminar persona:", error);
+        if (error.response?.data?.message) {
+          alert(`Error: ${error.response.data.message}`);
+        } else {
+          alert("Error al eliminar la persona. Por favor, inténtelo de nuevo.");
         }
+      }
+    }
+  };
 
-        closeModal();
-    };
-
-    const handleDelete = async (personaId) => {
-        if (window.confirm('¿Está seguro de que desea eliminar esta persona?')) {
-            try {
-                await personaService.delete(personaId);
-                setPersonas(prev => prev.filter(p => p.idPersona !== personaId));
-                alert('Persona eliminada exitosamente!');
-            } catch (error) {
-                console.error('Error al eliminar persona:', error);
-                if (error.response?.data?.message) {
-                    alert(`Error: ${error.response.data.message}`);
-                } else {
-                    alert('Error al eliminar la persona. Por favor, inténtelo de nuevo.');
-                }
-            }
-        }
-    };
-
-    return (
-        <div>
-            <div className="page-header">
-                <div className="header-left mt-2 mx-2">
-                    <h1 className="page-title-sub">
-                        Lista de Personas
-                    </h1>
-                </div>
-                <div className="header-actions">
-                    <button
-                        className="btn btn-primary-new"
-                        onClick={() => openModal('create')}
-                    >
-                        <i className="fas fa-plus"></i>
-                        Nueva Persona
-                    </button>
-                </div>
-            </div>
-
-            {/* Filtros y búsqueda */}
-            <div className="filters-section">
-                <div className="search-bar">
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre, apellido, documento o rol..."
-                        value={searchQuery}
-                        onChange={handleSearch}
-                        className="search-input"
-                    />
-                </div>
-
-                <div className="filter-actions">
-                    <select
-                        className="filter-select"
-                        value={filterTipo}
-                        onChange={handleFilterTipo}
-                        disabled={loadingRoles}
-                    >
-                        <option value="">Todos los roles</option>
-                        {loadingRoles ? (
-                            <option disabled>Cargando roles...</option>
-                        ) : (
-                            roles.map(rol => (
-                                <option key={rol.idRol || rol.id} value={rol.nombreRol}>
-                                    {rol.nombreRol}
-                                </option>
-                            ))
-                        )}
-                    </select>
-
-                    <select
-                        className="filter-select"
-                        value={filterEstado}
-                        onChange={handleFilterEstado}
-                    >
-                        <option value="">Todos los estados</option>
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                    </select>
-
-                    {(searchQuery || filterTipo || filterEstado) && (
-                        <button
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={clearFilters}
-                            title="Limpiar filtros"
-                        >
-                            <i className="fas fa-times"></i>
-                            Limpiar
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Indicador de resultados */}
-            <div className="results-info">
-                <span className="results-count">
-                    Mostrando {filteredPersonas.length} de {personas.length} persona(s)
-                    {(searchQuery || filterTipo || filterEstado) && (
-                        <span className="filter-indicator"> (filtrado)</span>
-                    )}
-                </span>
-            </div>
-
-            {/* Tabla */}
-            <div className="table-container">
-                {loading ? (
-                    <div className="loading-spinner">
-                        <i className="fas fa-spinner fa-spin"></i>
-                        <p>Cargando personas...</p>
-                    </div>
-                ) : (
-                    <div className="scrollable-table">
-                        <div className="table-body-scroll">
-                            <table className="table table-striped data-table" style={{ width: '100%' }}>
-                                <thead className="table-header-fixed">
-                                    <tr>
-                                        <th>Nombre y Apellido</th>
-                                        <th>Documento</th>
-                                        <th>Fecha Nacimiento</th>
-                                        <th>Género</th>
-                                        <th>Rol</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {currentPersonas.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="8" className="no-data">
-                                                <p>No se encontraron personas</p>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        currentPersonas.map((persona, index) => (
-                                            <tr key={persona.idPersona || persona.id_persona || `persona-${index}`}>
-                                                <td>
-                                                    <div>
-                                                        <div>
-                                                            <strong>{(persona.nombre || '') + ' ' + (persona.apellido || '')}</strong>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    {persona.dni || persona.numeroDocumento || 'Sin documento'}
-                                                </td>
-                                                <td>
-                                                    {persona.fechaNacimiento ?
-                                                        new Date(persona.fechaNacimiento).toLocaleDateString('es-ES') :
-                                                        'No registrada'
-                                                    }
-                                                </td>
-                                                <td>
-                                                    <span className="badge bg-secondary">
-                                                        {persona.genero || 'No especificado'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span className={`type-badge ${persona.habilitaCuentaUsuario === 'Sí' ? 'teacher' : 'student'}`}>
-                                                        {persona.nombreRol || 'Sin rol'}
-                                                    </span>
-                                                </td>
-
-                                                <td>
-                                                    <span className={`status-badge ${persona.estado ? persona.estado.toLowerCase() : 'unknown'}`}>
-                                                        {persona.estado || 'Desconocido'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className="action-buttons">
-                                                        <button
-                                                            className="btn-action btn-view"
-                                                            onClick={() => openModal('view', persona)}
-                                                            title="Ver detalles"
-                                                        >
-                                                            <i className="fas fa-eye"></i>
-                                                        </button>
-                                                        <button
-                                                            className="btn-action btn-edit"
-                                                            onClick={() => openModal('edit', persona)}
-                                                            title="Editar"
-                                                        >
-                                                            <i className="fas fa-edit"></i>
-                                                        </button>
-                                                        <button
-                                                            className="btn-action btn-delete"
-                                                            onClick={() => handleDelete(persona.idPersona)}
-                                                            title="Eliminar"
-                                                        >
-                                                            <i className="fas fa-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Paginación */}
-            {totalPages > 1 && (
-                <div className="pagination">
-                    <button
-                        className="pagination-btn"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                    >
-                        <i className="fas fa-chevron-left"></i>
-                    </button>
-
-                    <div className="pagination-info">
-                        Página {currentPage} de {totalPages} ({filteredPersonas.length} registros)
-                    </div>
-
-                    <button
-                        className="pagination-btn"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                    >
-                        <i className="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            )}
-
-            {/* Modal para crear nueva Persona */}
-            {showModal && modalMode === 'create' && (
-                <div className="modal-overlay">
-                    <div className="modal-content persona-modal">
-                        <div className="modal-header">
-                            <h3>
-                                <i className="fas fa-user-plus me-2"></i>
-                                Nueva Persona
-                            </h3>
-                            <button className="modal-close" onClick={closeModal}>
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <PersonaForm
-                                persona={selectedPersona}
-                                mode={modalMode}
-                                onSave={handleSavePersona}
-                                onCancel={closeModal}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal para ver/editar Persona existente */}
-            {showModal && (modalMode === 'edit' || modalMode === 'view') && (
-                <div className="modal-overlay">
-                    <div className="modal-content persona-modal">
-                        <div className="modal-header">
-                            <h3>
-                                {modalMode === 'edit' && (
-                                    <>
-                                        <i className="fas fa-user-edit me-2"></i>
-                                        Editar Persona
-                                    </>
-                                )}
-                                {modalMode === 'view' && (
-                                    <>
-                                        <i className="fas fa-user me-2"></i>
-                                        Detalles de Persona
-                                    </>
-                                )}
-                            </h3>
-                            <button className="modal-close" onClick={closeModal}>
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div className="modal-body">
-                            <PersonaEditForm
-                                persona={selectedPersona}
-                                mode={modalMode}
-                                onSave={handleSavePersona}
-                                onCancel={closeModal}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
+  return (
+    <div className="content-page">
+      <div className="page-header">
+        <div className="header-left">
+          <h1 className="page-title-sub">Lista de Personas</h1>
         </div>
-    );
+        <div className="header-actions">
+          <button
+            className="btn btn-primary-new"
+            onClick={() => openModal("create")}
+          >
+            <i className="fas fa-plus"></i>
+            Nueva Persona
+          </button>
+        </div>
+      </div>
+
+      {/* Filtros y búsqueda */}
+      <div className="search-filters">
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Buscar por nombre, apellido, documento o rol..."
+            value={searchQuery}
+            onChange={handleSearch}
+            className="search-input"
+          />
+        </div>
+
+        <div className="filter-actions">
+          <select
+            className="filter-select"
+            value={filterTipo}
+            onChange={handleFilterTipo}
+            disabled={loadingRoles}
+          >
+            <option value="">Todos los roles</option>
+            {loadingRoles ? (
+              <option disabled>Cargando roles...</option>
+            ) : (
+              roles.map((rol) => (
+                <option key={rol.idRol || rol.id} value={rol.nombreRol}>
+                  {rol.nombreRol}
+                </option>
+              ))
+            )}
+          </select>
+
+          <select
+            className="filter-select"
+            value={filterEstado}
+            onChange={handleFilterEstado}
+          >
+            <option value="">Todos los estados</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+
+          {(searchQuery || filterTipo || filterEstado) && (
+            <button
+              className="btn btn-outline-secondary btn-sm"
+              onClick={clearFilters}
+              title="Limpiar filtros"
+            >
+              <i className="fas fa-times"></i>
+              Limpiar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Indicador de resultados */}
+      <div className="results-info">
+        <span className="results-count">
+          Mostrando {filteredPersonas.length} de {personas.length} persona(s)
+          {(searchQuery || filterTipo || filterEstado) && (
+            <span className="filter-indicator"> (filtrado)</span>
+          )}
+        </span>
+      </div>
+
+      {/* Tabla */}
+      <div className="table-container">
+        {loading ? (
+          <div className="loading-spinner">
+            <i className="fas fa-spinner fa-spin"></i>
+            <p>Cargando personas...</p>
+          </div>
+        ) : (
+          <div style={{ width: "100%", overflowX: "auto" }}>
+            <table
+              className="table table-striped data-table table-responsive-insumos"
+              style={{ minWidth: 900 }}
+            >
+              <colgroup>
+                <col style={{ width: "5%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "12%" }} />
+              </colgroup>
+              <thead className="table-header-fixed">
+                <tr>
+                  <th> # </th>
+                  <th>Nombre y Apellido</th>
+                  <th>Documento</th>
+                  <th>Fecha Nacimiento</th>
+                  <th>Género</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentPersonas.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="no-data">
+                      <p>No se encontraron personas</p>
+                    </td>
+                  </tr>
+                ) : (
+                  currentPersonas.map((persona, index) => (
+                    <tr
+                      key={
+                        persona.idPersona ||
+                        persona.id_persona ||
+                        `persona-${index}`
+                      }
+                    >
+                      <td>
+                        <strong>{persona.idPersona}</strong>
+                      </td>
+                      <td
+                        className="truncate-cell"
+                        title={`${persona.nombre || ""} ${
+                          persona.apellido || ""
+                        }`}
+                      >
+                        <strong>
+                          {(persona.nombre || "") +
+                            " " +
+                            (persona.apellido || "")}
+                        </strong>
+                      </td>
+                      <td className="truncate-cell">
+                        {persona.dni ||
+                          persona.numeroDocumento ||
+                          "Sin documento"}
+                      </td>
+                      <td>
+                        {persona.fechaNacimiento
+                          ? new Date(
+                              persona.fechaNacimiento
+                            ).toLocaleDateString("es-ES")
+                          : "No registrada"}
+                      </td>
+                      <td>
+                        <span className="badge bg-secondary">
+                          {persona.genero || "No especificado"}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`type-badge ${
+                            persona.habilitaCuentaUsuario === "Sí"
+                              ? "teacher"
+                              : "student"
+                          }`}
+                        >
+                          {persona.nombreRol || "Sin rol"}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            persona.estado
+                              ? persona.estado.toLowerCase()
+                              : "unknown"
+                          }`}
+                        >
+                          {persona.estado || "Desconocido"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            className="btn-action btn-view"
+                            onClick={() => openModal("view", persona)}
+                            title="Ver detalles"
+                          >
+                            <i className="fas fa-eye"></i>
+                          </button>
+                          <button
+                            className="btn-action btn-edit"
+                            onClick={() => openModal("edit", persona)}
+                            title="Editar"
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                          <button
+                            className="btn-action btn-delete"
+                            onClick={() =>
+                              handleDelete(
+                                persona.id_persona ??
+                                  persona.idPersona ??
+                                  persona.id
+                              )
+                            }
+                            title="Eliminar"
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button
+            className="pagination-btn"
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            <i className="fas fa-chevron-left"></i>
+          </button>
+
+          <div className="pagination-info">
+            Página {currentPage} de {totalPages} ({filteredPersonas.length}{" "}
+            registros)
+          </div>
+
+          <button
+            className="pagination-btn"
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+          >
+            <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      )}
+
+      {/* Modal para crear nueva Persona */}
+      {showModal && modalMode === "create" && (
+        <div className="modal-overlay">
+          <div className="modal-content persona-modal">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-user-plus me-2"></i>
+                Nueva Persona
+              </h3>
+              <button className="modal-close" onClick={closeModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <PersonaForm
+                persona={selectedPersona}
+                mode={modalMode}
+                onSave={handleSavePersona}
+                onCancel={closeModal}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para ver/editar Persona existente */}
+      {showModal && (modalMode === "edit" || modalMode === "view") && (
+        <div className="modal-overlay">
+          <div className="modal-content persona-modal">
+            <div className="modal-header">
+              <h3>
+                {modalMode === "edit" && (
+                  <>
+                    <i className="fas fa-user-edit me-2"></i>
+                    Editar Persona
+                  </>
+                )}
+                {modalMode === "view" && (
+                  <>
+                    <i className="fas fa-user me-2"></i>
+                    Detalles de Persona
+                  </>
+                )}
+              </h3>
+              <button className="modal-close" onClick={closeModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <PersonaEditForm
+                persona={selectedPersona}
+                mode={modalMode}
+                onSave={handleSavePersona}
+                onCancel={closeModal}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default ListaPersonas;
