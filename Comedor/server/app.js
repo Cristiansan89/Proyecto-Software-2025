@@ -32,6 +32,8 @@ import reemplazoDocenteRouter from "./routes/reemplazodocente.js";
 import telegramRouter from "./routes/telegram.js";
 import estadoPedidoRouter from "./routes/estadospedido.js";
 import tipoMermaRouter from "./routes/tiposmerma.js";
+import alertasInventarioRouter from "./routes/alertasInventario.js";
+import alertasService from "./services/alertasInventarioService.js";
 
 export const createApp = ({
   usuarioModel,
@@ -119,6 +121,14 @@ export const createApp = ({
   app.use("/api/reemplazo-docentes", reemplazoDocenteRouter);
   app.use("/api/estado-pedidos", estadoPedidoRouter);
   app.use("/api/tipos-merma", tipoMermaRouter);
+  app.use("/api/alertas-inventario", alertasInventarioRouter);
+
+  // Inicializar servicio de alertas
+  alertasService
+    .inicializar()
+    .catch((err) =>
+      console.error("Error al inicializar servicio de alertas:", err)
+    );
 
   // Endpoint específico para obtener alumnos de un grado
   app.get("/api/alumnos-grado", async (req, res) => {
