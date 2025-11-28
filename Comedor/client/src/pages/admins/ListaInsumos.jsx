@@ -128,20 +128,29 @@ const ListaInsumos = () => {
   };
 
   const getStockStatus = (insumo) => {
-    if (insumo.stockActual <= insumo.stockMinimo) {
+    const minimo = Number(insumo.stockMinimo);
+    const actual = Number(insumo.stockActual);
+
+    const critico = minimo * 0.75;
+
+    if (actual <= critico) {
       return {
-        status: "low",
+        status: "critical",
         color: "text-danger",
         icon: "fa-exclamation-triangle",
       };
-    } else if (insumo.stockActual <= insumo.stockMinimo * 1.5) {
+    } else if (actual <= minimo) {
       return {
-        status: "medium",
+        status: "low",
         color: "text-warning",
         icon: "fa-exclamation-circle",
       };
     } else {
-      return { status: "good", color: "text-success", icon: "fa-check-circle" };
+      return {
+        status: "good",
+        color: "text-success",
+        icon: "fa-check-circle",
+      };
     }
   };
 
@@ -210,15 +219,29 @@ const ListaInsumos = () => {
         </div>
       </div>
 
-      <div className="results-info">
-        <div className="results-count">
-          Mostrando {filteredInsumos.length} de {insumos.length} insumos{" "}
-          {searchTerm && (
-            <span className="filter-indicator">
-              filtrado por "{searchTerm}"
-            </span>
-          )}
-        </div>
+      {/* Selector de tamaño de página y Paginación */}
+      <div className="page-size-selector d-flex align-items-center gap-2 ml-2 mb-2">
+        <label className="mb-0">
+          <strong>
+            <i>Registros por página</i>:
+          </strong>
+        </label>
+        <select
+          className="form-select"
+          style={{ width: "60px" }}
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setCurrentPage(1);
+          }}
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+        </select>
+        <span className="ms-2 text-muted">
+          Total: {filteredInsumos.length} registros
+        </span>
       </div>
 
       <div className="table-container">
@@ -362,41 +385,34 @@ const ListaInsumos = () => {
                 )}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="table-footer">
+                <div className="pagination">
+                  <button
+                    className="pagination-btn"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <i className="fas fa-chevron-left"></i>
+                  </button>
+                  <div className="pagination-info">
+                    Página {currentPage} de {totalPages} (
+                    {filteredInsumos.length} registros)
+                  </div>
+                  <button
+                    className="pagination-btn"
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    <i className="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
-
-        <div className="table-footer">
-          <div className="pagination-controls">
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              Anterior
-            </button>
-            <span className="mx-2">
-              Página {currentPage} / {totalPages}
-            </span>
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Siguiente
-            </button>
-            <select
-              className="form-select form-select-sm ms-3"
-              style={{ width: "80px" }}
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-          </div>
-        </div>
       </div>
 
       {/* Modal */}

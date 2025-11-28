@@ -13,6 +13,8 @@ const ListaProveedores = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredProveedores, setFilteredProveedores] = useState([]);
   const [estadoFilter, setEstadoFilter] = useState("todos");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     loadProveedores();
@@ -67,6 +69,13 @@ const ListaProveedores = () => {
     setFilteredProveedores(filtered);
   };
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, estadoFilter, proveedores]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProveedores.length / pageSize));
+
   // Ordenar proveedores por id (numérico si corresponde, si no lexicográfico)
   const sortedProveedores = filteredProveedores.slice().sort((a, b) => {
     const ia = String(a.idProveedor ?? "");
@@ -77,6 +86,11 @@ const ListaProveedores = () => {
     }
     return ia.localeCompare(ib);
   });
+
+  const paginatedProveedores = sortedProveedores.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const handleCreate = () => {
     setSelectedProveedor(null);
@@ -240,6 +254,37 @@ const ListaProveedores = () => {
           </select>
         </div>
       </div>
+
+      {/* Información de resultados y paginación */}
+      <div className="results-info">
+        <div className="results-count">
+          Mostrando {paginatedProveedores.length} de {filteredProveedores.length} proveedores{" "}
+          {searchTerm && (
+            <span className="filter-indicator">
+              filtrado por "{searchTerm}"
+            </span>
+          )}
+        </div>
+        <div className="page-size-selector d-flex align-items-center gap-2">
+          <label className="mb-0">
+            <strong>Registros por página:</strong>
+          </label>
+          <select
+            className="form-select form-select-sm"
+            style={{ width: "70px" }}
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+          </select>
+        </div>
+      </div>
+
       {/* Tabla de Proveedores */}
 
       <div className="table-container">
@@ -257,11 +302,18 @@ const ListaProveedores = () => {
                 </tr>
               </thead>
               <tbody>
-                {sortedProveedores.map((proveedor, index) => (
+                {paginatedProveedores.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="no-data">
+                      No se encontraron proveedores
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedProveedores.map((proveedor, index) => (
                   <tr key={proveedor.idProveedor || `proveedor-${index}`}>
                     <td>
-                      {/* Mostrar un id entero basado en la posición (fila) */}
-                      <strong>{index + 1}</strong>
+                      {/* Mostrar un id entero basado en la posición global (no por página) */}
+                      <strong>{(currentPage - 1) * pageSize + index + 1}</strong>
                       {/* Si necesitas ver el UUID original, descomenta la línea siguiente */}
                       {/* <div className="text-muted small">{proveedor.idProveedor}</div> */}
                     </td>
@@ -362,9 +414,36 @@ const ListaProveedores = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="table-footer">
+                <div className="pagination">
+                  <button
+                    className="pagination-btn"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <i className="fas fa-chevron-left"></i>
+                  </button>
+                  <div className="pagination-info">
+                    Página {currentPage} de {totalPages} (
+                    {filteredProveedores.length} registros)
+                  </div>
+                  <button
+                    className="pagination-btn"
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    <i className="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {filteredProveedores.length === 0 && (
