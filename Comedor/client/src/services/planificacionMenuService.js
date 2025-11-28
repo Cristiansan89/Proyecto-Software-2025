@@ -213,9 +213,7 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-        "Error al calcular comensales por turno y servicio:",
-        error
-      );
+      console.log("Error al calcular comensales por turno y servicio:", error);
       throw error;
     }
   },

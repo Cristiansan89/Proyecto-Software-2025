@@ -13,6 +13,7 @@ const pedidoService = {
       if (data && Array.isArray(data.pedidos)) return data.pedidos;
       if (data && Array.isArray(data.data)) return data.data;
       // Si no se reconoce el formato, devolver un array vacío y loggear
+      console.log(
         "pedidoService.getAll: formato de respuesta inesperado",
         data
       );
