@@ -231,6 +231,7 @@ const pedidoService = {
   // Generar pedidos automáticamente basado en planificación
   generarAutomatico: async (fechaInicio, fechaFin) => {
     try {
+      console.log(
         `🤖 Iniciando generación automática: ${fechaInicio} - ${fechaFin}`
       );
 
