@@ -190,20 +190,24 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           const existingIngredients = await API.get(
             `/recetas/${receta.id_receta}/insumos`
           );
+          console.log(
             "📋 Ingredientes existentes completos:",
             existingIngredients.data
           );
 
           if (existingIngredients.data && existingIngredients.data.insumos) {
+            console.log(
               `🗑️ Eliminando ${existingIngredients.data.insumos.length} ingredientes existentes...`
             );
             for (const ingrediente of existingIngredients.data.insumos) {
               try {
                 await API.delete(`/recetas/insumos/${ingrediente.id_item}`);
+                console.log(
                   "✅ Ingrediente eliminado exitosamente:",
                   ingrediente.id_item
                 );
               } catch (delError) {
+                console.log(
                   "❌ Error eliminando ingrediente individual:",
                   delError
                 );
@@ -213,6 +217,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           } else {
           }
         } catch (deleteError) {
+          console.log(
             "❌ Error general al eliminar ingredientes existentes:",
             deleteError
           );
@@ -220,9 +225,11 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         }
 
         // Agregar ingredientes actualizados
+        console.log(
           `➕ Agregando ${ingredientes.length} ingredientes actualizados...`
         );
         for (const ingrediente of ingredientes) {
+          console.log({
             id_insumo: ingrediente.id_insumo,
             cantidadPorPorcion: ingrediente.cantidadPorPorcion,
             unidadPorPorcion: ingrediente.unidadPorPorcion,
@@ -238,6 +245,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
             await API.post(`/recetas/${receta.id_receta}/insumos`, payload);
           } catch (addError) {
             if (addError.response?.data?.errors) {
+              console.log(
                 "❌ Errores de validación detallados:",
                 addError.response.data.errors
               );
@@ -251,7 +259,6 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
       onSave(savedReceta);
     } catch (error) {
-
       // Mostrar errores específicos
       if (error.response?.data?.errors) {
         const apiErrors = {};
@@ -261,11 +268,13 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         setErrors(apiErrors);
         alert("Error de validación. Revise los campos marcados en rojo.");
       } else if (error.response?.data?.message) {
+        console.log(
           "❌ Mensaje de error de la API:",
           error.response.data.message
         );
         alert(`Error: ${error.response.data.message}`);
       } else if (error.response) {
+        console.log(
           "❌ Error de respuesta HTTP:",
           error.response.status,
           error.response.data

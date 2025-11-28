@@ -31,7 +31,9 @@ const Parametros = () => {
     try {
       setLoading(true);
       const response = await API.get("/parametros-sistemas");
-      setParametros(response.data || []);    } catch (error) {      setMensaje({
+      setParametros(response.data || []);
+    } catch (error) {
+      setMensaje({
         tipo: "error",
         texto: "Error al cargar los parámetros",
       });
@@ -107,7 +109,8 @@ const Parametros = () => {
       });
       setEditandoId(null);
       cargarParametros();
-    } catch (error) {      setMensaje({
+    } catch (error) {
+      setMensaje({
         tipo: "error",
         texto: error.response?.data?.message || "Error al guardar el parámetro",
       });
@@ -134,7 +137,8 @@ const Parametros = () => {
           texto: "Parámetro eliminado correctamente",
         });
         cargarParametros();
-      } catch (error) {        setMensaje({
+      } catch (error) {
+        setMensaje({
           tipo: "error",
           texto: "Error al eliminar el parámetro",
         });

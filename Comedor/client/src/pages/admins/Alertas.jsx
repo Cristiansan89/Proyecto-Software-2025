@@ -91,7 +91,9 @@ const Alertas = () => {
         }
       });
 
-      setAlertas(configAlertas);    } catch (error) {      setMensaje({
+      setAlertas(configAlertas);
+    } catch (error) {
+      setMensaje({
         tipo: "error",
         texto: "Error al cargar la configuración de alertas",
       });
@@ -127,7 +129,8 @@ const Alertas = () => {
       }
 
       return true;
-    } catch (error) {      throw error;
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -236,7 +239,8 @@ const Alertas = () => {
 
       // Recargar configuración después de guardar
       await cargarConfiguracionAlertas();
-    } catch (error) {      setMensaje({
+    } catch (error) {
+      setMensaje({
         tipo: "error",
         texto:
           error.response?.data?.message ||

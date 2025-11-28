@@ -21,8 +21,6 @@ const AdminLayout = ({ children }) => {
     if (path.includes("/insumos")) return "insumos";
     if (path.includes("/proveedores")) return "proveedores";
     if (path.includes("/personasgrados")) return "personasgrados";
-    if (path.includes("/parametros")) return "parametros";
-    if (path.includes("/alertas")) return "alertas";
     if (path.includes("/configuracion")) return "configuracion";
     return "dashboard";
   };

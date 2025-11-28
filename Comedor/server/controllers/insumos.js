@@ -55,7 +55,10 @@ export class InsumoController {
       if (error.message.includes("ya existe")) {
         return res.status(409).json({ message: error.message });
       }
-      res.status(500).json({ message: "Error interno del servidor" });
+      res.status(500).json({
+        message: "Error interno del servidor",
+        error: error.message,
+      });
     }
   };
 
@@ -75,11 +78,9 @@ export class InsumoController {
         error.message.includes("referencia") ||
         error.message.includes("usado")
       ) {
-        return res
-          .status(409)
-          .json({
-            message: "No se puede eliminar el insumo porque está en uso",
-          });
+        return res.status(409).json({
+          message: "No se puede eliminar el insumo porque está en uso",
+        });
       }
       res.status(500).json({ message: "Error interno del servidor" });
     }

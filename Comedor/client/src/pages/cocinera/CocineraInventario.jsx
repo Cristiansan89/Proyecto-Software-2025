@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
+import Select from "react-select";
 import "../../styles/CocineraInventario.css";
 
 const CocineraInventario = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [inventarios, setInventarios] = useState([]);
-  const [insumos, setInsumos] = useState([]);
   const [movimientos, setMovimientos] = useState([]);
   const [filtros, setFiltros] = useState({
     categoria: "",
@@ -17,70 +17,75 @@ const CocineraInventario = () => {
   const [modalMovimiento, setModalMovimiento] = useState(false);
   const [nuevoMovimiento, setNuevoMovimiento] = useState({
     id_insumo: "",
-    tipo_movimiento: "entrada",
-    cantidad: "",
-    observaciones: "",
-    fecha: new Date().toISOString().split("T")[0],
+    tipoMovimiento: "Entrada",
+    cantidadMovimiento: "",
+    comentarioMovimiento: "",
+    id_tipoMerma: "",
   });
+  const [tiposMerma, setTiposMerma] = useState([]);
   const [alertasInventario, setAlertasInventario] = useState([]);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortConfig, setSortConfig] = useState({
+    key: "id_insumo",
+    direction: "asc",
+  });
 
   useEffect(() => {
     cargarDatos();
+    cargarTiposMerma();
   }, []);
 
   const cargarDatos = async () => {
     try {
       setLoading(true);
 
-      const [inventariosRes, insumosRes, movimientosRes] = await Promise.all([
+      const [inventariosRes, movimientosRes] = await Promise.all([
         API.get("/inventarios"),
-        API.get("/insumos"),
         API.get("/movimientos-inventarios"),
       ]);
 
       const inventariosData = inventariosRes.data || [];
-      const insumosData = insumosRes.data || [];
       const movimientosData = movimientosRes.data || [];
 
       setInventarios(inventariosData);
-      setInsumos(insumosData);
       setMovimientos(movimientosData);
 
       // Generar alertas de stock bajo
-      generarAlertas(inventariosData, insumosData);
+      generarAlertas(inventariosData);
     } catch (error) {
-      console.error("Error al cargar datos:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const cargarTiposMerma = async () => {
+    try {
+      const response = await API.get("/tipos-merma/activos");
+      setTiposMerma(response.data || []);
+    } catch (error) {}
   };
 
   const generarAlertas = (inventariosData, insumosData) => {
     const alertas = [];
 
     inventariosData.forEach((inv) => {
-      const insumo = insumosData.find((ins) => ins.id_insumo === inv.id_insumo);
-      if (insumo) {
-        const porcentajeStock =
-          (inv.cantidad_actual / inv.cantidad_maxima) * 100;
+      const cantidad = parseFloat(inv.cantidadActual);
+      const nivelMinimo = parseFloat(inv.nivelMinimoAlerta);
+      const stockMaximo = parseFloat(inv.stockMaximo) || nivelMinimo; // Fallback si no hay stockMaximo
 
-        if (porcentajeStock <= 10) {
-          alertas.push({
-            tipo: "critico",
-            insumo: insumo.nombre,
-            cantidad: inv.cantidad_actual,
-            unidad: insumo.unidad_medida,
-            porcentaje: porcentajeStock,
-          });
-        } else if (porcentajeStock <= 25) {
-          alertas.push({
-            tipo: "bajo",
-            insumo: insumo.nombre,
-            cantidad: inv.cantidad_actual,
-            unidad: insumo.unidad_medida,
-            porcentaje: porcentajeStock,
-          });
-        }
+      // Alerta si: stock actual <= stock mínimo de alerta
+      if (cantidad <= nivelMinimo) {
+        // Calcular porcentaje respecto al stock máximo
+        const porcentaje = stockMaximo > 0 ? (cantidad / stockMaximo) * 100 : 0;
+
+        alertas.push({
+          tipo: cantidad <= 0 ? "agotado" : "critico",
+          insumo: inv.nombreInsumo,
+          cantidad: cantidad,
+          unidad: inv.unidadMedida,
+          porcentaje: porcentaje,
+        });
       }
     });
 
@@ -89,54 +94,82 @@ const CocineraInventario = () => {
 
   const obtenerInventarioFiltrado = () => {
     return inventarios.filter((inv) => {
-      const insumo = insumos.find((ins) => ins.id_insumo === inv.id_insumo);
-      if (!insumo) return false;
-
+      // Los datos ya vienen con toda la información del insumo incluida
       const matchBusqueda =
         !filtros.busqueda ||
-        insumo.nombre.toLowerCase().includes(filtros.busqueda.toLowerCase());
+        inv.nombreInsumo.toLowerCase().includes(filtros.busqueda.toLowerCase());
 
       const matchCategoria =
-        !filtros.categoria || insumo.categoria === filtros.categoria;
+        !filtros.categoria || inv.categoria === filtros.categoria;
 
-      const porcentajeStock = (inv.cantidad_actual / inv.cantidad_maxima) * 100;
+      // Usar la nueva definición de estados basada en porcentaje de stock máximo
+      const cantidad = parseFloat(inv.cantidadActual);
+      const stockMaximo = parseFloat(inv.stockMaximo);
+      const nivelMinimo = parseFloat(inv.nivelMinimoAlerta);
+
+      const porcentajeActual = (cantidad / stockMaximo) * 100;
+      const porcentajeMinimo = (nivelMinimo / stockMaximo) * 100;
+
       let matchEstado = true;
 
-      if (filtros.estado === "critico") {
-        matchEstado = porcentajeStock <= 10;
+      if (filtros.estado === "agotado") {
+        matchEstado = cantidad <= 0;
+      } else if (filtros.estado === "critico") {
+        matchEstado = porcentajeActual <= 2;
       } else if (filtros.estado === "bajo") {
-        matchEstado = porcentajeStock <= 25 && porcentajeStock > 10;
-      } else if (filtros.estado === "normal") {
-        matchEstado = porcentajeStock > 25;
+        matchEstado =
+          porcentajeActual > 2 && porcentajeActual <= porcentajeMinimo;
+      } else if (filtros.estado === "bueno") {
+        matchEstado =
+          porcentajeActual > porcentajeMinimo && porcentajeActual <= 70;
+      } else if (filtros.estado === "excelente") {
+        matchEstado = porcentajeActual > 70;
       }
+      // Si no hay filtro de estado, mostrar todos
 
       return matchBusqueda && matchCategoria && matchEstado;
     });
   };
 
   const obtenerCategorias = () => {
-    const cats = [...new Set(insumos.map((ins) => ins.categoria))].filter(
+    const cats = [...new Set(inventarios.map((inv) => inv.categoria))].filter(
       Boolean
     );
     return cats;
   };
 
   const obtenerEstadoStock = (inventario) => {
-    const porcentaje =
-      (inventario.cantidad_actual / inventario.cantidad_maxima) * 100;
+    const cantidad = parseFloat(inventario.cantidadActual);
+    const stockMaximo = parseFloat(inventario.stockMaximo);
+    const nivelMinimo = parseFloat(inventario.nivelMinimoAlerta);
 
-    if (porcentaje <= 10)
+    // Calcular porcentajes basado en stock máximo
+    const porcentajeActual = (cantidad / stockMaximo) * 100;
+    const porcentajeMinimo = (nivelMinimo / stockMaximo) * 100;
+
+    // Nuevas definiciones de estado basadas en (stock actual / stock máximo) * 100
+    if (cantidad <= 0) {
+      return { estado: "agotado", color: "dark", texto: "Agotado" };
+    }
+    if (porcentajeActual <= 2) {
+      // Crítico: ≤ 2% del stock máximo
       return { estado: "critico", color: "danger", texto: "Crítico" };
-    if (porcentaje <= 25)
+    }
+    if (porcentajeActual <= porcentajeMinimo) {
+      // Bajo: entre 2% y el porcentaje del nivel mínimo
       return { estado: "bajo", color: "warning", texto: "Bajo" };
-    if (porcentaje <= 50)
-      return { estado: "medio", color: "info", texto: "Medio" };
-    return { estado: "bueno", color: "success", texto: "Bueno" };
+    }
+    if (porcentajeActual <= 70) {
+      // Bueno: entre nivel mínimo y 70%
+      return { estado: "bueno", color: "info", texto: "Bueno" };
+    }
+    // Excelente: > 70%
+    return { estado: "excelente", color: "success", texto: "Excelente" };
   };
 
   const registrarMovimiento = async () => {
     try {
-      if (!nuevoMovimiento.id_insumo || !nuevoMovimiento.cantidad) {
+      if (!nuevoMovimiento.id_insumo || !nuevoMovimiento.cantidadMovimiento) {
         alert("Complete los campos requeridos");
         return;
       }
@@ -144,27 +177,34 @@ const CocineraInventario = () => {
       setLoading(true);
 
       const movimientoData = {
-        ...nuevoMovimiento,
-        cantidad: parseFloat(nuevoMovimiento.cantidad),
-        usuario_registro: user.idPersona || user.id_persona,
+        id_insumo: parseInt(nuevoMovimiento.id_insumo),
+        tipoMovimiento: nuevoMovimiento.tipoMovimiento,
+        cantidadMovimiento: parseFloat(nuevoMovimiento.cantidadMovimiento),
+        comentarioMovimiento: nuevoMovimiento.comentarioMovimiento,
+        id_usuario: user.idUsuario || user.id_usuario,
+        id_tipoMerma:
+          nuevoMovimiento.tipoMovimiento === "Merma"
+            ? parseInt(nuevoMovimiento.id_tipoMerma)
+            : null,
       };
-
       await API.post("/movimientos-inventarios", movimientoData);
 
       setModalMovimiento(false);
       setNuevoMovimiento({
         id_insumo: "",
-        tipo_movimiento: "entrada",
-        cantidad: "",
-        observaciones: "",
-        fecha: new Date().toISOString().split("T")[0],
+        tipoMovimiento: "Entrada",
+        cantidadMovimiento: "",
+        comentarioMovimiento: "",
+        id_tipoMerma: "",
       });
 
       await cargarDatos();
       alert("Movimiento registrado exitosamente");
     } catch (error) {
-      console.error("Error al registrar movimiento:", error);
-      alert("Error al registrar el movimiento");
+      alert(
+        "Error al registrar el movimiento: " +
+          (error.response?.data?.message || error.message)
+      );
     } finally {
       setLoading(false);
     }
@@ -172,8 +212,60 @@ const CocineraInventario = () => {
 
   const obtenerUltimosMovimientos = () => {
     return movimientos
-      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+      .sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora))
       .slice(0, 10);
+  };
+
+  // Opciones para react-select
+  const opcionesInsumos = inventarios.map((inv) => {
+    return {
+      value: inv.id_insumo,
+      label: `${inv.nombreInsumo} (${inv.unidadMedida})`,
+      data: {
+        idInsumo: inv.id_insumo,
+        nombreInsumo: inv.nombreInsumo,
+        unidadMedida: inv.unidadMedida,
+        categoria: inv.categoria,
+        inventario: {
+          cantidadActual: inv.cantidadActual,
+          stockMaximo: inv.stockMaximo,
+        },
+      },
+    };
+  });
+
+  const opcionesTiposMovimiento = [
+    { value: "Entrada", label: "↗️ Entrada" },
+    { value: "Salida", label: "↙️ Salida" },
+    { value: "Merma", label: "🗑️ Merma" },
+  ];
+
+  const opcionesTiposMerma = tiposMerma.map((tipo) => ({
+    value: tipo.id_tipo_merma || tipo.id_tipoMerma,
+    label: `${tipo.nombre} - ${tipo.descripcion}`,
+  }));
+
+  // Estilos personalizados para react-select
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      borderColor: state.isFocused ? "#0d6efd" : "#ced4da",
+      boxShadow: state.isFocused
+        ? "0 0 0 0.25rem rgba(13, 110, 253, 0.25)"
+        : "none",
+      "&:hover": {
+        borderColor: "#0d6efd",
+      },
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected
+        ? "#0d6efd"
+        : state.isFocused
+        ? "#f8f9fa"
+        : "white",
+      color: state.isSelected ? "white" : "#212529",
+    }),
   };
 
   if (loading) {
@@ -191,9 +283,37 @@ const CocineraInventario = () => {
   const categorias = obtenerCategorias();
   const ultimosMovimientos = obtenerUltimosMovimientos();
 
+  const manejarOrdenamiento = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Aplicar ordenamiento
+  const inventariosOrdenados = [...inventariosFiltrados].sort((a, b) => {
+    const valueA = a[sortConfig.key];
+    const valueB = b[sortConfig.key];
+
+    if (typeof valueA === "string") {
+      const comparison = valueA.localeCompare(valueB);
+      return sortConfig.direction === "asc" ? comparison : -comparison;
+    }
+
+    const comparison = valueA - valueB;
+    return sortConfig.direction === "asc" ? comparison : -comparison;
+  });
+
+  // Aplicar paginación
+  const totalPages = Math.ceil(inventariosOrdenados.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const inventariosPaginados = inventariosOrdenados.slice(startIndex, endIndex);
+
   return (
     <div className="cocinera-inventario">
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
           <h1 className="page-title">
             <i className="fas fa-warehouse me-2"></i>
@@ -201,33 +321,58 @@ const CocineraInventario = () => {
           </h1>
           <p>Gestión de insumos y stock del comedor</p>
         </div>
+        <div className="col-md-2">
+          <button
+            className="btn btn-success w-100"
+            onClick={() => {
+              setModalMovimiento(true);
+            }}
+          >
+            <i className="fas fa-plus me-2"></i>
+            Movimiento
+          </button>
+        </div>
       </div>
 
       {/* Alertas de stock */}
       {alertasInventario.length > 0 && (
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="card border-warning">
-              <div className="card-header bg-warning text-dark">
-                <h5 className="mb-0">
-                  <i className="fas fa-exclamation-triangle me-2"></i>
-                  Alertas de Inventario
-                </h5>
-              </div>
-              <div className="card-body">
+        <div className="accordion mb-3" id="accordionAlertas">
+          <div className="accordion-item border-warning">
+            <h2 className="accordion-header">
+              <button
+                className="accordion-button bg-warning text-dark"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapseAlertas"
+              >
+                <i className="fas fa-exclamation-triangle me-2"></i>
+                Alertas de Inventario
+              </button>
+            </h2>
+
+            <div
+              id="collapseAlertas"
+              className="accordion-collapse collapse "
+              data-bs-parent="#accordionAlertas"
+            >
+              <div className="accordion-body">
                 <div className="row">
                   {alertasInventario.map((alerta, index) => (
                     <div key={index} className="col-md-6 col-lg-4 mb-2">
                       <div
                         className={`alert alert-${
-                          alerta.tipo === "critico" ? "danger" : "warning"
+                          alerta.tipo === "critico"
+                            ? "danger"
+                            : alerta.tipo === "agotado"
+                            ? "dark"
+                            : "warning"
                         } mb-0`}
                       >
                         <strong>{alerta.insumo}</strong>
                         <br />
                         <small>
-                          {alerta.cantidad} {alerta.unidad}(
-                          {alerta.porcentaje.toFixed(1)}% del stock)
+                          {alerta.cantidad} {alerta.unidad} (
+                          {alerta.porcentaje.toFixed(1)}% del stock máximo)
                         </small>
                       </div>
                     </div>
@@ -241,17 +386,17 @@ const CocineraInventario = () => {
 
       <div className="row">
         {/* Panel principal */}
-        <div className="col-lg-8">
+        <div className="col-lg-9">
           {/* Filtros */}
           <div className="card mb-4">
             <div className="card-body">
               <div className="row align-items-end">
                 <div className="col-md-4">
-                  <label className="form-label">Buscar insumo</label>
+                  <label className="form-label">Buscar Insumo</label>
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Nombre del insumo..."
+                    placeholder="Nombre del Insumo..."
                     value={filtros.busqueda}
                     onChange={(e) =>
                       setFiltros({
@@ -261,7 +406,7 @@ const CocineraInventario = () => {
                     }
                   />
                 </div>
-                <div className="col-md-3">
+                <div className="col-md-4">
                   <label className="form-label">Categoría</label>
                   <select
                     className="form-select"
@@ -281,7 +426,7 @@ const CocineraInventario = () => {
                     ))}
                   </select>
                 </div>
-                <div className="col-md-3">
+                <div className="col-md-4">
                   <label className="form-label">Estado de stock</label>
                   <select
                     className="form-select"
@@ -299,15 +444,6 @@ const CocineraInventario = () => {
                     <option value="normal">Stock Normal</option>
                   </select>
                 </div>
-                <div className="col-md-2">
-                  <button
-                    className="btn btn-success w-100"
-                    onClick={() => setModalMovimiento(true)}
-                  >
-                    <i className="fas fa-plus me-2"></i>
-                    Movimiento
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -319,8 +455,33 @@ const CocineraInventario = () => {
                 <i className="fas fa-clipboard-list me-2"></i>
                 Inventario Actual
               </h4>
+              <div></div>
             </div>
             <div className="card-body">
+              {/* Selector de tamaño de página y Paginación */}
+              <div className="page-size-selector d-flex align-items-center gap-2 ml-2 mb-2">
+                <label className="mb-0">
+                  <strong>
+                    <i>Registros por página</i>:
+                  </strong>
+                </label>
+                <select
+                  className="form-select"
+                  style={{ width: "60px" }}
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                </select>
+                <span className="ms-2 text-muted">
+                  Total: {inventariosOrdenados.length} registros
+                </span>
+              </div>
               {inventariosFiltrados.length === 0 ? (
                 <div className="text-center py-4">
                   <i className="fas fa-search fa-2x text-muted mb-3"></i>
@@ -330,56 +491,63 @@ const CocineraInventario = () => {
                 </div>
               ) : (
                 <div className="table-responsive">
-                  <table className="table table-hover">
-                    <thead className="table-light">
+                  <table className="table table-hover table-striped">
+                    <thead>
                       <tr>
+                        <th>#</th>
                         <th>Insumo</th>
                         <th>Categoría</th>
                         <th>Stock Actual</th>
-                        <th>Stock Máximo</th>
+                        <th>Stock Mínimo</th>
                         <th>Estado</th>
                         <th>Última Actualización</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {inventariosFiltrados.map((inventario) => {
-                        const insumo = insumos.find(
-                          (ins) => ins.id_insumo === inventario.id_insumo
-                        );
+                      {inventariosPaginados.map((inventario) => {
                         const estadoStock = obtenerEstadoStock(inventario);
-                        const porcentaje =
-                          (inventario.cantidad_actual /
-                            inventario.cantidad_maxima) *
-                          100;
-
+                        // Calcular porcentaje respecto al stock maximo
+                        const porcentajeDelMinimo =
+                          (parseFloat(inventario.cantidadActual) * 100) /
+                          parseFloat(inventario.stockMaximo);
                         return (
-                          <tr key={inventario.id_inventario}>
+                          <tr key={inventario.id_insumo}>
+                            <td>
+                              <strong>{inventario.id_insumo}</strong>
+                            </td>
                             <td>
                               <div>
                                 <strong>
-                                  {insumo?.nombre || "Insumo no encontrado"}
+                                  {inventario.nombreInsumo ||
+                                    "Insumo no encontrado"}
                                 </strong>
-                                {insumo?.descripcion && (
+                                {inventario.descripcion && (
                                   <small className="text-muted d-block">
-                                    {insumo.descripcion}
+                                    {inventario.descripcion}
                                   </small>
                                 )}
                               </div>
                             </td>
                             <td>
                               <span className="badge bg-secondary">
-                                {insumo?.categoria || "Sin categoría"}
+                                {inventario.categoria || "Sin categoría"}
                               </span>
                             </td>
                             <td>
                               <strong>
-                                {inventario.cantidad_actual}{" "}
-                                {insumo?.unidad_medida}
+                                {Math.round(
+                                  parseFloat(inventario.cantidadActual)
+                                )}{" "}
+                                {inventario.unidadMedida}
                               </strong>
                             </td>
-                            <td>
-                              {inventario.cantidad_maxima}{" "}
-                              {insumo?.unidad_medida}
+                            <td className="text-danger">
+                              <strong>
+                                {Math.round(
+                                  parseFloat(inventario.nivelMinimoAlerta)
+                                )}{" "}
+                                {inventario.unidadMedida}
+                              </strong>
                             </td>
                             <td>
                               <div>
@@ -394,19 +562,24 @@ const CocineraInventario = () => {
                                 >
                                   <div
                                     className={`progress-bar bg-${estadoStock.color}`}
-                                    style={{ width: `${porcentaje}%` }}
+                                    style={{
+                                      width: `${Math.min(
+                                        porcentajeDelMinimo,
+                                        100
+                                      )}%`,
+                                    }}
                                   ></div>
                                 </div>
                                 <small className="text-muted">
-                                  {porcentaje.toFixed(1)}%
+                                  {porcentajeDelMinimo.toFixed(1)}% del nivel
+                                  mínimo
                                 </small>
                               </div>
                             </td>
                             <td>
                               <small className="text-muted">
                                 {new Date(
-                                  inventario.fecha_actualizacion ||
-                                    inventario.updated_at
+                                  inventario.fechaUltimaActualizacion
                                 ).toLocaleDateString("es-ES")}
                               </small>
                             </td>
@@ -415,6 +588,34 @@ const CocineraInventario = () => {
                       })}
                     </tbody>
                   </table>
+                  {totalPages > 1 && (
+                    <div className="table-footer">
+                      <div className="pagination">
+                        <button
+                          className="pagination-btn"
+                          onClick={() =>
+                            setCurrentPage((p) => Math.max(1, p - 1))
+                          }
+                          disabled={currentPage === 1}
+                        >
+                          <i className="fas fa-chevron-left"></i>
+                        </button>
+                        <div className="pagination-info">
+                          Página {currentPage} de {totalPages} (
+                          {inventariosOrdenados.length} registros)
+                        </div>
+                        <button
+                          className="pagination-btn"
+                          onClick={() =>
+                            setCurrentPage((p) => Math.min(totalPages, p + 1))
+                          }
+                          disabled={currentPage === totalPages}
+                        >
+                          <i className="fas fa-chevron-right"></i>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -422,72 +623,92 @@ const CocineraInventario = () => {
         </div>
 
         {/* Panel lateral */}
-        <div className="col-lg-2">
-          {/* Estadísticas rápidas */}
-          <div className="card mb-2">
-            <div className="card-header">
-              <h4>
-                <i className="fas fa-chart-pie me-2"></i>
-                Estadísticas
-              </h4>
-            </div>
-            <div className="card-body">
-              <div className="stat-item">
-                <div className="stat-icon bg-primary">
-                  <i className="fas fa-boxes"></i>
-                </div>
-                <div className="stat-content">
-                  <h6>Total Insumos</h6>
-                  <h4>{inventarios.length}</h4>
-                </div>
-              </div>
+        <div className="col-lg-3 ml-lg-4">
+          {/* Accordion de Estadísticas */}
+          <div className="accordion ml-2" id="accordionEstadisticas">
+            <div className="accordion-item">
+              <h2 className="accordion-header" id="headingEst">
+                <button
+                  className="accordion-button"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapseEst"
+                  aria-expanded="true"
+                  aria-controls="collapseEst"
+                >
+                  <i className="fas fa-chart-pie me-2"></i>
+                  Estadísticas
+                </button>
+              </h2>
 
-              <div className="stat-item">
-                <div className="stat-icon bg-danger">
-                  <i className="fas fa-exclamation-triangle"></i>
-                </div>
-                <div className="stat-content">
-                  <h6>Stock Crítico</h6>
-                  <h4>
-                    {
-                      alertasInventario.filter((a) => a.tipo === "critico")
-                        .length
-                    }
-                  </h4>
-                </div>
-              </div>
+              <div
+                id="collapseEst"
+                className="accordion-collapse collapse"
+                aria-labelledby="headingEst"
+                data-bs-parent="#accordionEstadisticas"
+              >
+                <div className="accordion-body">
+                  <div className="stat-item mb-2">
+                    <div className="stat-icon bg-primary">
+                      <i className="fas fa-boxes"></i>
+                    </div>
+                    <div className="stat-content">
+                      <h6>Total Insumos</h6>
+                      <h5>{inventarios.length}</h5>
+                    </div>
+                  </div>
 
-              <div className="stat-item">
-                <div className="stat-icon bg-warning">
-                  <i className="fas fa-minus-circle"></i>
-                </div>
-                <div className="stat-content">
-                  <h6>Stock Bajo</h6>
-                  <h4>
-                    {alertasInventario.filter((a) => a.tipo === "bajo").length}
-                  </h4>
-                </div>
-              </div>
+                  <div className="stat-item mb-2">
+                    <div className="stat-icon bg-danger">
+                      <i className="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div className="stat-content">
+                      <h6>Stock Crítico</h6>
+                      <h5>
+                        {
+                          alertasInventario.filter((a) => a.tipo === "critico")
+                            .length
+                        }
+                      </h5>
+                    </div>
+                  </div>
 
-              <div className="stat-item">
-                <div className="stat-icon bg-info">
-                  <i className="fas fa-tags"></i>
-                </div>
-                <div className="stat-content">
-                  <h6>Categorías</h6>
-                  <h4>{categorias.length}</h4>
+                  <div className="stat-item mb-2">
+                    <div className="stat-icon bg-warning">
+                      <i className="fas fa-minus-circle"></i>
+                    </div>
+                    <div className="stat-content">
+                      <h6>Stock Bajo</h6>
+                      <h5>
+                        {
+                          alertasInventario.filter((a) => a.tipo === "bajo")
+                            .length
+                        }
+                      </h5>
+                    </div>
+                  </div>
+
+                  <div className="stat-item mb-2">
+                    <div className="stat-icon bg-info">
+                      <i className="fas fa-tags"></i>
+                    </div>
+                    <div className="stat-content">
+                      <h6>Categorías</h6>
+                      <h5>{categorias.length}</h5>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Últimos movimientos */}
-          <div className="card">
+          <div className="card mt-3">
             <div className="card-header">
-              <h4>
-                <i className="fas fa-history me-2"></i>
+              <h6>
+                <i className="fas fa-history me-2 pb-0"></i>
                 Últimos Movimientos
-              </h4>
+              </h6>
             </div>
             <div className="card-body">
               {ultimosMovimientos.length === 0 ? (
@@ -497,8 +718,10 @@ const CocineraInventario = () => {
               ) : (
                 <div className="movimientos-list">
                   {ultimosMovimientos.map((mov, index) => {
-                    const insumo = insumos.find(
-                      (ins) => ins.id_insumo === mov.id_insumo
+                    const insumo = inventarios.find(
+                      (inv) =>
+                        inv.id_insumo === mov.idInsumo ||
+                        inv.id_insumo === mov.id_insumo
                     );
 
                     return (
@@ -506,32 +729,34 @@ const CocineraInventario = () => {
                         <div className="movimiento-header">
                           <span
                             className={`badge bg-${
-                              mov.tipo_movimiento === "entrada"
+                              mov.tipoMovimiento === "Entrada"
                                 ? "success"
-                                : "danger"
+                                : mov.tipoMovimiento === "Salida"
+                                ? "danger"
+                                : "warning"
                             }`}
                           >
-                            {mov.tipo_movimiento === "entrada"
+                            {mov.tipoMovimiento === "Entrada"
                               ? "↗️ Entrada"
-                              : "↙️ Salida"}
+                              : mov.tipoMovimiento === "Salida"
+                              ? "↙️ Salida"
+                              : "🗑️ Merma"}
                           </span>
-                          <small className="text-muted">
-                            {new Date(mov.fecha).toLocaleDateString("es-ES")}
+                          <small className="text-muted mx-2">
+                            {new Date(mov.fechaHora).toLocaleDateString(
+                              "es-ES"
+                            )}
                           </small>
                         </div>
-                        <div className="movimiento-content">
+                        <div className="movimiento-content mb-2">
                           <strong>
-                            {insumo?.nombre || "Insumo desconocido"}
+                            {insumo?.nombreInsumo || "Insumo desconocido"}
                           </strong>
                           <br />
                           <span>
-                            {mov.cantidad} {insumo?.unidad_medida}
+                            {Math.round(parseFloat(mov.cantidadMovimiento))}{" "}
+                            {insumo?.unidadMedida}
                           </span>
-                          {mov.observaciones && (
-                            <small className="text-muted d-block">
-                              {mov.observaciones}
-                            </small>
-                          )}
                         </div>
                       </div>
                     );
@@ -562,44 +787,99 @@ const CocineraInventario = () => {
                 ></button>
               </div>
               <div className="modal-body">
+                {/* Debug info */}
+                <div className="alert alert-info mb-3">
+                  <small>
+                    <strong>Debug:</strong> Inventarios: {inventarios.length},
+                    Opciones: {opcionesInsumos.length}, Tipos de merma:{" "}
+                    {tiposMerma.length}
+                    <br />
+                    Estado loading: {loading ? "Sí" : "No"}
+                  </small>
+                </div>
                 <div className="mb-3">
                   <label className="form-label">Insumo *</label>
-                  <select
-                    className="form-select"
-                    value={nuevoMovimiento.id_insumo}
-                    onChange={(e) =>
+                  {opcionesInsumos.length === 0 && (
+                    <div className="alert alert-warning">
+                      🔄 Cargando inventario... ({inventarios.length} items
+                      disponibles)
+                    </div>
+                  )}
+                  <Select
+                    options={opcionesInsumos}
+                    value={
+                      opcionesInsumos.find(
+                        (opt) => opt.value == nuevoMovimiento.id_insumo
+                      ) || null
+                    }
+                    onChange={(selectedOption) => {
                       setNuevoMovimiento({
                         ...nuevoMovimiento,
-                        id_insumo: e.target.value,
-                      })
-                    }
-                    required
-                  >
-                    <option value="">Seleccionar insumo</option>
-                    {insumos.map((insumo) => (
-                      <option key={insumo.id_insumo} value={insumo.id_insumo}>
-                        {insumo.nombre} ({insumo.unidad_medida})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
+                        id_insumo: selectedOption ? selectedOption.value : "",
+                      });
+                    }}
+                    placeholder={`Buscar y seleccionar insumo... (${opcionesInsumos.length} disponibles)`}
+                    isSearchable
+                    isClearable
+                    styles={customSelectStyles}
+                    formatOptionLabel={(option) => (
+                      <div>
+                        <div style={{ fontWeight: "bold" }}>
+                          {option.data.nombreInsumo}
+                        </div>
+                        <div style={{ fontSize: "0.875rem", color: "#6c757d" }}>
+                          Unidad: {option.data.unidadMedida} | Categoría:{" "}
+                          {option.data.categoria || "Sin categoría"}
+                          {option.data.inventario &&
+                            ` | Stock: ${Math.round(
+                              parseFloat(
+                                option.data.inventario.cantidadActual || 0
+                              )
+                            )}`}
+                        </div>
+                      </div>
+                    )}
+                    noOptionsMessage={() => "No se encontraron insumos"}
+                    loadingMessage={() => "Cargando insumos..."}
+                  />
+                  {nuevoMovimiento.id_insumo && (
+                    <small className="form-text text-muted">
+                      {(() => {
+                        const inventarioSeleccionado = inventarios.find(
+                          (inv) => inv.id_insumo == nuevoMovimiento.id_insumo
+                        );
+                        if (inventarioSeleccionado) {
+                          return `Stock actual: ${Math.round(
+                            parseFloat(inventarioSeleccionado.cantidadActual)
+                          )} ${
+                            inventarioSeleccionado.unidadMedida
+                          } | Categoría: ${
+                            inventarioSeleccionado.categoria || "Sin categoría"
+                          }`;
+                        }
+                        return "";
+                      })()}
+                    </small>
+                  )}
+                </div>{" "}
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Tipo de movimiento</label>
-                    <select
-                      className="form-select"
-                      value={nuevoMovimiento.tipo_movimiento}
-                      onChange={(e) =>
+                    <Select
+                      options={opcionesTiposMovimiento}
+                      value={opcionesTiposMovimiento.find(
+                        (opt) => opt.value === nuevoMovimiento.tipoMovimiento
+                      )}
+                      onChange={(selectedOption) => {
                         setNuevoMovimiento({
                           ...nuevoMovimiento,
-                          tipo_movimiento: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="entrada">Entrada</option>
-                      <option value="salida">Salida</option>
-                    </select>
+                          tipoMovimiento: selectedOption.value,
+                          id_tipoMerma: "", // Reset merma when changing type
+                        });
+                      }}
+                      isSearchable={false}
+                      styles={customSelectStyles}
+                    />
                   </div>
 
                   <div className="col-md-6 mb-3">
@@ -607,48 +887,69 @@ const CocineraInventario = () => {
                     <input
                       type="number"
                       className="form-control"
-                      value={nuevoMovimiento.cantidad}
+                      value={nuevoMovimiento.cantidadMovimiento}
                       onChange={(e) =>
                         setNuevoMovimiento({
                           ...nuevoMovimiento,
-                          cantidad: e.target.value,
+                          cantidadMovimiento: e.target.value,
                         })
                       }
                       min="0"
-                      step="0.01"
+                      step="0.001"
                       required
                     />
                   </div>
                 </div>
-
+                {nuevoMovimiento.tipoMovimiento === "Merma" && (
+                  <div className="mb-3">
+                    <label className="form-label">Tipo de Merma *</label>
+                    <Select
+                      options={opcionesTiposMerma}
+                      value={
+                        opcionesTiposMerma.find(
+                          (opt) => opt.value == nuevoMovimiento.id_tipoMerma
+                        ) || null
+                      }
+                      onChange={(selectedOption) => {
+                        setNuevoMovimiento({
+                          ...nuevoMovimiento,
+                          id_tipoMerma: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        });
+                      }}
+                      placeholder="Seleccionar tipo de merma..."
+                      isSearchable
+                      isClearable
+                      styles={customSelectStyles}
+                    />
+                  </div>
+                )}
                 <div className="mb-3">
-                  <label className="form-label">Fecha</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={nuevoMovimiento.fecha}
-                    onChange={(e) =>
-                      setNuevoMovimiento({
-                        ...nuevoMovimiento,
-                        fecha: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Observaciones</label>
+                  <label className="form-label">
+                    {nuevoMovimiento.tipoMovimiento === "Entrada"
+                      ? "Observaciones (proveedor, factura, etc.)"
+                      : nuevoMovimiento.tipoMovimiento === "Salida"
+                      ? "Observaciones (destino, receta, etc.)"
+                      : "Descripción de la merma"}
+                  </label>
                   <textarea
                     className="form-control"
                     rows="3"
-                    value={nuevoMovimiento.observaciones}
+                    value={nuevoMovimiento.comentarioMovimiento}
                     onChange={(e) =>
                       setNuevoMovimiento({
                         ...nuevoMovimiento,
-                        observaciones: e.target.value,
+                        comentarioMovimiento: e.target.value,
                       })
                     }
-                    placeholder="Motivo del movimiento, proveedor, etc..."
+                    placeholder={
+                      nuevoMovimiento.tipoMovimiento === "Entrada"
+                        ? "Proveedor, número de factura, lote..."
+                        : nuevoMovimiento.tipoMovimiento === "Salida"
+                        ? "Para qué receta, consumo directo..."
+                        : "Detalles sobre la causa de la merma..."
+                    }
                   />
                 </div>
               </div>
@@ -665,11 +966,14 @@ const CocineraInventario = () => {
                   className="btn btn-success"
                   onClick={registrarMovimiento}
                   disabled={
-                    !nuevoMovimiento.id_insumo || !nuevoMovimiento.cantidad
+                    !nuevoMovimiento.id_insumo ||
+                    !nuevoMovimiento.cantidadMovimiento ||
+                    (nuevoMovimiento.tipoMovimiento === "Merma" &&
+                      !nuevoMovimiento.id_tipoMerma)
                   }
                 >
                   <i className="fas fa-save me-2"></i>
-                  Registrar
+                  Registrar {nuevoMovimiento.tipoMovimiento}
                 </button>
               </div>
             </div>
