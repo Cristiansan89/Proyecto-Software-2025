@@ -57,7 +57,6 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
     setResultado(null);
 
     try {
-      console.log("🚀 Generando pedidos automáticos...");
 
       const response = await pedidoService.generarAutomatico(
         formData.fechaInicio,
@@ -72,7 +71,6 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
         onError?.(response.message || "No fue necesario crear pedidos");
       }
     } catch (error) {
-      console.error("❌ Error generando pedidos automáticos:", error);
       onError?.(
         error.response?.data?.message || "Error al generar pedidos automáticos"
       );
@@ -91,92 +89,77 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
     onClose?.();
   };
 
+
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-90vh overflow-auto">
+    <div
+      className="modal-overlay"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        className="modal-content"
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          padding: "0",
+          maxWidth: "800px",
+          width: "90%",
+          maxHeight: "80vh",
+          overflowY: "auto",
+        }}
+      >
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                Generación Automática de Pedidos
-              </h2>
-              <p className="text-sm text-gray-500">
-                Basado en planificación de menús e inventario
-              </p>
-            </div>
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 className="mb-0">
+              <i className="fas fa-robot me-2"></i>
+              Generación Automática de Pedidos
+            </h5>
+            <small className="text-muted">
+              Basado en planificación de menús e inventario
+            </small>
           </div>
           <button
+            type="button"
+            className="btn-close"
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+          ></button>
         </div>
 
         {/* Body */}
-        <div className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="card-body">
+          <form onSubmit={handleSubmit}>
             {/* Información del proceso */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2 flex items-center">
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                ¿Cómo funciona?
-              </h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Analiza la planificación de menús del período</li>
-                <li>• Calcula insumos necesarios por recetas y comensales</li>
-                <li>• Verifica stock actual en inventario</li>
-                <li>• Identifica déficit y selecciona mejores proveedores</li>
-                <li>• Crea pedidos agrupados automáticamente</li>
+            <div className="alert alert-info mb-4">
+              <h6 className="alert-heading mb-2">
+                <i className="fas fa-info-circle me-2"></i>¿Cómo funciona?
+              </h6>
+              <ul className="mb-0 ps-3">
+                <li>Analiza la planificación de menús del período</li>
+                <li>Calcula insumos necesarios por recetas y comensales</li>
+                <li>Verifica stock actual en inventario</li>
+                <li>Identifica déficit y selecciona mejores proveedores</li>
+                <li>Crea pedidos agrupados automáticamente</li>
               </ul>
             </div>
 
             {/* Selección de fechas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="row mb-3">
+              <div className="col-md-6">
+                <label className="form-label">
+                  <i className="fas fa-calendar-alt me-1"></i>
                   Fecha Inicio del Período
                 </label>
                 <input
@@ -184,13 +167,14 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
                   name="fechaInicio"
                   value={formData.fechaInicio}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="form-control"
                   required
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="col-md-6">
+                <label className="form-label">
+                  <i className="fas fa-calendar-alt me-1"></i>
                   Fecha Fin del Período
                 </label>
                 <input
@@ -198,113 +182,71 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
                   name="fechaFin"
                   value={formData.fechaFin}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="form-control"
                   required
                 />
               </div>
             </div>
 
             {/* Botón de fechas sugeridas */}
-            <div className="flex justify-center">
+            <div className="text-center mb-3">
               <button
                 type="button"
                 onClick={usarFechasSugeridas}
-                className="flex items-center space-x-2 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md transition-colors"
+                className="btn btn-outline-secondary btn-sm"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <span>Usar próxima semana</span>
+                <i className="fas fa-calendar-check me-1"></i>
+                Usar próxima semana
               </button>
             </div>
 
             {/* Resultado del análisis */}
             {resultado && (
               <div
-                className={`border rounded-lg p-4 ${
+                className={`alert ${
                   resultado.success && resultado.totalPedidosCreados > 0
-                    ? "border-green-200 bg-green-50"
-                    : "border-yellow-200 bg-yellow-50"
-                }`}
+                    ? "alert-success"
+                    : "alert-warning"
+                } mb-3`}
               >
-                <h3 className="font-semibold mb-3 flex items-center">
+                <h6 className="alert-heading">
                   {resultado.success && resultado.totalPedidosCreados > 0 ? (
                     <>
-                      <svg
-                        className="w-5 h-5 mr-2 text-green-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span className="text-green-900">
-                        Pedidos Generados Exitosamente
-                      </span>
+                      <i className="fas fa-check-circle me-2"></i>
+                      Pedidos Generados Exitosamente
                     </>
                   ) : (
                     <>
-                      <svg
-                        className="w-5 h-5 mr-2 text-yellow-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span className="text-yellow-900">
-                        Información del Análisis
-                      </span>
+                      <i className="fas fa-info-circle me-2"></i>
+                      Información del Análisis
                     </>
                   )}
-                </h3>
+                </h6>
 
-                <p className="text-sm text-gray-700 mb-3">
-                  {resultado.message}
-                </p>
+                <p className="mb-2">{resultado.message}</p>
 
                 {resultado.analisis && (
-                  <div className="text-xs space-y-1">
-                    <div className="grid grid-cols-2 gap-2">
-                      <span>
+                  <div className="small">
+                    <div className="row">
+                      <div className="col-sm-6">
                         <strong>Período:</strong>{" "}
                         {resultado.analisis.periodoPlanificacion}
-                      </span>
-                      <span>
+                      </div>
+                      <div className="col-sm-6">
                         <strong>Total Menús:</strong>{" "}
                         {resultado.analisis.totalMenus || 0}
-                      </span>
-                      <span>
+                      </div>
+                      <div className="col-sm-6">
                         <strong>Insumos Analizados:</strong>{" "}
                         {resultado.analisis.insumosAnalizados || 0}
-                      </span>
-                      <span>
+                      </div>
+                      <div className="col-sm-6">
                         <strong>Proveedores:</strong>{" "}
                         {resultado.analisis.proveedoresInvolucrados || 0}
-                      </span>
+                      </div>
                     </div>
                     {resultado.analisis.fechaEntregaSugerida && (
-                      <div>
+                      <div className="mt-2">
                         <strong>Entrega Sugerida:</strong>{" "}
                         {resultado.analisis.fechaEntregaSugerida}
                       </div>
@@ -314,14 +256,14 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
 
                 {resultado.pedidos && resultado.pedidos.length > 0 && (
                   <div className="mt-3">
-                    <h4 className="text-sm font-semibold mb-2">
+                    <h6 className="text-sm font-semibold mb-2">
                       Pedidos Creados:
-                    </h4>
+                    </h6>
                     <div className="space-y-2">
                       {resultado.pedidos.map((pedido, index) => (
                         <div
                           key={index}
-                          className="text-xs bg-white bg-opacity-50 p-2 rounded"
+                          className="small bg-white p-2 rounded border"
                         >
                           <div>
                             <strong>Proveedor:</strong>{" "}
@@ -340,11 +282,11 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
             )}
 
             {/* Botones de acción */}
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div className="d-flex justify-content-end gap-2 pt-3">
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                className="btn btn-secondary"
                 disabled={loading}
               >
                 {resultado ? "Cerrar" : "Cancelar"}
@@ -354,47 +296,21 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  className={`btn btn-primary ${loading ? "disabled" : ""}`}
                 >
                   {loading ? (
                     <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      <span>Generando...</span>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      Generando...
                     </>
                   ) : (
                     <>
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 10V3L4 14h7v7l9-11h-7z"
-                        />
-                      </svg>
-                      <span>Generar Pedidos</span>
+                      <i className="fas fa-cog me-1"></i>
+                      Generar Pedidos
                     </>
                   )}
                 </button>

@@ -88,10 +88,8 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                 estado: formData.estado
             };
 
-            console.log('ProveedorForm: Enviando datos:', proveedorData);
             onSave(proveedorData);
         } catch (error) {
-            console.error('Error al guardar proveedor:', error);
             // Mostrar error al usuario
             if (error.response?.data?.message) {
                 alert(`Error: ${error.response.data.message}`);

@@ -86,8 +86,6 @@ Proyecto en desarrollo activo con funcionalidades core implementadas y en proces
 
 ## 📋 Descripción
 
-
-
 ## 🛠️ Tecnologías Utilizadas
 
 ## 📊 Estructura de la Base de Datos

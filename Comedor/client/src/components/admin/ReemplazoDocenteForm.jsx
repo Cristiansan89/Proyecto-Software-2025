@@ -156,7 +156,6 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
         setTitulares(normalizedTitulares);
         setOptions(optionsData);
       } catch (error) {
-        console.error("Error al cargar opciones:", error);
       } finally {
         setLoadingOptions(false);
       }
@@ -204,7 +203,6 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
 
       onSave(result);
     } catch (error) {
-      console.error("Error al guardar reemplazo:", error);
 
       if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);

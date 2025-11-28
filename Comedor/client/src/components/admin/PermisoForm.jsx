@@ -116,7 +116,6 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
 
       await onSave(dataToSend);
     } catch (error) {
-      console.error("Error al guardar permiso:", error);
     }
   };
 

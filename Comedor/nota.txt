@@ -9,3 +9,5 @@ n cantidad de insumos disponible, entocnes debería tenerse en cuenta la cantida
 - Se puede clasificar en varias parte los pedido porque se tendrá pedido de fideo a un proveedor, la carne a otros proveedor. Y así con cada insumo que se necesita se tiene su proveedor.
 - También pedir según la clasificación que se tiene el insumo por proveedor. Es decir un proveedor provee arroz de mala calificación y hay otro proveedor que tiene insumo de buena calificación se le pide a este.
 - Los pedido se envía por mail a los proveedores.
+
+

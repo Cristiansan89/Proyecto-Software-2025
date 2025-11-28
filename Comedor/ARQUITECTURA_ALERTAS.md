@@ -7,84 +7,84 @@
 │                      FRONTEND (React)                           │
 │                   CocineraInventario.jsx                        │
 │                                                                 │
-│  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────┐  │
-│  │ Tabla Inventario│  │ Alertas Section  │  │ Últimos Mov. │  │
-│  └────────┬────────┘  └────────┬─────────┘  └──────────────┘  │
-└───────────┼───────────────────┼──────────────────────────────────┘
-            │                   │
-            └───────────┬───────┘
+│  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────┐    │
+│  │ Tabla Inventario│  │ Alertas Section  │  │ Últimos Mov. │    │
+│  └────────┬────────┘  └────────┬─────────┘  └──────────────┘    │
+└───────────┼────────────────────┼────────────────────────────────┘
+            │                    │
+            └───────────┬────────┘
                         │
                  GET /api/inventarios
                  GET /api/alertas-inventario/activas
                         │
-┌───────────────────────┴────────────────────────────────────────┐
-│                      EXPRESS BACKEND                           │
-│                                                                │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │                    MIDDLEWARE                         │    │
-│  │  ┌──────────────────────────────────────────────┐   │    │
-│  │  │ updateLastActivity (resuelve alertas)       │   │    │
-│  │  │ authMiddleware (autenticación)               │   │    │
-│  │  │ corsMiddleware (CORS)                         │   │    │
-│  │  └──────────────────────────────────────────────┘   │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                        │                                       │
-│                        ▼                                       │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │              ROUTER                                   │    │
-│  │  app.use('/api/alertas-inventario',                 │    │
-│  │           alertasInventarioRouter)                  │    │
-│  └────┬────────────────────────────────────────────┬───┘    │
-│       │                                             │        │
-│       ▼                                             ▼        │
-│  ┌──────────────────┐                  ┌──────────────────┐ │
-│  │   CONTROLLER     │                  │   CONTROLLER     │ │
-│  │ AlertasInventario│                  │ InventariosCtrl  │ │
-│  │                  │                  │                  │ │
-│  │ - inicializar()  │                  │ - getAll()       │ │
-│  │ - obtenerActivas │                  │ - getById()      │ │
-│  │ - resolverAlerta │                  │                  │ │
-│  │ - estadisticas() │                  │                  │ │
-│  └────────┬─────────┘                  └────────┬─────────┘ │
+┌───────────────────────┴──────────────────────────────────────┐
+│                      EXPRESS BACKEND                         │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐   │
+│  │                    MIDDLEWARE                         │   │
+│  │  ┌──────────────────────────────────────────────┐     │   │
+│  │  │ updateLastActivity (resuelve alertas)        │     │   │
+│  │  │ authMiddleware (autenticación)               │     │   │
+│  │  │ corsMiddleware (CORS)                        │     │   │
+│  │  └──────────────────────────────────────────────┘     │   │
+│  └───────────────────────────────────────────────────────┘   │
+│                        │                                     │
+│                        ▼                                     │
+│  ┌─────────────────────────────────────────────────────┐     │
+│  │              ROUTER                                 │     │
+│  │  app.use('/api/alertas-inventario',                 │     │
+│  │           alertasInventarioRouter)                  │     │
+│  └────┬─────────────────────────────────────────┬──────┘     │
+│       │                                         │            │
+│       ▼                                         ▼            │
+│  ┌──────────────────┐                  ┌──────────────────┐  │
+│  │   CONTROLLER     │                  │   CONTROLLER     │  │
+│  │ AlertasInventario│                  │ InventariosCtrl  │  │
+│  │                  │                  │                  │  │
+│  │ - inicializar()  │                  │ - getAll()       │  │
+│  │ - obtenerActivas │                  │ - getById()      │  │
+│  │ - resolverAlerta │                  │                  │  │
+│  │ - estadisticas() │                  │                  │  │
+│  └────────┬─────────┘                  └────────┬─────────┘  │
 │           │                                     │            │
 │           ▼                                     ▼            │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              SERVICE                                │   │
-│  │  AlertasInventarioService (singleton)              │   │
-│  │                                                    │   │
-│  │  ┌──────────────────────────────────────────────┐ │   │
-│  │  │ inicializar()                                │ │   │
-│  │  │ ├─ await telegramService.initialize()       │ │   │
-│  │  │ └─ iniciarVerificacionPeriodica()           │ │   │
-│  │  └──────────────────────────────────────────────┘ │   │
-│  │                                                    │   │
-│  │  ┌──────────────────────────────────────────────┐ │   │
-│  │  │ setInterval: verificarYEnviarAlertas()      │ │   │
-│  │  │ (cada 5 minutos)                            │ │   │
-│  │  │                                             │ │   │
-│  │  │ Para cada insumo con stock bajo:            │ │   │
-│  │  │ ├─ procesarAlerta()                         │ │   │
-│  │  │ ├─ enviarAlerta()                           │ │   │
-│  │  │ └─ actualizar contador_envios               │ │   │
-│  │  └──────────────────────────────────────────────┘ │   │
-│  │                                                    │   │
-│  │  ┌──────────────────────────────────────────────┐ │   │
-│  │  │ resolverAlertaCocineraIngresa()              │ │   │
-│  │  │ (cuando user con rol 'cocinera' ingresa)    │ │   │
-│  │  └──────────────────────────────────────────────┘ │   │
-│  └────────┬─────────────────────┬────────┬───────────┘   │
-│           │                     │        │                │
-│           ▼                     ▼        ▼                │
-│  ┌──────────────────┐ ┌────────────────────┐ ┌───────┐  │
-│  │  MODEL           │ │ TELEGRAM SERVICE   │ │LOGGER │  │
-│  │ AlertaInventario │ │                    │ └───────┘  │
-│  │                  │ │ - initialize()     │            │
-│  │ - create()       │ │ - sendMessage()    │            │
-│  │ - getActivas()   │ │ - sendToMainChat() │            │
-│  │ - marcarResuelta │ │ - getStatus()      │            │
-│  │ - estadisticas() │ └────────────────────┘            │
-│  └────────┬─────────┘            │                      │
-└───────────┼────────────────────────┼──────────────────────┘
+│  ┌──────────────────────────────────────────────────────┐    │
+│  │                  SERVICE                             │    │
+│  │       AlertasInventarioService (singleton)           │    │
+│  │                                                      │    │
+│  │  ┌──────────────────────────────────────────────┐    │    │
+│  │  │ inicializar()                                │    │    │
+│  │  │ ├─ await telegramService.initialize()        │    │    │
+│  │  │ └─ iniciarVerificacionPeriodica()            │    │    │
+│  │  └──────────────────────────────────────────────┘    │    │
+│  │                                                      │    │
+│  │  ┌──────────────────────────────────────────────┐    │    │
+│  │  │ setInterval: verificarYEnviarAlertas()       │    │    │
+│  │  │ (cada 5 minutos)                             │    │    │
+│  │  │                                              │    │    │
+│  │  │ Para cada insumo con stock bajo:             │    │    │
+│  │  │ ├─ procesarAlerta()                          │    │    │
+│  │  │ ├─ enviarAlerta()                            │    │    │
+│  │  │ └─ actualizar contador_envios                │    │    │
+│  │  └──────────────────────────────────────────────┘    │    │
+│  │                                                      │    │
+│  │  ┌──────────────────────────────────────────────┐    │    │
+│  │  │ resolverAlertaCocineraIngresa()              │    │    │
+│  │  │ (cuando user con rol 'cocinera' ingresa)     │    │    │
+│  │  └──────────────────────────────────────────────┘    │    │
+│  └────────┬─────────────────────┬────────────────┬──────┘    │
+│           │                     │                │           │
+│           ▼                     ▼                ▼           │
+│  ┌──────────────────┐ ┌────────────────────┐ ┌───────┐       │
+│  │  MODEL           │ │ TELEGRAM SERVICE   │ │LOGGER │       │
+│  │ AlertaInventario │ │                    │ └───────┘       │
+│  │                  │ │ - initialize()     │                 │
+│  │ - create()       │ │ - sendMessage()    │                 │
+│  │ - getActivas()   │ │ - sendToMainChat() │                 │
+│  │ - marcarResuelta │ │ - getStatus()      │                 │
+│  │ - estadisticas() │ └────────────────────┘                 │
+│  └────────┬─────────┘              │                         │
+└───────────┼────────────────────────┼─────────────────────────┘
             │                        │
             │                        │  HTTP API
             │                   ┌────▼────────────┐
@@ -93,53 +93,57 @@
             │                   └─────────────────┘
             │
             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     MYSQL DATABASE                          │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐ │
-│  │ TABLAS:                                              │ │
-│  │ ├─ AlertasInventario (UNIQUE: id_insumo)           │ │
-│  │ │  ├─ id_alerta (PK)                               │ │
-│  │ │  ├─ id_insumo (FK)                               │ │
-│  │ │  ├─ tipo_alerta (Critico/Agotado)               │ │
-│  │ │  ├─ contador_envios (1-3)                        │ │
-│  │ │  ├─ estado (activa/resuelta/completada)         │ │
-│  │ │  ├─ fecha_primera_alerta                         │ │
-│  │ │  ├─ fecha_ultima_alerta                          │ │
-│  │ │  └─ fecha_resolucion                             │ │
-│  │ │                                                   │ │
-│  │ ├─ AuditAlertas (registro de envíos)              │ │
-│  │ │  ├─ id_auditoria (PK)                            │ │
-│  │ │  ├─ id_alerta (FK)                               │ │
-│  │ │  ├─ numero_envio (1-3)                           │ │
-│  │ │  ├─ canal_envio (Telegram)                       │ │
-│  │ │  ├─ mensaje_enviado                              │ │
-│  │ │  ├─ estado_envio                                 │ │
-│  │ │  └─ fecha_envio                                  │ │
-│  │ │                                                   │ │
-│  │ └─ Inventarios (existente)                         │ │
-│  │    └─ estado (Normal/Critico/Agotado)             │ │
-│  │                                                    │ │
-│  │ ├─ Insumos (existente)                            │ │
-│  │ └─ Usuarios (existente)                           │ │
-│  └──────────────────────────────────────────────────────┘ │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐ │
-│  │ VISTAS SQL:                                          │ │
-│  │                                                      │ │
-│  │ v_alertas_activas                                  │ │
-│  │ ├─ Muestra alertas estado='activa'                 │ │
-│  │ ├─ Con información del insumo                      │ │
-│  │ ├─ Stock actual vs mínimo                          │ │
-│  │ └─ Tiempo desde última alerta                      │ │
-│  │                                                      │ │
-│  │ v_resumen_alertas                                  │ │
-│  │ ├─ Total de alertas                                │ │
-│  │ ├─ Alertas activas/resueltas/completadas          │ │
-│  │ ├─ Promedio de envíos                              │ │
-│  │ └─ Insumos críticos activos                        │ │
-│  └──────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│                     MYSQL DATABASE                         │
+│                                                            │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ TABLAS:                                              │  │
+│  │ ├─ AlertasInventario (UNIQUE: id_insumo)             │  │
+│  │ │  ├─ id_alerta (PK)                                 │  │
+│  │ │  ├─ id_insumo (FK)                                 │  │
+│  │ │  ├─ tipo_alerta (solo "Critico")                   │  │
+│  │ │  ├─ contador_envios (1-3)                          │  │
+│  │ │  ├─ estado (activa/resuelta/completada)            │  │
+│  │ │  ├─ fecha_primera_alerta                           │  │
+│  │ │  ├─ fecha_ultima_alerta                            │  │
+│  │ │  └─ fecha_resolucion                               │  │
+│  │ │                                                    │  │
+│  │ ├─ AuditAlertas (registro de envíos)                 │  │
+│  │ │  ├─ id_auditoria (PK)                              │  │
+│  │ │  ├─ id_alerta (FK)                                 │  │
+│  │ │  ├─ numero_envio (1-3)                             │  │
+│  │ │  ├─ canal_envio (Telegram)                         │  │
+│  │ │  ├─ mensaje_enviado                                │  │
+│  │ │  ├─ estado_envio                                   │  │
+│  │ │  └─ fecha_envio                                    │  │
+│  │ │                                                    │  │
+│  │ └─ Inventarios (existente)                           │  │
+│  │    └─ estado (Normal/Bajo/Critico/Agotado)           │  │
+│  │       • Normal: Cantidad > Nivel Mínimo              │  │
+│  │       • Bajo: Niv.Mín×2% < Cantidad ≤ Niv.Mín       │  │
+│  │       • Crítico: Cantidad ≤ Niv.Mín×2% (⚠️ ALERTA)   │  │
+│  │       • Agotado: Cantidad ≤ 0                        │  │
+│  │                                                      │  │
+│  │ ├─ Insumos (existente)                               │  │
+│  │ └─ Usuarios (existente)                              │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                            │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ VISTAS SQL:                                          │  │
+│  │                                                      │  │
+│  │ v_alertas_activas                                    │  │
+│  │ ├─ Muestra alertas estado='activa'                   │  │
+│  │ ├─ Con información del insumo                        │  │
+│  │ ├─ Stock actual vs mínimo                            │  │
+│  │ └─ Tiempo desde última alerta                        │  │
+│  │                                                      │  │
+│  │ v_resumen_alertas                                    │  │
+│  │ ├─ Total de alertas                                  │  │
+│  │ ├─ Alertas activas/resueltas/completadas             │  │
+│  │ ├─ Promedio de envíos                                │  │
+│  │ └─ Insumos críticos activos                          │  │
+│  └──────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -152,9 +156,12 @@
 InventarioModel.getInsumosConStockBajo()
     │
     ├─ SELECT * FROM Inventarios
-    │  WHERE estado IN ('Agotado', 'Critico')
+    │  WHERE estado IN ('Agotado', 'Bajo', 'Critico')
     │
-    └─ Retorna array de insumos
+    ├─ Filtra solo los que tienen estado = 'Critico'
+    │  (Cantidad ≤ Nivel Mínimo × 2%)
+    │
+    └─ Retorna array de insumos CRÍTICOS únicamente
 ```
 
 ### 2. Procesamiento de Alerta
@@ -215,21 +222,21 @@ updateLastActivity middleware
 │contador=1│  contador++      │
 └────┬─────┘      o enviar    │
      │                        │
-     │   ¿Cocinera ingresa?  │
-     ├─────► SÍ ────┐        │
-     │             │        │
-     │             ▼        │
-     │          ┌──────────┐│
-     │          │ RESUELTA ││
-     │          │          ││
-     │          │Fin de    ││
-     │          │alertas   ││
-     │          └──────────┘│
-     │                      │
-     │   ¿contador >= 3?    │
-     ├─────► SÍ ────┐       │
-     │             │       │
-     │             ▼       │
+     │   ¿Cocinera ingresa?   │
+     ├─────► SÍ ────┐         │
+     │              │         │
+     │              ▼         │
+     │          ┌──────────┐  │
+     │          │ RESUELTA │  │
+     │          │          │  │
+     │          │Fin de    │  │
+     │          │alertas   │  │
+     │          └──────────┘  │
+     │                        │
+     │   ¿contador >= 3?      │
+     ├─────► SÍ ────┐         │
+     │              │         │
+     │              ▼         │
      │          ┌──────────┐
      │          │COMPLETADA│
      │          │          │

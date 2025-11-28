@@ -100,7 +100,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
         // No llamar onCancel aquí, el componente padre se encargará de cerrar
       }
     } catch (error) {
-      console.error("Error al guardar persona:", error);
 
       // Mostrar error al usuario
       if (error.response?.data?.message) {

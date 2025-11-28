@@ -1,0 +1,142 @@
+.parametros-container {
+  padding: 20px 0;
+}
+
+.parametros-container h1 {
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 30px;
+}
+
+.parametros-container .card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.parametros-container .card-header {
+  border-bottom: 2px solid #e9ecef;
+  padding: 20px;
+}
+
+.parametros-container .card-body {
+  padding: 0;
+}
+
+.parametros-container .table {
+  margin-bottom: 0;
+}
+
+.parametros-container .table thead th {
+  background-color: #f8f9fa;
+  border-top: none;
+  border-bottom: 2px solid #dee2e6;
+  color: #333;
+  font-weight: 600;
+  padding: 15px;
+  vertical-align: middle;
+}
+
+.parametros-container .table tbody td {
+  padding: 15px;
+  vertical-align: middle;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.parametros-container .table tbody tr:hover {
+  background-color: #f8f9fa;
+  transition: background-color 0.2s ease;
+}
+
+.parametros-container .table code {
+  font-size: 0.85rem;
+  max-width: 100%;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.parametros-container .badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.parametros-container .btn-sm {
+  padding: 5px 10px;
+  font-size: 0.85rem;
+}
+
+.parametros-container .modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1050;
+  display: block !important;
+}
+
+.parametros-container .modal-dialog {
+  margin-top: 50px;
+}
+
+.parametros-container .form-control:focus,
+.parametros-container .form-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.parametros-container .form-label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.parametros-container .text-danger {
+  color: #dc3545 !important;
+}
+
+.parametros-container .pagination {
+  margin-top: 0;
+}
+
+.parametros-container .page-link {
+  color: #007bff;
+  border: 1px solid #dee2e6;
+  padding: 8px 12px;
+}
+
+.parametros-container .page-link:hover {
+  color: #0056b3;
+  background-color: #e9ecef;
+}
+
+.parametros-container .page-item.active .page-link {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.parametros-container .fw-500 {
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .parametros-container h1 {
+    font-size: 1.5rem;
+  }
+
+  .parametros-container .table {
+    font-size: 0.9rem;
+  }
+
+  .parametros-container .table thead th,
+  .parametros-container .table tbody td {
+    padding: 10px;
+  }
+
+  .parametros-container .modal-dialog {
+    margin: 20px auto;
+    max-width: 95% !important;
+  }
+}

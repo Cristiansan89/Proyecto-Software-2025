@@ -46,7 +46,6 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
         setAlumnos(normalized);
         setGrados(gradosData.filter((g) => g.estado === "Activo"));
       } catch (error) {
-        console.error("Error al cargar opciones:", error);
       } finally {
         setLoadingOptions(false);
       }
@@ -192,7 +191,6 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
 
       onSave(result);
     } catch (error) {
-      console.error("Error al guardar asignación:", error);
 
       if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);

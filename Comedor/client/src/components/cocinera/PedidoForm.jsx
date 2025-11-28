@@ -51,7 +51,6 @@ const PedidoForm = ({ onClose, onSuccess, pedidoEditado = null }) => {
       setInsumos(insumosData);
       setProveedores(proveedoresData);
     } catch (error) {
-      console.error("Error al cargar datos:", error);
       alert("Error al cargar datos: " + error.message);
     } finally {
       setLoading(false);
@@ -129,7 +128,6 @@ const PedidoForm = ({ onClose, onSuccess, pedidoEditado = null }) => {
         alert("No se encontraron proveedores para este insumo");
       }
     } catch (error) {
-      console.error("Error al buscar proveedores:", error);
       alert("Error al buscar proveedores: " + error.message);
     }
   };
@@ -188,7 +186,6 @@ const PedidoForm = ({ onClose, onSuccess, pedidoEditado = null }) => {
       if (onSuccess) onSuccess(pedidosCreados);
       if (onClose) onClose();
     } catch (error) {
-      console.error("Error al crear pedido:", error);
       alert("Error al crear el pedido: " + error.message);
     } finally {
       setLoading(false);
@@ -371,10 +368,7 @@ const PedidoForm = ({ onClose, onSuccess, pedidoEditado = null }) => {
                             >
                               <option value="">Seleccionar proveedor...</option>
                               {proveedores.map((proveedor) => (
-                                <option
-                                  key={proveedor.idProveedor}
-                                  value={proveedor.idProveedor}
-                                >
+                                <option value={proveedor.idProveedor}>
                                   {proveedor.razonSocial}
                                 </option>
                               ))}
@@ -521,9 +515,7 @@ const PedidoForm = ({ onClose, onSuccess, pedidoEditado = null }) => {
                   >
                     <option value="">Todas las categorías</option>
                     {categorias.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
+                      <option value={cat}>{cat}</option>
                     ))}
                   </select>
                 </div>

@@ -14,6 +14,31 @@ Sistema automatizado que detecta insumos con stock crítico o agotado y envía a
 ✅ **Configuración ajustable** del tiempo de verificación  
 ✅ **Estadísticas** en tiempo real
 
+## Niveles de Stock
+
+El sistema clasifica los insumos en cuatro estados según su cantidad actual:
+
+| Estado      | Condición                                   | Alerta                  |
+| ----------- | ------------------------------------------- | ----------------------- |
+| **Agotado** | Cantidad ≤ 0                                | ✅ **Sí genera alerta** |
+| **Crítico** | Cantidad ≤ (Nivel Mínimo × 2%)              | ✅ **Sí genera alerta** |
+| **Bajo**    | Nivel Mínimo × 2% < Cantidad ≤ Nivel Mínimo | ⚠️ No genera alerta     |
+| **Normal**  | Cantidad > Nivel Mínimo                     | ✅ OK                   |
+
+### Ejemplo Práctico
+
+Si un insumo (ej: Arroz) tiene:
+
+- **Nivel Mínimo**: 100 kg
+- **Crítico en**: 100 × 0.02 = **2 kg**
+
+Entonces:
+
+- Cantidad: 150 kg → Estado **Normal** (sin alerta) ✅
+- Cantidad: 80 kg → Estado **Bajo** (sin alerta automática) ⚠️
+- Cantidad: 2 kg → Estado **Crítico** (✅ **genera alerta por Telegram**)
+- Cantidad: 0 kg → Estado **Agotado** (✅ **genera alerta por Telegram**)
+
 ## Instalación
 
 ### 1. Crear las tablas en la base de datos

@@ -7,7 +7,6 @@ const reemplazoDocenteService = {
             const response = await api.get('/reemplazo-docentes');
             return response.data;
         } catch (error) {
-            console.error('Error al obtener reemplazos:', error);
             throw error;
         }
     },
@@ -18,7 +17,6 @@ const reemplazoDocenteService = {
             const response = await api.get(`/reemplazo-docentes/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener reemplazo:', error);
             throw error;
         }
     },
@@ -29,7 +27,6 @@ const reemplazoDocenteService = {
             const response = await api.get(`/reemplazo-docentes/grado/${nombreGrado}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener reemplazos por grado:', error);
             throw error;
         }
     },
@@ -40,7 +37,6 @@ const reemplazoDocenteService = {
             const response = await api.get('/reemplazo-docentes/suplentes-disponibles');
             return response.data;
         } catch (error) {
-            console.error('Error al obtener docentes suplentes disponibles:', error);
             throw error;
         }
     },
@@ -51,7 +47,6 @@ const reemplazoDocenteService = {
             const response = await api.get(`/reemplazo-docentes/docentes-titulares?cicloLectivo=${cicloLectivo}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener docentes titulares:', error);
             throw error;
         }
     },
@@ -62,7 +57,6 @@ const reemplazoDocenteService = {
             const response = await api.get('/reemplazo-docentes/options');
             return response.data;
         } catch (error) {
-            console.error('Error al obtener opciones:', error);
             throw error;
         }
     },
@@ -73,7 +67,6 @@ const reemplazoDocenteService = {
             const response = await api.post('/reemplazo-docentes', data);
             return response.data;
         } catch (error) {
-            console.error('Error al crear reemplazo:', error);
             throw error;
         }
     },
@@ -84,7 +77,6 @@ const reemplazoDocenteService = {
             const response = await api.put(`/reemplazo-docentes/${id}`, data);
             return response.data;
         } catch (error) {
-            console.error('Error al actualizar reemplazo:', error);
             throw error;
         }
     },
@@ -97,7 +89,6 @@ const reemplazoDocenteService = {
             });
             return response.data;
         } catch (error) {
-            console.error('Error al finalizar reemplazo:', error);
             throw error;
         }
     },
@@ -108,7 +99,6 @@ const reemplazoDocenteService = {
             const response = await api.delete(`/reemplazo-docentes/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Error al eliminar reemplazo:', error);
             throw error;
         }
     }

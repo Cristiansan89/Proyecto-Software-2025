@@ -44,7 +44,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
         const rolesData = await rolService.getActivos();
         setRoles(rolesData);
       } catch (error) {
-        console.error("Error al cargar roles:", error);
       } finally {
         setLoadingRoles(false);
       }
@@ -314,7 +313,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
       // Pasar datos al callback del componente padre
       onSave(savedPersona, usuarioCreado);
     } catch (error) {
-      console.error("Error al guardar persona:", error);
 
       // Mostrar error al usuario
       if (error.response?.data?.message) {

@@ -3,13 +3,10 @@ import api from './api.js';
 const proveedorService = {
     // Obtener todos los proveedores
     getAll: async () => {
-        console.log('ProveedorService: Haciendo petición a /proveedores');
         try {
             const response = await api.get('/proveedores');
-            console.log('ProveedorService: Respuesta recibida:', response.data);
             return response.data;
         } catch (error) {
-            console.error('ProveedorService: Error en getAll:', error);
             throw error;
         }
     },
@@ -20,7 +17,6 @@ const proveedorService = {
             const response = await api.get('/proveedores/calificaciones');
             return response.data;
         } catch (error) {
-            console.error('ProveedorService: Error en getCalificaciones:', error);
             throw error;
         }
     },
@@ -33,39 +29,30 @@ const proveedorService = {
 
     // Crear un nuevo proveedor
     create: async (proveedorData) => {
-        console.log('ProveedorService: Creando proveedor:', proveedorData);
         try {
             const response = await api.post('/proveedores', proveedorData);
-            console.log('ProveedorService: Proveedor creado:', response.data);
             return response.data;
         } catch (error) {
-            console.error('ProveedorService: Error en create:', error);
             throw error;
         }
     },
 
     // Actualizar un proveedor
     update: async (id, proveedorData) => {
-        console.log('ProveedorService: Actualizando proveedor:', id, proveedorData);
         try {
             const response = await api.patch(`/proveedores/${id}`, proveedorData);
-            console.log('ProveedorService: Proveedor actualizado:', response.data);
             return response.data;
         } catch (error) {
-            console.error('ProveedorService: Error en update:', error);
             throw error;
         }
     },
 
     // Eliminar un proveedor
     delete: async (id) => {
-        console.log('ProveedorService: Eliminando proveedor con ID:', id);
         try {
             const response = await api.delete(`/proveedores/${id}`);
-            console.log('ProveedorService: Respuesta de eliminación:', response.data);
             return response.data;
         } catch (error) {
-            console.error('ProveedorService: Error en delete:', error);
             throw error;
         }
     },
@@ -84,13 +71,10 @@ const proveedorService = {
 
     // Asignar insumos a un proveedor
     asignarInsumos: async (id, insumosData) => {
-        console.log('ProveedorService: Asignando insumos:', id, insumosData);
         try {
             const response = await api.post(`/proveedores/${id}/insumos`, insumosData);
-            console.log('ProveedorService: Insumos asignados:', response.data);
             return response.data;
         } catch (error) {
-            console.error('ProveedorService: Error en asignarInsumos:', error);
             throw error;
         }
     },

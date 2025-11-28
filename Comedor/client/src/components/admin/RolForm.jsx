@@ -74,7 +74,6 @@ const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
 
       await onSave(dataToSend);
     } catch (error) {
-      console.error("Error al guardar rol:", error);
     }
   };
 

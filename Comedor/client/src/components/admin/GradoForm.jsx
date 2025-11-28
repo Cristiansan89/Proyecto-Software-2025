@@ -21,7 +21,6 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
                 const turnosData = await turnoService.getActivos();
                 setTurnos(turnosData);
             } catch (error) {
-                console.error('Error al cargar turnos:', error);
             } finally {
                 setLoadingTurnos(false);
             }
@@ -84,7 +83,6 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
 
             onSave(savedGrado);
         } catch (error) {
-            console.error('Error al guardar grado:', error);
 
             // Mostrar errores específicos
             if (error.response?.data?.errors) {

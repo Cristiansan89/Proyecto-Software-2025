@@ -69,7 +69,6 @@ const EstadoPedidoForm = ({ estadoPedido, mode, onSave, onCancel }) => {
       }
       onSave();
     } catch (error) {
-      console.error("Error al guardar el estado de pedido:", error);
       const errorMessage =
         error.response?.data?.message || error.message || "Error desconocido";
       alert(`Ocurrió un error al guardar el estado de pedido: ${errorMessage}`);

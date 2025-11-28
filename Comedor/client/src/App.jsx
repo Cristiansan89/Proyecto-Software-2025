@@ -12,6 +12,8 @@ import GestionRolesPermisos from "./pages/admins/GestionRolesPermisos";
 import ListaInsumos from "./pages/admins/ListaInsumos";
 import ListaProveedores from "./pages/admins/ListaProveedores";
 import Configuracion from "./pages/admins/Configuracion";
+import Parametros from "./pages/admins/Parametros";
+import Alertas from "./pages/admins/Alertas";
 import Persona from "./pages/admins/Personas";
 import PersonaGrado from "./pages/admins/PersonaGrado";
 import RegistroAsistenciasMovil from "./pages/movil/RegistroAsistenciasMovil.jsx";
@@ -106,7 +108,8 @@ function App() {
                         path="/personasgrados"
                         element={<PersonaGrado />}
                       />
-
+                      <Route path="/parametros" element={<Parametros />} />
+                      <Route path="/alertas" element={<Alertas />} />
                       <Route
                         path="/configuracion"
                         element={<Configuracion />}

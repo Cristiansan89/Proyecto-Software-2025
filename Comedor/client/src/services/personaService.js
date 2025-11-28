@@ -9,7 +9,6 @@ export const personaService = {
             const response = await api.get(PERSONAS_ENDPOINT)
             return response.data
         } catch (error) {
-            console.error('Error al obtener personas:', error)
             throw error
         }
     },
@@ -20,7 +19,6 @@ export const personaService = {
             const response = await api.get(`${PERSONAS_ENDPOINT}/${id}`)
             return response.data
         } catch (error) {
-            console.error(`Error al obtener persona ${id}:`, error)
             throw error
         }
     },
@@ -31,7 +29,6 @@ export const personaService = {
             const response = await api.post(PERSONAS_ENDPOINT, personaData)
             return response.data
         } catch (error) {
-            console.error('Error al crear persona:', error)
             throw error
         }
     },
@@ -42,7 +39,6 @@ export const personaService = {
             const response = await api.patch(`${PERSONAS_ENDPOINT}/${id}`, personaData)
             return response.data
         } catch (error) {
-            console.error(`Error al actualizar persona ${id}:`, error)
             throw error
         }
     },
@@ -53,7 +49,6 @@ export const personaService = {
             const response = await api.delete(`${PERSONAS_ENDPOINT}/${id}`)
             return response.data
         } catch (error) {
-            console.error(`Error al eliminar persona ${id}:`, error)
             throw error
         }
     },
@@ -64,7 +59,6 @@ export const personaService = {
             const response = await api.get(`${PERSONAS_ENDPOINT}/activas/list`)
             return response.data
         } catch (error) {
-            console.error('Error al obtener personas activas:', error)
             throw error
         }
     },
@@ -77,7 +71,6 @@ export const personaService = {
             })
             return response.data
         } catch (error) {
-            console.error('Error al buscar personas por nombre:', error)
             throw error
         }
     },
@@ -88,7 +81,6 @@ export const personaService = {
             const response = await api.get(`${PERSONAS_ENDPOINT}/grado/${idGrado}`)
             return response.data
         } catch (error) {
-            console.error(`Error al obtener personas por grado ${idGrado}:`, error)
             throw error
         }
     },
@@ -99,7 +91,6 @@ export const personaService = {
             const response = await api.get(`${PERSONAS_ENDPOINT}/servicio/${idServicio}`)
             return response.data
         } catch (error) {
-            console.error(`Error al obtener personas por servicio ${idServicio}:`, error)
             throw error
         }
     },
@@ -110,7 +101,6 @@ export const personaService = {
             const response = await api.patch(`${PERSONAS_ENDPOINT}/${id}/estado`, { estado })
             return response.data
         } catch (error) {
-            console.error(`Error al cambiar estado de persona ${id}:`, error)
             throw error
         }
     }

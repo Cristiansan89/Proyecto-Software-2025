@@ -7,7 +7,6 @@ const tipoMermaService = {
       const response = await api.get("/tipos-merma");
       return response.data;
     } catch (error) {
-      console.error("Error al obtener tipos de merma:", error);
       throw error;
     }
   },
@@ -18,7 +17,6 @@ const tipoMermaService = {
       const response = await api.get(`/tipos-merma/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error al obtener tipo de merma:", error);
       throw error;
     }
   },
@@ -29,7 +27,6 @@ const tipoMermaService = {
       const response = await api.post("/tipos-merma", data);
       return response.data;
     } catch (error) {
-      console.error("Error al crear tipo de merma:", error);
       throw error;
     }
   },
@@ -40,7 +37,6 @@ const tipoMermaService = {
       const response = await api.patch(`/tipos-merma/${id}`, data);
       return response.data;
     } catch (error) {
-      console.error("Error al actualizar tipo de merma:", error);
       throw error;
     }
   },
@@ -51,7 +47,6 @@ const tipoMermaService = {
       const response = await api.delete(`/tipos-merma/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error al eliminar tipo de merma:", error);
       throw error;
     }
   },

@@ -35,7 +35,6 @@ const AsignarPermisosForm = ({ onClose, rolSeleccionado = null }) => {
         permisosDelRol.map((p) => p.idPermiso || p.id_permiso)
       );
     } catch (error) {
-      console.error("Error al cargar permisos del rol:", error);
       setError("Error al cargar permisos del rol: " + error.message);
     }
   }, [selectedRol]);
@@ -66,7 +65,6 @@ const AsignarPermisosForm = ({ onClose, rolSeleccionado = null }) => {
       setRoles(rolesData);
       setPermisos(permisosData);
     } catch (error) {
-      console.error("Error al cargar datos:", error);
       setError("Error al cargar datos: " + error.message);
     } finally {
       setLoading(false);
@@ -150,7 +148,6 @@ const AsignarPermisosForm = ({ onClose, rolSeleccionado = null }) => {
       // Recargar permisos del rol
       await cargarPermisosDelRol();
     } catch (error) {
-      console.error("Error al asignar permisos:", error);
       setError("Error al asignar permisos: " + error.message);
     } finally {
       setLoading(false);

@@ -89,16 +89,18 @@ POST   /control/detener
 ### Verificación Periódica (cada 5 minutos)
 
 ```
-1. Sistema obtiene insumos con stock bajo
-2. Para cada insumo:
+1. Sistema obtiene insumos con stock bajo (estados: Agotado, Bajo, Crítico)
+2. Filtra solo los que están en estado CRÍTICO
+   (Cantidad ≤ Nivel Mínimo × 2%)
+3. Para cada insumo CRÍTICO:
    - Busca alertas previas
    - Si existe alerta activa:
      * Si contador >= 3: Marcar completada
      * Si contador < 3: Enviar Telegram + aumentar contador
    - Si NO existe alerta:
-     * Crear nueva alerta
+     * Crear nueva alerta (tipo: "Critico")
      * Enviar primer Telegram
-3. Registrar en tabla AuditAlertas
+4. Registrar en tabla AuditAlertas
 ```
 
 ### Resolución (cuando cocinera ingresa)

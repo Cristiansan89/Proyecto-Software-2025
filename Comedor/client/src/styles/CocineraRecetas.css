@@ -540,25 +540,25 @@
   .recetas-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .filters-row {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-bar-recetas {
     min-width: auto;
   }
-  
+
   .receta-modal-content {
     max-width: 95%;
     max-height: 95vh;
   }
-  
+
   .add-ingrediente-form {
     flex-direction: column;
   }
-  
+
   .receta-actions {
     flex-wrap: wrap;
   }
@@ -580,6 +580,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   background: #fff;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.receta-accordion-card .card-body {
+  overflow-y: auto;
+  flex: 1;
 }
 
 .receta-accordion-card:hover {
@@ -598,7 +606,7 @@
 }
 
 .receta-accordion-header::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -858,19 +866,19 @@
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
-  
+
   .receta-accordion-header {
     padding: 0.75rem;
   }
-  
+
   .receta-title-text {
     font-size: 1rem;
   }
-  
+
   .actions-buttons-row {
     gap: 0.25rem;
   }
-  
+
   .action-btn {
     padding: 0.4rem;
     font-size: 0.8rem;
@@ -883,12 +891,12 @@
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .actions-buttons-row {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .action-btn {
     padding: 0.6rem;
   }

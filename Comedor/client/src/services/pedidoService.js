@@ -13,13 +13,11 @@ const pedidoService = {
       if (data && Array.isArray(data.pedidos)) return data.pedidos;
       if (data && Array.isArray(data.data)) return data.data;
       // Si no se reconoce el formato, devolver un array vacío y loggear
-      console.warn(
         "pedidoService.getAll: formato de respuesta inesperado",
         data
       );
       return [];
     } catch (error) {
-      console.error("Error al obtener pedidos:", error);
       throw error;
     }
   },
@@ -30,7 +28,6 @@ const pedidoService = {
       const response = await axiosInstance.get(`/pedidos/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error al obtener pedido por ID:", error);
       throw error;
     }
   },
@@ -41,7 +38,6 @@ const pedidoService = {
       const response = await axiosInstance.post("/pedidos", datos);
       return response.data;
     } catch (error) {
-      console.error("Error al crear pedido:", error);
       throw error;
     }
   },
@@ -52,7 +48,6 @@ const pedidoService = {
       const response = await axiosInstance.patch(`/pedidos/${id}`, datos);
       return response.data;
     } catch (error) {
-      console.error("Error al actualizar pedido:", error);
       throw error;
     }
   },
@@ -63,7 +58,6 @@ const pedidoService = {
       const response = await axiosInstance.delete(`/pedidos/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error al eliminar pedido:", error);
       throw error;
     }
   },
@@ -76,7 +70,6 @@ const pedidoService = {
       const response = await axiosInstance.get(`/pedidos/estado/${estado}`);
       return response.data;
     } catch (error) {
-      console.error("Error al obtener pedidos por estado:", error);
       throw error;
     }
   },
@@ -89,7 +82,6 @@ const pedidoService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al obtener pedidos por proveedor:", error);
       throw error;
     }
   },
@@ -102,7 +94,6 @@ const pedidoService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error al cambiar estado del pedido:", error);
       throw error;
     }
   },
@@ -116,7 +107,6 @@ const pedidoService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error al aprobar pedido:", error);
       throw error;
     }
   },
@@ -130,7 +120,6 @@ const pedidoService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error al cancelar pedido:", error);
       throw error;
     }
   },
@@ -191,7 +180,6 @@ const pedidoService = {
 
       return pedidosCreados;
     } catch (error) {
-      console.error("Error al crear pedido manual:", error);
       throw error;
     }
   },
@@ -205,7 +193,6 @@ const pedidoService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error al generar pedido automático:", error);
       throw error;
     }
   },
@@ -218,7 +205,6 @@ const pedidoService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al obtener resumen por período:", error);
       throw error;
     }
   },
@@ -236,7 +222,6 @@ const pedidoService = {
         detalles: detalles.data,
       };
     } catch (error) {
-      console.error("Error al obtener pedido completo:", error);
       throw error;
     }
   },
@@ -246,7 +231,6 @@ const pedidoService = {
   // Generar pedidos automáticamente basado en planificación
   generarAutomatico: async (fechaInicio, fechaFin) => {
     try {
-      console.log(
         `🤖 Iniciando generación automática: ${fechaInicio} - ${fechaFin}`
       );
 
@@ -255,10 +239,8 @@ const pedidoService = {
         fechaFin,
       });
 
-      console.log("✅ Generación automática completada:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Error al generar pedidos automáticamente:", error);
       throw error;
     }
   },
@@ -271,7 +253,6 @@ const pedidoService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error al enviar pedido por email:", error);
       throw error;
     }
   },

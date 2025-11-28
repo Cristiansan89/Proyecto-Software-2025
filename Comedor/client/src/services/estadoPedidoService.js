@@ -7,7 +7,6 @@ const estadoPedidoService = {
       const response = await api.get("/estado-pedidos");
       return response.data;
     } catch (error) {
-      console.error("Error al obtener estados de pedido:", error);
       throw error;
     }
   },
@@ -18,7 +17,6 @@ const estadoPedidoService = {
       const response = await api.get(`/estado-pedidos/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error al obtener estado de pedido:", error);
       throw error;
     }
   },
@@ -29,7 +27,6 @@ const estadoPedidoService = {
       const response = await api.post("/estado-pedidos", estadoPedidoData);
       return response.data;
     } catch (error) {
-      console.error("Error al crear estado de pedido:", error);
       throw error;
     }
   },
@@ -43,7 +40,6 @@ const estadoPedidoService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al actualizar estado de pedido:", error);
       throw error;
     }
   },
@@ -54,7 +50,6 @@ const estadoPedidoService = {
       const response = await api.delete(`/estado-pedidos/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error al eliminar estado de pedido:", error);
       throw error;
     }
   },

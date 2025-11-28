@@ -68,9 +68,7 @@ const Login = () => {
                 navigate('/dashboard', { replace: true });
             }
 
-        } catch (error) {
-            console.error('Error en login:', error);
-            setError(error.message || 'Usuario o contraseña incorrectos');
+        } catch (error) {            setError(error.message || 'Usuario o contraseña incorrectos');
         } finally {
             setLoading(false);
         }

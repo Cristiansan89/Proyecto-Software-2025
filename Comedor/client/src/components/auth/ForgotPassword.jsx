@@ -57,7 +57,6 @@ export function ForgotPassword({ onBack }) {
                 setIsError(true);
             }
         } catch (error) {
-            console.error('Error:', error);
             setMessage('Error de conexión. Por favor intente nuevamente.');
             setIsError(true);
         } finally {

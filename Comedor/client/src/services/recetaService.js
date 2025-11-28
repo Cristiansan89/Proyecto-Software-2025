@@ -7,7 +7,6 @@ const recetaService = {
             const response = await api.get('/recetas');
             return response.data;
         } catch (error) {
-            console.error('Error al obtener recetas:', error);
             throw error;
         }
     },
@@ -18,7 +17,6 @@ const recetaService = {
             const response = await api.get(`/recetas/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener receta:', error);
             throw error;
         }
     },
@@ -29,7 +27,6 @@ const recetaService = {
             const response = await api.post('/recetas', receta);
             return response.data;
         } catch (error) {
-            console.error('Error al crear receta:', error);
             throw error;
         }
     },
@@ -40,7 +37,6 @@ const recetaService = {
             const response = await api.patch(`/recetas/${id}`, receta);
             return response.data;
         } catch (error) {
-            console.error('Error al actualizar receta:', error);
             throw error;
         }
     },
@@ -51,7 +47,6 @@ const recetaService = {
             const response = await api.delete(`/recetas/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Error al eliminar receta:', error);
             throw error;
         }
     },
@@ -62,7 +57,6 @@ const recetaService = {
             const response = await api.get('/recetas/activas');
             return response.data;
         } catch (error) {
-            console.error('Error al obtener recetas activas:', error);
             throw error;
         }
     },
@@ -73,7 +67,6 @@ const recetaService = {
             const response = await api.get(`/recetas/buscar?nombre=${encodeURIComponent(nombre)}`);
             return response.data;
         } catch (error) {
-            console.error('Error al buscar recetas:', error);
             throw error;
         }
     },
@@ -84,7 +77,6 @@ const recetaService = {
             const response = await api.get(`/recetas/${id}/insumos`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener receta con insumos:', error);
             throw error;
         }
     },
@@ -95,7 +87,6 @@ const recetaService = {
             const response = await api.get('/recetas/con-insumos-count');
             return response.data;
         } catch (error) {
-            console.error('Error al obtener recetas con conteo:', error);
             throw error;
         }
     },
@@ -106,7 +97,6 @@ const recetaService = {
             const response = await api.post(`/recetas/${idReceta}/insumos`, insumoData);
             return response.data;
         } catch (error) {
-            console.error('Error al agregar insumo:', error);
             throw error;
         }
     },
@@ -117,7 +107,6 @@ const recetaService = {
             const response = await api.patch(`/recetas/${idReceta}/insumos/${idItem}`, insumoData);
             return response.data;
         } catch (error) {
-            console.error('Error al actualizar insumo:', error);
             throw error;
         }
     },
@@ -128,7 +117,6 @@ const recetaService = {
             const response = await api.delete(`/recetas/${idReceta}/insumos/${idItem}`);
             return response.data;
         } catch (error) {
-            console.error('Error al remover insumo:', error);
             throw error;
         }
     },
@@ -139,7 +127,6 @@ const recetaService = {
             const response = await api.patch(`/recetas/${id}/estado`, { estado });
             return response.data;
         } catch (error) {
-            console.error('Error al cambiar estado de receta:', error);
             throw error;
         }
     },
@@ -150,7 +137,6 @@ const recetaService = {
             const response = await api.get(`/recetas/categoria/${categoria}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener recetas por categoría:', error);
             throw error;
         }
     },
@@ -161,7 +147,6 @@ const recetaService = {
             const response = await api.get(`/recetas/estadisticas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener estadísticas:', error);
             throw error;
         }
     }

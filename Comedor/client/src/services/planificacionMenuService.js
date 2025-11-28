@@ -7,7 +7,6 @@ const planificacionMenuService = {
       const response = await api.get("/planificacion-menus");
       return response.data;
     } catch (error) {
-      console.error("Error al obtener planificaciones:", error);
       throw error;
     }
   },
@@ -18,7 +17,6 @@ const planificacionMenuService = {
       const response = await api.get(`/planificacion-menus/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error al obtener planificación:", error);
       throw error;
     }
   },
@@ -29,7 +27,6 @@ const planificacionMenuService = {
       const response = await api.post("/planificacion-menus", planificacion);
       return response.data;
     } catch (error) {
-      console.error("Error al crear planificación:", error);
       throw error;
     }
   },
@@ -43,7 +40,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al actualizar planificación:", error);
       throw error;
     }
   },
@@ -54,7 +50,6 @@ const planificacionMenuService = {
       const response = await api.delete(`/planificacion-menus/${id}`);
       return response.data;
     } catch (error) {
-      console.error("Error al eliminar planificación:", error);
       throw error;
     }
   },
@@ -65,7 +60,6 @@ const planificacionMenuService = {
       const response = await api.get(`/planificacion-menus/${id}/completa`);
       return response.data;
     } catch (error) {
-      console.error("Error al obtener planificación completa:", error);
       throw error;
     }
   },
@@ -76,7 +70,6 @@ const planificacionMenuService = {
       const response = await api.post("/planificacion-menus/jornadas", data);
       return response.data;
     } catch (error) {
-      console.error("Error al crear jornada:", error);
       throw error;
     }
   },
@@ -90,7 +83,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al asignar receta:", error);
       throw error;
     }
   },
@@ -103,7 +95,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al obtener recetas por jornada:", error);
       throw error;
     }
   },
@@ -116,7 +107,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al obtener planificaciones por usuario:", error);
       throw error;
     }
   },
@@ -127,7 +117,6 @@ const planificacionMenuService = {
       const response = await api.get(`/planificacion-menus/estado/${estado}`);
       return response.data;
     } catch (error) {
-      console.error("Error al obtener planificaciones por estado:", error);
       throw error;
     }
   },
@@ -138,7 +127,6 @@ const planificacionMenuService = {
       const response = await api.patch(`/planificacion-menus/${id}/finalizar`);
       return response.data;
     } catch (error) {
-      console.error("Error al finalizar planificación:", error);
       throw error;
     }
   },
@@ -151,7 +139,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al obtener planificaciones por rango:", error);
       throw error;
     }
   },
@@ -165,7 +152,6 @@ const planificacionMenuService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error al duplicar semana:", error);
       throw error;
     }
   },
@@ -178,7 +164,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al obtener estadísticas:", error);
       throw error;
     }
   },
@@ -189,7 +174,6 @@ const planificacionMenuService = {
       const response = await api.get("/recetas/activas");
       return response.data;
     } catch (error) {
-      console.error("Error al obtener recetas disponibles:", error);
       throw error;
     }
   },
@@ -202,7 +186,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al obtener menús de la semana:", error);
       throw error;
     }
   },
@@ -218,7 +201,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al eliminar receta:", error);
       throw error;
     }
   },
@@ -231,7 +213,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error(
         "Error al calcular comensales por turno y servicio:",
         error
       );
@@ -247,7 +228,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al calcular comensales por fecha:", error);
       throw error;
     }
   },
@@ -260,7 +240,6 @@ const planificacionMenuService = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al obtener resumen de comensales:", error);
       throw error;
     }
   },

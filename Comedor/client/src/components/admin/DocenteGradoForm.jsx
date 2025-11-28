@@ -45,7 +45,6 @@ const DocenteGradoForm = ({ docenteGrado, mode, onSave, onCancel }) => {
         setDocentes(normalizedDocentes);
         setGrados(Array.isArray(gradosData) ? gradosData : []);
       } catch (error) {
-        console.error("Error al cargar opciones:", error);
       } finally {
         setLoadingOptions(false);
       }
@@ -169,7 +168,6 @@ const DocenteGradoForm = ({ docenteGrado, mode, onSave, onCancel }) => {
 
       onSave(result);
     } catch (error) {
-      console.error("Error al guardar asignación:", error);
       if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {

@@ -24,7 +24,6 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
             const turnosData = await turnoService.getAll();
             setTurnos(turnosData);
         } catch (error) {
-            console.error('Error al cargar turnos:', error);
         }
     };
 
@@ -34,7 +33,6 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
             const turnosAsignadosData = await servicioTurnoService.getTurnosByServicio(idServicio);
             setTurnosAsignados(turnosAsignadosData);
         } catch (error) {
-            console.error('Error al cargar turnos asignados:', error);
         }
     };
 
@@ -78,7 +76,6 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
 
             alert('Turno asignado correctamente');
         } catch (error) {
-            console.error('Error al asignar turno:', error);
             alert('Error al asignar el turno: ' + (error.response?.data?.message || error.message));
         }
     };
@@ -96,7 +93,6 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
 
                 alert('Turno desasignado correctamente');
             } catch (error) {
-                console.error('Error al desasignar turno:', error);
                 alert('Error al desasignar el turno: ' + (error.response?.data?.message || error.message));
             }
         }
@@ -181,7 +177,6 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
                                 idTurno: turno.idTurno
                             });
                         } catch (error) {
-                            console.error('Error al asignar turno:', error);
                         }
                     }
                 }
@@ -191,7 +186,6 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
 
             onSave(savedServicio);
         } catch (error) {
-            console.error('Error al guardar servicio:', error);
 
             // Mostrar error al usuario
             if (error.response?.data?.message) {

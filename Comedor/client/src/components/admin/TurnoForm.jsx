@@ -80,7 +80,6 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
 
             onSave(savedTurno);
         } catch (error) {
-            console.error('Error al guardar turno:', error);
 
             // Mostrar error al usuario
             if (error.response?.data?.message) {

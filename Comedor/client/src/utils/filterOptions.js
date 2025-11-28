@@ -23,12 +23,9 @@ export const useRolesFilter = () => {
     const loadRoles = async () => {
         try {
             setLoading(true);
-            console.log('useRolesFilter: Cargando roles...');
             const rolesData = await rolService.getActivos();
-            console.log('useRolesFilter: Roles cargados:', rolesData);
             setRoles(Array.isArray(rolesData) ? rolesData : []);
         } catch (error) {
-            console.error('Error al cargar roles:', error);
             setRoles([]);
         } finally {
             setLoading(false);
@@ -48,12 +45,9 @@ export const useGradosFilter = () => {
     const loadGrados = async () => {
         try {
             setLoading(true);
-            console.log('useGradosFilter: Cargando grados...');
             const gradosData = await gradoService.getActivos();
-            console.log('useGradosFilter: Grados cargados:', gradosData);
             setGrados(Array.isArray(gradosData) ? gradosData : []);
         } catch (error) {
-            console.error('Error al cargar grados:', error);
             setGrados([]);
         } finally {
             setLoading(false);
@@ -68,12 +62,9 @@ export const useGradosFilter = () => {
  */
 export const loadRolesOptions = async () => {
     try {
-        console.log('loadRolesOptions: Cargando roles...');
         const rolesData = await rolService.getActivos();
-        console.log('loadRolesOptions: Roles cargados:', rolesData);
         return Array.isArray(rolesData) ? rolesData : [];
     } catch (error) {
-        console.error('Error al cargar roles:', error);
         return [];
     }
 };
@@ -83,12 +74,9 @@ export const loadRolesOptions = async () => {
  */
 export const loadGradosOptions = async () => {
     try {
-        console.log('loadGradosOptions: Cargando grados...');
         const gradosData = await gradoService.getActivos();
-        console.log('loadGradosOptions: Grados cargados:', gradosData);
         return Array.isArray(gradosData) ? gradosData : [];
     } catch (error) {
-        console.error('Error al cargar grados:', error);
         return [];
     }
 };

@@ -3,13 +3,10 @@ import api from './api.js';
 const turnoService = {
     // Obtener todos los turnos
     getAll: async () => {
-        console.log('TurnoService: Haciendo petición a /turnos');
         try {
             const response = await api.get('/turnos');
-            console.log('TurnoService: Respuesta recibida:', response.data);
             return response.data;
         } catch (error) {
-            console.error('TurnoService: Error en getAll:', error);
             throw error;
         }
     },
@@ -34,14 +31,10 @@ const turnoService = {
 
     // Eliminar un turno
     delete: async (id) => {
-        console.log('TurnoService: Eliminando turno con ID:', id);
         try {
             const response = await api.delete(`/turnos/${id}`);
-            console.log('TurnoService: Respuesta de eliminación:', response.data);
             return response.data;
         } catch (error) {
-            console.error('TurnoService: Error en delete:', error);
-            console.error('TurnoService: Error response:', error.response?.data);
             throw error;
         }
     },

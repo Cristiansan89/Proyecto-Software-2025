@@ -97,7 +97,6 @@ const UsuarioForm = ({ usuario, mode, onCancel }) => {
 
             onCancel(); // Cerrar el modal y recargar
         } catch (error) {
-            console.error('Error al guardar el usuario:', error);
             alert('Error al guardar el usuario: ' + error.message);
         } finally {
             setLoading(false);

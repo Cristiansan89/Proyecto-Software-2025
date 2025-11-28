@@ -50,7 +50,6 @@ const PlanificacionMenuForm = ({
 
       setMostrarDetalleComensales(true);
     } catch (error) {
-      console.error("Error al calcular comensales:", error);
       alert("Error al calcular comensales automáticamente: " + error.message);
     } finally {
       setCalculandoComensales(false);

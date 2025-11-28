@@ -7,7 +7,6 @@ const docenteGradoService = {
             const response = await api.get('/docente-grados');
             return response.data;
         } catch (error) {
-            console.error('Error al obtener asignaciones docente-grado:', error);
             throw error;
         }
     },
@@ -18,7 +17,6 @@ const docenteGradoService = {
             const response = await api.get(`/docente-grados/${idDocenteTitular}/${idPersona}/${nombreGrado}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener asignación:', error);
             throw error;
         }
     },
@@ -29,7 +27,6 @@ const docenteGradoService = {
             const response = await api.get(`/docente-grados/grado/${nombreGrado}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener docentes por grado:', error);
             throw error;
         }
     },
@@ -40,7 +37,6 @@ const docenteGradoService = {
             const response = await api.get(`/docente-grados/docentes-disponibles?cicloLectivo=${cicloLectivo}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener docentes disponibles:', error);
             throw error;
         }
     },
@@ -51,7 +47,6 @@ const docenteGradoService = {
             const response = await api.get(`/docente-grados/grados-disponibles?cicloLectivo=${cicloLectivo}`);
             return response.data;
         } catch (error) {
-            console.error('Error al obtener grados disponibles:', error);
             throw error;
         }
     },
@@ -62,7 +57,6 @@ const docenteGradoService = {
             const response = await api.post('/docente-grados', data);
             return response.data;
         } catch (error) {
-            console.error('Error al crear asignación docente-grado:', error);
             throw error;
         }
     },
@@ -73,7 +67,6 @@ const docenteGradoService = {
             const response = await api.put(`/docente-grados/${idDocenteTitular}/${idPersona}/${nombreGrado}`, data);
             return response.data;
         } catch (error) {
-            console.error('Error al actualizar asignación:', error);
             throw error;
         }
     },
@@ -84,7 +77,6 @@ const docenteGradoService = {
             const response = await api.delete(`/docente-grados/${idDocenteTitular}/${idPersona}/${nombreGrado}`);
             return response.data;
         } catch (error) {
-            console.error('Error al eliminar asignación:', error);
             throw error;
         }
     }

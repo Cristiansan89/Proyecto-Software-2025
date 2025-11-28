@@ -4,13 +4,10 @@ export const rolPermisoService = {
     // Obtener todas las asignaciones rol-permiso
     async getAll() {
         try {
-            console.log('rolPermisoService: Obteniendo todas las asignaciones...');
             const response = await api.get('/rol-permisos');
             const asignaciones = response.data;
-            console.log('rolPermisoService: Asignaciones obtenidas:', asignaciones.length);
             return asignaciones;
         } catch (error) {
-            console.error('rolPermisoService: Error al obtener asignaciones:', error);
             throw error;
         }
     },
@@ -18,13 +15,10 @@ export const rolPermisoService = {
     // Obtener permisos de un rol específico
     async getPermisosByRol(idRol) {
         try {
-            console.log('rolPermisoService: Obteniendo permisos del rol ID:', idRol);
             const response = await api.get(`/rol-permisos/rol/${idRol}/permisos`);
             const permisos = response.data;
-            console.log('rolPermisoService: Permisos del rol obtenidos:', permisos.length);
             return permisos;
         } catch (error) {
-            console.error('rolPermisoService: Error al obtener permisos del rol:', error);
             throw error;
         }
     },
@@ -32,13 +26,10 @@ export const rolPermisoService = {
     // Obtener roles con todos sus permisos
     async getRolesWithPermisos() {
         try {
-            console.log('rolPermisoService: Obteniendo roles con permisos...');
             const response = await api.get('/rol-permisos/roles-with-permisos');
             const rolesConPermisos = response.data;
-            console.log('rolPermisoService: Roles con permisos obtenidos:', rolesConPermisos.length);
             return rolesConPermisos;
         } catch (error) {
-            console.error('rolPermisoService: Error al obtener roles con permisos:', error);
             throw error;
         }
     },
@@ -46,15 +37,12 @@ export const rolPermisoService = {
     // Asignar permisos a un rol
     async asignarPermisos(idRol, idsPermisos) {
         try {
-            console.log('rolPermisoService: Asignando permisos al rol:', { idRol, idsPermisos });
             const response = await api.post(`/rol-permisos/rol/${idRol}/asignar-permisos`, {
                 permisos: idsPermisos
             });
             const resultado = response.data;
-            console.log('rolPermisoService: Permisos asignados exitosamente:', resultado);
             return resultado;
         } catch (error) {
-            console.error('rolPermisoService: Error al asignar permisos:', error);
             throw error;
         }
     },
@@ -62,12 +50,9 @@ export const rolPermisoService = {
     // Remover permiso específico de un rol
     async removerPermiso(idRol, idPermiso) {
         try {
-            console.log('rolPermisoService: Removiendo permiso', idPermiso, 'del rol', idRol);
             await api.delete(`/rol-permisos/rol/${idRol}/permiso/${idPermiso}`);
-            console.log('rolPermisoService: Permiso removido exitosamente');
             return true;
         } catch (error) {
-            console.error('rolPermisoService: Error al remover permiso:', error);
             throw error;
         }
     },
@@ -75,7 +60,6 @@ export const rolPermisoService = {
     // Limpiar todos los permisos de un rol
     async limpiarPermisosRol(idRol) {
         try {
-            console.log('rolPermisoService: Limpiando permisos del rol ID:', idRol);
             // Obtenemos los permisos actuales del rol primero
             const permisosActuales = await this.getPermisosByRol(idRol);
             
@@ -84,10 +68,8 @@ export const rolPermisoService = {
                 await this.removerPermiso(idRol, permiso.id_permiso);
             }
             
-            console.log('rolPermisoService: Permisos del rol limpiados exitosamente');
             return true;
         } catch (error) {
-            console.error('rolPermisoService: Error al limpiar permisos del rol:', error);
             throw error;
         }
     },
@@ -95,7 +77,6 @@ export const rolPermisoService = {
     // Obtener estadísticas básicas
     async getEstadisticas() {
         try {
-            console.log('rolPermisoService: Calculando estadísticas...');
             const rolesConPermisos = await this.getRolesWithPermisos();
             
             const estadisticas = {
@@ -105,10 +86,8 @@ export const rolPermisoService = {
                 rolesSinPermisos: rolesConPermisos.filter(rol => !rol.permisos || rol.permisos.length === 0).length
             };
             
-            console.log('rolPermisoService: Estadísticas calculadas:', estadisticas);
             return estadisticas;
         } catch (error) {
-            console.error('rolPermisoService: Error al calcular estadísticas:', error);
             throw error;
         }
     },
@@ -116,14 +95,11 @@ export const rolPermisoService = {
     // Verificar si un rol tiene un permiso específico
     async verificarPermiso(idRol, idPermiso) {
         try {
-            console.log('rolPermisoService: Verificando permiso', idPermiso, 'en rol', idRol);
             const permisos = await this.getPermisosByRol(idRol);
             const tienePermiso = permisos.some(permiso => permiso.id_permiso === idPermiso);
             
-            console.log('rolPermisoService: Verificación completada:', tienePermiso);
             return tienePermiso;
         } catch (error) {
-            console.error('rolPermisoService: Error al verificar permiso:', error);
             return false;
         }
     }

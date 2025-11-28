@@ -3,13 +3,10 @@ import api from './api.js';
 const servicioService = {
     // Obtener todos los servicios
     getAll: async () => {
-        console.log('ServicioService: Haciendo petición a /servicios');
         try {
             const response = await api.get('/servicios');
-            console.log('ServicioService: Respuesta recibida:', response.data);
             return response.data;
         } catch (error) {
-            console.error('ServicioService: Error en getAll:', error);
             throw error;
         }
     },
@@ -34,14 +31,10 @@ const servicioService = {
 
     // Eliminar un servicio
     delete: async (id) => {
-        console.log('ServicioService: Eliminando servicio con ID:', id);
         try {
             const response = await api.delete(`/servicios/${id}`);
-            console.log('ServicioService: Respuesta de eliminación:', response.data);
             return response.data;
         } catch (error) {
-            console.error('ServicioService: Error en delete:', error);
-            console.error('ServicioService: Error response:', error.response?.data);
             throw error;
         }
     },

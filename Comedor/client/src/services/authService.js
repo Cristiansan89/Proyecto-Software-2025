@@ -4,7 +4,6 @@ import axios from 'axios';
 const getApiBaseUrl = () => {
     // FORZAR SIEMPRE LOCALHOST CON PREFIJO /api
     const forceLocalhost = 'http://localhost:3000/api';
-    console.log('🔐 Auth - FORZANDO localhost (sin detección):', forceLocalhost);
     return forceLocalhost;
 };
 
@@ -16,11 +15,6 @@ const axiosInstance = axios.create({
     timeout: 15000, // FORZAR 15 segundos
 });
 
-console.log('🔐 Auth Service API URL:', API_URL);
-console.log('🔍 VITE_API_TIMEOUT raw:', import.meta.env.VITE_API_TIMEOUT);
-console.log('🔍 VITE_API_TIMEOUT converted:', Number(import.meta.env.VITE_API_TIMEOUT));
-console.log('⏱️ Auth Service Timeout:', axiosInstance.defaults.timeout + 'ms');
-console.log('🔗 Auth Service Base URL Final:', axiosInstance.defaults.baseURL);
 
 // Configurar axios para incluir el token en todas las peticiones
 axiosInstance.interceptors.request.use(
@@ -42,18 +36,14 @@ axiosInstance.interceptors.response.use(
     (error) => {
         // Manejar errores de timeout y conexión específicamente para auth
         if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
-            console.error('⏱️ Timeout en autenticación:', error.message);
-            console.log('💡 El servidor de autenticación puede estar sobrecargado');
         } else if (error.response?.status === 401) {
             // Token expirado o inválido
-            console.log('🔐 Token expirado o inválido, redirigiendo al login');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }
         } else if (error.response?.status >= 500) {
-            console.error('🔥 Error interno del servidor de autenticación:', error.response.data?.message);
         }
         return Promise.reject(error);
     }
@@ -73,7 +63,6 @@ class AuthService {
 
             return { success: true, data: response.data };
         } catch (error) {
-            console.error('Error en login:', error);
             return {
                 success: false,
                 error: error.response?.data?.message || 'Error al iniciar sesión'

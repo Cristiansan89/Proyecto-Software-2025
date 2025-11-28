@@ -4,12 +4,9 @@ export const permisoService = {
     // Obtener todos los permisos
     async getAll() {
         try {
-            console.log('permisoService: Obteniendo todos los permisos...');
             const response = await api.get('/permisos');
-            console.log('permisoService: Permisos obtenidos:', response.data.length);
             return response.data;
         } catch (error) {
-            console.error('permisoService: Error al obtener permisos:', error);
             throw error;
         }
     },
@@ -17,15 +14,12 @@ export const permisoService = {
     // Obtener permiso por ID
     async getById(id) {
         try {
-            console.log('permisoService: Obteniendo permiso con ID:', id);
             const response = await api.get(`/permisos/${id}`);
-            console.log('permisoService: Permiso obtenido:', response.data);
             return response.data;
         } catch (error) {
             if (error.response && error.response.status === 404) {
                 return null;
             }
-            console.error(`permisoService: Error al obtener permiso ${id}:`, error);
             throw error;
         }
     },
@@ -33,12 +27,9 @@ export const permisoService = {
     // Crear un nuevo permiso
     async create(permisoData) {
         try {
-            console.log('permisoService: Creando permiso:', permisoData);
             const response = await api.post('/permisos', permisoData);
-            console.log('permisoService: Permiso creado exitosamente:', response.data);
             return response.data;
         } catch (error) {
-            console.error('permisoService: Error al crear permiso:', error);
             throw error;
         }
     },
@@ -46,12 +37,9 @@ export const permisoService = {
     // Actualizar un permiso
     async update(id, permisoData) {
         try {
-            console.log('permisoService: Actualizando permiso ID:', id, 'con datos:', permisoData);
             const response = await api.patch(`/permisos/${id}`, permisoData);
-            console.log('permisoService: Permiso actualizado exitosamente:', response.data);
             return response.data;
         } catch (error) {
-            console.error('permisoService: Error al actualizar permiso:', error);
             throw error;
         }
     },
@@ -59,12 +47,9 @@ export const permisoService = {
     // Eliminar un permiso
     async delete(id) {
         try {
-            console.log('permisoService: Eliminando permiso ID:', id);
             const response = await api.delete(`/permisos/${id}`);
-            console.log('permisoService: Permiso eliminado exitosamente');
             return response.data;
         } catch (error) {
-            console.error('permisoService: Error al eliminar permiso:', error);
             throw error;
         }
     },
@@ -72,12 +57,9 @@ export const permisoService = {
     // Obtener permisos activos
     async getActivos() {
         try {
-            console.log('permisoService: Obteniendo permisos activos...');
             const response = await api.get('/permisos/activos/list');
-            console.log('permisoService: Permisos activos obtenidos:', response.data.length);
             return response.data;
         } catch (error) {
-            console.error('permisoService: Error al obtener permisos activos:', error);
             throw error;
         }
     },
@@ -85,12 +67,9 @@ export const permisoService = {
     // Buscar permisos por texto
     async buscarPorTexto(texto) {
         try {
-            console.log('permisoService: Buscando permisos con texto:', texto);
             const response = await api.get(`/permisos/search/by-texto?texto=${encodeURIComponent(texto)}`);
-            console.log('permisoService: Permisos encontrados:', response.data.length);
             return response.data;
         } catch (error) {
-            console.error('permisoService: Error al buscar permisos:', error);
             throw error;
         }
     },
@@ -98,12 +77,9 @@ export const permisoService = {
     // Obtener permisos por módulo
     async getByModulo(modulo) {
         try {
-            console.log('permisoService: Obteniendo permisos del módulo:', modulo);
             const response = await api.get(`/permisos/modulo/${encodeURIComponent(modulo)}`);
-            console.log('permisoService: Permisos del módulo obtenidos:', response.data.length);
             return response.data;
         } catch (error) {
-            console.error('permisoService: Error al obtener permisos por módulo:', error);
             throw error;
         }
     },
@@ -111,12 +87,9 @@ export const permisoService = {
     // Cambiar estado de un permiso
     async cambiarEstado(id, estado) {
         try {
-            console.log('permisoService: Cambiando estado del permiso ID:', id, 'a:', estado);
             const response = await api.patch(`/permisos/${id}/estado`, { estado });
-            console.log('permisoService: Estado cambiado exitosamente:', response.data);
             return response.data;
         } catch (error) {
-            console.error('permisoService: Error al cambiar estado:', error);
             throw error;
         }
     }
