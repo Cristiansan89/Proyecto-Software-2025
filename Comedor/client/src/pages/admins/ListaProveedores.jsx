@@ -74,7 +74,10 @@ const ListaProveedores = () => {
     setCurrentPage(1);
   }, [searchTerm, estadoFilter, proveedores]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredProveedores.length / pageSize));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredProveedores.length / pageSize)
+  );
 
   // Ordenar proveedores por id (numérico si corresponde, si no lexicográfico)
   const sortedProveedores = filteredProveedores.slice().sort((a, b) => {
@@ -258,7 +261,8 @@ const ListaProveedores = () => {
       {/* Información de resultados y paginación */}
       <div className="results-info">
         <div className="results-count">
-          Mostrando {paginatedProveedores.length} de {filteredProveedores.length} proveedores{" "}
+          Mostrando {paginatedProveedores.length} de{" "}
+          {filteredProveedores.length} proveedores{" "}
           {searchTerm && (
             <span className="filter-indicator">
               filtrado por "{searchTerm}"
@@ -295,7 +299,7 @@ const ListaProveedores = () => {
                 <tr>
                   <th>#</th>
                   <th>Proveedor</th>
-                  <th>Contacto</th>
+                  <th>CUIT</th>
                   <th>Insumos Asignados</th>
                   <th>Estado</th>
                   <th>Acciones</th>
@@ -310,111 +314,106 @@ const ListaProveedores = () => {
                   </tr>
                 ) : (
                   paginatedProveedores.map((proveedor, index) => (
-                  <tr key={proveedor.idProveedor || `proveedor-${index}`}>
-                    <td>
-                      {/* Mostrar un id entero basado en la posición global (no por página) */}
-                      <strong>{(currentPage - 1) * pageSize + index + 1}</strong>
-                      {/* Si necesitas ver el UUID original, descomenta la línea siguiente */}
-                      {/* <div className="text-muted small">{proveedor.idProveedor}</div> */}
-                    </td>
-                    <td>
-                      <div className="item-info">
-                        <div>
-                          <div className="item-name">
-                            <h5>{proveedor.razonSocial}</h5>
-                          </div>
+                    <tr key={proveedor.idProveedor || `proveedor-${index}`}>
+                      <td>
+                        {/* Mostrar un id entero basado en la posición global (no por página) */}
+                        <strong>
+                          {(currentPage - 1) * pageSize + index + 1}
+                        </strong>
+                        {/* Si necesitas ver el UUID original, descomenta la línea siguiente */}
+                        {/* <div className="text-muted small">{proveedor.idProveedor}</div> */}
+                      </td>
+                      <td>
+                        <div className="item-info">
                           <div>
-                            <i className="fas fa-id-card me-1"></i>
-                            {proveedor.CUIT}
-                          </div>
-                          <div className="item-detail text-muted">
-                            <i className="fas fa-map-marker-alt me-1"></i>
-                            {proveedor.direccion}
+                            <div className="item-name">
+                              <h5>{proveedor.razonSocial}</h5>
+                            </div>
+                            <div>
+                              <i className="fas fa-phone me-1"></i>
+                              {proveedor.telefono}
+                            </div>
+                            <div className="item-detail text-muted">
+                              <i className="fas fa-map-marker-alt me-1"></i>
+                              {proveedor.direccion}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="contact-info">
-                        <div>{proveedor.telefono}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <div>
-                        {proveedor.insumos.length > 0 ? (
-                          <div>
-                            {proveedor.insumos
-                              .slice(0, 5)
-                              .map((insumo, index) => (
-                                <div key={index}>
-                                  <span className="insumo-name">
-                                    {insumo.nombreInsumo}
-                                    <span
-                                      className={`badge ms-2 ${getCalificacionBadge(
-                                        insumo.calificacion
-                                      )}`}
-                                    >
-                                      {insumo.calificacion}
+                      </td>
+                      <td>
+                        <div className="contact-info">
+                          <div>{proveedor.CUIT}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          {proveedor.insumos.length > 0 ? (
+                            <div>
+                              {proveedor.insumos
+                                .slice(0, 5)
+                                .map((insumo, index) => (
+                                  <div key={index}>
+                                    <span className="insumo-name">
+                                      {insumo.nombreInsumo}
                                     </span>
-                                  </span>
-                                </div>
-                              ))}
-                            {proveedor.insumos.length > 5 && (
-                              <small className="text-muted">
-                                +{proveedor.insumos.length - 5} más
-                              </small>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-muted">
-                            Sin insumos asignados
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <span
-                        className={`status-badge ${getEstadoBadge(
-                          proveedor.estado
-                        )}`}
-                      >
-                        {proveedor.estado}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        <button
-                          className="btn-action btn-view"
-                          onClick={() => handleView(proveedor)}
-                          title="Ver detalles"
+                                  </div>
+                                ))}
+                              {proveedor.insumos.length > 5 && (
+                                <small className="text-muted">
+                                  +{proveedor.insumos.length - 5} más
+                                </small>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted">
+                              Sin insumos asignados
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className={`status-badge ${getEstadoBadge(
+                            proveedor.estado
+                          )}`}
                         >
-                          <i className="fas fa-eye"></i>
-                        </button>
-                        <button
-                          className="btn-action btn-edit"
-                          onClick={() => handleEdit(proveedor)}
-                          title="Editar"
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button
-                          className="btn-action btn-assign"
-                          onClick={() => handleAssignInsumos(proveedor)}
-                          title="Asignar Insumos"
-                        >
-                          <i className="fas fa-boxes"></i>
-                        </button>
-                        <button
-                          className="btn-action btn-delete"
-                          onClick={() => handleDelete(proveedor.idProveedor)}
-                          title="Eliminar"
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {proveedor.estado}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            className="btn-action btn-view"
+                            onClick={() => handleView(proveedor)}
+                            title="Ver detalles"
+                          >
+                            <i className="fas fa-eye"></i>
+                          </button>
+                          <button
+                            className="btn-action btn-edit"
+                            onClick={() => handleEdit(proveedor)}
+                            title="Editar"
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                          <button
+                            className="btn-action btn-assign"
+                            onClick={() => handleAssignInsumos(proveedor)}
+                            title="Asignar Insumos"
+                          >
+                            <i className="fas fa-boxes"></i>
+                          </button>
+                          <button
+                            className="btn-action btn-delete"
+                            onClick={() => handleDelete(proveedor.idProveedor)}
+                            title="Eliminar"
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>

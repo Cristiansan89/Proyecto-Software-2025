@@ -97,7 +97,15 @@ const ListaDocentesGrados = () => {
   }, [searchTerm, gradoFilter, cicloFilter, docentes]);
 
   const totalPages = Math.max(1, Math.ceil(filteredDocentes.length / pageSize));
-  const paginatedDocentes = filteredDocentes.slice(
+
+  // Ordenar docentes por ID
+  const sortedDocentes = filteredDocentes.slice().sort((a, b) => {
+    const idA = a.idDocenteTitular || 0;
+    const idB = b.idDocenteTitular || 0;
+    return idA - idB;
+  });
+
+  const paginatedDocentes = sortedDocentes.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );

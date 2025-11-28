@@ -116,7 +116,15 @@ const ListaReemplazosGrados = () => {
     1,
     Math.ceil(filteredReemplazos.length / pageSize)
   );
-  const paginatedReemplazos = filteredReemplazos.slice(
+  
+  // Ordenar reemplazos por ID
+  const sortedReemplazos = filteredReemplazos.slice().sort((a, b) => {
+    const idA = a.idReemplazoDocente || 0;
+    const idB = b.idReemplazoDocente || 0;
+    return idA - idB;
+  });
+  
+  const paginatedReemplazos = sortedReemplazos.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );

@@ -98,7 +98,15 @@ const ListaAlumnosGrados = () => {
   }, [searchTerm, gradoFilter, cicloFilter, alumnos]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAlumnos.length / pageSize));
-  const paginatedAlumnos = filteredAlumnos.slice(
+
+  // Ordenar alumnos por ID
+  const sortedAlumnos = filteredAlumnos.slice().sort((a, b) => {
+    const idA = a.idAlumnoGrado || 0;
+    const idB = b.idAlumnoGrado || 0;
+    return idA - idB;
+  });
+
+  const paginatedAlumnos = sortedAlumnos.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
