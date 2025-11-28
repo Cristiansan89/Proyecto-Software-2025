@@ -228,28 +228,19 @@ const ListaInsumos = () => {
             <p>Cargando insumos...</p>
           </div>
         ) : (
-          <div
-            style={{
-              width: "90vw",
-              maxWidth: "90vw",
-              margin: "0 auto",
-              overflowX: "auto",
-            }}
-          >
-            <table
-              className="table table-striped data-table table-responsive-insumos"
-              style={{ minWidth: 900 }}
-            >
+          <div className="table-responsive">
+            <table className="table table-striped data-table">
               <colgroup>
-                <col style={{ width: "5%" }} />
-                <col style={{ width: "20%" }} />
-                <col style={{ width: "25%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "8%" }} />
-                <col style={{ width: "8%" }} />
-                <col style={{ width: "7%" }} />
-                <col style={{ width: "7%" }} />
+                <col style={{ minWidth: "50px" }} />
+                <col style={{ minWidth: "10px" }} />
+                <col style={{ minWidth: "20px" }} />
+                <col style={{ minWidth: "10px" }} />
+                <col style={{ minWidth: "10px" }} />
+                <col style={{ minWidth: "10px" }} />
+                <col style={{ minWidth: "10px" }} />
+                <col style={{ minWidth: "10px" }} />
+                <col style={{ minWidth: "8px" }} />
+                <col style={{ minWidth: "10px" }} />
               </colgroup>
               <thead>
                 <tr>
@@ -260,6 +251,7 @@ const ListaInsumos = () => {
                   <th>Unidad</th>
                   <th>Stock Mínimo</th>
                   <th>Stock Actual</th>
+                  <th>Stock Máximo</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -267,7 +259,7 @@ const ListaInsumos = () => {
               <tbody>
                 {paginatedInsumos.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="no-data">
+                    <td colSpan={10} className="no-data">
                       No se encontraron insumos
                     </td>
                   </tr>
@@ -301,6 +293,7 @@ const ListaInsumos = () => {
                             {formatStockActual(insumo.stockActual)}
                           </span>
                         </td>
+                        <td>{formatStockActual(insumo.stockMaximo)}</td>
                         <td>
                           <span
                             className={`status-badge-insumo ${String(

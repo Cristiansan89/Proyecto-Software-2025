@@ -199,4 +199,41 @@ export class AlertasInventarioController {
       });
     }
   }
+
+  // Recalcular estados de inventario
+  static async recalcularEstados(req, res) {
+    try {
+      const resultado = await alertasService.recalcularEstadosInventario();
+      res.json({
+        success: true,
+        message: `Estados recalculados correctamente. ${resultado.actualizados} registros actualizados.`,
+        data: resultado,
+      });
+    } catch (error) {
+      console.error("Error al recalcular estados:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al recalcular estados de inventario",
+        error: error.message,
+      });
+    }
+  }
+
+  // Limpiar alertas obsoletas
+  static async limpiarObsoletas(req, res) {
+    try {
+      await alertasService.limpiarAlertasObsoletas();
+      res.json({
+        success: true,
+        message: "Alertas obsoletas limpiadas correctamente",
+      });
+    } catch (error) {
+      console.error("Error al limpiar alertas:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al limpiar alertas obsoletas",
+        error: error.message,
+      });
+    }
+  }
 }

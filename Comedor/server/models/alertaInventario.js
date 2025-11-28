@@ -129,4 +129,21 @@ export class AlertaInventarioModel {
       throw new Error("Error al limpiar alertas antiguas");
     }
   }
+
+  // Marcar como completadas las alertas de insumos que ya no están críticos
+  static async marcarCompletadasSiNoEsCritico() {
+    try {
+      const result = await connection.query(
+        `UPDATE AlertasInventario aa
+         JOIN Inventarios inv ON aa.id_insumo = inv.id_insumo
+         SET aa.estado = 'resuelta', aa.fecha_resolucion = NOW()
+         WHERE aa.estado = 'activa' 
+         AND inv.estado = 'Normal'`
+      );
+      return result;
+    } catch (error) {
+      console.error("Error al marcar alertas como resueltas:", error);
+      throw new Error("Error al marcar alertas como resueltas");
+    }
+  }
 }

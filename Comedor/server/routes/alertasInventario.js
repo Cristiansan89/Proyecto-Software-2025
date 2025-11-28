@@ -67,4 +67,18 @@ router.post(
   AlertasInventarioController.detener
 );
 
+// Recalcular estados de inventario
+router.post(
+  "/diagnostico/recalcular-estados",
+  authRequired,
+  AlertasInventarioController.recalcularEstados
+);
+
+// Limpiar alertas obsoletas
+router.post(
+  "/diagnostico/limpiar-obsoletas",
+  authRequired,
+  AlertasInventarioController.limpiarObsoletas
+);
+
 export default router;

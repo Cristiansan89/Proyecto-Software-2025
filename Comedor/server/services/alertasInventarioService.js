@@ -14,6 +14,12 @@ class AlertasInventarioService {
     try {
       console.log("🚀 Iniciando servicio de alertas de inventario...");
 
+      // Recalcular estados de inventario al iniciar
+      await this.recalcularEstadosInventario();
+
+      // Limpiar alertas obsoletas
+      await this.limpiarAlertasObsoletas();
+
       // Inicializar Telegram
       const telegramInit = await telegramService.initialize();
       if (!telegramInit.success) {
@@ -74,12 +80,63 @@ class AlertasInventarioService {
         `🔔 Se detectaron ${insumosConStockBajo.length} insumos con stock bajo`
       );
 
-      // Procesar cada insumo
+      // Diagnosticar cada insumo antes de procesar
       for (const insumo of insumosConStockBajo) {
-        await this.procesarAlerta(insumo);
+        const esAlertaValida = await this.validarAlerta(insumo);
+        if (esAlertaValida) {
+          await this.procesarAlerta(insumo);
+        } else {
+          console.log(
+            `⚠️ Alerta inválida ignorada para: ${insumo.nombreInsumo}`
+          );
+        }
       }
     } catch (error) {
       console.error("❌ Error en verificación de alertas:", error);
+    }
+  }
+
+  // Validar si la alerta es realmente necesaria
+  async validarAlerta(insumo) {
+    try {
+      const cantidadActual = parseFloat(insumo.cantidadActual || 0);
+      const nivelMinimo = parseFloat(insumo.nivelMinimoAlerta || 0);
+
+      // Log para diagnóstico
+      console.log(`🔍 Validando alerta para ${insumo.nombreInsumo}:`);
+      console.log(`   Stock actual: ${cantidadActual}`);
+      console.log(`   Nivel mínimo: ${nivelMinimo}`);
+      console.log(`   Estado actual: ${insumo.estado}`);
+
+      // Si el stock actual es mayor que el nivel mínimo, la alerta no es válida
+      if (cantidadActual > nivelMinimo && nivelMinimo > 0) {
+        console.log(
+          `   ❌ Alerta inválida: Stock (${cantidadActual}) > Mínimo (${nivelMinimo})`
+        );
+
+        // Actualizar estado a Normal si es necesario
+        await InventarioModel.updateEstadoByNiveles({
+          id_insumo: insumo.id_insumo,
+        });
+        return false;
+      }
+
+      // Si el nivel mínimo es 0 pero hay stock, no alertar
+      if (nivelMinimo === 0 && cantidadActual > 0) {
+        console.log(
+          `   ❌ Alerta inválida: Nivel mínimo no configurado pero hay stock`
+        );
+        return false;
+      }
+
+      console.log(`   ✅ Alerta válida`);
+      return true;
+    } catch (error) {
+      console.error(
+        `Error validando alerta para ${insumo.nombreInsumo}:`,
+        error
+      );
+      return false;
     }
   }
 
@@ -188,6 +245,61 @@ class AlertasInventarioService {
       "⏰ Se enviarán hasta 3 notificaciones hasta que ingreses al sistema.";
 
     return mensaje;
+  }
+
+  // Método para recalcular todos los estados de inventario
+  async recalcularEstadosInventario() {
+    try {
+      console.log("🔄 Recalculando estados de inventario...");
+
+      // Obtener todos los inventarios
+      const inventarios = await InventarioModel.getAll();
+
+      let actualizados = 0;
+      for (const inventario of inventarios) {
+        const cantidadActual = parseFloat(inventario.cantidadActual || 0);
+        const nivelMinimo = parseFloat(inventario.nivelMinimoAlerta || 0);
+
+        let nuevoEstado = "Normal";
+        if (cantidadActual <= 0) {
+          nuevoEstado = "Agotado";
+        } else if (nivelMinimo > 0 && cantidadActual <= nivelMinimo) {
+          nuevoEstado = "Critico";
+        }
+
+        if (inventario.estado !== nuevoEstado) {
+          await InventarioModel.updateEstadoByNiveles({
+            id_insumo: inventario.id_insumo,
+          });
+          actualizados++;
+          console.log(
+            `   📝 ${inventario.nombreInsumo}: ${inventario.estado} → ${nuevoEstado}`
+          );
+        }
+      }
+
+      console.log(
+        `✅ Recálculo completado. Estados actualizados: ${actualizados}`
+      );
+      return { actualizados };
+    } catch (error) {
+      console.error("❌ Error recalculando estados:", error);
+      throw error;
+    }
+  }
+
+  // Método para limpiar alertas obsoletas
+  async limpiarAlertasObsoletas() {
+    try {
+      console.log("🧹 Limpiando alertas obsoletas...");
+
+      // Marcar como completadas las alertas de insumos que ya no están en estado crítico
+      await AlertaInventarioModel.marcarCompletadasSiNoEsCritico();
+
+      console.log("✅ Alertas obsoletas limpiadas");
+    } catch (error) {
+      console.error("❌ Error limpiando alertas:", error);
+    }
   }
 
   // Resolver alerta cuando la cocinera ingresa
