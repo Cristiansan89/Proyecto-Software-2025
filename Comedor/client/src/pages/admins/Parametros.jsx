@@ -183,10 +183,22 @@ const Parametros = () => {
     return matchBusqueda && matchEstado;
   });
 
+  // Ordenar parámetros por ID desde el último (descendente)
+  const parametrosOrdenados = parametrosFiltrados.slice().sort((a, b) => {
+    const idA = a.id_parametro || 0;
+    const idB = b.id_parametro || 0;
+    return idB - idA; // Descendente: último ID primero
+  });
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtros.busqueda, filtros.estado]);
+
   // Paginación
-  const totalPages = Math.ceil(parametrosFiltrados.length / pageSize);
+  const totalPages = Math.ceil(parametrosOrdenados.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
-  const parametrosPaginados = parametrosFiltrados.slice(
+  const parametrosPaginados = parametrosOrdenados.slice(
     startIndex,
     startIndex + pageSize
   );
@@ -247,7 +259,7 @@ const Parametros = () => {
                 }
               />
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
               <select
                 className="form-select"
                 value={filtros.estado}
@@ -262,6 +274,26 @@ const Parametros = () => {
                 <option value="Activo">Activo</option>
                 <option value="Inactivo">Inactivo</option>
               </select>
+            </div>
+            <div className="col-md-3">
+              <div className="d-flex align-items-center gap-2">
+                <label className="form-label mb-0 text-nowrap">
+                  <small>Registros:</small>
+                </label>
+                <select
+                  className="form-select form-select-sm"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -342,8 +374,8 @@ const Parametros = () => {
               <div className="col-md-6">
                 <small className="text-muted">
                   Mostrando {startIndex + 1} a{" "}
-                  {Math.min(startIndex + pageSize, parametrosFiltrados.length)}{" "}
-                  de {parametrosFiltrados.length} parámetros
+                  {Math.min(startIndex + pageSize, parametrosOrdenados.length)}{" "}
+                  de {parametrosOrdenados.length} parámetros
                 </small>
               </div>
               <div className="col-md-6">
