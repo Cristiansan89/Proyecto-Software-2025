@@ -63,22 +63,23 @@ export class InsumoModel {
       stockMaximo = 999.999,
     } = input;
 
+    const conn = await connection.getConnection();
     try {
-      await connection.beginTransaction();
+      await conn.beginTransaction();
 
       // Verificar si ya existe un insumo con ese nombre
-      const [existing] = await connection.query(
+      const [existing] = await conn.query(
         `SELECT id_insumo FROM Insumos WHERE nombreInsumo = ?;`,
         [nombreInsumo]
       );
 
       if (existing.length > 0) {
-        await connection.rollback();
+        await conn.rollback();
         throw new Error("Ya existe un insumo con ese nombre");
       }
 
       // Crear el insumo
-      const [result] = await connection.query(
+      const [result] = await conn.query(
         `INSERT INTO Insumos (
                     nombreInsumo, 
                     descripcion,
@@ -100,7 +101,7 @@ export class InsumoModel {
       const insumoId = result.insertId;
 
       // Crear el registro en inventario
-      await connection.query(
+      await conn.query(
         `INSERT INTO Inventarios (
                     id_insumo,
                     cantidadActual,
@@ -115,34 +116,37 @@ export class InsumoModel {
         ]
       );
 
-      await connection.commit();
+      await conn.commit();
       return this.getById({ id: insumoId });
     } catch (error) {
-      await connection.rollback();
+      await conn.rollback();
       if (error.code === "ER_DUP_ENTRY") {
         throw new Error("Ya existe un insumo con ese nombre");
       }
       throw new Error("Error al crear el insumo: " + error.message);
+    } finally {
+      conn.release();
     }
   }
 
   static async delete({ id }) {
+    const conn = await connection.getConnection();
     try {
-      await connection.beginTransaction();
+      await conn.beginTransaction();
 
       // Verificar si el insumo existe
-      const [exists] = await connection.query(
+      const [exists] = await conn.query(
         `SELECT id_insumo FROM Insumos WHERE id_insumo = ?;`,
         [id]
       );
 
       if (exists.length === 0) {
-        await connection.rollback();
+        await conn.rollback();
         return false;
       }
 
       // Verificar si el insumo está siendo usado en otras tablas
-      const [references] = await connection.query(
+      const [references] = await conn.query(
         `SELECT 
                     (SELECT COUNT(*) FROM ProveedorInsumo WHERE id_insumo = ?) as proveedorCount,
                     (SELECT COUNT(*) FROM ItemsRecetas WHERE id_insumo = ?) as recetaCount,
@@ -156,28 +160,28 @@ export class InsumoModel {
         references[0].movimientoCount;
 
       if (totalReferences > 0) {
-        await connection.rollback();
+        await conn.rollback();
         throw new Error(
           "No se puede eliminar el insumo porque está siendo usado en otros registros"
         );
       }
 
       // Eliminar primero del inventario (por la restricción de FK)
-      await connection.query(`DELETE FROM Inventarios WHERE id_insumo = ?;`, [
-        id,
-      ]);
+      await conn.query(`DELETE FROM Inventarios WHERE id_insumo = ?;`, [id]);
 
       // Luego eliminar el insumo
-      const [result] = await connection.query(
+      const [result] = await conn.query(
         `DELETE FROM Insumos WHERE id_insumo = ?;`,
         [id]
       );
 
-      await connection.commit();
+      await conn.commit();
       return result.affectedRows > 0;
     } catch (error) {
-      await connection.rollback();
+      await conn.rollback();
       throw error;
+    } finally {
+      conn.release();
     }
   }
 
@@ -195,29 +199,30 @@ export class InsumoModel {
       stockMaximo,
     } = input;
 
+    const conn = await connection.getConnection();
     try {
-      await connection.beginTransaction();
+      await conn.beginTransaction();
 
       // Verificar si el insumo existe
-      const [exists] = await connection.query(
+      const [exists] = await conn.query(
         `SELECT id_insumo FROM Insumos WHERE id_insumo = ?;`,
         [id]
       );
 
       if (exists.length === 0) {
-        await connection.rollback();
+        await conn.rollback();
         return null;
       }
 
       // Verificar duplicado de nombre si se está actualizando
       if (nombreInsumo) {
-        const [duplicate] = await connection.query(
+        const [duplicate] = await conn.query(
           `SELECT id_insumo FROM Insumos WHERE nombreInsumo = ? AND id_insumo != ?;`,
           [nombreInsumo, id]
         );
 
         if (duplicate.length > 0) {
-          await connection.rollback();
+          await conn.rollback();
           throw new Error("Ya existe otro insumo con ese nombre");
         }
       }
@@ -253,7 +258,7 @@ export class InsumoModel {
 
       if (insumoUpdates.length > 0) {
         insumoValues.push(id);
-        await connection.query(
+        await conn.query(
           `UPDATE Insumos
                      SET ${insumoUpdates.join(", ")}
                      WHERE id_insumo = ?;`,
@@ -282,7 +287,7 @@ export class InsumoModel {
         inventarioUpdates.push("fechaUltimaActualizacion = NOW()");
         inventarioValues.push(id);
 
-        await connection.query(
+        await conn.query(
           `UPDATE Inventarios
                      SET ${inventarioUpdates.join(", ")}
                      WHERE id_insumo = ?;`,
@@ -290,14 +295,16 @@ export class InsumoModel {
         );
       }
 
-      await connection.commit();
+      await conn.commit();
       return this.getById({ id });
     } catch (error) {
-      await connection.rollback();
+      await conn.rollback();
       if (error.code === "ER_DUP_ENTRY") {
         throw new Error("Ya existe un insumo con ese nombre");
       }
       throw new Error("Error al actualizar el insumo: " + error.message);
+    } finally {
+      conn.release();
     }
   }
 

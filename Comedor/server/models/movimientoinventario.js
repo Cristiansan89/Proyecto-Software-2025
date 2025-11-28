@@ -72,8 +72,43 @@ export class MovimientoInventarioModel {
       comentarioMovimiento = null,
     } = input;
 
+    const conn = await connection.getConnection();
     try {
-      const [result] = await connection.query(
+      await conn.beginTransaction();
+
+      // Verificar que el insumo existe
+      const [insumoExists] = await conn.query(
+        `SELECT id_insumo FROM Insumos WHERE id_insumo = ?;`,
+        [id_insumo]
+      );
+
+      if (insumoExists.length === 0) {
+        await conn.rollback();
+        throw new Error("El insumo especificado no existe");
+      }
+
+      // Verificar stock disponible para salidas y mermas
+      if (tipoMovimiento === "Salida" || tipoMovimiento === "Merma") {
+        const [stockActual] = await conn.query(
+          `SELECT cantidadActual FROM Inventarios WHERE id_insumo = ?;`,
+          [id_insumo]
+        );
+
+        if (stockActual.length === 0) {
+          await conn.rollback();
+          throw new Error("No se encontró el inventario para este insumo");
+        }
+
+        if (stockActual[0].cantidadActual < cantidadMovimiento) {
+          await conn.rollback();
+          throw new Error(
+            `Stock insuficiente. Disponible: ${stockActual[0].cantidadActual}, Solicitado: ${cantidadMovimiento}`
+          );
+        }
+      }
+
+      // Crear el movimiento
+      await conn.query(
         `INSERT INTO MovimientosInventarios (
                     id_insumo, 
                     id_usuario,
@@ -105,6 +140,22 @@ export class MovimientoInventarioModel {
             ]
       );
 
+      // Actualizar el stock en inventarios
+      let cantidadParaStock = cantidadMovimiento;
+      if (tipoMovimiento === "Salida" || tipoMovimiento === "Merma") {
+        cantidadParaStock = -cantidadMovimiento; // Resta del stock
+      }
+
+      await conn.query(
+        `UPDATE Inventarios 
+         SET cantidadActual = cantidadActual + ?,
+             fechaUltimaActualizacion = NOW()
+         WHERE id_insumo = ?;`,
+        [cantidadParaStock, id_insumo]
+      );
+
+      await conn.commit();
+
       // Obtener el ID del movimiento recién creado
       const [newMovimiento] = await connection.query(
         `SELECT BIN_TO_UUID(id_movimiento) as id_movimiento 
@@ -116,8 +167,13 @@ export class MovimientoInventarioModel {
 
       return this.getById({ id: newMovimiento[0].id_movimiento });
     } catch (error) {
+      await conn.rollback();
       console.error("Error al crear el movimiento de inventario:", error);
-      throw new Error("Error al crear el movimiento de inventario");
+      throw new Error(
+        error.message || "Error al crear el movimiento de inventario"
+      );
+    } finally {
+      conn.release();
     }
   }
 

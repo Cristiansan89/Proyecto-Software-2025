@@ -21,12 +21,18 @@ const PedidoForm = ({ onClose, onSuccess, pedidoEditado = null }) => {
   const [filtroCategoria, setFiltroCategoria] = useState("");
   const [busquedaInsumo, setBusquedaInsumo] = useState("");
   const [categorias] = useState([
-    "Carnes",
-    "Verduras",
-    "Cereales",
-    "Lácteos",
+    "Carnes y proteínas",
     "Condimentos",
-    "Otros",
+    "Cereales",
+    "Enlatados",
+    "Limpieza",
+    "Bebidas",
+    "Verduras",
+    "Frutas",
+    "Descartables",
+    "Legumbres",
+    "Lacteos",
+    "Otros"
   ]);
 
   useEffect(() => {
@@ -51,6 +57,7 @@ const PedidoForm = ({ onClose, onSuccess, pedidoEditado = null }) => {
       setInsumos(insumosData);
       setProveedores(proveedoresData);
     } catch (error) {
+      console.error("Error al cargar datos:", error);
       alert("Error al cargar datos: " + error.message);
     } finally {
       setLoading(false);
@@ -128,6 +135,7 @@ const PedidoForm = ({ onClose, onSuccess, pedidoEditado = null }) => {
         alert("No se encontraron proveedores para este insumo");
       }
     } catch (error) {
+      console.error("Error al buscar proveedores:", error);
       alert("Error al buscar proveedores: " + error.message);
     }
   };
@@ -186,6 +194,7 @@ const PedidoForm = ({ onClose, onSuccess, pedidoEditado = null }) => {
       if (onSuccess) onSuccess(pedidosCreados);
       if (onClose) onClose();
     } catch (error) {
+      console.error("Error al crear pedido:", error);
       alert("Error al crear el pedido: " + error.message);
     } finally {
       setLoading(false);
