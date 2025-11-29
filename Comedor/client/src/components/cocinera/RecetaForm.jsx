@@ -7,6 +7,23 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   const formatCantidad = (cantidad) => {
     return parseFloat(cantidad).toFixed(2);
   };
+
+  // Función para normalizar unidades (convertir minúsculas a mayúsculas correctas)
+  const normalizarUnidad = (unidad) => {
+    const unidadesMap = {
+      gramo: "Gramo",
+      gramos: "Gramos",
+      kilogramo: "Kilogramo",
+      kilogramos: "Kilogramos",
+      mililitro: "Mililitro",
+      mililitros: "Mililitros",
+      litro: "Litro",
+      litros: "Litros",
+      unidad: "Unidad",
+      unidades: "Unidades",
+    };
+    return unidadesMap[unidad?.toLowerCase()] || unidad;
+  };
   const [formData, setFormData] = useState({
     nombreReceta: receta?.nombreReceta || "",
     instrucciones: receta?.instrucciones || "",
@@ -36,10 +53,11 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
     try {
       const response = await API.get(`/recetas/${receta.id_receta}/insumos`);
       if (response.data && response.data.insumos) {
-        // Formatear los ingredientes para evitar exceso de decimales
+        // Formatear los ingredientes para evitar exceso de decimales y normalizar unidades
         const ingredientesFormateados = response.data.insumos.map((ing) => ({
           ...ing,
           cantidadPorPorcion: formatCantidad(ing.cantidadPorPorcion),
+          unidadPorPorcion: normalizarUnidad(ing.unidadPorPorcion),
         }));
         setIngredientes(ingredientesFormateados);
       } else {
@@ -175,11 +193,36 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
         // Agregar ingredientes
         for (const ingrediente of ingredientes) {
-          await API.post(`/recetas/${savedReceta.id_receta}/insumos`, {
-            id_insumo: Number(ingrediente.id_insumo),
-            cantidadPorPorcion: Number(ingrediente.cantidadPorPorcion),
-            unidadPorPorcion: ingrediente.unidadPorPorcion,
-          });
+          const payload = {
+            id_insumo: ingrediente.id_insumo,
+            cantidadPorPorcion: parseFloat(ingrediente.cantidadPorPorcion) || 0,
+            unidadPorPorcion: normalizarUnidad(ingrediente.unidadPorPorcion),
+          };
+          console.log("📤 Enviando ingrediente:", payload);
+          try {
+            await API.post(
+              `/recetas/${savedReceta.id_receta}/insumos`,
+              payload
+            );
+          } catch (addError) {
+            console.error("❌ Error completo:", addError);
+            console.error("Response:", addError.response?.data);
+            if (addError.response?.data?.errors) {
+              console.log(
+                "❌ Errores de validación detallados:",
+                addError.response.data.errors
+              );
+              addError.response.data.errors.forEach((err, idx) => {
+                console.log(`  Error ${idx}:`, err);
+              });
+            } else {
+              console.log(
+                "❌ Error sin detalles de validación:",
+                addError.response?.data?.message || addError.message
+              );
+            }
+            throw addError;
+          }
         }
       } else {
         // Actualizar receta
@@ -233,21 +276,34 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
             id_insumo: ingrediente.id_insumo,
             cantidadPorPorcion: ingrediente.cantidadPorPorcion,
             unidadPorPorcion: ingrediente.unidadPorPorcion,
-            id_insumo_num: Number(ingrediente.id_insumo),
-            cantidadPorPorcion_num: Number(ingrediente.cantidadPorPorcion),
           });
           try {
             const payload = {
-              id_insumo: Number(ingrediente.id_insumo),
-              cantidadPorPorcion: Number(ingrediente.cantidadPorPorcion),
-              unidadPorPorcion: ingrediente.unidadPorPorcion,
+              id_insumo: ingrediente.id_insumo,
+              cantidadPorPorcion:
+                parseFloat(ingrediente.cantidadPorPorcion) || 0,
+              unidadPorPorcion: normalizarUnidad(ingrediente.unidadPorPorcion),
             };
+            console.log("📤 Enviando ingrediente:", payload);
             await API.post(`/recetas/${receta.id_receta}/insumos`, payload);
           } catch (addError) {
+            console.error("❌ Error completo:", addError);
+            console.error("Response completa:", addError.response?.data);
+            console.log("📋 Payload enviado fue:", payload);
             if (addError.response?.data?.errors) {
               console.log(
                 "❌ Errores de validación detallados:",
                 addError.response.data.errors
+              );
+              addError.response.data.errors.forEach((err, idx) => {
+                console.log(
+                  `  Error ${idx}: Campo "${err.field}" - ${err.message}`
+                );
+              });
+            } else {
+              console.log(
+                "❌ Error sin detalles de validación:",
+                addError.response?.data?.message || addError.message
               );
             }
             throw addError; // Re-lanzar para abortar el proceso
@@ -348,9 +404,9 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                       disabled={isViewMode}
                     >
                       <option value="Porcion">Porción</option>
-                      <option value="Litros">Litros</option>
-                      <option value="Kilogramos">Kilogramos</option>
-                      <option value="Unidades">Unidades</option>
+                      <option value="Litro">Litro</option>
+                      <option value="Kilogramo">Kilogramo</option>
+                      <option value="Unidad">Unidad</option>
                     </select>
                     {errors.unidadSalida && (
                       <div className="invalid-feedback">
@@ -522,7 +578,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                             })
                           }
                         >
-                          <option value="">Unidad...</option>
+                          <option value="">Seleccione unidad</option>
                           <option value="Gramo">Gramo</option>
                           <option value="Gramos">Gramos</option>
                           <option value="Kilogramo">Kilogramo</option>

@@ -23,12 +23,6 @@ const Sidebar = ({ collapsed }) => {
       path: "/admin/parametros",
     },
     {
-      id: "alertas",
-      label: "Alertas",
-      icon: "fas fa-bell",
-      path: "/admin/alertas",
-    },
-    {
       id: "roles",
       label: "Seguridad",
       icon: "fas fa-shield-alt",

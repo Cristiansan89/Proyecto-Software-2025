@@ -12,8 +12,7 @@ import GestionRolesPermisos from "./pages/admins/GestionRolesPermisos";
 import ListaInsumos from "./pages/admins/ListaInsumos";
 import ListaProveedores from "./pages/admins/ListaProveedores";
 import Configuracion from "./pages/admins/Configuracion";
-import Parametros from "./pages/admins/Parametros";
-import Alertas from "./pages/admins/Alertas";
+import ParametrosSistema from "./pages/admins/ParametrosSistema";
 import Persona from "./pages/admins/Personas";
 import PersonaGrado from "./pages/admins/PersonaGrado";
 import RegistroAsistenciasMovil from "./pages/movil/RegistroAsistenciasMovil.jsx";
@@ -35,6 +34,7 @@ import CocineraInventario from "./pages/cocinera/CocineraInventario";
 import CocineraReportes from "./pages/cocinera/CocineraReportes";
 import CocineraRecetas from "./pages/cocinera/CocineraRecetas";
 import PedidoInsumo from "./pages/cocinera/PedidoInsumo";
+import InsumosSemanal from "./pages/cocinera/InsumosSemanal";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/App.css";
 
@@ -108,8 +108,10 @@ function App() {
                         path="/personasgrados"
                         element={<PersonaGrado />}
                       />
-                      <Route path="/parametros" element={<Parametros />} />
-                      <Route path="/alertas" element={<Alertas />} />
+                      <Route
+                        path="/parametros"
+                        element={<ParametrosSistema />}
+                      />
                       <Route
                         path="/configuracion"
                         element={<Configuracion />}
@@ -172,6 +174,10 @@ function App() {
                         element={<CocineraInventario />}
                       />
                       <Route path="/pedidos" element={<PedidoInsumo />} />
+                      <Route
+                        path="/insumos-semanal"
+                        element={<InsumosSemanal />}
+                      />
                     </Routes>
                   </CocineraLayout>
                 </ProtectedRoute>

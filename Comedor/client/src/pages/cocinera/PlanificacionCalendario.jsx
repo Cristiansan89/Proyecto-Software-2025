@@ -72,30 +72,33 @@ const PlanificacionCalendario = () => {
 
   useEffect(() => {
     cargarRecetasDisponibles();
-    cargarMenusAsignados();
+    // Solo llamar a verificarPlanificacionActiva en la carga inicial
     verificarPlanificacionActiva();
-    cargarComensalesSemana();
   }, []);
 
   useEffect(() => {
     cargarMenusAsignados();
-    verificarPlanificacionActiva();
     cargarComensalesSemana();
   }, [semanaActual]);
 
   const verificarPlanificacionActiva = async () => {
     try {
-      const semana = obtenerSemanaActual();
-      const fechaInicio = semana[0].toISOString().split("T")[0];
-      const fechaFin = semana[4].toISOString().split("T")[0];
+      // Obtener todas las planificaciones activas (sin filtrar por semana)
+      const todasLasPlanificaciones = await planificacionMenuService.getAll();
+      const activa = todasLasPlanificaciones.find((p) => p.estado === "Activo");
 
-      // Buscar planificaciones activas para esta semana
-      const planificaciones = await planificacionMenuService.getByRangoFechas(
-        fechaInicio,
-        fechaFin
-      );
-      const activa = planificaciones.find((p) => p.estado === "Activo");
-      setPlanificacionActiva(activa || null);
+      if (activa) {
+        // Si hay una planificación activa, establecer semanaActual a su fecha de inicio
+        const fechaInicioPlanificacion = new Date(activa.fechaInicio);
+        setSemanaActual(fechaInicioPlanificacion);
+        setPlanificacionActiva(activa);
+        console.log(
+          `✅ Planificación activa encontrada. Inicializando calendario desde ${activa.fechaInicio}`
+        );
+      } else {
+        // Si no hay planificación activa, usar la semana actual
+        setPlanificacionActiva(null);
+      }
     } catch (error) {
       console.error("Error al verificar planificación activa:", error);
       setPlanificacionActiva(null);
@@ -163,6 +166,10 @@ const PlanificacionCalendario = () => {
       const fechaInicio = semana[0].toISOString().split("T")[0];
       const fechaFin = semana[4].toISOString().split("T")[0];
 
+      console.log(
+        `📅 Cargando menús para la semana ${fechaInicio} a ${fechaFin}`
+      );
+
       const response = await planificacionMenuService.getMenusSemana(
         fechaInicio,
         fechaFin
@@ -170,14 +177,21 @@ const PlanificacionCalendario = () => {
 
       // Convertir la respuesta a un objeto para fácil acceso
       const menusMap = {};
-      response?.forEach((menu) => {
-        if (menu.id_receta) {
-          // Solo mapear si hay una receta asignada
-          const clave = `${menu.fecha}_${menu.id_servicio}`;
-          menusMap[clave] = menu;
-        }
-      });
+      if (response && Array.isArray(response)) {
+        response.forEach((menu) => {
+          if (menu && menu.fecha && menu.id_servicio && menu.id_receta) {
+            const clave = `${menu.fecha}_${menu.id_servicio}`;
+            console.log(`✅ Menú agregado: ${clave} - ${menu.nombreReceta}`);
+            menusMap[clave] = menu;
+          } else {
+            console.warn("⚠️ Menú incompleto descartado:", menu);
+          }
+        });
+      }
 
+      console.log(
+        `📊 Total de menús cargados: ${Object.keys(menusMap).length}`
+      );
       setMenusAsignados(menusMap);
     } catch (error) {
       console.error("❌ Error al cargar menús asignados:", error);
@@ -246,6 +260,7 @@ const PlanificacionCalendario = () => {
       return;
     }
 
+    console.log("=== ASIGNANDO MENÚ ===");
     console.log("Usuario actual:", user);
     console.log("ID del usuario:", user?.idUsuario || user?.id_usuario);
 
@@ -263,20 +278,29 @@ const PlanificacionCalendario = () => {
         id_usuario: user?.idUsuario || user?.id_usuario || null,
       };
 
-      console.log("Datos de asignación:", datosAsignacion);
+      console.log("📤 Datos de asignación:", datosAsignacion);
 
       const resultado = await planificacionMenuService.asignarReceta(
         datosAsignacion
       );
 
+      console.log("✅ Respuesta del servidor:", resultado);
+
+      // Pequeño delay para asegurar que la BD esté actualizada
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       // Recargar menús asignados
+      console.log("🔄 Recargando menús asignados...");
       await cargarMenusAsignados();
 
       cerrarModalAsignacion();
       alert("Menú asignado exitosamente");
     } catch (error) {
       console.error("❌ Error al asignar menú:", error);
-      alert("Error al asignar el menú: " + error.message);
+      alert(
+        "Error al asignar el menú: " +
+          (error.response?.data?.message || error.message)
+      );
     } finally {
       setLoading(false);
     }
@@ -298,17 +322,28 @@ const PlanificacionCalendario = () => {
         id_servicio: servicio.id_servicio,
       };
 
+      console.log("🗑️ Eliminando receta:", datosEliminacion);
+
       const resultado = await planificacionMenuService.eliminarReceta(
         datosEliminacion
       );
 
+      console.log("✅ Receta eliminada exitosamente");
+
+      // Pequeño delay para asegurar que la BD esté actualizada
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       // Recargar menús asignados
+      console.log("🔄 Recargando menús asignados después de eliminar...");
       await cargarMenusAsignados();
 
       alert("Receta eliminada exitosamente");
     } catch (error) {
       console.error("❌ Error al eliminar receta:", error);
-      alert("Error al eliminar la receta: " + error.message);
+      alert(
+        "Error al eliminar la receta: " +
+          (error.response?.data?.message || error.message)
+      );
     } finally {
       setLoading(false);
     }
@@ -351,28 +386,36 @@ const PlanificacionCalendario = () => {
           </div>
           <div>
             {planificacionActiva && (
-              <div className="d-flex align-items-center">
-                <button
-                  className="btn btn-success btn-sm"
-                  onClick={finalizarPlanificacion}
-                  disabled={finalizandoPlanificacion}
-                >
-                  {finalizandoPlanificacion ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-1"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Finalizando...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-check me-1"></i>
-                      Finalizar Planificación
-                    </>
-                  )}
-                </button>
+              <div className="d-flex gap-2 align-items-center">
+                {planificacionActiva.estado === "Activo" && (
+                  <button
+                    className="btn btn-success btn-sm"
+                    onClick={finalizarPlanificacion}
+                    disabled={finalizandoPlanificacion}
+                  >
+                    {finalizandoPlanificacion ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-1"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        Finalizando...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-check me-1"></i>
+                        Finalizar Planificación
+                      </>
+                    )}
+                  </button>
+                )}
+                {planificacionActiva.estado === "Finalizado" && (
+                  <span className="badge bg-success">
+                    <i className="fas fa-lock me-1"></i>
+                    Planificación Finalizada (Solo Lectura)
+                  </span>
+                )}
               </div>
             )}
             {!planificacionActiva && (
@@ -387,8 +430,8 @@ const PlanificacionCalendario = () => {
           <table className="table table-bordered menu-calendar-table">
             <thead className="table-light">
               <tr>
-                <th>
-                  <span>Servicio</span>
+                <th className="font-italic">
+                  <h4>Servicio</h4>
                 </th>
                 {diasSemana.map((dia, index) => (
                   <th key={dia} width="17%" className="text-center">
@@ -476,33 +519,47 @@ const PlanificacionCalendario = () => {
                                 ) : null;
                               })()}
                               <div className="menu-acciones mt-2">
-                                <button
-                                  className="btn-action btn-edit btn-sm me-1"
-                                  title="Cambiar receta"
-                                  onClick={() =>
-                                    abrirModalAsignacion(fecha, servicio, dia)
-                                  }
-                                >
-                                  <i className="fas fa-edit"></i>
-                                </button>
-                                <button
-                                  className="btn-action btn-delete btn-sm"
-                                  title="Eliminar asignación"
-                                  disabled={loading}
-                                  onClick={() =>
-                                    eliminarReceta(fecha, servicio, dia)
-                                  }
-                                >
-                                  {loading ? (
-                                    <span
-                                      className="spinner-border spinner-border-sm"
-                                      role="status"
-                                      aria-hidden="true"
-                                    ></span>
-                                  ) : (
-                                    <i className="fas fa-trash"></i>
-                                  )}
-                                </button>
+                                {planificacionActiva?.estado === "Activo" ? (
+                                  <>
+                                    <button
+                                      className="btn-action btn-edit btn-sm me-1"
+                                      title="Cambiar receta"
+                                      onClick={() =>
+                                        abrirModalAsignacion(
+                                          fecha,
+                                          servicio,
+                                          dia
+                                        )
+                                      }
+                                    >
+                                      <i className="fas fa-edit"></i>
+                                    </button>
+                                    <button
+                                      className="btn-action btn-delete btn-sm"
+                                      title="Eliminar asignación"
+                                      disabled={loading}
+                                      onClick={() =>
+                                        eliminarReceta(fecha, servicio, dia)
+                                      }
+                                    >
+                                      {loading ? (
+                                        <span
+                                          className="spinner-border spinner-border-sm"
+                                          role="status"
+                                          aria-hidden="true"
+                                        ></span>
+                                      ) : (
+                                        <i className="fas fa-trash"></i>
+                                      )}
+                                    </button>
+                                  </>
+                                ) : planificacionActiva?.estado ===
+                                  "Finalizado" ? (
+                                  <div className="text-muted small">
+                                    <i className="fas fa-lock me-1"></i>
+                                    Solo lectura
+                                  </div>
+                                ) : null}
                               </div>
                             </div>
                           ) : (
@@ -527,15 +584,22 @@ const PlanificacionCalendario = () => {
                                   </div>
                                 ) : null;
                               })()}
-                              <button
-                                className="btn btn-outline-success btn-sm w-100"
-                                onClick={() =>
-                                  abrirModalAsignacion(fecha, servicio, dia)
-                                }
-                              >
-                                <i className="fas fa-plus me-1"></i>
-                                Asignar Menú
-                              </button>
+                              {planificacionActiva?.estado === "Activo" ? (
+                                <button
+                                  className="btn btn-outline-success btn-sm w-100"
+                                  onClick={() =>
+                                    abrirModalAsignacion(fecha, servicio, dia)
+                                  }
+                                >
+                                  <i className="fas fa-plus me-1"></i>
+                                  Asignar Menú
+                                </button>
+                              ) : (
+                                <div className="text-muted small text-center">
+                                  <i className="fas fa-lock me-1"></i>
+                                  No se puede asignar
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

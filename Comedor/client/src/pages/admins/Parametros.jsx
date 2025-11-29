@@ -217,9 +217,7 @@ const Parametros = () => {
     <div className="container-fluid parametros-container">
       <div className="page-header">
         <div className="page-left">
-          <h1 className="page-title">
-            <i className="fas fa-sliders-h"></i> Parámetros del Sistema
-          </h1>
+          <h5 className="page-title">Parámetros del Sistema</h5>
         </div>
         <div className="col-md-4 text-end">
           <button className="btn btn-primary" onClick={handleNuevo}>

@@ -234,9 +234,7 @@ const PlanificacionMenuForm = ({
                             {servicio.nombreServicio}
                           </h6>
                           <p className="mb-1">
-                            <strong>
-                              Total: {servicio.totalComensales} estudiantes
-                            </strong>
+                            <strong>Total: {servicio.totalComensales}</strong>
                           </p>
                           {servicio.turnos?.map((turno, tIndex) => (
                             <div key={tIndex} className="small text-muted">
@@ -258,7 +256,7 @@ const PlanificacionMenuForm = ({
                   <div className="alert alert-info mt-3">
                     <i className="fas fa-info-circle me-2"></i>
                     <strong>Total de comensales para el día:</strong>{" "}
-                    {comensalesCalculados.resumen?.totalDia} estudiantes
+                    <strong>{comensalesCalculados.resumen?.totalDia}</strong>
                     <div className="small mt-1">
                       Este cálculo se basa en la matrícula actual de estudiantes
                       por grado y turno.

@@ -33,7 +33,9 @@ import telegramRouter from "./routes/telegram.js";
 import estadoPedidoRouter from "./routes/estadospedido.js";
 import tipoMermaRouter from "./routes/tiposmerma.js";
 import alertasInventarioRouter from "./routes/alertasInventario.js";
+import generacionAutomaticaRouter from "./routes/generacionAutomaticaRoutes.js";
 import alertasService from "./services/alertasInventarioService.js";
+import { schedulerService } from "./services/schedulerService.js";
 
 export const createApp = ({
   usuarioModel,
@@ -122,6 +124,7 @@ export const createApp = ({
   app.use("/api/estado-pedidos", estadoPedidoRouter);
   app.use("/api/tipos-merma", tipoMermaRouter);
   app.use("/api/alertas-inventario", alertasInventarioRouter);
+  app.use("/api/generacion-automatica", generacionAutomaticaRouter);
 
   // Inicializar servicio de alertas
   alertasService
@@ -129,6 +132,11 @@ export const createApp = ({
     .catch((err) =>
       console.error("Error al inicializar servicio de alertas:", err)
     );
+
+  // Inicializar scheduler de generación automática
+  schedulerService
+    .inicializar()
+    .catch((err) => console.error("Error al inicializar scheduler:", err));
 
   // Endpoint específico para obtener alumnos de un grado
   app.get("/api/alumnos-grado", async (req, res) => {

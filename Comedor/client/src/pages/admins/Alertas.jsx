@@ -86,7 +86,7 @@ const Alertas = () => {
           configAlertas.emailHabilitado = valorProcesado;
         } else if (nombreParametro === "Destinatario Email") {
           configAlertas.destinatarioEmail = valorProcesado;
-        } else if (nombreParametro === "Notificaciones UI Habilitadas") {
+        } else if (nombreParametro === "Notificaciones Ui Habilitadas") {
           configAlertas.notificacionesUIHabilitadas = valorProcesado;
         }
       });
@@ -190,7 +190,7 @@ const Alertas = () => {
           valor: alertas.destinatarioEmail,
         },
         {
-          nombreParametro: "Notificaciones UI Habilitadas",
+          nombreParametro: "Notificaciones Ui Habilitadas",
           valor: alertas.notificacionesUIHabilitadas,
         },
       ];

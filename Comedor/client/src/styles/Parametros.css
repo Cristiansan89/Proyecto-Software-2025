@@ -140,3 +140,171 @@
     max-width: 95% !important;
   }
 }
+
+/* Estilos para las pestañas */
+.navigation-tabs {
+  margin: 30px 0 20px 0;
+}
+
+.tabs-header {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #e9ecef;
+  padding: 0;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-button i {
+  font-size: 16px;
+}
+
+.tab-button:hover {
+  color: #333;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.tab-button.active {
+  color: #0d6efd;
+  border-bottom-color: #0d6efd;
+  font-weight: 600;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Alertas container styles */
+.alertas-container {
+  padding: 20px 0;
+}
+
+.alertas-container .card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.alertas-container .card-header {
+  padding: 20px;
+  border-radius: 8px 8px 0 0;
+}
+
+.alertas-container .card-body {
+  padding: 20px;
+}
+
+.alertas-container .form-check-input {
+  width: 1.5em;
+  height: 1.5em;
+  cursor: pointer;
+}
+
+.alertas-container .form-check-label {
+  cursor: pointer;
+  user-select: none;
+}
+
+.alertas-container .form-label {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.alertas-container .input-alerta {
+  max-width: 200px;
+}
+
+.alertas-container .badge {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.form-actions button {
+  min-width: 120px;
+}
+
+/* Header styles */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.header-left p {
+  color: #666;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tabs-header {
+    flex-wrap: wrap;
+  }
+
+  .tab-button {
+    padding: 10px 15px;
+    font-size: 13px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .alertas-container .row {
+    margin: 0;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}

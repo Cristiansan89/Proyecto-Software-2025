@@ -1,0 +1,159 @@
+/* InsumosSemanal.css */
+
+.insumos-semanal-container {
+  padding: 20px;
+}
+
+.insumos-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.insumos-header h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.insumos-tabla {
+  margin-top: 20px;
+}
+
+.insumos-tabla table {
+  font-size: 14px;
+}
+
+.insumos-tabla thead {
+  background-color: #f8f9fa;
+}
+
+.insumos-tabla tbody tr {
+  transition: background-color 0.2s;
+}
+
+.insumos-tabla tbody tr:hover {
+  background-color: #f0f7ff;
+}
+
+.badge-cantidad {
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.menus-detalle {
+  margin-top: 30px;
+}
+
+.menu-card {
+  border-left: 4px solid #667eea;
+  padding: 15px;
+  margin-bottom: 10px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  transition: box-shadow 0.2s;
+}
+
+.menu-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.menu-card .menu-fecha {
+  color: #666;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.menu-card .menu-comensales {
+  float: right;
+  background: #e3f2fd;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.resumen-insumos {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.resumen-insumos h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.botones-accion {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.botones-accion button {
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.botones-accion button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Para impresión */
+@media print {
+  body {
+    background: white;
+  }
+
+  .botones-accion,
+  .btn-close,
+  nav,
+  footer {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .insumos-tabla table {
+    page-break-inside: avoid;
+  }
+
+  .menu-card {
+    page-break-inside: avoid;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .insumos-header {
+    padding: 15px;
+  }
+
+  .insumos-header h3 {
+    font-size: 18px;
+  }
+
+  .menu-card .menu-comensales {
+    float: none;
+    display: inline-block;
+    margin-top: 10px;
+  }
+
+  .table-responsive {
+    font-size: 12px;
+  }
+}

@@ -1,5 +1,35 @@
 import { connection } from "./db.js";
 
+// Mapa consistente de días de la semana (índice UTC -> nombre sin acentos para DB)
+const DIAS_SEMANA_POR_INDICE = [
+  "Domingo",
+  "Lunes",
+  "Martes",
+  "Miercoles",
+  "Jueves",
+  "Viernes",
+  "Sabado",
+];
+
+// Mapa para convertir nombre a índice (case-insensitive y sin acentos)
+const NOMBRE_A_INDICE_DIA = {
+  domingo: 0,
+  lunes: 1,
+  martes: 2,
+  miercoles: 3, // Sin acento para matching
+  miércoles: 3, // Con acento
+  jueves: 4,
+  viernes: 5,
+  sabado: 6, // Sin acento
+  sábado: 6, // Con acento
+};
+
+function normalizarDia(diaNombre) {
+  if (!diaNombre) return null;
+  const diaLower = diaNombre.toLowerCase().trim();
+  return NOMBRE_A_INDICE_DIA[diaLower];
+}
+
 export class PlanificacionMenuModel {
   static async getAll() {
     try {
@@ -64,15 +94,20 @@ export class PlanificacionMenuModel {
       estado = "Activo",
     } = input;
 
+    const conn = await connection.getConnection();
+
     try {
-      const [result] = await connection.execute(
+      await conn.beginTransaction();
+
+      // Crear la planificación
+      const [result] = await conn.execute(
         `INSERT INTO PlanificacionMenus (id_usuario, fechaInicio, fechaFin, comensalesEstimados, estado) 
                  VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)`,
         [id_usuario, fechaInicio, fechaFin, comensalesEstimados, estado]
       );
 
       // Obtener el ID de la planificación creada
-      const [newPlan] = await connection.query(
+      const [newPlan] = await conn.query(
         `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion 
                  FROM PlanificacionMenus 
                  WHERE id_usuario = UUID_TO_BIN(?) AND fechaInicio = ?
@@ -80,9 +115,36 @@ export class PlanificacionMenuModel {
         [id_usuario, fechaInicio]
       );
 
-      return this.getById({ id: newPlan[0].id_planificacion });
+      const id_planificacion = newPlan[0].id_planificacion;
+
+      // Obtener todos los servicios
+      const [servicios] = await conn.query(
+        `SELECT id_servicio FROM Servicios WHERE estado = 'Activo';`
+      );
+
+      // Crear jornadas solo para días de semana (lunes a viernes)
+      const diasSemana = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes"];
+
+      for (const servicio of servicios) {
+        for (const dia of diasSemana) {
+          await conn.execute(
+            `INSERT INTO JornadaPlanificada (id_planificacion, id_servicio, diaSemana)
+             VALUES (UUID_TO_BIN(?), ?, ?)`,
+            [id_planificacion, servicio.id_servicio, dia]
+          );
+        }
+      }
+
+      await conn.commit();
+
+      return this.getById({ id: id_planificacion });
     } catch (error) {
-      throw new Error("Error al crear la planificación del menú");
+      await conn.rollback();
+      throw new Error(
+        "Error al crear la planificación del menú: " + error.message
+      );
+    } finally {
+      conn.release();
     }
   }
 
@@ -179,7 +241,7 @@ export class PlanificacionMenuModel {
                  JOIN Servicios s ON jp.id_servicio = s.id_servicio
                  WHERE jp.id_planificacion = UUID_TO_BIN(?)
                  ORDER BY 
-                    FIELD(jp.diaSemana, 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'),
+                    FIELD(jp.diaSemana, 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'),
                     s.nombreServicio;`,
         [id]
       );
@@ -373,17 +435,22 @@ export class PlanificacionMenuModel {
       }
 
       // Obtener el día de la semana en español
-      const fechaObj = new Date(fecha + "T00:00:00Z");
-      const diasSemana = [
-        "Domingo",
-        "Lunes",
-        "Martes",
-        "Miércoles",
-        "Jueves",
-        "Viernes",
-        "Sábado",
-      ];
-      const diaSemana = diasSemana[fechaObj.getUTCDay()];
+      // Parsear la fecha en formato YYYY-MM-DD
+      const [año, mes, día] = fecha.split("-").map(Number);
+      const fechaObj = new Date(año, mes - 1, día); // mes es 0-indexed en JS
+      const indiceLocal = fechaObj.getDay();
+      const diaSemana = DIAS_SEMANA_POR_INDICE[indiceLocal];
+
+      console.log(
+        `📅 asignarRecetaPorFechaServicio: Fecha ${fecha} -> Día '${diaSemana}' (índice: ${indiceLocal})`
+      );
+
+      // Validar que no sea fin de semana (sábado=6, domingo=0)
+      if (indiceLocal === 0 || indiceLocal === 6) {
+        throw new Error(
+          `No se pueden asignar recetas para ${diaSemana}. Las jornadas planificadas son solo de lunes a viernes.`
+        );
+      }
 
       // Buscar o crear una planificación para esta fecha
       let [planificaciones] = await conn.query(
@@ -503,6 +570,10 @@ export class PlanificacionMenuModel {
   // Método para obtener menús asignados por rango de fechas
   static async getMenusSemana({ fechaInicio, fechaFin }) {
     try {
+      console.log(
+        `🔍 getMenusSemana: Buscando menús entre ${fechaInicio} y ${fechaFin}`
+      );
+
       const [menus] = await connection.query(
         `SELECT 
                     jp.diaSemana,
@@ -511,55 +582,93 @@ export class PlanificacionMenuModel {
                     BIN_TO_UUID(psr.id_receta) as id_receta,
                     r.nombreReceta,
                     BIN_TO_UUID(psr.id_recetaAsignada) as id_recetaAsignada,
+                    BIN_TO_UUID(jp.id_jornada) as id_jornada,
+                    BIN_TO_UUID(pm.id_planificacion) as id_planificacion,
                     pm.fechaInicio,
-                    pm.fechaFin
+                    pm.fechaFin,
+                    pm.estado
                  FROM PlanificacionMenus pm
                  JOIN JornadaPlanificada jp ON pm.id_planificacion = jp.id_planificacion
                  JOIN Servicios s ON jp.id_servicio = s.id_servicio
                  LEFT JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
                  LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
-                                 WHERE pm.fechaInicio <= ? AND pm.fechaFin >= ? 
-                                     AND pm.estado = 'Activo'
-                 ORDER BY jp.id_servicio;`,
+                 WHERE pm.fechaInicio <= ? AND pm.fechaFin >= ? 
+                   AND pm.estado = 'Activo'
+                 ORDER BY pm.fechaInicio, jp.id_servicio, jp.diaSemana;`,
         [fechaFin, fechaInicio]
       );
 
+      console.log(`📊 Total de jornadas encontradas: ${menus.length}`);
+
       // Convertir los días de la semana a fechas específicas
       const resultados = [];
+      const menusVistos = new Set(); // Para evitar duplicados
 
-      menus.forEach((menu) => {
-        // Calcular la fecha específica basada en el día de la semana
-        const fechaInicio = new Date(menu.fechaInicio);
-        const diasMap = {
-          Lunes: 1,
-          Martes: 2,
-          Miércoles: 3,
-          Jueves: 4,
-          Viernes: 5,
-          Sábado: 6,
-          Domingo: 0,
-        };
+      menus.forEach((menu, index) => {
+        console.log(
+          `  [${index}] Día: '${menu.diaSemana}', Servicio: ${
+            menu.id_servicio
+          }, Receta: ${menu.id_receta ? "✅" : "❌"}`
+        );
 
-        // Encontrar el día específico en la semana de la planificación
-        const diaObjetivo = diasMap[menu.diaSemana];
-        const fechaMenu = new Date(fechaInicio);
+        // Solo procesar si hay una receta asignada
+        if (menu.id_receta) {
+          try {
+            // Normalizar el nombre del día para obtener el índice
+            const indiceNormalizado = normalizarDia(menu.diaSemana);
 
-        // Ajustar a la fecha correcta del día de la semana
-        const diaActual = fechaMenu.getDay();
-        const diferencia = diaObjetivo - diaActual;
-        fechaMenu.setDate(fechaMenu.getDate() + diferencia);
+            if (indiceNormalizado === undefined || indiceNormalizado === null) {
+              console.warn(
+                `⚠️ Día desconocido/no válido: '${menu.diaSemana}'. Intenta: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo`
+              );
+              return; // Saltar este registro
+            }
 
-        resultados.push({
-          fecha: fechaMenu.toISOString().split("T")[0],
-          id_servicio: menu.id_servicio,
-          nombreServicio: menu.nombreServicio,
-          id_receta: menu.id_receta,
-          nombreReceta: menu.nombreReceta,
-          id_recetaAsignada: menu.id_recetaAsignada,
-        });
+            // Calcular la fecha específica basada en el día de la semana
+            const planificacionInicio = new Date(menu.fechaInicio);
+            const fechaMenu = new Date(planificacionInicio);
+
+            // Ajustar a la fecha correcta del día de la semana
+            const diaActual = fechaMenu.getDay();
+            const diferencia = indiceNormalizado - diaActual;
+            fechaMenu.setDate(fechaMenu.getDate() + diferencia);
+
+            const fechaFormato = fechaMenu.toISOString().split("T")[0];
+            const clave = `${fechaFormato}_${menu.id_servicio}`;
+
+            // Solo agregar si no lo hemos visto antes (evitar duplicados)
+            if (!menusVistos.has(clave)) {
+              menusVistos.add(clave);
+              resultados.push({
+                fecha: fechaFormato,
+                id_servicio: menu.id_servicio,
+                nombreServicio: menu.nombreServicio,
+                id_receta: menu.id_receta,
+                nombreReceta: menu.nombreReceta,
+                id_recetaAsignada: menu.id_recetaAsignada,
+                id_jornada: menu.id_jornada,
+                id_planificacion: menu.id_planificacion,
+              });
+              console.log(
+                `    ✅ Agregado: ${fechaFormato} - ${menu.nombreServicio} - ${menu.nombreReceta}`
+              );
+            }
+          } catch (itemError) {
+            console.warn(
+              `⚠️ Error procesando menú para ${menu.diaSemana} servicio ${menu.id_servicio}:`,
+              itemError.message
+            );
+          }
+        }
       });
+
+      console.log(
+        `✅ getMenusSemana: ${resultados.length} menús encontrados entre ${fechaInicio} y ${fechaFin}`
+      );
       return resultados;
     } catch (error) {
+      console.error("❌ Error en getMenusSemana:", error.message);
+      console.error("Stack:", error.stack);
       return [];
     }
   }

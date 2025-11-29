@@ -16,6 +16,7 @@ const AdminLayout = ({ children }) => {
     const path = location.pathname;
     if (path.includes("/dashboard")) return "dashboard";
     if (path.includes("/personas")) return "personas";
+    if (path.includes("/parametros")) return "parametros";
     if (path.includes("/grados")) return "grados";
     if (path.includes("/roles")) return "roles";
     if (path.includes("/insumos")) return "insumos";
