@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import PlanificacionSemanal from "../../pages/cocinera/PlanificacionSemanal";
 import PlanificacionCalendario from "../../pages/cocinera/PlanificacionCalendario";
+import InsumosSemanal from "../../pages/cocinera/InsumosSemanal";
 import PlanificacionMenuForm from "../../components/cocinera/PlanificacionMenuForm";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import "../../styles/PlanificacionMenus.css";
@@ -124,6 +125,12 @@ const PlanificacionMenus = () => {
           planificacionSeleccionada={planificacionSeleccionada}
         />
       ),
+    },
+    {
+      id: "insumos",
+      label: "Insumos Semanales",
+      icon: "fas fa-boxes",
+      component: <InsumosSemanal />,
     },
   ];
 

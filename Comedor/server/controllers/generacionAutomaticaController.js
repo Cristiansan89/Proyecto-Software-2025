@@ -460,9 +460,10 @@ export const obtenerInsumosSemanales = async (req, res) => {
         for (const item of items) {
           const key = `${item.id_insumo}`;
 
+          // Obtener insumo básico SIEMPRE (primera vez o actualización)
           if (!insumosMap[key]) {
             const [insumo] = await connection.query(
-              "SELECT nombreInsumo, unidadMedida FROM Insumos WHERE id_insumo = ?",
+              "SELECT id_insumo, nombreInsumo, unidadMedida FROM Insumos WHERE id_insumo = ?",
               [item.id_insumo]
             );
 
@@ -471,8 +472,60 @@ export const obtenerInsumosSemanales = async (req, res) => {
               nombre: insumo[0]?.nombreInsumo || "Insumo desconocido",
               unidad: item.unidadPorPorcion || insumo[0]?.unidadMedida,
               cantidad: 0,
+              cantidad_disponible: 0,
+              unidad_inventario:
+                insumo[0]?.unidadMedida || item.unidadPorPorcion,
             };
           }
+
+          // OBTENER STOCK SIEMPRE (no solo primera vez)
+          let cantidadDisponible = 0;
+          console.log(`   🔍 Buscando stock para insumo ID: ${item.id_insumo}`);
+
+          try {
+            // Primero intenta obtener con cantidadActual
+            let query = `SELECT i.cantidadActual as stock 
+               FROM Inventarios i 
+               WHERE i.id_insumo = ? 
+               LIMIT 1`;
+
+            let [stockInventario] = await connection.query(query, [
+              item.id_insumo,
+            ]);
+
+            // Si no encuentra, intenta con cantidad
+            if (!stockInventario || stockInventario.length === 0) {
+              console.log(
+                `   ⚠️ No encontrado con cantidadActual, intentando con cantidad`
+              );
+              query = `SELECT i.cantidad as stock 
+                 FROM Inventarios i 
+                 WHERE i.id_insumo = ? 
+                 LIMIT 1`;
+              [stockInventario] = await connection.query(query, [
+                item.id_insumo,
+              ]);
+            }
+
+            if (stockInventario && stockInventario.length > 0) {
+              cantidadDisponible = parseFloat(stockInventario[0].stock) || 0;
+              console.log(
+                `   ✅ Stock encontrado: ${cantidadDisponible} ${insumosMap[key].unidad_inventario}`
+              );
+            } else {
+              console.log(
+                `   ❌ No hay registros en Inventarios para insumo ${item.id_insumo}`
+              );
+            }
+          } catch (invError) {
+            console.warn(
+              `⚠️ Error obteniendo inventario para insumo ${item.id_insumo}:`,
+              invError.message
+            );
+          }
+
+          // Actualizar cantidad disponible en cada iteración
+          insumosMap[key].cantidad_disponible = cantidadDisponible;
 
           // Calcular cantidad paso a paso con logs detallados
           const cantidadPorPorcion = parseFloat(item.cantidadPorPorcion);
@@ -510,8 +563,14 @@ export const obtenerInsumosSemanales = async (req, res) => {
     console.log(`\n🎯 RESUMEN FINAL - INSUMOS SEMANALES CALCULADOS:`);
     console.log(`═══════════════════════════════════════════════`);
     insumos.forEach((insumo) => {
+      const diferencia = insumo.cantidad_disponible - insumo.cantidad;
+      const estado = diferencia >= 0 ? "✅ SUFICIENTE" : "⚠️ FALTA";
       console.log(
-        `📦 ${insumo.nombre}: ${insumo.cantidad.toFixed(2)} ${insumo.unidad}`
+        `📦 ${insumo.nombre}: ${insumo.cantidad.toFixed(2)} ${
+          insumo.unidad
+        } | Inventario: ${insumo.cantidad_disponible.toFixed(2)} ${
+          insumo.unidad_inventario
+        } | ${estado}`
       );
     });
     console.log(`═══════════════════════════════════════════════\n`);

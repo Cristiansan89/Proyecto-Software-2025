@@ -64,29 +64,29 @@ const Alertas = () => {
           valorProcesado = parseFloat(valor);
 
         // Mapear a estado
-        if (nombreParametro === "Alertas Inventario Habilitadas") {
+        if (nombreParametro === "ALERTAS_INVENTARIO_HABILITADAS") {
           configAlertas.alertasInventarioHabilitadas = valorProcesado;
-        } else if (nombreParametro === "Alertas Agotado Habilitadas") {
+        } else if (nombreParametro === "ALERTAS_AGOTADO_HABILITADAS") {
           configAlertas.alertasAgotadoHabilitadas = valorProcesado;
-        } else if (nombreParametro === "Alertas Critico Habilitadas") {
+        } else if (nombreParametro === "ALERTAS_CRITICO_HABILITADAS") {
           configAlertas.alertasCriticoHabilitadas = valorProcesado;
-        } else if (nombreParametro === "Alertas Bajo Habilitadas") {
+        } else if (nombreParametro === "ALERTAS_BAJO_HABILITADAS") {
           configAlertas.alertasBajoHabilitadas = valorProcesado;
-        } else if (nombreParametro === "Porcentaje Alerta Critico") {
+        } else if (nombreParametro === "PORCENTAJE_ALERTA_CRITICO") {
           configAlertas.porcentajeAlertaCritico = valorProcesado;
-        } else if (nombreParametro === "Porcentaje Alerta Bajo") {
+        } else if (nombreParametro === "PORCENTAJE_ALERTA_BAJO") {
           configAlertas.porcentajeAlertaBajo = valorProcesado;
-        } else if (nombreParametro === "Telegram Habilitado") {
+        } else if (nombreParametro === "TELEGRAM_HABILITADO") {
           configAlertas.telegramHabilitado = valorProcesado;
-        } else if (nombreParametro === "Cantidad Reintentos Telegram") {
+        } else if (nombreParametro === "CANTIDAD_REINTENTOS_TELEGRAM") {
           configAlertas.cantidadReintentosTelegram = valorProcesado;
-        } else if (nombreParametro === "Intervalo Reintentos Telegram") {
+        } else if (nombreParametro === "INTERVALO_REINTENTOS_TELEGRAM") {
           configAlertas.intervaloReintentosTelegram = valorProcesado;
-        } else if (nombreParametro === "Email Habilitado") {
+        } else if (nombreParametro === "EMAIL_HABILITADO") {
           configAlertas.emailHabilitado = valorProcesado;
-        } else if (nombreParametro === "Destinatario Email") {
+        } else if (nombreParametro === "DESTINATARIO_EMAIL") {
           configAlertas.destinatarioEmail = valorProcesado;
-        } else if (nombreParametro === "Notificaciones Ui Habilitadas") {
+        } else if (nombreParametro === "NOTIFICACIONES_UI_HABILITADAS") {
           configAlertas.notificacionesUIHabilitadas = valorProcesado;
         }
       });
@@ -146,51 +146,51 @@ const Alertas = () => {
       // Preparar todas las operaciones
       const operaciones = [
         {
-          nombreParametro: "Alertas Inventario Habilitadas",
+          nombreParametro: "ALERTAS_INVENTARIO_HABILITADAS",
           valor: alertas.alertasInventarioHabilitadas,
         },
         {
-          nombreParametro: "Alertas Agotado Habilitadas",
+          nombreParametro: "ALERTAS_AGOTADO_HABILITADAS",
           valor: alertas.alertasAgotadoHabilitadas,
         },
         {
-          nombreParametro: "Alertas Critico Habilitadas",
+          nombreParametro: "ALERTAS_CRITICO_HABILITADAS",
           valor: alertas.alertasCriticoHabilitadas,
         },
         {
-          nombreParametro: "Alertas Bajo Habilitadas",
+          nombreParametro: "ALERTAS_BAJO_HABILITADAS",
           valor: alertas.alertasBajoHabilitadas,
         },
         {
-          nombreParametro: "Porcentaje Alerta Critico",
+          nombreParametro: "PORCENTAJE_ALERTA_CRITICO",
           valor: alertas.porcentajeAlertaCritico,
         },
         {
-          nombreParametro: "Porcentaje Alerta Bajo",
+          nombreParametro: "PORCENTAJE_ALERTA_BAJO",
           valor: alertas.porcentajeAlertaBajo,
         },
         {
-          nombreParametro: "Telegram Habilitado",
+          nombreParametro: "TELEGRAM_HABILITADO",
           valor: alertas.telegramHabilitado,
         },
         {
-          nombreParametro: "Cantidad Reintentos Telegram",
+          nombreParametro: "CANTIDAD_REINTENTOS_TELEGRAM",
           valor: alertas.cantidadReintentosTelegram,
         },
         {
-          nombreParametro: "Intervalo Reintentos Telegram",
+          nombreParametro: "INTERVALO_REINTENTOS_TELEGRAM",
           valor: alertas.intervaloReintentosTelegram,
         },
         {
-          nombreParametro: "Email Habilitado",
+          nombreParametro: "EMAIL_HABILITADO",
           valor: alertas.emailHabilitado,
         },
         {
-          nombreParametro: "Destinatario Email",
+          nombreParametro: "DESTINATARIO_EMAIL",
           valor: alertas.destinatarioEmail,
         },
         {
-          nombreParametro: "Notificaciones Ui Habilitadas",
+          nombreParametro: "NOTIFICACIONES_UI_HABILITADAS",
           valor: alertas.notificacionesUIHabilitadas,
         },
       ];

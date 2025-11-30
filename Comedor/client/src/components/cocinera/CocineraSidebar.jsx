@@ -41,12 +41,6 @@ const CocineraSidebar = ({ collapsed }) => {
       path: "/cocinera/pedidos",
     },
     {
-      id: "insumos-semanal",
-      label: "Insumos Semanal",
-      icon: "fas fa-list-check",
-      path: "/cocinera/insumos-semanal",
-    },
-    {
       id: "reportes",
       label: "Reportes",
       icon: "fas fa-chart-line",

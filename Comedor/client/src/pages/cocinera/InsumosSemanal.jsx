@@ -122,10 +122,20 @@ const InsumosSemanal = () => {
       // Convertir array a map con nombre como clave
       const insumosMap = {};
       for (const insumo of response.insumos) {
+        console.log(`📦 Insumo recibido:`, {
+          nombre: insumo.nombre,
+          cantidad: insumo.cantidad,
+          unidad: insumo.unidad,
+          cantidad_disponible: insumo.cantidad_disponible,
+          unidad_inventario: insumo.unidad_inventario,
+        });
+
         insumosMap[insumo.nombre] = {
           id_insumo: insumo.id_insumo,
           cantidad: insumo.cantidad,
           unidad: insumo.unidad,
+          cantidad_disponible: insumo.cantidad_disponible || 0,
+          unidad_inventario: insumo.unidad_inventario || insumo.unidad,
         };
       }
 
@@ -267,8 +277,10 @@ const InsumosSemanal = () => {
                       <thead className="table-light">
                         <tr>
                           <th width="30%">Insumo</th>
-                          <th width="25%">Cantidad, Unidad</th>
-                          <th width="25%">Cantidad Convertida, Unidad</th>
+                          <th width="25%">Cantidad Insumo</th>
+                          <th width="25%">Cantidad Convertida</th>
+                          <th width="15%">Stock Actual </th>
+                          <th width="15%">Cantidad Faltantes</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -294,6 +306,44 @@ const InsumosSemanal = () => {
                                     {mejorUnidad.cantidad.toFixed(2)}{" "}
                                     {mejorUnidad.unidad}
                                   </span>
+                                </td>
+                                <td width="15%">
+                                  <span className="badge bg-info text-dark">
+                                    {datos.cantidad_disponible
+                                      ? datos.cantidad_disponible.toFixed(2)
+                                      : "0"}{" "}
+                                    {datos.unidad_inventario}
+                                  </span>
+                                </td>
+                                <td width="15%">
+                                  {(() => {
+                                    const stockDisponible =
+                                      datos.cantidad_disponible || 0;
+                                    const cantidadNecesaria =
+                                      mejorUnidad.cantidad;
+                                    const diferencia =
+                                      stockDisponible - cantidadNecesaria;
+
+                                    console.log(
+                                      `🧮 Cálculo disponibilidad ${nombreInsumo}:`,
+                                      {
+                                        stockDisponible,
+                                        cantidadNecesaria,
+                                        diferencia,
+                                      }
+                                    );
+
+                                    const badgeClass =
+                                      diferencia >= 0
+                                        ? "bg-success"
+                                        : "bg-danger";
+                                    return (
+                                      <span className={`badge ${badgeClass}`}>
+                                        {diferencia.toFixed(2)}{" "}
+                                        {mejorUnidad.unidad}
+                                      </span>
+                                    );
+                                  })()}
                                 </td>
                               </tr>
                             );
