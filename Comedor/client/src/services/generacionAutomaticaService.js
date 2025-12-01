@@ -47,6 +47,15 @@ const generacionAutomaticaService = {
     const response = await API.get("/generacion-automatica/estado-scheduler");
     return response.data;
   },
+
+  // Generar pedidos por insumos faltantes
+  generarPedidosPorInsumosFaltantes: async () => {
+    const response = await API.post(
+      "/generacion-automatica/generar-pedidos-insumos-faltantes",
+      {}
+    );
+    return response.data;
+  },
 };
 
 export default generacionAutomaticaService;

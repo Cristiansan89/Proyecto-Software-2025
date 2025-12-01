@@ -5,6 +5,7 @@ import {
   obtenerEstadoGeneracion,
   finalizarPlanificacionesAutomaticas,
   obtenerInsumosSemanales,
+  generarPedidosPorInsumosFaltantes,
 } from "../controllers/generacionAutomaticaController.js";
 import { authRequired } from "../middlewares/auth.js";
 import { schedulerService } from "../services/schedulerService.js";
@@ -64,5 +65,12 @@ router.post(
 
 // Obtener insumos semanales calculados
 router.get("/obtener-insumos-semanales", authRequired, obtenerInsumosSemanales);
+
+// Generar pedidos por insumos faltantes (manual)
+router.post(
+  "/generar-pedidos-insumos-faltantes",
+  authRequired,
+  generarPedidosPorInsumosFaltantes
+);
 
 export default router;

@@ -342,7 +342,7 @@ const ListaProveedores = () => {
                       </td>
                       <td>
                         <div className="contact-info">
-                          <div>{proveedor.CUIT}</div>
+                          <h6>{proveedor.CUIT}</h6>
                         </div>
                       </td>
                       <td>

@@ -252,31 +252,19 @@ const ListaInsumos = () => {
           </div>
         ) : (
           <div className="table-responsive">
-            <table className="table table-striped data-table">
-              <colgroup>
-                <col style={{ minWidth: "50px" }} />
-                <col style={{ minWidth: "10px" }} />
-                <col style={{ minWidth: "20px" }} />
-                <col style={{ minWidth: "10px" }} />
-                <col style={{ minWidth: "10px" }} />
-                <col style={{ minWidth: "10px" }} />
-                <col style={{ minWidth: "10px" }} />
-                <col style={{ minWidth: "10px" }} />
-                <col style={{ minWidth: "8px" }} />
-                <col style={{ minWidth: "10px" }} />
-              </colgroup>
+            <table className="table table-striped data-table table-sm">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Insumo</th>
-                  <th>Descripción</th>
-                  <th>Categoría</th>
-                  <th>Unidad</th>
-                  <th>Stock Mínimo</th>
-                  <th>Stock Actual</th>
-                  <th>Stock Máximo</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+                  <th style={{ fontSize: "0.75rem" }}>#</th>
+                  <th style={{ fontSize: "0.75rem" }}>Insumo</th>
+                  <th style={{ fontSize: "0.75rem" }}>Descripción</th>
+                  <th style={{ fontSize: "0.75rem" }}>Categoría</th>
+                  <th style={{ fontSize: "0.75rem" }}>Unidad</th>
+                  <th style={{ fontSize: "0.75rem" }}>Stock Mín.</th>
+                  <th style={{ fontSize: "0.75rem" }}>Stock Actual</th>
+                  <th style={{ fontSize: "0.75rem" }}>Stock Máx.</th>
+                  <th style={{ fontSize: "0.75rem" }}>Estado</th>
+                  <th style={{ fontSize: "0.75rem" }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -291,7 +279,7 @@ const ListaInsumos = () => {
                     const stockStatus = getStockStatus(insumo);
                     return (
                       <tr key={insumo.idInsumo || index}>
-                        <td>
+                        <td style={{ fontSize: "0.75rem" }}>
                           <strong>
                             {(currentPage - 1) * pageSize + index + 1}
                           </strong>
@@ -299,25 +287,35 @@ const ListaInsumos = () => {
                         <td
                           className="truncate-cell"
                           title={insumo.nombreInsumo}
+                          style={{ fontSize: "0.75rem" }}
                         >
                           {insumo.nombreInsumo || "-"}
                         </td>
                         <td
                           className="truncate-cell"
                           title={insumo.descripcion}
+                          style={{ fontSize: "0.75rem" }}
                         >
                           {insumo.descripcion || "Sin descripción"}
                         </td>
-                        <td>{insumo.categoria || ""}</td>
-                        <td>{insumo.unidadMedida || ""}</td>
-                        <td>{formatStockActual(insumo.stockMinimo)}</td>
-                        <td>
+                        <td style={{ fontSize: "0.75rem" }}>
+                          {insumo.categoria || ""}
+                        </td>
+                        <td style={{ fontSize: "0.75rem" }}>
+                          {insumo.unidadMedida || ""}
+                        </td>
+                        <td style={{ fontSize: "0.75rem" }}>
+                          {formatStockActual(insumo.stockMinimo)}
+                        </td>
+                        <td style={{ fontSize: "0.75rem" }}>
                           <span className={`fw-bold ${stockStatus.color}`}>
                             {formatStockActual(insumo.stockActual)}
                           </span>
                         </td>
-                        <td>{formatStockActual(insumo.stockMaximo)}</td>
-                        <td>
+                        <td style={{ fontSize: "0.75rem" }}>
+                          {formatStockActual(insumo.stockMaximo)}
+                        </td>
+                        <td style={{ fontSize: "0.75rem" }}>
                           <span
                             className={`status-badge-insumo ${String(
                               insumo.estado || ""
@@ -327,11 +325,18 @@ const ListaInsumos = () => {
                           </span>
                         </td>
                         <td>
-                          <div className="action-buttons">
+                          <div
+                            className="action-buttons"
+                            style={{ gap: "2px" }}
+                          >
                             <button
                               className="btn-action btn-view"
                               onClick={() => handleView(insumo)}
                               title="Ver detalles"
+                              style={{
+                                padding: "4px 6px",
+                                fontSize: "0.75rem",
+                              }}
                             >
                               <i className="fas fa-eye"></i>
                             </button>
@@ -339,6 +344,10 @@ const ListaInsumos = () => {
                               className="btn-action btn-edit"
                               onClick={() => handleEdit(insumo)}
                               title="Editar"
+                              style={{
+                                padding: "4px 6px",
+                                fontSize: "0.75rem",
+                              }}
                             >
                               <i className="fas fa-edit"></i>
                             </button>
@@ -346,6 +355,10 @@ const ListaInsumos = () => {
                               className="btn-action btn-delete"
                               onClick={() => handleDelete(insumo)}
                               title="Eliminar"
+                              style={{
+                                padding: "4px 6px",
+                                fontSize: "0.75rem",
+                              }}
                             >
                               <i className="fas fa-trash"></i>
                             </button>
@@ -368,6 +381,10 @@ const ListaInsumos = () => {
                                   ? "Desactivar"
                                   : "Activar"
                               }
+                              style={{
+                                padding: "4px 6px",
+                                fontSize: "0.75rem",
+                              }}
                             >
                               <i
                                 className={`fas ${

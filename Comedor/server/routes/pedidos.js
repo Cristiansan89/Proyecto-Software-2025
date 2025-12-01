@@ -15,6 +15,7 @@ export const createPedidoRouter = ({ pedidoModel }) => {
   // Rutas especializadas (deben ir antes de las rutas con parámetros dinámicos)
   pedidosRouter.post("/manual", pedidoController.crearPedidoManual);
   pedidosRouter.post("/automatico", pedidoController.generarPedidoAutomatico);
+  pedidosRouter.post("/:id/aprobar", pedidoController.aprobarPedido);
   pedidosRouter.get("/resumen", pedidoController.getResumenPorPeriodo);
 
   // Rutas por estado y proveedor

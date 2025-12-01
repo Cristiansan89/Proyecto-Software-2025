@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import { EscuelaService } from "./escuelaService.js";
 
 dotenv.config();
 
@@ -255,8 +256,164 @@ export const generateTemporalPassword = () => {
   return result;
 };
 
+// Enviar pedido al proveedor
+const enviarPedidoProveedor = async (pedido, pdfBuffer) => {
+  try {
+    console.log("🔍 Debug enviarPedidoProveedor:");
+    console.log("- Pedido ID:", pedido.id_pedido);
+    console.log("- PDF Buffer existe:", !!pdfBuffer);
+    console.log(
+      "- PDF Buffer size:",
+      pdfBuffer ? pdfBuffer.length : 0,
+      "bytes"
+    );
+
+    // Obtener datos de la escuela dinámicamente
+    const datosEscuela = await EscuelaService.getDatosEscuela();
+    console.log("- Datos escuela obtenidos:", datosEscuela);
+
+    const transporter = createTransporter();
+
+    // Email del proveedor - usar el email del proveedor si existe
+    const emailProveedor = pedido.emailProveedor || "proveedor@test.com";
+    console.log("- Email proveedor:", emailProveedor);
+
+    const mailOptions = {
+      from: process.env.MAIL_FROM || "comedor@escuela.edu",
+      to: emailProveedor,
+      subject: `Pedido de Insumos - ${pedido.nombreProveedor} - ${pedido.id_pedido}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 20px; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 24px; text-align: center;">
+              🛒 Pedido de Insumos
+            </h1>
+          </div>
+          
+          <div style="background: white; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px; padding: 30px;">
+            <h2 style="color: #28a745; margin-top: 0;">Estimado proveedor ${
+              pedido.nombreProveedor
+            }</h2>
+            
+            <p>Le informamos que ha recibido un nuevo pedido de insumos del Sistema de Comedor Escolar.</p>
+            
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="color: #495057; margin: 0 0 15px 0;">🏫 Datos de la Escuela</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Nombre:</td>
+                  <td style="padding: 8px 0; color: #2c3e50; font-weight: 600;">${
+                    datosEscuela.nombre || "Escuela"
+                  }</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Dirección:</td>
+                  <td style="padding: 8px 0; color: #2c3e50;">${
+                    datosEscuela.direccion || "Dirección no disponible"
+                  }</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Teléfono:</td>
+                  <td style="padding: 8px 0; color: #2c3e50;">${
+                    datosEscuela.telefono || "Teléfono no disponible"
+                  }</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Email:</td>
+                  <td style="padding: 8px 0; color: #2c3e50;">${
+                    datosEscuela.email || "Email no disponible"
+                  }</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="color: #495057; margin: 0 0 15px 0;">📋 Detalles del Pedido</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Número de Pedido:</td>
+                  <td style="padding: 8px 0; color: #2c3e50; font-family: monospace; font-weight: 600;">${
+                    pedido.id_pedido
+                  }</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Fecha de Emisión:</td>
+                  <td style="padding: 8px 0; color: #2c3e50;">${new Date(
+                    pedido.fechaEmision
+                  ).toLocaleDateString("es-ES")}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="background: #e8f5e8; border-radius: 8px; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0; color: #155724;">
+                <strong>📎 Adjunto:</strong> Encontrará el detalle completo del pedido en el archivo PDF adjunto.
+              </p>
+            </div>
+            
+            <p>Por favor, revise el pedido adjunto y confirme la disponibilidad de los productos solicitados.</p>
+            
+            <p style="color: #6c757d; font-size: 14px;">
+              Este correo fue enviado automáticamente por el Sistema de Comedor Escolar.<br>
+              Si tiene consultas, puede responder a este email.
+            </p>
+          </div>
+        </div>
+      `,
+      attachments: pdfBuffer
+        ? [
+            {
+              filename: `Pedido_${pedido.id_pedido}_${
+                new Date().toISOString().split("T")[0]
+              }.pdf`,
+              content: pdfBuffer,
+              contentType: "application/pdf",
+            },
+          ]
+        : [],
+    };
+
+    console.log("📧 Enviando email con las siguientes opciones:");
+    console.log("- From:", mailOptions.from);
+    console.log("- To:", mailOptions.to);
+    console.log("- Subject:", mailOptions.subject);
+    console.log(
+      "- Attachments:",
+      mailOptions.attachments.length > 0 ? "PDF incluido" : "Sin adjuntos"
+    );
+
+    if (!pdfBuffer) {
+      console.warn("⚠️ Advertencia: No se proporcionó PDF para adjuntar");
+    }
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(
+      `✅ Email enviado al proveedor ${pedido.nombreProveedor}:`,
+      info.messageId
+    );
+
+    return {
+      success: true,
+      messageId: info.messageId,
+      proveedor: pedido.nombreProveedor,
+      pdfAdjuntado: !!pdfBuffer,
+    };
+  } catch (error) {
+    console.error("❌ Error enviando email al proveedor:", error);
+    throw new Error(`Error al enviar email: ${error.message}`);
+  }
+};
+
+export const emailService = {
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  generateTemporalPassword,
+  enviarPedidoProveedor,
+};
+
 export default {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   generateTemporalPassword,
+  enviarPedidoProveedor,
 };

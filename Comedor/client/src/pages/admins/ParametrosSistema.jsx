@@ -2,6 +2,7 @@ import { useState } from "react";
 import Parametros from "./Parametros";
 import Alertas from "./Alertas";
 import GeneracionAutomatica from "./GeneracionAutomatica";
+import ConfiguracionEscuela from "../../components/admin/ConfiguracionEscuela";
 
 const ParametrosSistema = () => {
   const [activeTab, setActiveTab] = useState("parametros");
@@ -12,6 +13,12 @@ const ParametrosSistema = () => {
       label: "Parametros del Sistema",
       icon: "fas fa-sliders-h",
       component: <Parametros />,
+    },
+    {
+      id: "escuela",
+      label: "Datos de la Escuela",
+      icon: "fas fa-school",
+      component: <ConfiguracionEscuela />,
     },
     {
       id: "alertas",

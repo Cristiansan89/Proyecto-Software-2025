@@ -5,21 +5,16 @@ import API from "../../services/api";
 const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   // Función helper para formatear cantidades
   const formatCantidad = (cantidad) => {
-    return parseFloat(cantidad).toFixed(2);
+    return parseInt(cantidad) || 0;
   };
 
   // Función para normalizar unidades (convertir minúsculas a mayúsculas correctas)
   const normalizarUnidad = (unidad) => {
     const unidadesMap = {
-      gramo: "Gramo",
       gramos: "Gramos",
-      kilogramo: "Kilogramo",
       kilogramos: "Kilogramos",
-      mililitro: "Mililitro",
       mililitros: "Mililitros",
-      litro: "Litro",
       litros: "Litros",
-      unidad: "Unidad",
       unidades: "Unidades",
     };
     return unidadesMap[unidad?.toLowerCase()] || unidad;
@@ -141,7 +136,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       const nuevoIngredienteCompleto = {
         id_insumo: nuevoIngrediente.id_insumo,
         nombreInsumo: insumoSeleccionado?.nombreInsumo || "Insumo desconocido",
-        cantidadPorPorcion: parseFloat(nuevoIngrediente.cantidadPorPorcion),
+        cantidadPorPorcion: parseInt(nuevoIngrediente.cantidadPorPorcion),
         unidadPorPorcion: nuevoIngrediente.unidadPorPorcion,
       };
 
@@ -195,7 +190,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         for (const ingrediente of ingredientes) {
           const payload = {
             id_insumo: ingrediente.id_insumo,
-            cantidadPorPorcion: parseFloat(ingrediente.cantidadPorPorcion) || 0,
+            cantidadPorPorcion: parseInt(ingrediente.cantidadPorPorcion) || 0,
             unidadPorPorcion: normalizarUnidad(ingrediente.unidadPorPorcion),
           };
           console.log("📤 Enviando ingrediente:", payload);
@@ -280,8 +275,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           try {
             const payload = {
               id_insumo: ingrediente.id_insumo,
-              cantidadPorPorcion:
-                parseFloat(ingrediente.cantidadPorPorcion) || 0,
+              cantidadPorPorcion: parseInt(ingrediente.cantidadPorPorcion) || 0,
               unidadPorPorcion: normalizarUnidad(ingrediente.unidadPorPorcion),
             };
             console.log("📤 Enviando ingrediente:", payload);
@@ -555,7 +549,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                               cantidadPorPorcion: e.target.value,
                             })
                           }
-                          placeholder="0.00"
+                          placeholder="1"
                         />
                       </div>
                     </div>
@@ -579,15 +573,10 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                           }
                         >
                           <option value="">Seleccione unidad</option>
-                          <option value="Gramo">Gramo</option>
                           <option value="Gramos">Gramos</option>
-                          <option value="Kilogramo">Kilogramo</option>
                           <option value="Kilogramos">Kilogramos</option>
-                          <option value="Mililitro">Mililitro</option>
                           <option value="Mililitros">Mililitros</option>
-                          <option value="Litro">Litro</option>
                           <option value="Litros">Litros</option>
-                          <option value="Unidad">Unidad</option>
                           <option value="Unidades">Unidades</option>
                         </select>
                       </div>

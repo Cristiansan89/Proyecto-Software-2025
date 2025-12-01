@@ -14,7 +14,7 @@ const PlanificacionSemanal = () => {
     fechaInicio: "",
     fechaFin: "",
     comensalesEstimados: "",
-    estado: "Activo",
+    estado: "Pendiente",
   });
 
   // Función para formatear fechas para inputs de tipo date
@@ -57,7 +57,7 @@ const PlanificacionSemanal = () => {
       fechaInicio: "",
       fechaFin: "",
       comensalesEstimados: "",
-      estado: "Activo",
+      estado: "Pendiente",
     });
     setModalVisible(true);
   };
@@ -119,7 +119,7 @@ const PlanificacionSemanal = () => {
       fechaInicio: "",
       fechaFin: "",
       comensalesEstimados: "",
-      estado: "Activo",
+      estado: "Pendiente",
     });
   };
 
@@ -225,7 +225,9 @@ const PlanificacionSemanal = () => {
                           ? "bg-success"
                           : planificacion.estado === "Finalizado"
                           ? "bg-secondary"
-                          : "bg-warning"
+                          : planificacion.estado === "Pendiente"
+                          ? "bg-warning"
+                          : "bg-info"
                       }`}
                     >
                       {planificacion.estado}

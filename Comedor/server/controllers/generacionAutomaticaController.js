@@ -151,7 +151,7 @@ export const generarPedidosAutomaticos = async (req, res) => {
 
     // Obtener proveedores por insumo
     const [proveedoresInsumo] = await connection.query(
-      "SELECT DISTINCT pi.id_proveedor, pi.id_insumo, pr.nombre FROM ProveedorInsumo pi INNER JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor"
+      "SELECT DISTINCT BIN_TO_UUID(pi.id_proveedor) as id_proveedor, pi.id_insumo, pr.razonSocial as nombre FROM ProveedorInsumo pi INNER JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor"
     );
 
     // Agrupar insumos por proveedor
@@ -192,18 +192,30 @@ export const generarPedidosAutomaticos = async (req, res) => {
 
     for (const pedido of pedidos) {
       try {
+        // Generar UUID para el pedido
+        const [uuidResult] = await connection.query(
+          "SELECT UUID() as new_uuid"
+        );
+        const idPedidoUUID = uuidResult[0].new_uuid;
+
         const [result] = await connection.query(
-          "INSERT INTO Pedidos (id_proveedor, estado, fechaPedido) VALUES (?, 'Pendiente', NOW())",
-          [pedido.id_proveedor]
+          "INSERT INTO Pedidos (id_pedido, id_proveedor, id_estadoPedido, fechaEmision, id_usuario, id_planificacion) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, NOW(), ?, ?)",
+          [
+            idPedidoUUID,
+            pedido.id_proveedor,
+            idEstadoPendiente,
+            idUsuarioBin,
+            idPlanificacionBin,
+          ]
         );
 
-        const idPedido = result.insertId;
+        const idPedido = idPedidoUUID;
 
         // Agregar líneas de pedido
         for (const item of pedido.items) {
           await connection.query(
-            "INSERT INTO LineaPedido (id_pedido, id_insumo, cantidad, unidad) VALUES (?, ?, ?, ?)",
-            [idPedido, item.id_insumo, item.cantidad, item.unidad]
+            "INSERT INTO DetallePedido (id_pedido, id_proveedor, id_insumo, cantidadSolicitada) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)",
+            [idPedido, pedido.id_proveedor, item.id_insumo, item.cantidad]
           );
         }
 
@@ -449,9 +461,9 @@ export const obtenerInsumosSemanales = async (req, res) => {
         comensalesParaCalculo =
           comensalesPorServicio[jornada.nombreServicio] || 119;
 
-        console.log(
-          `📌 ${fechaStr} - ${jornada.nombreServicio}: ${jornada.nombreReceta} (${comensalesParaCalculo} comensales específicos del servicio)`
-        );
+        // console.log(
+        //   `📌 ${fechaStr} - ${jornada.nombreServicio}: ${jornada.nombreReceta} (${comensalesParaCalculo} comensales específicos del servicio)`
+        // );
         const [items] = await connection.query(
           "SELECT id_insumo, cantidadPorPorcion, unidadPorPorcion FROM ItemsRecetas WHERE id_receta = ?",
           [jornada.id_receta]
@@ -480,7 +492,7 @@ export const obtenerInsumosSemanales = async (req, res) => {
 
           // OBTENER STOCK SIEMPRE (no solo primera vez)
           let cantidadDisponible = 0;
-          console.log(`   🔍 Buscando stock para insumo ID: ${item.id_insumo}`);
+          // console.log(`   🔍 Buscando stock para insumo ID: ${item.id_insumo}`);
 
           try {
             // Primero intenta obtener con cantidadActual
@@ -495,9 +507,9 @@ export const obtenerInsumosSemanales = async (req, res) => {
 
             // Si no encuentra, intenta con cantidad
             if (!stockInventario || stockInventario.length === 0) {
-              console.log(
-                `   ⚠️ No encontrado con cantidadActual, intentando con cantidad`
-              );
+              // console.log(
+              //   `   ⚠️ No encontrado con cantidadActual, intentando con cantidad`
+              // );
               query = `SELECT i.cantidad as stock 
                  FROM Inventarios i 
                  WHERE i.id_insumo = ? 
@@ -508,14 +520,14 @@ export const obtenerInsumosSemanales = async (req, res) => {
             }
 
             if (stockInventario && stockInventario.length > 0) {
-              cantidadDisponible = parseFloat(stockInventario[0].stock) || 0;
-              console.log(
-                `   ✅ Stock encontrado: ${cantidadDisponible} ${insumosMap[key].unidad_inventario}`
-              );
+              cantidadDisponible = parseInt(stockInventario[0].stock) || 0;
+              // console.log(
+              //   `   ✅ Stock encontrado: ${cantidadDisponible} ${insumosMap[key].unidad_inventario}`
+              // );
             } else {
-              console.log(
-                `   ❌ No hay registros en Inventarios para insumo ${item.id_insumo}`
-              );
+              // console.log(
+              //   `   ❌ No hay registros en Inventarios para insumo ${item.id_insumo}`
+              // );
             }
           } catch (invError) {
             console.warn(
@@ -528,26 +540,26 @@ export const obtenerInsumosSemanales = async (req, res) => {
           insumosMap[key].cantidad_disponible = cantidadDisponible;
 
           // Calcular cantidad paso a paso con logs detallados
-          const cantidadPorPorcion = parseFloat(item.cantidadPorPorcion);
+          const cantidadPorPorcion = parseInt(item.cantidadPorPorcion);
           const cantidadDia = cantidadPorPorcion * comensalesParaCalculo;
           const cantidadAnterior = insumosMap[key].cantidad;
 
-          console.log(`📊 Calculando insumo: ${insumosMap[key].nombre}`);
-          console.log(
-            `   📏 Cantidad por porción: ${cantidadPorPorcion} ${insumosMap[key].unidad}`
-          );
-          console.log(`   👥 Comensales del día: ${comensalesParaCalculo}`);
-          console.log(
-            `   🍽️ Cantidad total día: ${cantidadPorPorcion} × ${comensalesParaCalculo} = ${cantidadDia} ${insumosMap[key].unidad}`
-          );
+          // console.log(`📊 Calculando insumo: ${insumosMap[key].nombre}`);
+          // console.log(
+          //   `   📏 Cantidad por porción: ${cantidadPorPorcion} ${insumosMap[key].unidad}`
+          // );
+          // console.log(`   👥 Comensales del día: ${comensalesParaCalculo}`);
+          // console.log(
+          //   `   🍽️ Cantidad total día: ${cantidadPorPorcion} × ${comensalesParaCalculo} = ${cantidadDia} ${insumosMap[key].unidad}`
+          // );
 
           // Multiplicar por cantidad real de comensales de este servicio
           insumosMap[key].cantidad += cantidadDia;
 
-          console.log(
-            `   📈 Cantidad acumulada semanal: ${cantidadAnterior} + ${cantidadDia} = ${insumosMap[key].cantidad} ${insumosMap[key].unidad}`
-          );
-          console.log(`   ─────────────────────────────────────`);
+          // console.log(
+          //   `   📈 Cantidad acumulada semanal: ${cantidadAnterior} + ${cantidadDia} = ${insumosMap[key].cantidad} ${insumosMap[key].unidad}`
+          // );
+          // console.log(`   ─────────────────────────────────────`);
         }
       } catch (itemError) {
         console.warn(
@@ -566,11 +578,7 @@ export const obtenerInsumosSemanales = async (req, res) => {
       const diferencia = insumo.cantidad_disponible - insumo.cantidad;
       const estado = diferencia >= 0 ? "✅ SUFICIENTE" : "⚠️ FALTA";
       console.log(
-        `📦 ${insumo.nombre}: ${insumo.cantidad.toFixed(2)} ${
-          insumo.unidad
-        } | Inventario: ${insumo.cantidad_disponible.toFixed(2)} ${
-          insumo.unidad_inventario
-        } | ${estado}`
+        `📦 ${insumo.nombre}: ${insumo.cantidad} ${insumo.unidad} | Inventario: ${insumo.cantidad_disponible} ${insumo.unidad_inventario} | ${estado}`
       );
     });
     console.log(`═══════════════════════════════════════════════\n`);
@@ -588,6 +596,402 @@ export const obtenerInsumosSemanales = async (req, res) => {
     res.status(500).json({
       success: false,
       mensaje: "Error al obtener insumos semanales",
+      error: error.message,
+      detalles:
+        process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
+  }
+};
+
+// Generar pedidos automáticos por insumos faltantes
+export const generarPedidosPorInsumosFaltantes = async (req, res) => {
+  // Función auxiliar para conversión de unidades (igual que en frontend)
+  const obtenerMejorUnidad = (cantidad, unidadOriginal) => {
+    // Para gramos: si es >= 1000, convertir a kilogramos
+    if (
+      unidadOriginal === "Gramo" ||
+      unidadOriginal === "Gramos" ||
+      unidadOriginal === "gramo" ||
+      unidadOriginal === "gramos"
+    ) {
+      if (cantidad >= 1000) {
+        return {
+          cantidad: cantidad / 1000,
+          unidad: "Kilogramos",
+        };
+      }
+      return { cantidad, unidad: "Gramos" };
+    }
+
+    // Para mililitros: si es >= 1000, convertir a litros
+    if (
+      unidadOriginal === "Mililitro" ||
+      unidadOriginal === "Mililitros" ||
+      unidadOriginal === "mililitro" ||
+      unidadOriginal === "mililitros"
+    ) {
+      if (cantidad >= 1000) {
+        return {
+          cantidad: cantidad / 1000,
+          unidad: "Litros",
+        };
+      }
+      return { cantidad, unidad: "Mililitros" };
+    }
+
+    return { cantidad, unidad: unidadOriginal };
+  };
+
+  try {
+    console.log(
+      "\n📦 INICIANDO GENERACIÓN DE PEDIDOS POR INSUMOS FALTANTES..."
+    );
+
+    // 1. Obtener insumos semanales con cálculos
+    const [planificaciones] = await connection.query(
+      "SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin FROM PlanificacionMenus WHERE estado = 'Activo' LIMIT 1"
+    );
+
+    if (!planificaciones || planificaciones.length === 0) {
+      return res.status(400).json({
+        success: false,
+        mensaje: "No hay planificación activa",
+      });
+    }
+
+    const planificacion = planificaciones[0];
+    const fechaInicio = new Date(planificacion.fechaInicio);
+
+    // Función para calcular fecha de una jornada
+    const calcularFechaJornada = (diaSemana) => {
+      const diasMap = {
+        Lunes: 0,
+        Martes: 1,
+        Miércoles: 2,
+        Jueves: 3,
+        Viernes: 4,
+      };
+      const offset = diasMap[diaSemana] || 0;
+      const fecha = new Date(fechaInicio);
+      fecha.setDate(fecha.getDate() + offset);
+      return fecha.toISOString().split("T")[0];
+    };
+
+    // 2. Obtener jornadas
+    const [jornadas] = await connection.query(
+      `SELECT 
+        jp.id_jornada,
+        jp.diaSemana,
+        jp.id_servicio,
+        psr.id_receta,
+        r.nombreReceta,
+        s.nombre as nombreServicio
+       FROM JornadaPlanificada jp
+       LEFT JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
+       LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
+       LEFT JOIN Servicios s ON jp.id_servicio = s.id_servicio
+       WHERE jp.id_planificacion = UUID_TO_BIN(?)
+       ORDER BY jp.diaSemana, s.nombre`,
+      [planificacion.id_planificacion]
+    );
+
+    if (!jornadas || jornadas.length === 0) {
+      return res.json({
+        success: true,
+        mensaje: "No hay jornadas configuradas",
+        pedidos: [],
+      });
+    }
+
+    // 3. Calcular insumos requeridos
+    const insumosMap = {};
+    const comensalesPorServicio = {
+      Desayuno: 119,
+      Almuerzo: 119,
+      Merienda: 109,
+    };
+
+    for (const jornada of jornadas) {
+      if (!jornada.id_receta) continue;
+
+      const comensalesParaCalculo =
+        comensalesPorServicio[jornada.nombreServicio] || 119;
+
+      const [items] = await connection.query(
+        "SELECT id_insumo, cantidadPorPorcion, unidadPorPorcion FROM ItemsRecetas WHERE id_receta = ?",
+        [jornada.id_receta]
+      );
+
+      for (const item of items) {
+        const key = `${item.id_insumo}`;
+
+        if (!insumosMap[key]) {
+          const [insumo] = await connection.query(
+            "SELECT id_insumo, nombreInsumo, unidadMedida FROM Insumos WHERE id_insumo = ?",
+            [item.id_insumo]
+          );
+
+          // Obtener stock actual e información del inventario
+          let cantidadDisponible = 0;
+          let stockMaximo = 0;
+
+          const [inventario] = await connection.query(
+            "SELECT cantidadActual, stockMaximo FROM Inventarios WHERE id_insumo = ? LIMIT 1",
+            [item.id_insumo]
+          );
+
+          if (inventario && inventario.length > 0) {
+            cantidadDisponible = parseInt(inventario[0].cantidadActual) || 0;
+            stockMaximo = parseInt(inventario[0].stockMaximo) || 0;
+          }
+
+          insumosMap[key] = {
+            id_insumo: item.id_insumo,
+            nombre: insumo[0]?.nombreInsumo || "Insumo desconocido",
+            unidad: item.unidadPorPorcion || insumo[0]?.unidadMedida,
+            cantidad: 0,
+            cantidad_disponible: cantidadDisponible,
+            stock_maximo: stockMaximo,
+            unidad_inventario: insumo[0]?.unidadMedida || item.unidadPorPorcion,
+          };
+        }
+
+        // Sumar cantidad requerida
+        const cantidadPorPorcion = parseInt(item.cantidadPorPorcion);
+        const cantidadDia = cantidadPorPorcion * comensalesParaCalculo;
+        insumosMap[key].cantidad += cantidadDia;
+      }
+    }
+
+    // 4. Identificar insumos faltantes y crear pedidos
+    const insumosFaltantes = [];
+    const pedidosAGenerar = {};
+
+    console.log(`\n🔍 ANÁLISIS DE INSUMOS FALTANTES:`);
+    console.log(`═══════════════════════════════════════════`);
+
+    for (const [key, insumo] of Object.entries(insumosMap)) {
+      // Usar la cantidad original para los cálculos de stock y diferencias
+      const cantidadNecesariaOriginal = insumo.cantidad;
+      const mejorUnidad = obtenerMejorUnidad(insumo.cantidad, insumo.unidad);
+      const stockDisponible = insumo.cantidad_disponible || 0;
+      const diferencia = stockDisponible - cantidadNecesariaOriginal; // Usar cantidad original
+
+      console.log(`\n📦 Insumo: ${insumo.nombre}`);
+      console.log(
+        `   📊 Cantidad necesaria original: ${insumo.cantidad.toFixed(2)} ${
+          insumo.unidad
+        }`
+      );
+      console.log(
+        `   📊 Cantidad necesaria convertida: ${mejorUnidad.cantidad.toFixed(
+          2
+        )} ${mejorUnidad.unidad}`
+      );
+      console.log(
+        `   📦 Stock actual: ${stockDisponible} ${insumo.unidad_inventario}`
+      );
+      console.log(
+        `   📈 Stock máximo: ${insumo.stock_maximo || "No definido"}`
+      );
+      console.log(
+        `   🔢 Diferencia: ${diferencia} (${
+          diferencia < 0 ? "FALTANTE" : "SUFICIENTE"
+        })`
+      );
+
+      // Si hay falta de stock
+      if (diferencia < 0) {
+        console.log(
+          `   ⚠️ ¡FALTANTE DETECTADO! Faltan ${Math.abs(diferencia).toFixed(
+            2
+          )} ${insumo.unidad}`
+        );
+
+        // Usar stock máximo o calcular cantidad a pedir
+        let cantidadAPedir = insumo.stock_maximo || 0;
+
+        // Si no hay stock máximo definido, pedir al menos lo que falta más un 20%
+        if (!cantidadAPedir || cantidadAPedir <= 0) {
+          cantidadAPedir = Math.abs(diferencia) * 1.2; // 20% extra como buffer
+          console.log(
+            `   📋 Sin stock máximo, pidiendo faltante + 20%: ${cantidadAPedir.toFixed(
+              2
+            )} ${insumo.unidad}`
+          );
+        } else {
+          console.log(
+            `   📋 Usando stock máximo: ${cantidadAPedir} ${insumo.unidad}`
+          );
+        }
+
+        insumosFaltantes.push({
+          id_insumo: insumo.id_insumo,
+          nombre: insumo.nombre,
+          cantidad_necesaria: cantidadNecesariaOriginal, // Usar cantidad original para base de datos
+          cantidad_original: insumo.cantidad, // Mantener original para referencia
+          cantidad_actual: stockDisponible,
+          diferencia: diferencia,
+          stock_maximo: insumo.stock_maximo || 0,
+          unidad: insumo.unidad, // Usar unidad original para base de datos
+          unidad_original: insumo.unidad, // Mantener original
+          cantidad_a_pedir: cantidadAPedir,
+        });
+
+        // Obtener proveedores del insumo
+        const [proveedores] = await connection.query(
+          `SELECT DISTINCT BIN_TO_UUID(pi.id_proveedor) as id_proveedor, pr.razonSocial as nombre 
+           FROM ProveedorInsumo pi 
+           INNER JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor
+           WHERE pi.id_insumo = ?`,
+          [insumo.id_insumo]
+        );
+
+        if (proveedores && proveedores.length > 0) {
+          const idProveedor = proveedores[0].id_proveedor;
+          console.log(`   🏢 Proveedor encontrado: ${proveedores[0].nombre}`);
+
+          if (!pedidosAGenerar[idProveedor]) {
+            pedidosAGenerar[idProveedor] = {
+              id_proveedor: idProveedor,
+              nombreProveedor: proveedores[0].nombre,
+              items: [],
+            };
+          }
+
+          pedidosAGenerar[idProveedor].items.push({
+            id_insumo: insumo.id_insumo,
+            nombreInsumo: insumo.nombre,
+            cantidad_a_pedir: cantidadAPedir,
+            unidad: insumo.unidad, // Usar unidad original
+            stock_maximo: insumo.stock_maximo || 0,
+            cantidad_actual: stockDisponible,
+          });
+
+          console.log(
+            `   ✅ Item agregado al pedido para ${proveedores[0].nombre}`
+          );
+        } else {
+          console.log(
+            `   ❌ No se encontró proveedor para el insumo ${insumo.nombre}`
+          );
+        }
+      } else {
+        console.log(`   ✅ Stock suficiente`);
+      }
+    }
+
+    // 5. Crear los pedidos en la base de datos
+    const pedidosCreados = [];
+
+    for (const [idProveedor, pedido] of Object.entries(pedidosAGenerar)) {
+      try {
+        // Obtener el ID del estado 'Pendiente'
+        const [estadoPendiente] = await connection.query(
+          "SELECT id_estadoPedido FROM EstadoPedido WHERE nombreEstado = 'Pendiente' LIMIT 1"
+        );
+
+        if (!estadoPendiente || estadoPendiente.length === 0) {
+          console.error(
+            "❌ No se encontró el estado 'Pendiente' en EstadoPedido"
+          );
+          continue;
+        }
+
+        const idEstadoPendiente = estadoPendiente[0].id_estadoPedido;
+
+        // Usar planificación activa o generar UUID por defecto
+        let idPlanificacionBin, idUsuarioBin;
+
+        if (planificaciones[0]?.id_planificacion) {
+          const [planifBin] = await connection.query(
+            "SELECT UUID_TO_BIN(?) as id_bin",
+            [planificaciones[0].id_planificacion]
+          );
+          idPlanificacionBin = planifBin[0].id_bin;
+        } else {
+          const [newUUID] = await connection.query(
+            "SELECT UUID_TO_BIN(UUID()) as id_bin"
+          );
+          idPlanificacionBin = newUUID[0].id_bin;
+        }
+
+        // Para pedidos automáticos, no asignar usuario inicialmente (será asignado al aprobar)
+        // El campo 'origen' = 'Generado' identifica que es un proceso automático del sistema
+
+        // Crear pedido automático del sistema
+        const [result] = await connection.query(
+          "INSERT INTO Pedidos (id_planificacion, id_usuario, id_estadoPedido, id_proveedor, fechaEmision, origen) VALUES (?, NULL, ?, UUID_TO_BIN(?), NOW(), 'Generado')",
+          [idPlanificacionBin, idEstadoPendiente, pedido.id_proveedor]
+        );
+
+        // El resultado contiene el ID como BINARY, necesitamos obtener el UUID generado
+        // Para obtener el ID del pedido que acabamos de crear
+        const [pedidoCreado] = await connection.query(
+          "SELECT BIN_TO_UUID(id_pedido) as id_pedido_uuid, id_pedido as id_pedido_bin FROM Pedidos WHERE id_planificacion = ? AND id_usuario IS NULL AND id_estadoPedido = ? AND id_proveedor = UUID_TO_BIN(?) ORDER BY fechaEmision DESC LIMIT 1",
+          [idPlanificacionBin, idEstadoPendiente, pedido.id_proveedor]
+        );
+
+        if (!pedidoCreado || pedidoCreado.length === 0) {
+          console.error("❌ No se pudo recuperar el pedido creado");
+          continue;
+        }
+
+        const idPedidoBin = pedidoCreado[0].id_pedido_bin;
+        const idPedidoUuid = pedidoCreado[0].id_pedido_uuid;
+
+        // Agregar detalles de pedido
+        for (const item of pedido.items) {
+          await connection.query(
+            "INSERT INTO DetallePedido (id_pedido, id_proveedor, id_insumo, cantidadSolicitada) VALUES (?, UUID_TO_BIN(?), ?, ?)",
+            [
+              idPedidoBin,
+              pedido.id_proveedor,
+              item.id_insumo,
+              item.cantidad_a_pedir,
+            ]
+          );
+        }
+
+        pedidosCreados.push({
+          id_pedido: idPedidoUuid,
+          proveedor: pedido.nombreProveedor,
+          items: pedido.items,
+          origen: "Sistema - Generación Automática",
+          tipo_proceso: "automatico",
+        });
+
+        console.log(
+          `✅ Pedido automático creado por el SISTEMA para ${pedido.nombreProveedor} (ID: ${idPedidoUuid})`
+        );
+      } catch (error) {
+        console.error(
+          `❌ Error creando pedido para proveedor ${pedido.nombreProveedor}:`,
+          error
+        );
+      }
+    }
+
+    console.log(`\n📊 RESUMEN DE PEDIDOS GENERADOS:`);
+    console.log(`═════════════════════════════════════════`);
+    console.log(`Total de insumos faltantes: ${insumosFaltantes.length}`);
+    console.log(`Total de pedidos creados: ${pedidosCreados.length}`);
+    console.log(`═════════════════════════════════════════\n`);
+
+    res.json({
+      success: true,
+      mensaje: "Pedidos automáticos generados por el SISTEMA correctamente",
+      origen: "Sistema - Proceso Automático",
+      insumosFaltantes,
+      pedidosCreados,
+      totalPedidos: pedidosCreados.length,
+      nota: "Estos pedidos fueron generados automáticamente por el sistema para cubrir faltantes de insumos",
+    });
+  } catch (error) {
+    console.error("Error generando pedidos por insumos faltantes:", error);
+    res.status(500).json({
+      success: false,
+      mensaje: "Error al generar pedidos por insumos faltantes",
       error: error.message,
       detalles:
         process.env.NODE_ENV === "development" ? error.stack : undefined,

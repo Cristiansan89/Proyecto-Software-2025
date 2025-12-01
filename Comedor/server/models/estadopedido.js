@@ -11,8 +11,8 @@ class EstadoPedidoModel {
             `;
       const [rows] = await connection.execute(query);
       return rows.map((row) => ({
-        id_estado_pedido: row.id_estadoPedido,
-        nombre: row.nombre,
+        id_estadoPedido: row.id_estadoPedido,
+        nombreEstado: row.nombre,
         descripcion: row.descripcion,
         estado: "Activo", // Las tablas existentes no tienen campo estado
       }));
@@ -34,8 +34,8 @@ class EstadoPedidoModel {
       if (rows[0]) {
         const row = rows[0];
         return {
-          id_estado_pedido: row.id_estadoPedido,
-          nombre: row.nombre,
+          id_estadoPedido: row.id_estadoPedido,
+          nombreEstado: row.nombre,
           descripcion: row.descripcion,
           estado: "Activo",
         };

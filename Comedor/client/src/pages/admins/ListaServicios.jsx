@@ -344,7 +344,7 @@ const ListaServicios = () => {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content servicio-modal">
+          <div className="modal-content">
             <div className="modal-header">
               <h3>
                 {modalMode === "create" && "Crear Nuevo Servicio"}

@@ -16,7 +16,7 @@ const Parametros = () => {
   const [formData, setFormData] = useState({
     nombreParametro: "",
     valor: "",
-    tipoParametro: "string",
+    tipoParametro: "Texto",
     estado: "Activo",
   });
   const [mensaje, setMensaje] = useState(null);
@@ -104,7 +104,7 @@ const Parametros = () => {
       setFormData({
         nombreParametro: "",
         valor: "",
-        tipoParametro: "string",
+        tipoParametro: "Texto",
         estado: "Activo",
       });
       setEditandoId(null);
@@ -121,7 +121,7 @@ const Parametros = () => {
     setFormData({
       nombreParametro: parametro.nombreParametro,
       valor: parametro.valor,
-      tipoParametro: parametro.tipoParametro || "string",
+      tipoParametro: parametro.tipoParametro || "Texto",
       estado: parametro.estado,
     });
     setEditandoId(parametro.id_parametro);
@@ -150,7 +150,7 @@ const Parametros = () => {
     setFormData({
       nombreParametro: "",
       valor: "",
-      tipoParametro: "string",
+      tipoParametro: "Texto",
       estado: "Activo",
     });
     setEditandoId(null);
@@ -163,7 +163,7 @@ const Parametros = () => {
     setFormData({
       nombreParametro: "",
       valor: "",
-      tipoParametro: "string",
+      tipoParametro: "Texto",
       estado: "Activo",
     });
     setMensaje(null);
@@ -298,7 +298,7 @@ const Parametros = () => {
 
         <div className="card-body">
           {parametrosPaginados.length === 0 ? (
-            <div className="alert alert-info text-center">
+            <div className="alert alert-light text-center">
               No hay parámetros disponibles
             </div>
           ) : (
@@ -328,7 +328,7 @@ const Parametros = () => {
                       </td>
                       <td>
                         <span className="badge bg-info">
-                          {param.tipoParametro || "string"}
+                          {param.tipoParametro || "Texto"}
                         </span>
                       </td>
                       <td>
@@ -495,12 +495,12 @@ const Parametros = () => {
                         value={formData.tipoParametro}
                         onChange={handleInputChange}
                       >
-                        <option value="string">String (Texto)</option>
-                        <option value="number">Number (Número)</option>
-                        <option value="boolean">
-                          Boolean (Verdadero/Falso)
+                        <option value="Texto">Texto</option>
+                        <option value="Numero">Número</option>
+                        <option value="Booleano">
+                          Booleano (Verdadero/Falso)
                         </option>
-                        <option value="json">JSON</option>
+                        <option value="Fecha">Fecha</option>
                       </select>
                     </div>
 
@@ -521,15 +521,17 @@ const Parametros = () => {
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer">
+                <div className="form-actions mt-3 mb-3">
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="btn btn-secondary me-2"
                     onClick={handleCerrarModal}
                   >
+                    <i className="fas fa-times"></i>
                     Cancelar
                   </button>
                   <button type="submit" className="btn btn-primary">
+                    <i className="fas fa-save"></i>
                     {editandoId ? "Actualizar" : "Crear"} Parámetro
                   </button>
                 </div>

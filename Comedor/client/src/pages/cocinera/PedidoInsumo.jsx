@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import PedidoForm from "../../components/cocinera/PedidoForm";
+import PedidoFormSimple from "../../components/cocinera/PedidoFormSimple";
 import PedidoAutomaticoForm from "../../components/cocinera/PedidoAutomaticoForm";
 import pedidoService from "../../services/pedidoService";
 import estadoPedidoService from "../../services/estadoPedidoService";
@@ -18,10 +18,47 @@ const PedidoInsumo = () => {
     fechaInicio: "",
     fechaFin: "",
     proveedor: "",
+    usuario: "",
+    origen: "",
   });
+  const [pedidosFiltrados, setPedidosFiltrados] = useState([]);
+  const [proveedoresUnicos, setProveedoresUnicos] = useState([]);
+  const [usuariosUnicos, setUsuariosUnicos] = useState([]);
   const [pedidoEditando, setPedidoEditando] = useState(null);
   const [mostrarDetallesPedido, setMostrarDetallesPedido] = useState(null);
   const [mostrarAutomatico, setMostrarAutomatico] = useState(false);
+
+  // Función para calcular fecha de entrega desde fecha de aprobación
+  const calcularFechaEntrega = (fechaAprobacion) => {
+    if (!fechaAprobacion) return null;
+
+    const fecha = new Date(fechaAprobacion);
+    // Agregar 1 día a la fecha de aprobación
+    fecha.setDate(fecha.getDate() + 1);
+
+    // Si cae en sábado (6), mover al lunes
+    if (fecha.getDay() === 6) {
+      fecha.setDate(fecha.getDate() + 2);
+    }
+    // Si cae en domingo (0), mover al lunes
+    else if (fecha.getDay() === 0) {
+      fecha.setDate(fecha.getDate() + 1);
+    }
+
+    return fecha;
+  };
+
+  // Función para verificar si hay filtros aplicados
+  const hayFiltrosAplicados = () => {
+    return (
+      filtros.estado ||
+      filtros.proveedor ||
+      filtros.usuario ||
+      filtros.origen ||
+      filtros.fechaInicio ||
+      filtros.fechaFin
+    );
+  };
 
   useEffect(() => {
     cargarDatos();
@@ -29,12 +66,60 @@ const PedidoInsumo = () => {
   }, []);
 
   useEffect(() => {
-    if (filtros.estado || filtros.fechaInicio || filtros.fechaFin) {
-      cargarPedidosFiltrados();
-    } else {
-      cargarPedidos();
+    aplicarFiltros();
+  }, [pedidos, filtros]);
+
+  const aplicarFiltros = () => {
+    let pedidosTemp = [...pedidos];
+
+    // Filtrar por estado
+    if (filtros.estado) {
+      pedidosTemp = pedidosTemp.filter(
+        (pedido) => pedido.id_estadoPedido.toString() === filtros.estado
+      );
     }
-  }, [filtros]);
+
+    // Filtrar por proveedor
+    if (filtros.proveedor) {
+      pedidosTemp = pedidosTemp.filter((pedido) =>
+        pedido.nombreProveedor
+          .toLowerCase()
+          .includes(filtros.proveedor.toLowerCase())
+      );
+    }
+
+    // Filtrar por usuario
+    if (filtros.usuario) {
+      pedidosTemp = pedidosTemp.filter((pedido) =>
+        pedido.nombreUsuario
+          .toLowerCase()
+          .includes(filtros.usuario.toLowerCase())
+      );
+    }
+
+    // Filtrar por origen
+    if (filtros.origen) {
+      pedidosTemp = pedidosTemp.filter(
+        (pedido) => pedido.origen === filtros.origen
+      );
+    }
+
+    // Filtrar por fechas
+    if (filtros.fechaInicio) {
+      pedidosTemp = pedidosTemp.filter(
+        (pedido) =>
+          new Date(pedido.fechaEmision) >= new Date(filtros.fechaInicio)
+      );
+    }
+
+    if (filtros.fechaFin) {
+      pedidosTemp = pedidosTemp.filter(
+        (pedido) => new Date(pedido.fechaEmision) <= new Date(filtros.fechaFin)
+      );
+    }
+
+    setPedidosFiltrados(pedidosTemp);
+  };
 
   const cargarDatos = async () => {
     try {
@@ -43,8 +128,20 @@ const PedidoInsumo = () => {
         pedidoService.getAll(),
         estadoPedidoService.getAll(),
       ]);
+
       setPedidos(pedidosData);
       setEstadosPedido(estadosData);
+
+      // Extraer proveedores y usuarios únicos para los filtros
+      const proveedores = [
+        ...new Set(pedidosData.map((p) => p.nombreProveedor).filter(Boolean)),
+      ].sort();
+      const usuarios = [
+        ...new Set(pedidosData.map((p) => p.nombreUsuario).filter(Boolean)),
+      ].sort();
+
+      setProveedoresUnicos(proveedores);
+      setUsuariosUnicos(usuarios);
     } catch (error) {
       console.error("Error al cargar datos:", error);
       alert("Error al cargar datos: " + error.message);
@@ -52,48 +149,23 @@ const PedidoInsumo = () => {
       setLoading(false);
     }
   };
-
   const cargarPedidos = async () => {
     try {
       const data = await pedidoService.getAll();
       setPedidos(data);
+
+      // Actualizar listas únicas - filtrar valores vacíos/nulos
+      const proveedores = [
+        ...new Set(data.map((p) => p.nombreProveedor).filter(Boolean)),
+      ].sort();
+      const usuarios = [
+        ...new Set(data.map((p) => p.nombreUsuario).filter(Boolean)),
+      ].sort();
+
+      setProveedoresUnicos(proveedores);
+      setUsuariosUnicos(usuarios);
     } catch (error) {
       console.error("Error al cargar pedidos:", error);
-    }
-  };
-
-  const cargarPedidosFiltrados = async () => {
-    try {
-      setLoading(true);
-      let data;
-
-      if (filtros.estado) {
-        data = await pedidoService.getByEstado(filtros.estado);
-      } else {
-        data = await pedidoService.getAll();
-      }
-
-      // Filtrar por fechas si se especificaron
-      if (filtros.fechaInicio || filtros.fechaFin) {
-        data = data.filter((pedido) => {
-          const fechaPedido = new Date(pedido.fechaEmision);
-          const inicio = filtros.fechaInicio
-            ? new Date(filtros.fechaInicio)
-            : null;
-          const fin = filtros.fechaFin ? new Date(filtros.fechaFin) : null;
-
-          return (
-            (!inicio || fechaPedido >= inicio) && (!fin || fechaPedido <= fin)
-          );
-        });
-      }
-
-      setPedidos(data);
-    } catch (error) {
-      console.error("Error al cargar pedidos filtrados:", error);
-      alert("Error al cargar pedidos: " + error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -107,15 +179,27 @@ const PedidoInsumo = () => {
   };
 
   const aprobarPedido = async (id) => {
-    if (!confirm("¿Está seguro de que desea aprobar este pedido?")) return;
+    if (
+      !confirm(
+        "¿Está seguro de que desea aprobar este pedido?\n\nEsto generará un PDF y lo enviará automáticamente al proveedor por email."
+      )
+    )
+      return;
 
     try {
-      await pedidoService.aprobar(id);
-      alert("Pedido aprobado exitosamente");
+      const response = await pedidoService.aprobar(id);
+      alert(
+        `✅ Pedido aprobado exitosamente.\n📧 Email enviado al proveedor: ${
+          response.pedido?.nombreProveedor || "Proveedor"
+        }`
+      );
       cargarPedidos();
     } catch (error) {
       console.error("Error al aprobar pedido:", error);
-      alert("Error al aprobar pedido: " + error.message);
+      alert(
+        "❌ Error al aprobar pedido: " +
+          (error.response?.data?.message || error.message)
+      );
     }
   };
 
@@ -232,10 +316,9 @@ const PedidoInsumo = () => {
           </div>
         </div>
 
-        <PedidoForm
+        <PedidoFormSimple
           onClose={() => setVistaActual("lista")}
           onSuccess={onSuccessForm}
-          pedidoEditado={pedidoEditando}
         />
       </div>
     );
@@ -263,14 +346,6 @@ const PedidoInsumo = () => {
             >
               <i className="fas fa-plus me-1"></i>
               Nuevo Pedido Manual
-            </button>
-            <button
-              className="btn btn-info"
-              onClick={abrirGeneracionAutomatica}
-              disabled={loading}
-            >
-              <i className="fas fa-robot me-1"></i>
-              Generar Automático
             </button>
           </div>
         </div>
@@ -312,8 +387,8 @@ const PedidoInsumo = () => {
           </h5>
         </div>
         <div className="card-body">
-          <div className="row">
-            <div className="col-md-3">
+          <div className="row g-3">
+            <div className="col-md-2">
               <label className="form-label">Estado:</label>
               <select
                 className="form-select"
@@ -322,19 +397,71 @@ const PedidoInsumo = () => {
                   setFiltros({ ...filtros, estado: e.target.value })
                 }
               >
-                <option value="">Todos los estados</option>
-                {estadosPedido.map((estado) => (
+                <option value="">Todos</option>
+                {estadosPedido.map((estado, index) => (
                   <option
-                    key={estado.id_estadoPedido}
+                    key={estado.id_estadoPedido || `estado-${index}`}
                     value={estado.id_estadoPedido}
                   >
-                    {estado.nombre}
+                    {estado.nombreEstado}
                   </option>
                 ))}
               </select>
             </div>
-            <div className="col-md-3">
-              <label className="form-label">Fecha desde:</label>
+
+            <div className="col-md-2">
+              <label className="form-label">Proveedor:</label>
+              <select
+                className="form-select"
+                value={filtros.proveedor}
+                onChange={(e) =>
+                  setFiltros({ ...filtros, proveedor: e.target.value })
+                }
+              >
+                <option value="">Todos</option>
+                {proveedoresUnicos.map((proveedor, index) => (
+                  <option key={`proveedor-${index}`} value={proveedor}>
+                    {proveedor}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label">Usuario:</label>
+              <select
+                className="form-select"
+                value={filtros.usuario}
+                onChange={(e) =>
+                  setFiltros({ ...filtros, usuario: e.target.value })
+                }
+              >
+                <option value="">Todos</option>
+                {usuariosUnicos.map((usuario, index) => (
+                  <option key={`usuario-${index}`} value={usuario}>
+                    {usuario}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label">Origen:</label>
+              <select
+                className="form-select"
+                value={filtros.origen}
+                onChange={(e) =>
+                  setFiltros({ ...filtros, origen: e.target.value })
+                }
+              >
+                <option value="">Todos</option>
+                <option value="Manual">Manual</option>
+                <option value="Generado">Automático</option>
+              </select>
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label">Desde:</label>
               <input
                 type="date"
                 className="form-control"
@@ -344,8 +471,9 @@ const PedidoInsumo = () => {
                 }
               />
             </div>
-            <div className="col-md-3">
-              <label className="form-label">Fecha hasta:</label>
+
+            <div className="col-md-2">
+              <label className="form-label">Hasta:</label>
               <input
                 type="date"
                 className="form-control"
@@ -355,21 +483,28 @@ const PedidoInsumo = () => {
                 }
               />
             </div>
-            <div className="col-md-3 d-flex align-items-end">
-              <button
-                className="btn btn-outline-secondary w-100"
-                onClick={() =>
-                  setFiltros({
-                    estado: "",
-                    fechaInicio: "",
-                    fechaFin: "",
-                    proveedor: "",
-                  })
-                }
-              >
-                <i className="fas fa-times me-1"></i>
-                Limpiar Filtros
-              </button>
+          </div>
+
+          <div className="row mt-3">
+            <div className="col-md-12 d-flex gap-2">
+              {hayFiltrosAplicados() && (
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() =>
+                    setFiltros({
+                      estado: "",
+                      fechaInicio: "",
+                      fechaFin: "",
+                      proveedor: "",
+                      usuario: "",
+                      origen: "",
+                    })
+                  }
+                >
+                  <i className="fas fa-times me-1"></i>
+                  Limpiar Filtros
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -381,7 +516,7 @@ const PedidoInsumo = () => {
           <div className="d-flex justify-content-between align-items-center">
             <h5 className="mb-0">
               <i className="fas fa-list me-2"></i>
-              Lista de Pedidos ({pedidos.length})
+              Lista de Pedidos ({pedidosFiltrados.length})
             </h5>
             <button
               className="btn btn-outline-primary btn-sm"
@@ -401,12 +536,14 @@ const PedidoInsumo = () => {
               </div>
               <p className="mt-2">Cargando pedidos...</p>
             </div>
-          ) : pedidos.length === 0 ? (
+          ) : pedidosFiltrados.length === 0 ? (
             <div className="text-center py-5">
-              <i className="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-              <h5>No hay pedidos registrados</h5>
+              <i className="fas fa-search fa-3x text-muted mb-3"></i>
+              <h5>No se encontraron pedidos</h5>
               <p className="text-muted">
-                Cree el primer pedido haciendo clic en "Nuevo Pedido Manual"
+                {pedidos.length === 0
+                  ? "No hay pedidos registrados. Cree el primer pedido haciendo clic en 'Nuevo Pedido Manual'"
+                  : "No hay pedidos que coincidan con los filtros aplicados. Intente modificar los criterios de búsqueda."}
               </p>
             </div>
           ) : (
@@ -414,18 +551,22 @@ const PedidoInsumo = () => {
               <table className="table table-hover">
                 <thead>
                   <tr>
+                    <th>#</th>
                     <th>Fecha Emisión</th>
                     <th>Proveedor</th>
                     <th>Usuario</th>
                     <th>Origen</th>
                     <th>Estado</th>
-                    <th>Fecha Entrega</th>
+                    <th>Fecha Aprobación</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pedidos.map((pedido) => (
-                    <tr key={pedido.id_pedido}>
+                  {pedidosFiltrados.map((pedido, index) => (
+                    <tr key={pedido.id_pedido || `pedido-${index}`}>
+                      <td>
+                        <strong>{index + 1}</strong>
+                      </td>
                       <td>
                         {new Date(pedido.fechaEmision).toLocaleDateString(
                           "es-ES"
@@ -440,27 +581,52 @@ const PedidoInsumo = () => {
                           className={`badge ${
                             pedido.origen === "Manual"
                               ? "bg-primary"
-                              : "bg-info"
+                              : "bg-success"
                           }`}
+                          title={
+                            pedido.origen === "Generado"
+                              ? "Pedido generado automáticamente por el sistema"
+                              : "Pedido creado manualmente"
+                          }
                         >
-                          {pedido.origen}
+                          {pedido.origen === "Generado"
+                            ? "🤖 Automático"
+                            : "👤 Manual"}
                         </span>
                       </td>
                       <td>
                         <span
                           className={`badge ${getEstadoBadgeClass(
-                            pedido.id_estadoPedido
+                            pedido.estadoPedido
                           )}`}
                         >
-                          {pedido.id_estadoPedido}
+                          {pedido.estadoPedido}
                         </span>
                       </td>
                       <td>
-                        {pedido.fechaAprobacion
-                          ? new Date(pedido.fechaAprobacion).toLocaleDateString(
-                              "es-ES"
-                            )
-                          : "-"}
+                        {pedido.fechaAprobacion ? (
+                          <div className="d-flex flex-column">
+                            <span className="text-success">
+                              {calcularFechaEntrega(
+                                pedido.fechaAprobacion
+                              ).toLocaleDateString("es-ES")}
+                            </span>
+                            <small className="text-muted">
+                              (Aprobado:{" "}
+                              {new Date(
+                                pedido.fechaAprobacion
+                              ).toLocaleDateString("es-ES")}
+                              )
+                            </small>
+                          </div>
+                        ) : pedido.estadoPedido === "Pendiente" ? (
+                          <span className="text-warning">
+                            <i className="fas fa-clock me-1"></i>
+                            Pendiente de aprobación
+                          </span>
+                        ) : (
+                          "-"
+                        )}
                       </td>
                       <td>
                         <div className="btn-group-sm">
@@ -472,7 +638,7 @@ const PedidoInsumo = () => {
                             <i className="fas fa-eye"></i>
                           </button>
 
-                          {pedido.id_estadoPedido === "Pendiente" && (
+                          {pedido.estadoPedido === "Pendiente" && (
                             <>
                               <button
                                 className="btn btn-outline-success btn-sm me-1"
@@ -494,7 +660,7 @@ const PedidoInsumo = () => {
                             </>
                           )}
 
-                          {pedido.id_estadoPedido !== "Cancelado" && (
+                          {pedido.estadoPedido !== "Cancelado" && (
                             <button
                               className="btn btn-outline-danger btn-sm me-1"
                               onClick={() => cancelarPedido(pedido.id_pedido)}
@@ -584,10 +750,10 @@ const PedidoInsumo = () => {
                   <strong>Estado:</strong>
                   <span
                     className={`badge ms-2 ${getEstadoBadgeClass(
-                      mostrarDetallesPedido.id_estadoPedido
+                      mostrarDetallesPedido.estadoPedido
                     )}`}
                   >
-                    {mostrarDetallesPedido.id_estadoPedido}
+                    {mostrarDetallesPedido.estadoPedido}
                   </span>
                 </div>
               </div>
@@ -611,16 +777,18 @@ const PedidoInsumo = () => {
                         <th>Insumo</th>
                         <th>Unidad</th>
                         <th>Cantidad</th>
-                        <th>Proveedor</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {mostrarDetallesPedido.detalles.map((detalle) => (
-                        <tr key={detalle.id_detallePedido}>
+                      {mostrarDetallesPedido.detalles.map((detalle, index) => (
+                        <tr
+                          key={detalle.id_detallePedido || `detalle-${index}`}
+                        >
                           <td>{detalle.nombreInsumo}</td>
                           <td>{detalle.unidadMedida}</td>
-                          <td>{detalle.cantidadSolicitada}</td>
-                          <td>{detalle.nombreProveedor}</td>
+                          <td>
+                            {detalle.cantidad || detalle.cantidadSolicitada}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

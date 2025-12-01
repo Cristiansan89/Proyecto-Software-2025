@@ -34,6 +34,7 @@ import estadoPedidoRouter from "./routes/estadospedido.js";
 import tipoMermaRouter from "./routes/tiposmerma.js";
 import alertasInventarioRouter from "./routes/alertasInventario.js";
 import generacionAutomaticaRouter from "./routes/generacionAutomaticaRoutes.js";
+import escuelaRouter from "./routes/escuela.js";
 import alertasService from "./services/alertasInventarioService.js";
 import { schedulerService } from "./services/schedulerService.js";
 
@@ -84,7 +85,7 @@ export const createApp = ({
   app.use("/api/insumos", createInsumoRouter({ insumoModel }));
   app.use("/api/inventarios", createInventarioRouter({ inventarioModel }));
   app.use("/api/items-recetas", createItemRecetaRouter({ itemRecetaModel }));
-  app.use("/api/lineas-pedidos", createLineaPedidoRouter({ lineaPedidoModel }));
+  app.use("/api/lineaspedidos", createLineaPedidoRouter({ lineaPedidoModel }));
   app.use(
     "/api/movimientos-inventarios",
     createMovimientoInventarioRouter({ movimientoInventarioModel })
@@ -125,6 +126,7 @@ export const createApp = ({
   app.use("/api/tipos-merma", tipoMermaRouter);
   app.use("/api/alertas-inventario", alertasInventarioRouter);
   app.use("/api/generacion-automatica", generacionAutomaticaRouter);
+  app.use("/api/escuela", escuelaRouter);
 
   // Inicializar servicio de alertas
   alertasService

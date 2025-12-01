@@ -181,7 +181,10 @@ const AsignarPermisosForm = ({ onClose, rolSeleccionado = null }) => {
   }
 
   return (
-    <div className="asignar-permisos-form">
+    <div
+      className="asignar-permisos-form"
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+    >
       {error && (
         <div className="alert alert-error">
           <i className="fas fa-exclamation-triangle"></i>
@@ -200,8 +203,12 @@ const AsignarPermisosForm = ({ onClose, rolSeleccionado = null }) => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="form">
-        <div className="form-grid">
+      <form
+        onSubmit={handleSubmit}
+        className="form"
+        style={{ height: "100%", display: "flex", flexDirection: "column" }}
+      >
+        <div className="form-grid" style={{ flexShrink: 0 }}>
           {/* Selector de Rol */}
           <div className="form-group">
             <label htmlFor="rol" className="form-label">
@@ -255,7 +262,10 @@ const AsignarPermisosForm = ({ onClose, rolSeleccionado = null }) => {
 
         {/* Información del rol seleccionado */}
         {selectedRol && (
-          <div className="rol-info">
+          <div
+            className="rol-info"
+            style={{ flexShrink: 0, marginBottom: "1rem" }}
+          >
             <h3>Asignando permisos para: {getRolNombre()}</h3>
             <div className="text-muted">
               <strong>Permisos actuales:</strong> {permisosActuales.length} |
@@ -266,10 +276,20 @@ const AsignarPermisosForm = ({ onClose, rolSeleccionado = null }) => {
           </div>
         )}
 
-        {/* Lista de permisos */}
+        {/* Lista de permisos con scroll interno */}
         {selectedRol && (
-          <div className="permisos-section">
-            <h4>Seleccionar Permisos</h4>
+          <div
+            className="permisos-section"
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              marginBottom: "1rem",
+              border: "1px solid #dee2e6",
+              borderRadius: "0.375rem",
+              padding: "1rem",
+            }}
+          >
+            <h4 style={{ marginTop: 0 }}>Seleccionar Permisos</h4>
 
             {modulosDisponibles.map((modulo) => {
               const permisosDelModulo = permisos.filter(
@@ -349,8 +369,16 @@ const AsignarPermisosForm = ({ onClose, rolSeleccionado = null }) => {
           </div>
         )}
 
-        {/* Botones de acción */}
-        <div className="form-actions">
+        {/* Botones de acción fijos */}
+        <div
+          className="form-actions"
+          style={{
+            flexShrink: 0,
+            borderTop: "1px solid #dee2e6",
+            paddingTop: "1rem",
+            marginTop: "auto",
+          }}
+        >
           <button type="button" onClick={onClose} className="btn btn-secondary">
             <i className="fas fa-times mr-1"></i>
             Cancelar

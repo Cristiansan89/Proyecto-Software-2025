@@ -179,7 +179,7 @@ const ListaTipoMerma = () => {
       {/* Modal para agregar/editar tipo */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-tipomerma">
+          <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">
                 {modalMode === "crear"

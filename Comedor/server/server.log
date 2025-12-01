@@ -1,4 +1,15 @@
 nohup: no se tendrá en cuenta la entrada
-[dotenv@17.2.3] injecting env (15) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (15) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+🚀 Iniciando servicio de alertas de inventario...
+🔄 Recalculando estados de inventario...
+[Scheduler] Inicializando servicio de generación automática...
 El Servidor esta corriendo en el puerto http://localhost:3000
-Servidor configurado solo para conexiones locales
+Servidor configurado para todas las interfaces locales
+[Scheduler] Servicio de generación automática inicializado
+✅ Recálculo completado. Estados actualizados: 0
+🧹 Limpiando alertas obsoletas...
+✅ Alertas obsoletas limpiadas
+✅ Bot de Telegram conectado: SistemaComedor_Bot
+🤖 Comandos de Telegram configurados
+✅ Verificación periódica de alertas iniciada
+✅ Todos los insumos tienen stock adecuado

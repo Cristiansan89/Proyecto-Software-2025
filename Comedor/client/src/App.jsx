@@ -27,12 +27,13 @@ import AdminLayout from "./layouts/AdminLayout";
 import DocenteLayout from "./layouts/DocenteLayout";
 import CocineraLayout from "./layouts/CocineraLayout";
 import CocineraDashboard from "./pages/cocinera/CocineraDashboard";
-import CocineraGestionAsistencias from "./pages/cocinera/CocineraGestionAsistencias";
-import TestPage from "./pages/TestPage";
+import CocineraGestionAsistencias from "./pages/cocinera/GestionAsistencias";
 import CocineraMenu from "./pages/cocinera/CocineraMenu";
 import CocineraInventario from "./pages/cocinera/CocineraInventario";
+import CocineraMenuesDiaria from "./pages/cocinera/CocineraMenuesDiaria";
 import CocineraReportes from "./pages/cocinera/CocineraReportes";
 import CocineraRecetas from "./pages/cocinera/CocineraRecetas";
+import Consumos from "./pages/cocinera/Consumos";
 import PedidoInsumo from "./pages/cocinera/PedidoInsumo";
 import InsumosSemanal from "./pages/cocinera/InsumosSemanal";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -66,9 +67,6 @@ function App() {
       <AuthProvider>
         <div className="App">
           <Routes>
-            {/* Ruta de prueba temporal */}
-            <Route path="/test" element={<TestPage />} />
-
             {/* Ruta pública de login */}
             <Route path="/login" element={<Login />} />
 
@@ -173,7 +171,13 @@ function App() {
                         path="/inventario"
                         element={<CocineraInventario />}
                       />
+                      <Route path="/reportes" element={<CocineraReportes />} />
+                      <Route
+                        path="/menu-diaria"
+                        element={<CocineraMenuesDiaria />}
+                      />
                       <Route path="/pedidos" element={<PedidoInsumo />} />
+                      <Route path="/consumos" element={<Consumos />} />
                       <Route
                         path="/insumos-semanal"
                         element={<InsumosSemanal />}

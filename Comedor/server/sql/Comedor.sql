@@ -38,7 +38,26 @@ CREATE TABLE Asistencias(
     id_servicio       INT                        NOT NULL,
     id_alumnoGrado    INT                        NOT NULL,
     fecha             DATE                       DEFAULT '2025-01-01',
-    estado            ENUM('Ausente', 'Si', 'No')    NOT NULL DEFAULT 'No',
+    tipoAsistencia    ENUM('Si', 'No', 'Ausente')    NOT NULL DEFAULT 'No',
+    estado            ENUM('Pendiente', 'Completado', 'Cancelado')    NOT NULL DEFAULT 'Pendiente',
+    PRIMARY KEY (id_asistencia)
+)ENGINE=INNODB;
+
+
+
+-- -----------------------------------------------------
+-- TABLE: RegistrosAsistencias 
+-- Tabla agregada para registros por servicio/grado
+-- -----------------------------------------------------
+
+CREATE TABLE RegistrosAsistencias(
+    id_asistencia       BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
+    id_servicio         INT                        NOT NULL,
+    id_grado            INT                        NOT NULL,
+    fecha               DATE                       DEFAULT '2025-01-01',
+    cantidadPresentes   INT                        DEFAULT 0,
+    fecha_creacion      DATETIME                   DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME                   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id_asistencia)
 )ENGINE=INNODB;
 
@@ -257,8 +276,8 @@ CREATE TABLE Parametros(
 
 CREATE TABLE Pedidos(
     id_pedido            BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_planificacion     BINARY(16)                 NOT NULL,
-    id_usuario           BINARY(16)                 NOT NULL,
+    id_planificacion     BINARY(16),
+    id_usuario           BINARY(16),
     id_estadoPedido      INT                        NOT NULL,
     id_proveedor         BINARY(16)                 NOT NULL,
     fechaEmision         DATE                       DEFAULT '2025-01-01',
@@ -320,7 +339,7 @@ CREATE TABLE PlanificacionMenus(
     fechaInicio            DATE           NOT NULL,
     fechaFin               DATE           NOT NULL,
     comensalesEstimados    INT            DEFAULT 0,
-    estado                 ENUM('Activo', 'Inactivo', 'Finalizado') NOT NULL DEFAULT 'Activo',
+    estado                 ENUM('Activo', 'Pendiente', 'Finalizado', 'Cancelado') NOT NULL DEFAULT 'Pendiente',
     PRIMARY KEY (id_planificacion)
 )ENGINE=INNODB;
 
@@ -939,6 +958,21 @@ ALTER TABLE Asistencias ADD CONSTRAINT RefServicios884
 ALTER TABLE Asistencias ADD CONSTRAINT RefAlumnoGrado924 
     FOREIGN KEY (id_alumnoGrado)
     REFERENCES AlumnoGrado(id_alumnoGrado)
+;
+
+
+-- 
+-- TABLE: RegistrosAsistencias 
+--
+
+ALTER TABLE RegistrosAsistencias ADD CONSTRAINT RefServicios934 
+    FOREIGN KEY (id_servicio)
+    REFERENCES Servicios(id_servicio)
+;
+
+ALTER TABLE RegistrosAsistencias ADD CONSTRAINT RefGrados944 
+    FOREIGN KEY (id_grado)
+    REFERENCES Grados(id_grado)
 ;
 
 

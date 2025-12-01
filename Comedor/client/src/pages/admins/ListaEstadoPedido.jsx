@@ -181,7 +181,7 @@ const ListaEstadoPedido = () => {
       {/* Modal para agregar/editar estado */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-estadopedido">
+          <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">
                 {modalMode === "create"

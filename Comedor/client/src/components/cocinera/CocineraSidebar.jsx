@@ -29,6 +29,12 @@ const CocineraSidebar = ({ collapsed }) => {
       path: "/cocinera/gestion-asistencias",
     },
     {
+      id: "menu-diaria",
+      label: "Menú del Día",
+      icon: "fas fa-calendar-day",
+      path: "/cocinera/menu-diaria",
+    },
+    {
       id: "inventario",
       label: "Control de Inventario",
       icon: "fas fa-boxes",
@@ -36,13 +42,19 @@ const CocineraSidebar = ({ collapsed }) => {
     },
     {
       id: "pedidos",
-      label: "Pedidos",
+      label: "Gestión de Pedidos",
       icon: "fas fa-shopping-cart",
       path: "/cocinera/pedidos",
     },
     {
+      id: "consumos",
+      label: "Gestión de Consumos",
+      path: "/cocinera/consumos",
+      icon: "fas fa-receipt",
+    },
+    {
       id: "reportes",
-      label: "Reportes",
+      label: "Gestión de Reportes",
       icon: "fas fa-chart-line",
       path: "/cocinera/reportes",
     },

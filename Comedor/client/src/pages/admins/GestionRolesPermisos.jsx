@@ -1148,7 +1148,7 @@ const GestionRolesPermisos = () => {
       {/* Modal para asignar permisos */}
       {showAsignarPermisosForm && (
         <div className="modal fade show d-block" tabIndex="-1">
-          <div className="modal-dialog">
+          <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
@@ -1165,7 +1165,14 @@ const GestionRolesPermisos = () => {
                   <i className="fas fa-times"></i>
                 </button>
               </div>
-              <div>
+              <div
+                className="modal-body"
+                style={{
+                  maxHeight: "60vh",
+                  overflowY: "auto",
+                  padding: "1rem",
+                }}
+              >
                 <AsignarPermisosForm
                   rolSeleccionado={rolSeleccionadoParaEditar}
                   onClose={() => {

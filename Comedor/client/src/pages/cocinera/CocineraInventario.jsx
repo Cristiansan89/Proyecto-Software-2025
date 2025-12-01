@@ -70,9 +70,9 @@ const CocineraInventario = () => {
     const alertas = [];
 
     inventariosData.forEach((inv) => {
-      const cantidad = parseFloat(inv.cantidadActual);
-      const nivelMinimo = parseFloat(inv.nivelMinimoAlerta);
-      const stockMaximo = parseFloat(inv.stockMaximo) || nivelMinimo; // Fallback si no hay stockMaximo
+      const cantidad = parseInt(inv.cantidadActual);
+      const nivelMinimo = parseInt(inv.nivelMinimoAlerta);
+      const stockMaximo = parseInt(inv.stockMaximo) || nivelMinimo; // Fallback si no hay stockMaximo
 
       // Alerta si: stock actual <= stock mínimo de alerta
       if (cantidad <= nivelMinimo) {

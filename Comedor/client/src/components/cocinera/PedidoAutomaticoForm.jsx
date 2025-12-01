@@ -91,8 +91,6 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
     onClose?.();
   };
 
-  console.log("📋 PedidoAutomaticoForm - isVisible:", isVisible);
-
   if (!isVisible) return null;
 
   return (

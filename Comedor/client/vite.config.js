@@ -5,14 +5,20 @@ import react from "@vitejs/plugin-react-swc";
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: "localhost", // Solo localhost
-    port: 5175, // Cambiar puerto para evitar conflictos
-    strictPort: false, // Permitir puerto alternativo si es necesario
+    host: "0.0.0.0", // Escuchar en todas las interfaces
+    port: 5175,
+    strictPort: false,
+    allowedHosts: [
+      "localhost",
+      "127.0.0.1",
+      "spleeny-slouchily-brenda.ngrok-free.dev",
+    ],
+    // Proxy para las solicitudes de API
     proxy: {
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, "/api"),
+        rewrite: (path) => path,
       },
     },
   },

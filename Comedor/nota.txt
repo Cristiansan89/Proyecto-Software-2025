@@ -11,3 +11,4 @@ n cantidad de insumos disponible, entocnes debería tenerse en cuenta la cantida
 - Los pedido se envía por mail a los proveedores.
 
 
+No se muestran los datos de las tabla en ListaAsistencia que debe tomar de Asistencia y lo mismo en la ListaAsistenciasService no calcula lo datos de se registra en Asistencia en lista asistencias service debe tomar la cantidad presente.

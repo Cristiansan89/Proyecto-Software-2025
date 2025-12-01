@@ -397,6 +397,40 @@ export class PlanificacionMenuModel {
     }
   }
 
+  // Método para obtener planificaciones activas
+  static async getActivas() {
+    return this.getByEstado({ estado: "Activa" });
+  }
+
+  // Método para obtener jornadas de una planificación específica con recetas
+  static async getJornadasByPlanificacion(id_planificacion) {
+    try {
+      const [jornadas] = await connection.query(
+        `SELECT 
+                    BIN_TO_UUID(jp.id_jornada) as id_jornada,
+                    BIN_TO_UUID(jp.id_planificacion) as id_planificacion,
+                    jp.id_servicio,
+                    s.nombreServicio,
+                    jp.diaSemana,
+                    BIN_TO_UUID(psr.id_receta) as id_receta,
+                    r.nombreReceta
+                 FROM JornadaPlanificada jp
+                 JOIN Servicios s ON jp.id_servicio = s.id_servicio
+                 LEFT JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
+                 LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
+                 WHERE jp.id_planificacion = UUID_TO_BIN(?)
+                 ORDER BY 
+                    FIELD(jp.diaSemana, 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'),
+                    s.nombreServicio;`,
+        [id_planificacion]
+      );
+      return jornadas;
+    } catch (error) {
+      console.error("Error al obtener jornadas por planificación:", error);
+      throw new Error("Error al obtener jornadas por planificación");
+    }
+  }
+
   // Método para finalizar una planificación
   static async finalizar({ id }) {
     try {

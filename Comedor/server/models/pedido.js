@@ -9,17 +9,23 @@ export class PedidoModel {
                     BIN_TO_UUID(p.id_planificacion) as id_planificacion,
                     BIN_TO_UUID(p.id_usuario) as id_usuario,
                     p.id_estadoPedido,
+                    ep.nombreEstado as estadoPedido,
                     BIN_TO_UUID(p.id_proveedor) as id_proveedor,
                     pr.razonSocial as nombreProveedor,
-                    CONCAT(pe.nombre, ' ', pe.apellido) as nombreUsuario,
+                    pr.mail as emailProveedor,
+                    pr.telefono as telefonoProveedor,
+                    pr.direccion as direccionProveedor,
+                    pr.CUIT as cuitProveedor,
+                    COALESCE(CONCAT(pe.nombre, ' ', pe.apellido), 'Sistema Automatico') as nombreUsuario,
                     p.fechaEmision,
                     p.origen,
                     p.fechaAprobacion,
                     p.motivoCancelacion
                  FROM Pedidos p
                  JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
-                 JOIN Usuarios u ON p.id_usuario = u.id_usuario
-                 JOIN Personas pe ON u.id_persona = pe.id_persona
+                 JOIN EstadoPedido ep ON p.id_estadoPedido = ep.id_estadoPedido
+                 LEFT JOIN Usuarios u ON p.id_usuario = u.id_usuario
+                 LEFT JOIN Personas pe ON u.id_persona = pe.id_persona
                  ORDER BY p.fechaEmision DESC;`
       );
       return pedidos;
@@ -37,17 +43,23 @@ export class PedidoModel {
                     BIN_TO_UUID(p.id_planificacion) as id_planificacion,
                     BIN_TO_UUID(p.id_usuario) as id_usuario,
                     p.id_estadoPedido,
+                    ep.nombreEstado as estadoPedido,
                     BIN_TO_UUID(p.id_proveedor) as id_proveedor,
                     pr.razonSocial as nombreProveedor,
-                    CONCAT(pe.nombre, ' ', pe.apellido) as nombreUsuario,
+                    pr.mail as emailProveedor,
+                    pr.telefono as telefonoProveedor,
+                    pr.direccion as direccionProveedor,
+                    pr.CUIT as cuitProveedor,
+                    COALESCE(CONCAT(pe.nombre, ' ', pe.apellido), 'Sistema Automatico') as nombreUsuario,
                     p.fechaEmision,
                     p.origen,
                     p.fechaAprobacion,
                     p.motivoCancelacion
                  FROM Pedidos p
                  JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
-                 JOIN Usuarios u ON p.id_usuario = u.id_usuario
-                 JOIN Personas pe ON u.id_persona = pe.id_persona
+                 JOIN EstadoPedido ep ON p.id_estadoPedido = ep.id_estadoPedido
+                 LEFT JOIN Usuarios u ON p.id_usuario = u.id_usuario
+                 LEFT JOIN Personas pe ON u.id_persona = pe.id_persona
                  WHERE p.id_pedido = UUID_TO_BIN(?);`,
         [id]
       );
@@ -61,11 +73,10 @@ export class PedidoModel {
 
   static async create({ input }) {
     const {
-      id_planificacion,
       id_usuario,
-      id_estadoPedido,
+      id_estadoPedido = 15, // Por defecto "Pendiente"
       id_proveedor,
-      fechaEmision,
+      fechaEmision = new Date().toISOString().split("T")[0],
       origen = "Manual",
       fechaAprobacion = null,
       motivoCancelacion = null,
@@ -74,7 +85,6 @@ export class PedidoModel {
     try {
       const [result] = await connection.query(
         `INSERT INTO Pedidos (
-                    id_planificacion,
                     id_usuario, 
                     id_estadoPedido,
                     id_proveedor, 
@@ -82,9 +92,10 @@ export class PedidoModel {
                     origen,
                     fechaAprobacion,
                     motivoCancelacion
-                ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, UUID_TO_BIN(?), ?, ?, ?, ?);`,
+                ) VALUES (${
+                  id_usuario ? "UUID_TO_BIN(?)" : "?"
+                }, ?, UUID_TO_BIN(?), ?, ?, ?, ?);`,
         [
-          id_planificacion,
           id_usuario,
           id_estadoPedido,
           id_proveedor,
@@ -300,9 +311,11 @@ export class PedidoModel {
     try {
       await connection.query(
         `UPDATE Pedidos
-                 SET id_estadoPedido = 2, fechaAprobacion = CURDATE()
+                 SET id_estadoPedido = 16, 
+                     fechaAprobacion = CURDATE(),
+                     id_usuario = UUID_TO_BIN(?)
                  WHERE id_pedido = UUID_TO_BIN(?);`,
-        [id]
+        [id_usuario_aprobador, id]
       );
 
       return this.getById({ id });
@@ -317,7 +330,7 @@ export class PedidoModel {
     try {
       await connection.query(
         `UPDATE Pedidos
-                 SET id_estadoPedido = 3, motivoCancelacion = ?
+                 SET id_estadoPedido = 20, motivoCancelacion = ?
                  WHERE id_pedido = UUID_TO_BIN(?);`,
         [motivoCancelacion, id]
       );
@@ -382,22 +395,14 @@ export class PedidoModel {
         // Crear el pedido principal
         const [resultPedido] = await connection_ref.query(
           `INSERT INTO Pedidos (
-                        id_planificacion,
                         id_usuario, 
                         id_estadoPedido,
                         id_proveedor, 
                         fechaEmision, 
                         origen,
-                        fechaAprobacion,
                         motivoCancelacion
-                    ) VALUES (NULL, UUID_TO_BIN(?), 1, UUID_TO_BIN(?), ?, 'Manual', ?, ?);`,
-          [
-            id_usuario,
-            idProveedor,
-            fechaEmision,
-            fechaEntregaEsperada,
-            observaciones,
-          ]
+                    ) VALUES (UUID_TO_BIN(?), 15, UUID_TO_BIN(?), ?, 'Manual', ?);`,
+          [id_usuario, idProveedor, fechaEmision, observaciones]
         );
 
         // Obtener el ID del pedido recién creado
@@ -727,21 +732,16 @@ export class PedidoModel {
           // Crear pedido principal
           const [resultPedido] = await connection_ref.query(
             `INSERT INTO Pedidos (
-              id_planificacion,
               id_usuario, 
               id_estadoPedido,
               id_proveedor, 
               fechaEmision, 
               origen,
-              fechaAprobacion,
               motivoCancelacion
-            ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), 1, UUID_TO_BIN(?), ?, 'Automatico', ?, ?);`,
+            ) VALUES (NULL, 15, UUID_TO_BIN(?), ?, 'Generado', ?);`,
             [
-              planificaciones[0].id_planificacion, // Asociar a la primera planificación encontrada
-              "00000000-0000-0000-0000-000000000000", // Usuario sistema automático
               idProveedor,
               fechaEmision,
-              fechaEntregaEsperada,
               `Pedido automático generado para período ${fechaInicio} - ${fechaFin}. Total: ${insumos.length} insumo(s).`,
             ]
           );
@@ -750,7 +750,7 @@ export class PedidoModel {
           const [pedidoCreado] = await connection_ref.query(
             `SELECT BIN_TO_UUID(id_pedido) as id_pedido 
              FROM Pedidos 
-             WHERE id_proveedor = UUID_TO_BIN(?) AND fechaEmision = ? AND origen = 'Automatico'
+             WHERE id_proveedor = UUID_TO_BIN(?) AND fechaEmision = ? AND origen = 'Generado'
              ORDER BY fechaEmision DESC LIMIT 1;`,
             [idProveedor, fechaEmision]
           );

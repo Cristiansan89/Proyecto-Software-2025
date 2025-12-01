@@ -1,10 +1,10 @@
-import api from "./api.js";
+import axiosInstance from "./axiosConfig.js";
 
 const estadoPedidoService = {
   // Obtener todos los estados de pedido
   getAll: async () => {
     try {
-      const response = await api.get("/estado-pedidos");
+      const response = await axiosInstance.get("/estado-pedidos");
       return response.data;
     } catch (error) {
       throw error;
@@ -14,7 +14,7 @@ const estadoPedidoService = {
   // Obtener un estado de pedido por ID
   getById: async (id) => {
     try {
-      const response = await api.get(`/estado-pedidos/${id}`);
+      const response = await axiosInstance.get(`/estado-pedidos/${id}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -24,7 +24,10 @@ const estadoPedidoService = {
   // Crear un nuevo estado de pedido
   create: async (estadoPedidoData) => {
     try {
-      const response = await api.post("/estado-pedidos", estadoPedidoData);
+      const response = await axiosInstance.post(
+        "/estado-pedidos",
+        estadoPedidoData
+      );
       return response.data;
     } catch (error) {
       throw error;
@@ -34,7 +37,7 @@ const estadoPedidoService = {
   // Actualizar un estado de pedido
   update: async (id, estadoPedidoData) => {
     try {
-      const response = await api.patch(
+      const response = await axiosInstance.patch(
         `/estado-pedidos/${id}`,
         estadoPedidoData
       );
@@ -47,7 +50,7 @@ const estadoPedidoService = {
   // Eliminar un estado de pedido
   delete: async (id) => {
     try {
-      const response = await api.delete(`/estado-pedidos/${id}`);
+      const response = await axiosInstance.delete(`/estado-pedidos/${id}`);
       return response.data;
     } catch (error) {
       throw error;

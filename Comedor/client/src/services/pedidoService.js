@@ -164,7 +164,7 @@ const pedidoService = {
         };
 
         // Crear el pedido principal
-        const pedidoCreado = await this.create(pedido);
+        const pedidoCreado = await pedidoService.create(pedido);
 
         // Agregar los detalles del pedido (líneas)
         for (const insumo of insumosProveedor) {
@@ -241,6 +241,16 @@ const pedidoService = {
         fechaFin,
       });
 
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Aprobar pedido y enviar por email
+  aprobar: async (id) => {
+    try {
+      const response = await axiosInstance.post(`/pedidos/${id}/aprobar`);
       return response.data;
     } catch (error) {
       throw error;

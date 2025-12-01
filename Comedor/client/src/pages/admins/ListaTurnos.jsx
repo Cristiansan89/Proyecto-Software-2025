@@ -281,7 +281,7 @@ const ListaTurnos = () => {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content turno-modal">
+          <div className="modal-content">
             <div className="modal-header">
               <h3>
                 {modalMode === "create" && "Crear Nuevo Turno"}

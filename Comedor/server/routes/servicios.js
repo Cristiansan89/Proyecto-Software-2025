@@ -1,19 +1,29 @@
-import { Router } from 'express'
-import { ServicioController } from '../controllers/servicios.js'
+import { Router } from "express";
+import { ServicioController } from "../controllers/servicios.js";
 
 export const createServicioRouter = ({ servicioModel }) => {
-    const serviciosRouter = Router()
-    const servicioController = new ServicioController({ servicioModel })
+  const serviciosRouter = Router();
+  const servicioController = new ServicioController({ servicioModel });
 
-    serviciosRouter.get('/', servicioController.getAll)
-    serviciosRouter.get('/:id', servicioController.getById)
-    serviciosRouter.post('/', servicioController.create)
-    serviciosRouter.delete('/:id', servicioController.delete)
-    serviciosRouter.patch('/:id', servicioController.update)
+  serviciosRouter.get("/", servicioController.getAll);
+  serviciosRouter.post("/", servicioController.create);
 
-    // Endpoints especializados
-    serviciosRouter.get('/activos/list', servicioController.getActivos)
-    serviciosRouter.patch('/:id/estado', servicioController.changeStatus)
+  // Endpoints especializados (antes de las rutas con parámetros)
+  serviciosRouter.get("/activos/list", servicioController.getActivos);
+  serviciosRouter.post(
+    "/marcar-completado",
+    servicioController.marcarCompletado
+  );
+  serviciosRouter.get(
+    "/estado-completado",
+    servicioController.obtenerEstadoCompletado
+  );
 
-    return serviciosRouter
-}
+  // Rutas con parámetros (al final)
+  serviciosRouter.get("/:id", servicioController.getById);
+  serviciosRouter.delete("/:id", servicioController.delete);
+  serviciosRouter.patch("/:id", servicioController.update);
+  serviciosRouter.patch("/:id/estado", servicioController.changeStatus);
+
+  return serviciosRouter;
+};

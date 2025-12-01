@@ -213,7 +213,7 @@ const ListaGrados = () => {
                 <tbody>
                   {currentGrados.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="no-data">
+                      <td colSpan="5" className="no-data">
                         <p>No se encontraron grados</p>
                       </td>
                     </tr>
@@ -285,11 +285,11 @@ const ListaGrados = () => {
             disabled={currentPage === 1}
           >
             <i className="fas fa-chevron-left"></i>
-            Anterior
           </button>
 
           <div className="pagination-info">
-            Página {currentPage} de {totalPages}
+            Página {currentPage} de {totalPages} ({filteredGrados.length}{" "}
+            grados)
           </div>
 
           <button
@@ -297,7 +297,6 @@ const ListaGrados = () => {
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
-            Siguiente
             <i className="fas fa-chevron-right"></i>
           </button>
         </div>

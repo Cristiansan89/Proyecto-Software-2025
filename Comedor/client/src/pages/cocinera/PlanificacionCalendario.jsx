@@ -83,25 +83,70 @@ const PlanificacionCalendario = () => {
 
   const verificarPlanificacionActiva = async () => {
     try {
-      // Obtener todas las planificaciones activas (sin filtrar por semana)
+      // Obtener todas las planificaciones (sin filtrar por semana)
       const todasLasPlanificaciones = await planificacionMenuService.getAll();
-      const activa = todasLasPlanificaciones.find((p) => p.estado === "Activo");
 
-      if (activa) {
-        // Si hay una planificación activa, establecer semanaActual a su fecha de inicio
-        const fechaInicioPlanificacion = new Date(activa.fechaInicio);
+      // Buscar primero una planificación activa, luego pendiente
+      let planificacion = todasLasPlanificaciones.find(
+        (p) => p.estado === "Activo"
+      );
+      if (!planificacion) {
+        planificacion = todasLasPlanificaciones.find(
+          (p) => p.estado === "Pendiente"
+        );
+      }
+
+      if (planificacion) {
+        // Si hay una planificación, establecer semanaActual a su fecha de inicio
+        const fechaInicioPlanificacion = new Date(planificacion.fechaInicio);
         setSemanaActual(fechaInicioPlanificacion);
-        setPlanificacionActiva(activa);
+        setPlanificacionActiva(planificacion);
         console.log(
-          `✅ Planificación activa encontrada. Inicializando calendario desde ${activa.fechaInicio}`
+          `✅ Planificación ${planificacion.estado.toLowerCase()} encontrada. Inicializando calendario desde ${
+            planificacion.fechaInicio
+          }`
         );
       } else {
-        // Si no hay planificación activa, usar la semana actual
+        // Si no hay planificación activa o pendiente, usar la semana actual
         setPlanificacionActiva(null);
       }
     } catch (error) {
       console.error("Error al verificar planificación activa:", error);
       setPlanificacionActiva(null);
+    }
+  };
+
+  // Nueva función para verificar si el calendario está completo
+  const verificarCalendarioCompleto = async () => {
+    if (!planificacionActiva || planificacionActiva.estado !== "Pendiente") {
+      return;
+    }
+
+    const semana = obtenerSemanaActual();
+    const totalEsperado = diasSemana.length * servicios.length; // 5 días × 3 servicios = 15
+    const asignados = Object.keys(menusAsignados).length;
+
+    console.log(
+      `📊 Verificando calendario: ${asignados}/${totalEsperado} asignados`
+    );
+
+    if (asignados >= totalEsperado) {
+      try {
+        // Cambiar estado a Activo automáticamente
+        await planificacionMenuService.update(
+          planificacionActiva.id_planificacion,
+          {
+            ...planificacionActiva,
+            estado: "Activo",
+          }
+        );
+
+        console.log("✅ Planificación activada automáticamente");
+        // Recargar planificación activa para mostrar el nuevo estado
+        await verificarPlanificacionActiva();
+      } catch (error) {
+        console.error("Error al activar planificación:", error);
+      }
     }
   };
 
@@ -260,6 +305,14 @@ const PlanificacionCalendario = () => {
       return;
     }
 
+    // Validar que solo se pueda asignar en estado 'Pendiente'
+    if (planificacionActiva?.estado !== "Pendiente") {
+      alert(
+        "Solo se pueden asignar menús en planificaciones con estado 'Pendiente'"
+      );
+      return;
+    }
+
     console.log("=== ASIGNANDO MENÚ ===");
     console.log("Usuario actual:", user);
     console.log("ID del usuario:", user?.idUsuario || user?.id_usuario);
@@ -293,6 +346,9 @@ const PlanificacionCalendario = () => {
       console.log("🔄 Recargando menús asignados...");
       await cargarMenusAsignados();
 
+      // Verificar si el calendario está completo para activar la planificación
+      await verificarCalendarioCompleto();
+
       cerrarModalAsignacion();
       alert("Menú asignado exitosamente");
     } catch (error) {
@@ -307,6 +363,14 @@ const PlanificacionCalendario = () => {
   };
 
   const eliminarReceta = async (fecha, servicio, dia) => {
+    // Validar que solo se pueda eliminar en estado 'Pendiente'
+    if (planificacionActiva?.estado !== "Pendiente") {
+      alert(
+        "Solo se pueden eliminar menús en planificaciones con estado 'Pendiente'"
+      );
+      return;
+    }
+
     if (
       !confirm(
         `¿Está seguro de que desea eliminar la receta asignada para ${dia} - ${servicio.nombre}?`
@@ -336,6 +400,9 @@ const PlanificacionCalendario = () => {
       // Recargar menús asignados
       console.log("🔄 Recargando menús asignados después de eliminar...");
       await cargarMenusAsignados();
+
+      // Verificar estado del calendario después de eliminar
+      await verificarCalendarioCompleto();
 
       alert("Receta eliminada exitosamente");
     } catch (error) {
@@ -387,6 +454,13 @@ const PlanificacionCalendario = () => {
           <div>
             {planificacionActiva && (
               <div className="d-flex gap-2 align-items-center">
+                {planificacionActiva.estado === "Pendiente" && (
+                  <span className="badge bg-warning">
+                    <i className="fas fa-clock me-1"></i>
+                    Planificación Pendiente (Complete el calendario para
+                    activar)
+                  </span>
+                )}
                 {planificacionActiva.estado === "Activo" && (
                   <button
                     className="btn btn-success btn-sm"
@@ -519,7 +593,7 @@ const PlanificacionCalendario = () => {
                                 ) : null;
                               })()}
                               <div className="menu-acciones mt-2">
-                                {planificacionActiva?.estado === "Activo" ? (
+                                {planificacionActiva?.estado === "Pendiente" ? (
                                   <>
                                     <button
                                       className="btn-action btn-edit btn-sm me-1"
@@ -553,11 +627,16 @@ const PlanificacionCalendario = () => {
                                       )}
                                     </button>
                                   </>
+                                ) : planificacionActiva?.estado === "Activo" ? (
+                                  <div className="text-muted small">
+                                    <i className="fas fa-lock me-1"></i>
+                                    Planificación activa (Solo lectura)
+                                  </div>
                                 ) : planificacionActiva?.estado ===
                                   "Finalizado" ? (
                                   <div className="text-muted small">
                                     <i className="fas fa-lock me-1"></i>
-                                    Solo lectura
+                                    Planificación finalizada (Solo lectura)
                                   </div>
                                 ) : null}
                               </div>
@@ -584,7 +663,7 @@ const PlanificacionCalendario = () => {
                                   </div>
                                 ) : null;
                               })()}
-                              {planificacionActiva?.estado === "Activo" ? (
+                              {planificacionActiva?.estado === "Pendiente" ? (
                                 <button
                                   className="btn btn-outline-success btn-sm w-100"
                                   onClick={() =>
@@ -594,6 +673,11 @@ const PlanificacionCalendario = () => {
                                   <i className="fas fa-plus me-1"></i>
                                   Asignar Menú
                                 </button>
+                              ) : planificacionActiva?.estado === "Activo" ? (
+                                <div className="text-muted small text-center">
+                                  <i className="fas fa-lock me-1"></i>
+                                  Planificación activa (Solo lectura)
+                                </div>
                               ) : (
                                 <div className="text-muted small text-center">
                                   <i className="fas fa-lock me-1"></i>

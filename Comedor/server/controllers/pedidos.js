@@ -484,4 +484,77 @@ export class PedidoController {
       });
     }
   };
+
+  // Aprobar pedido y enviar por email
+  aprobarPedido = async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // 1. Obtener el pedido con todos sus detalles
+      const pedido = await this.pedidoModel.getById({ id });
+      if (!pedido) {
+        return res.status(404).json({
+          success: false,
+          message: "Pedido no encontrado",
+        });
+      }
+
+      // 2. Verificar que esté en estado "Pendiente" (ID: 15)
+      if (pedido.id_estadoPedido !== 15) {
+        return res.status(400).json({
+          success: false,
+          message: "Solo se pueden aprobar pedidos en estado Pendiente",
+        });
+      }
+
+      // 3. Calcular fecha de aprobación
+      const fechaAprobacion = new Date();
+
+      console.log(
+        `📅 Fecha de aprobación: ${fechaAprobacion.toISOString().split("T")[0]}`
+      );
+
+      // 4. Cambiar estado a "Aprobado" (ID: 16) y establecer fecha de aprobación
+      await this.pedidoModel.aprobar({
+        id,
+        estado: 16,
+        fechaAprobacion: fechaAprobacion.toISOString().split("T")[0],
+      });
+
+      // 4. Obtener detalles del pedido para el PDF
+      const { LineaPedidoModel } = await import("../models/lineapedido.js");
+      const detalles = await LineaPedidoModel.getByPedido({ id_pedido: id });
+
+      // 5. Generar PDF del pedido
+      console.log("🔄 Generando PDF del pedido...");
+      const { generarPDFPedido } = await import("../services/pdfService.js");
+      const pdfBuffer = await generarPDFPedido(pedido, detalles);
+      console.log(
+        "✅ PDF generado exitosamente. Tamaño:",
+        pdfBuffer.length,
+        "bytes"
+      );
+
+      // 6. Enviar email al proveedor
+      console.log("📧 Enviando email al proveedor...");
+      const { emailService } = await import("../services/emailService.js");
+      await emailService.enviarPedidoProveedor(pedido, pdfBuffer);
+      console.log("✅ Email enviado exitosamente");
+
+      res.json({
+        success: true,
+        message: "Pedido aprobado y enviado al proveedor exitosamente",
+        pedido: {
+          ...pedido,
+          estado: "Aprobado",
+        },
+      });
+    } catch (error) {
+      console.error("❌ Error al aprobar pedido:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al aprobar pedido: " + error.message,
+      });
+    }
+  };
 }

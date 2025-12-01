@@ -202,14 +202,26 @@ const Alertas = () => {
             (p) => p.nombreParametro === op.nombreParametro
           );
 
+          // Manejar caso especial de destinatarioEmail vacío
+          if (op.nombreParametro === "DESTINATARIO_EMAIL" && !op.valor.trim()) {
+            // Si el parámetro existe pero el valor está vacío, eliminarlo
+            if (parametroExistente) {
+              await API.delete(
+                `/parametros-sistemas/${parametroExistente.id_parametro}`
+              );
+            }
+            // Si no existe y el valor está vacío, no hacer nada
+            return;
+          }
+
           // Determinar el tipo de parámetro correcto
           let tipoParametro;
           if (typeof op.valor === "number") {
-            tipoParametro = "number";
+            tipoParametro = "Numero";
           } else if (typeof op.valor === "boolean") {
-            tipoParametro = "boolean";
+            tipoParametro = "Booleano";
           } else {
-            tipoParametro = "string";
+            tipoParametro = "Texto";
           }
 
           const payload = {

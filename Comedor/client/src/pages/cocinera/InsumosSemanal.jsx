@@ -1,16 +1,49 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import generacionAutomaticaService from "../../services/generacionAutomaticaService";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import "../../styles/InsumosSemanal.css";
 
 const InsumosSemanal = () => {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [semanaActual, setSemanaActual] = useState(new Date());
   const [menusSemanales, setMenusSemanales] = useState([]);
   const [insumosRequeridos, setInsumosRequeridos] = useState({});
   const [loading, setLoading] = useState(false);
   const [comensalesData, setComensalesData] = useState({});
+  const [generandoPedidos, setGenerandoPedidos] = useState(false);
+  const [mensaje, setMensaje] = useState(null);
 
   const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+
+  // Verificación de autenticación
+  useEffect(() => {
+    if (!isAuthenticated) {
+      console.log("❌ Usuario no autenticado, redirigiendo al login");
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Si no está autenticado, no renderizar el componente
+  if (!isAuthenticated) {
+    return (
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "50vh" }}
+      >
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Cargando...</span>
+          </div>
+          <p className="mt-2">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Conversiones estándar de unidades
   const CONVERSIONES = {
@@ -143,6 +176,27 @@ const InsumosSemanal = () => {
       setInsumosRequeridos(insumosMap);
     } catch (error) {
       console.error("❌ Error al calcular insumos:", error);
+
+      // Manejar error de autenticación
+      if (error.response?.status === 401) {
+        console.log("🔐 Token expirado, redirigiendo al login");
+        setMensaje({
+          tipo: "error",
+          texto: "Sesión expirada. Por favor, inicia sesión nuevamente.",
+        });
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+        return;
+      }
+
+      // Otros errores
+      setMensaje({
+        tipo: "error",
+        texto: `Error al cargar insumos: ${
+          error.message || "Error de conexión"
+        }`,
+      });
       setInsumosRequeridos({});
     }
   };
@@ -192,6 +246,141 @@ const InsumosSemanal = () => {
     }
 
     return { cantidad, unidad: unidadOriginal };
+  };
+
+  const generarPDF = () => {
+    const doc = new jsPDF();
+    const semana = obtenerSemanaActual();
+
+    // Configurar fuente y color
+    doc.setFontSize(16);
+    doc.setTextColor(33, 37, 41); // Color gris oscuro
+
+    // Título
+    doc.text("LISTA DE INSUMOS SEMANAL", 14, 15);
+
+    // Información de la semana
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    const fechaInicio = semana[0].toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const fechaFin = semana[4].toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    doc.text(`Semana: ${fechaInicio} a ${fechaFin}`, 14, 25);
+    doc.text(
+      `Fecha de generación: ${new Date().toLocaleDateString("es-ES")}`,
+      14,
+      32
+    );
+
+    // Preparar datos para la tabla
+    const tableData = Object.entries(insumosRequeridos).map(
+      ([nombreInsumo, datos]) => {
+        const mejorUnidad = obtenerMejorUnidad(datos.cantidad, datos.unidad);
+        const stockDisponible = datos.cantidad_disponible || 0;
+        const diferencia = stockDisponible - mejorUnidad.cantidad;
+
+        return [
+          nombreInsumo,
+          `${datos.cantidad} ${datos.unidad}`,
+          `${mejorUnidad.cantidad} ${mejorUnidad.unidad}`,
+          `${stockDisponible} ${datos.unidad_inventario}`,
+          `${diferencia} ${mejorUnidad.unidad}`,
+        ];
+      }
+    );
+
+    // Crear tabla
+    autoTable(doc, {
+      startY: 40,
+      head: [
+        [
+          "Insumo",
+          "Cantidad Insumo",
+          "Cantidad Convertida",
+          "Stock Actual",
+          "Stock Futuros",
+        ],
+      ],
+      body: tableData,
+      theme: "grid",
+      headStyles: {
+        fillColor: [65, 105, 225], // Royal blue
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center",
+        valign: "middle",
+      },
+      bodyStyles: {
+        textColor: [33, 37, 41],
+        halign: "center",
+        valign: "middle",
+      },
+      columnStyles: {
+        0: { halign: "left" },
+      },
+      margin: { top: 40, left: 14, right: 14 },
+      didDrawPage: function (data) {
+        // Footer
+        const pageSize = doc.internal.pageSize;
+        const pageHeight = pageSize.getHeight();
+        const pageWidth = pageSize.getWidth();
+
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Página ${doc.internal.getNumberOfPages()}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: "center" }
+        );
+      },
+    });
+
+    // Descargar PDF
+    const filename = `Insumos_Semanal_${fechaInicio.replace(/\//g, "-")}.pdf`;
+    doc.save(filename);
+  };
+
+  const generarPedidosPorFaltantes = async () => {
+    setGenerandoPedidos(true);
+    try {
+      const response =
+        await generacionAutomaticaService.generarPedidosPorInsumosFaltantes();
+
+      if (response.success) {
+        setMensaje({
+          tipo: "success",
+          texto: `✅ SISTEMA: Se generaron ${response.totalPedidos} pedido(s) automático(s) por insumos faltantes`,
+        });
+        console.log(
+          "Pedidos generados automáticamente por el SISTEMA:",
+          response.pedidosCreados
+        );
+        console.log("Origen:", response.origen);
+      } else {
+        setMensaje({
+          tipo: "warning",
+          texto: response.mensaje || "No se generaron pedidos",
+        });
+      }
+    } catch (error) {
+      console.error("Error generando pedidos:", error);
+      setMensaje({
+        tipo: "error",
+        texto:
+          error.response?.data?.message ||
+          "Error al generar pedidos automáticos",
+      });
+    } finally {
+      setGenerandoPedidos(false);
+    }
   };
 
   useEffect(() => {
@@ -279,8 +468,8 @@ const InsumosSemanal = () => {
                           <th width="30%">Insumo</th>
                           <th width="25%">Cantidad Insumo</th>
                           <th width="25%">Cantidad Convertida</th>
-                          <th width="15%">Stock Actual </th>
-                          <th width="15%">Cantidad Faltantes</th>
+                          <th width="15%">Stock Actual</th>
+                          <th width="15%">Stock Futuros</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -324,23 +513,13 @@ const InsumosSemanal = () => {
                                     const diferencia =
                                       stockDisponible - cantidadNecesaria;
 
-                                    console.log(
-                                      `🧮 Cálculo disponibilidad ${nombreInsumo}:`,
-                                      {
-                                        stockDisponible,
-                                        cantidadNecesaria,
-                                        diferencia,
-                                      }
-                                    );
-
                                     const badgeClass =
                                       diferencia >= 0
                                         ? "bg-success"
                                         : "bg-danger";
                                     return (
                                       <span className={`badge ${badgeClass}`}>
-                                        {diferencia.toFixed(2)}{" "}
-                                        {mejorUnidad.unidad}
+                                        {diferencia} {mejorUnidad.unidad}
                                       </span>
                                     );
                                   })()}
@@ -355,13 +534,13 @@ const InsumosSemanal = () => {
                 </div>
 
                 {/* Botones de acción */}
-                <div className="mt-4 d-flex gap-2">
+                <div className="form-actions mt-3">
                   <button
                     className="btn btn-outline-primary"
-                    onClick={() => window.print()}
+                    onClick={generarPDF}
                   >
-                    <i className="fas fa-print me-1"></i>
-                    Imprimir
+                    <i className="fas fa-file-pdf me-1"></i>
+                    Descargar PDF
                   </button>
                   <button
                     className="btn btn-outline-success"
@@ -374,10 +553,34 @@ const InsumosSemanal = () => {
                     <i className="fas fa-download me-1"></i>
                     Descargar CSV
                   </button>
+                  <button
+                    className="btn btn-outline-danger"
+                    onClick={generarPedidosPorFaltantes}
+                    disabled={generandoPedidos}
+                  >
+                    <i className="fas fa-shopping-cart me-1"></i>
+                    {generandoPedidos
+                      ? "Sistema generando pedidos..."
+                      : "Generación Automática (Sistema)"}
+                  </button>
                 </div>
               </>
             )}
         </div>
+
+        {mensaje && (
+          <div
+            className={`alert alert-${mensaje.tipo} alert-dismissible fade show`}
+            role="alert"
+          >
+            {mensaje.texto}
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setMensaje(null)}
+            ></button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -392,9 +595,7 @@ const InsumosSemanal = () => {
 
     Object.entries(insumosRequeridos).forEach(([nombreInsumo, datos]) => {
       const mejorUnidad = obtenerMejorUnidad(datos.cantidad, datos.unidad);
-      csv += `"${nombreInsumo}",${datos.cantidad.toFixed(2)},${
-        datos.unidad
-      },${mejorUnidad.cantidad.toFixed(2)},${mejorUnidad.unidad}\n`;
+      csv += `"${nombreInsumo}",${datos.cantidad},${datos.unidad},${mejorUnidad.cantidad},${mejorUnidad.unidad}\n`;
     });
 
     return csv;

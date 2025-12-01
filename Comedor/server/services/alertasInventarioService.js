@@ -99,8 +99,8 @@ class AlertasInventarioService {
   // Validar si la alerta es realmente necesaria
   async validarAlerta(insumo) {
     try {
-      const cantidadActual = parseFloat(insumo.cantidadActual || 0);
-      const nivelMinimo = parseFloat(insumo.nivelMinimoAlerta || 0);
+      const cantidadActual = parseInt(insumo.cantidadActual || 0);
+      const nivelMinimo = parseInt(insumo.nivelMinimoAlerta || 0);
 
       // Log para diagnóstico
       console.log(`🔍 Validando alerta para ${insumo.nombreInsumo}:`);
@@ -257,8 +257,8 @@ class AlertasInventarioService {
 
       let actualizados = 0;
       for (const inventario of inventarios) {
-        const cantidadActual = parseFloat(inventario.cantidadActual || 0);
-        const nivelMinimo = parseFloat(inventario.nivelMinimoAlerta || 0);
+        const cantidadActual = parseInt(inventario.cantidadActual || 0);
+        const nivelMinimo = parseInt(inventario.nivelMinimoAlerta || 0);
 
         let nuevoEstado = "Normal";
         if (cantidadActual <= 0) {

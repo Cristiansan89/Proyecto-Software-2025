@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
+import servicioService from "../../services/servicioService";
+import { gradoService } from "../../services/gradoService";
+import asistenciasService from "../../services/asistenciasService";
 import "../../styles/CocineraGestionAsistencias.css";
 
 const CocineraGestionAsistencias = () => {
@@ -107,26 +110,24 @@ const CocineraGestionAsistencias = () => {
     try {
       setLoading(true);
       const [
-        serviciosRes,
-        gradosRes,
+        serviciosData,
+        gradosData,
         docentesRes,
         docenteGradosRes,
         usuariosRes,
       ] = await Promise.all([
-        api.get("/servicios"),
-        api.get("/grados"),
+        servicioService.getAll(),
+        gradoService.getAll(),
         api.get("/personas"),
         api.get("/docente-grados"),
         api.get("/usuarios"),
       ]);
 
-      setServicios(
-        serviciosRes.data?.filter((s) => s.estado === "Activo") || []
-      );
+      setServicios(serviciosData?.filter((s) => s.estado === "Activo") || []);
 
       // Normalizar la estructura de grados para usar id_grado consistentemente
       const gradosActivos =
-        gradosRes.data
+        gradosData
           ?.filter((g) => g.estado === "Activo")
           .map((grado) => ({
             ...grado,
@@ -227,13 +228,30 @@ const CocineraGestionAsistencias = () => {
         return;
       }
 
+      // Verificar si ya existen registros de asistencia para la fecha y servicio
+      const verificacion =
+        await asistenciasService.verificarAsistenciasCompletas(
+          formulario.fecha,
+          formulario.idServicio
+        );
+
+      if (verificacion.data.completas) {
+        const confirmar = confirm(
+          "Ya existen registros de asistencia para esta fecha y servicio. ¿Desea generar enlaces de todas formas?"
+        );
+        if (!confirmar) {
+          return;
+        }
+      }
+
       // Generar enlaces para cada grado seleccionado
       const enlacesGenerados = [];
 
       for (const gradoId of formulario.gradosSeleccionados) {
         const grado = grados.find((g) => (g.id_grado || g.idGrado) === gradoId);
         const servicio = servicios.find(
-          (s) => s.idServicio === formulario.idServicio
+          (s) =>
+            (s.idServicio || s.id_servicio) === parseInt(formulario.idServicio)
         );
 
         // Encontrar al docente asignado a este grado específico
@@ -248,7 +266,9 @@ const CocineraGestionAsistencias = () => {
 
         if (!docenteGrado) {
           console.warn(
-            `⚠️ No se encontró docente asignado para el grado ${grado?.nombreGrado}`
+            `⚠️ No se encontró docente asignado para el grado ${
+              grado?.nombreGrado || grado?.nombre
+            }`
           );
           continue; // Saltar este grado si no tiene docente asignado
         }
@@ -256,7 +276,7 @@ const CocineraGestionAsistencias = () => {
         // Crear token con la estructura que espera el backend
         const tokenData = {
           idPersonaDocente: docenteGrado.id_persona,
-          nombreGrado: grado.nombreGrado,
+          nombreGrado: grado.nombreGrado || grado.nombre,
           fecha: formulario.fecha,
           idServicio: formulario.idServicio,
           timestamp: Date.now(),
@@ -270,7 +290,7 @@ const CocineraGestionAsistencias = () => {
 
         enlacesGenerados.push({
           id: `${gradoId}-${formulario.idServicio}`,
-          grado: grado?.nombreGrado || `Grado ${gradoId}`,
+          grado: grado?.nombreGrado || grado?.nombre || `Grado ${gradoId}`,
           servicio: servicio?.nombre || "Servicio",
           enlace,
           token,
@@ -409,16 +429,71 @@ ${user.nombre} ${user.apellido}
       return;
     }
 
+    // Validar que los enlaces tengan la estructura correcta
+    const enlacesValidos = enlaces.every(
+      (e) => (e.enlace || e.token) && e.grado
+    );
+    if (!enlacesValidos) {
+      console.error("Enlaces inválidos:", enlaces);
+      alert("Error: Los enlaces no tienen la estructura correcta");
+      return;
+    }
+
     try {
-      // Enviar enlaces usando el bot de Telegram
+      console.log("Enviando enlaces por Telegram:", enlaces);
+
+      // Preparar datos para enviar al servidor
+      // El servidor reconstruirá los URLs con FRONTEND_URL correcto
+      const gradosData = enlaces.map((e) => ({
+        grado: e.grado,
+        docente: e.docente,
+        token: e.token, // Enviar el token para que el servidor reconstruya la URL
+        enlace: e.enlace,
+      }));
+
       const response = await api.post("/telegram/send-asistencias", {
-        enlaces: enlaces,
+        gradosData: gradosData,
         fecha: formulario.fecha,
         mensaje: formulario.mensaje,
       });
 
       if (response.data.success) {
         alert("✅ Enlaces enviados por Telegram correctamente");
+
+        // Inicializar asistencias en estado Pendiente para cada grado seleccionado
+        for (const gradoId of formulario.gradosSeleccionados) {
+          try {
+            await api.post("/asistencias/inicializar-pendiente", {
+              id_grado: gradoId,
+              id_servicio: parseInt(formulario.idServicio),
+              fecha: formulario.fecha,
+              idDocente:
+                docentes.find((d) =>
+                  d.gradosAsignados?.some(
+                    (g) => (g.idGrado || g.id_grado) === gradoId
+                  )
+                )?.id_persona || null,
+            });
+          } catch (err) {
+            console.warn(
+              `Error inicializando asistencias para grado ${gradoId}:`,
+              err
+            );
+          }
+        }
+
+        // Limpiar enlaces y formulario automáticamente después de enviar
+        setEnlaces([]);
+        setMostrarEnlaces(false);
+
+        // Limpiar también el formulario de generación de enlaces
+        setFormulario({
+          fecha: new Date().toISOString().split("T")[0],
+          idServicio: "",
+          gradosSeleccionados: [],
+          mensaje: "",
+        });
+        setGradosFiltrados(grados); // Resetear grados filtrados
       } else {
         throw new Error(
           response.data.message || "Error al enviar por Telegram"
@@ -441,6 +516,63 @@ ${user.nombre} ${user.apellido}
     });
     setEnlaces([]);
     setMostrarEnlaces(false);
+    setGradosFiltrados(grados); // Resetear grados filtrados
+  };
+
+  const registrarAsistenciaDirecta = async (enlace) => {
+    const cantidadPresentes = prompt(
+      `Registre la cantidad de alumnos presentes para ${enlace.grado} - ${enlace.servicio}:`,
+      "0"
+    );
+
+    if (cantidadPresentes === null || cantidadPresentes === "") {
+      return;
+    }
+
+    const cantidad = parseInt(cantidadPresentes);
+    if (isNaN(cantidad) || cantidad < 0) {
+      alert("Por favor ingrese un número válido");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Buscar el ID del grado en la estructura de datos
+      const grado = grados.find(
+        (g) => (g.nombreGrado || g.nombre) === enlace.grado
+      );
+      if (!grado) {
+        alert("No se pudo encontrar el grado");
+        return;
+      }
+
+      const resultado = await asistenciasService.crearRegistroAsistencia({
+        id_grado: grado.id_grado || grado.idGrado,
+        id_servicio: formulario.idServicio,
+        fecha: formulario.fecha,
+        cantidadPresentes: cantidad,
+      });
+
+      if (resultado.success) {
+        alert("✅ Asistencia registrada correctamente");
+        // Actualizar el estado visual del enlace
+        setEnlaces((prev) =>
+          prev.map((e) =>
+            e.id === enlace.id
+              ? { ...e, registrado: true, cantidadPresentes: cantidad }
+              : e
+          )
+        );
+      } else {
+        alert(`❌ Error: ${resultado.message}`);
+      }
+    } catch (error) {
+      console.error("Error al registrar asistencia:", error);
+      alert("❌ Error al registrar asistencia");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -512,8 +644,8 @@ ${user.nombre} ${user.apellido}
                     <option value="">Seleccionar servicio</option>
                     {servicios.map((servicio) => (
                       <option
-                        key={servicio.idServicio}
-                        value={servicio.idServicio}
+                        key={servicio.idServicio || servicio.id_servicio}
+                        value={servicio.idServicio || servicio.id_servicio}
                       >
                         {servicio.nombre}
                       </option>
@@ -826,23 +958,27 @@ ${user.nombre} ${user.apellido}
               <table className="table table-hover">
                 <thead className="table-light">
                   <tr>
-                    <th width="15%">
+                    <th width="12%">
                       <i className="fas fa-graduation-cap me-2"></i>
                       Grado
                     </th>
-                    <th width="15%">
+                    <th width="12%">
                       <i className="fas fa-utensils me-2"></i>
                       Servicio
                     </th>
-                    <th width="25%">
+                    <th width="20%">
                       <i className="fas fa-user-tie me-2"></i>
                       Docente Asignado
                     </th>
-                    <th width="25%">
+                    <th width="20%">
                       <i className="fas fa-link me-2"></i>
                       Enlace Generado
                     </th>
-                    <th width="20%">
+                    <th width="12%">
+                      <i className="fas fa-check-circle me-2"></i>
+                      Estado
+                    </th>
+                    <th width="24%">
                       <i className="fas fa-cogs me-2"></i>
                       Acciones
                     </th>
@@ -919,42 +1055,87 @@ ${user.nombre} ${user.apellido}
                           </div>
                         </td>
                         <td>
+                          {enlace.registrado ? (
+                            <div className="text-center">
+                              <span className="badge bg-success fs-6 px-3 py-2">
+                                <i className="fas fa-check me-1"></i>
+                                Registrado
+                              </span>
+                              {enlace.cantidadPresentes && (
+                                <div className="small text-muted mt-1">
+                                  {enlace.cantidadPresentes} presentes
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-center">
+                              <span className="badge bg-warning fs-6 px-3 py-2">
+                                <i className="fas fa-clock me-1"></i>
+                                Pendiente
+                              </span>
+                              <div className="small text-muted mt-1">
+                                Esperando registro
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                        <td>
                           <div className="btn-group-vertical d-grid gap-1">
                             <button
                               className="btn btn-outline-primary btn-sm"
                               onClick={() => copiarEnlace(enlace.enlace)}
                               title="Copiar enlace al portapapeles"
                             >
-                              <i className="fas fa-copy me-2"></i>
-                              Copiar
+                              <i className="fas fa-copy me-1"></i>
+                              Copiar enlace
                             </button>
 
-                            {telefonoFormateado ? (
+                            {enlace.docente?.telefono && (
                               <button
-                                className="btn btn-outline-success btn-sm"
+                                className="btn btn-outline-info btn-sm"
                                 onClick={() =>
                                   enviarTelegramIndividual(
                                     enlace.docente.telefono,
-                                    formulario.mensaje,
+                                    `🏫 Registro de Asistencia\\n\\n📅 Fecha: ${
+                                      enlace.fecha
+                                    }\\n🍽️ Servicio: ${
+                                      enlace.servicio
+                                    }\\n🎓 Grado: ${
+                                      enlace.grado
+                                    }\\n\\n📱 Enlace: ${enlace.enlace}\\n\\n${
+                                      formulario.mensaje ||
+                                      "Por favor registre las asistencias antes de las 10:00 AM"
+                                    }`,
                                     enlace.grado,
                                     enlace.servicio
                                   )
                                 }
-                                title={`Enviar por Telegram a +${telefonoFormateado}`}
+                                title="Enviar por Telegram individual"
                               >
-                                <i className="fab fa-telegram me-2"></i>
+                                <i className="fab fa-telegram me-1"></i>
                                 Telegram
                               </button>
-                            ) : (
-                              <button
-                                className="btn btn-outline-secondary btn-sm"
-                                disabled
-                                title="No hay teléfono disponible"
-                              >
-                                <i className="fas fa-phone-slash me-2"></i>
-                                Sin teléfono
-                              </button>
                             )}
+
+                            <button
+                              className="btn btn-outline-success btn-sm"
+                              onClick={() => registrarAsistenciaDirecta(enlace)}
+                              title="Registrar asistencia directamente"
+                            >
+                              <i className="fas fa-user-check me-1"></i>
+                              Registrar
+                            </button>
+
+                            <button
+                              className="btn btn-outline-secondary btn-sm"
+                              onClick={() =>
+                                window.open(enlace.enlace, "_blank")
+                              }
+                              title="Abrir enlace en nueva pestaña"
+                            >
+                              <i className="fas fa-external-link-alt me-1"></i>
+                              Abrir
+                            </button>
                           </div>
                         </td>
                       </tr>
