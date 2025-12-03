@@ -2,17 +2,68 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import consumosService from "../../services/consumosService";
 import servicioService from "../../services/servicioService";
-import { gradoService } from "../../services/gradoService";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { jsPDF } from "jspdf";
+import { autoTable } from "jspdf-autotable";
 import "../../styles/Consumos.css";
+
+// Función para convertir unidades de medida
+function convertirUnidad(cantidad, unidadOrigen, unidadDestino) {
+  if (unidadOrigen === unidadDestino) {
+    return { cantidad, unidad: unidadOrigen };
+  }
+
+  // Conversiones a Gramos (para productos sólidos)
+  const aGramos = {
+    Gramos: 1,
+    Kilogramos: 1000,
+    Unidades: 1,
+  };
+
+  // Conversiones a Mililitros (para productos líquidos)
+  const aMililitros = {
+    Mililitros: 1,
+    Litros: 1000,
+    Unidades: 1,
+  };
+
+  const esLiquido = ["Mililitros", "Litros"].includes(unidadOrigen);
+  const conversiones = esLiquido ? aMililitros : aGramos;
+
+  if (!conversiones[unidadOrigen] || !conversiones[unidadDestino]) {
+    return { cantidad, unidad: unidadOrigen };
+  }
+
+  const cantidadEnBase = cantidad * conversiones[unidadOrigen];
+  const cantidadFinal = cantidadEnBase / conversiones[unidadDestino];
+
+  return {
+    cantidad: Math.round(cantidadFinal * 100) / 100,
+    unidad: unidadDestino,
+  };
+}
+
+// Función para obtener la mejor unidad de representación
+function obtenerMejorUnidad(cantidad, unidadActual) {
+  const esLiquido = ["Mililitros", "Litros"].includes(unidadActual);
+
+  if (esLiquido) {
+    if (cantidad >= 1000) {
+      return convertirUnidad(cantidad, unidadActual, "Litros");
+    }
+    return { cantidad, unidad: unidadActual };
+  } else {
+    if (cantidad >= 1000) {
+      return convertirUnidad(cantidad, unidadActual, "Kilogramos");
+    }
+    return { cantidad, unidad: unidadActual };
+  }
+}
 
 const Consumos = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [consumos, setConsumos] = useState([]);
   const [servicios, setServicios] = useState([]);
-  const [grados, setGrados] = useState([]);
 
   const [filtros, setFiltros] = useState({
     fechaInicio: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
@@ -20,7 +71,6 @@ const Consumos = () => {
       .split("T")[0], // Primer día del mes actual
     fechaFin: new Date().toISOString().split("T")[0], // Día actual
     idServicio: "",
-    idGrado: "",
   });
 
   const [estadisticas, setEstadisticas] = useState({
@@ -41,16 +91,16 @@ const Consumos = () => {
   const cargarDatosIniciales = async () => {
     try {
       setLoading(true);
-      const [serviciosData, gradosData] = await Promise.all([
-        servicioService.getAll(),
-        gradoService.getAll(),
-      ]);
-
-      setServicios(serviciosData?.filter((s) => s.estado === "Activo") || []);
-      setGrados(gradosData?.filter((g) => g.estado === "Activo") || []);
+      // Cargar servicios desde la API
+      const serviciosResponse = await servicioService.getAll();
+      if (serviciosResponse && Array.isArray(serviciosResponse)) {
+        setServicios(
+          serviciosResponse.filter((s) => s.estado === "Activo") || []
+        );
+      }
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
-      alert("Error al cargar datos iniciales");
+      setServicios([]);
     } finally {
       setLoading(false);
     }
@@ -65,7 +115,6 @@ const Consumos = () => {
         params.append("fechaInicio", filtros.fechaInicio);
       if (filtros.fechaFin) params.append("fechaFin", filtros.fechaFin);
       if (filtros.idServicio) params.append("idServicio", filtros.idServicio);
-      if (filtros.idGrado) params.append("idGrado", filtros.idGrado);
 
       const queryString = params.toString();
       const response = await consumosService.obtenerConsumos(queryString);
@@ -99,21 +148,23 @@ const Consumos = () => {
 
   const calcularEstadisticas = (consumosData) => {
     const totalRegistros = consumosData.length;
-    const totalConsumos = consumosData.reduce(
-      (sum, consumo) => sum + (consumo.cantidadConsumida || 0),
-      0
-    );
+
+    // Calcular total de consumos por cantidad registrada
+    const totalConsumos = consumosData.reduce((sum, consumo) => {
+      return sum + 1; // Contar registros de consumo
+    }, 0);
+
     const promedioConsumos =
       totalRegistros > 0 ? totalConsumos / totalRegistros : 0;
 
-    // Calcular servicio más consumido
+    // Calcular servicio más consumido (por cantidad de registros)
     const consumosPorServicio = {};
     consumosData.forEach((consumo) => {
       const servicio = consumo.nombreServicio || "Sin especificar";
       if (!consumosPorServicio[servicio]) {
         consumosPorServicio[servicio] = 0;
       }
-      consumosPorServicio[servicio] += consumo.cantidadConsumida || 0;
+      consumosPorServicio[servicio] += 1;
     });
 
     const servicioMasConsumido = Object.keys(consumosPorServicio).reduce(
@@ -144,7 +195,6 @@ const Consumos = () => {
         .split("T")[0],
       fechaFin: new Date().toISOString().split("T")[0],
       idServicio: "",
-      idGrado: "",
     });
   };
 
@@ -165,12 +215,6 @@ const Consumos = () => {
     return servicio ? servicio.nombre : "Servicio no encontrado";
   };
 
-  const obtenerNombreGrado = (idGrado, nombreGrado) => {
-    if (nombreGrado) return nombreGrado;
-    const grado = grados.find((g) => (g.idGrado || g.id_grado) === idGrado);
-    return grado ? grado.nombre || grado.nombreGrado : "Grado no encontrado";
-  };
-
   const exportarCSV = () => {
     if (consumos.length === 0) {
       alert("No hay datos para exportar");
@@ -180,22 +224,28 @@ const Consumos = () => {
     const headers = [
       "Fecha",
       "Servicio",
-      "Grado",
-      "Cantidad Consumida",
-      "Observaciones",
-      "Fecha Registro",
+      "Insumo",
+      "Cantidad",
+      "Unidad",
+      "Fecha Generación",
     ];
 
-    const csvData = consumos.map((consumo) => [
-      formatearFecha(consumo.fecha),
-      obtenerNombreServicio(consumo.id_servicio, consumo.nombreServicio),
-      obtenerNombreGrado(consumo.id_grado, consumo.nombreGrado),
-      consumo.cantidadConsumida || 0,
-      consumo.observaciones || "Sin observaciones",
-      consumo.fecha_creacion
-        ? new Date(consumo.fecha_creacion).toLocaleDateString("es-ES")
-        : "N/A",
-    ]);
+    const csvData = consumos.map((consumo) => {
+      const convertida = obtenerMejorUnidad(
+        consumo.cantidadUtilizada || 0,
+        consumo.unidadMedida || "Unidades"
+      );
+      return [
+        formatearFecha(consumo.fecha),
+        obtenerNombreServicio(consumo.id_servicio, consumo.nombreServicio),
+        consumo.nombreInsumo || `Insumo #${consumo.id_insumo}` || "N/A",
+        convertida.cantidad,
+        convertida.unidad,
+        consumo.fechaHoraGeneracion
+          ? new Date(consumo.fechaHoraGeneracion).toLocaleDateString("es-ES")
+          : "N/A",
+      ];
+    });
 
     const csvContent = [headers, ...csvData]
       .map((row) => row.map((field) => `"${field}"`).join(","))
@@ -263,28 +313,34 @@ const Consumos = () => {
       );
 
       // Preparar datos para la tabla
-      const tableData = consumos.map((consumo) => [
-        new Date(consumo.fecha).toLocaleDateString("es-ES"),
-        obtenerNombreServicio(consumo.id_servicio, consumo.nombreServicio),
-        obtenerNombreGrado(consumo.id_grado, consumo.nombreGrado),
-        consumo.cantidadConsumida || 0,
-        (consumo.observaciones || "Sin observaciones").substring(0, 30) +
-          (consumo.observaciones && consumo.observaciones.length > 30
-            ? "..."
-            : ""),
-      ]);
+      const tableData = consumos.map((consumo) => {
+        const convertida = obtenerMejorUnidad(
+          consumo.cantidadUtilizada || 0,
+          consumo.unidadMedida || "Unidades"
+        );
+        return [
+          new Date(consumo.fecha).toLocaleDateString("es-ES"),
+          obtenerNombreServicio(consumo.id_servicio, consumo.nombreServicio),
+          consumo.nombreInsumo || "N/A",
+          convertida.cantidad.toString(),
+          convertida.unidad,
+        ];
+      });
 
       // Tabla de datos
-      doc.autoTable({
+      autoTable(doc, {
         startY: 95,
-        head: [["Fecha", "Servicio", "Grado", "Cantidad", "Observaciones"]],
+        head: [["Fecha", "Servicio", "Insumo", "Cantidad", "Unidad"]],
         body: tableData,
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [66, 139, 202], textColor: 255 },
         alternateRowStyles: { fillColor: [245, 245, 245] },
         columnStyles: {
           0: { halign: "center" },
+          1: { halign: "left" },
+          2: { halign: "left" },
           3: { halign: "center" },
+          4: { halign: "center" },
         },
       });
 
@@ -313,6 +369,19 @@ const Consumos = () => {
   };
 
   const verDetalle = (consumo) => {
+    const convertida = obtenerMejorUnidad(
+      consumo.cantidadUtilizada || 0,
+      consumo.unidadMedida || "Unidades"
+    );
+
+    const varianza = consumo.cantidadCalculada
+      ? (
+          ((consumo.cantidadUtilizada - consumo.cantidadCalculada) /
+            consumo.cantidadCalculada) *
+          100
+        ).toFixed(2)
+      : "N/A";
+
     alert(`📊 DETALLE DE CONSUMO
 
 📅 Fecha: ${formatearFecha(consumo.fecha)}
@@ -320,13 +389,18 @@ const Consumos = () => {
       consumo.id_servicio,
       consumo.nombreServicio
     )}
-🎓 Grado: ${obtenerNombreGrado(consumo.id_grado, consumo.nombreGrado)}
-📈 Cantidad Consumida: ${consumo.cantidadConsumida || 0}
-📝 Observaciones: ${consumo.observaciones || "Sin observaciones"}
-🆔 ID de Registro: ${consumo.id_consumo}
-📋 Fecha de Registro: ${
-      consumo.fecha_creacion
-        ? new Date(consumo.fecha_creacion).toLocaleString("es-ES")
+📦 Insumo: ${consumo.nombreInsumo || `Insumo #${consumo.id_insumo}` || "N/A"}
+⚖️ Cantidad Utilizada: ${convertida.cantidad} ${convertida.unidad}
+📐 Cantidad Calculada: ${consumo.cantidadCalculada || "N/A"}
+📊 Varianza: ${varianza}%
+🆔 ID de Consumo: ${consumo.id_consumo}
+🆔 ID de Jornada: ${consumo.id_jornada || "N/A"}
+🆔 ID de Insumo: ${consumo.id_insumo || "N/A"}
+📋 ID Item Receta: ${consumo.idItemReceta || "N/A"}
+📋 Origen Cálculo: ${consumo.origenCalculo || "N/A"}
+📋 Fecha Hora Generación: ${
+      consumo.fechaHoraGeneracion
+        ? new Date(consumo.fechaHoraGeneracion).toLocaleString("es-ES")
         : "N/A"
     }`);
   };
@@ -468,30 +542,6 @@ const Consumos = () => {
                 ))}
               </select>
             </div>
-
-            <div className="col-md-3">
-              <label htmlFor="idGrado" className="form-label">
-                <i className="fas fa-graduation-cap me-2"></i>
-                Grado
-              </label>
-              <select
-                className="form-select"
-                id="idGrado"
-                name="idGrado"
-                value={filtros.idGrado}
-                onChange={handleFiltroChange}
-              >
-                <option value="">Todos</option>
-                {grados.map((grado) => (
-                  <option
-                    key={grado.idGrado || grado.id_grado}
-                    value={grado.idGrado || grado.id_grado}
-                  >
-                    {grado.nombre || grado.nombreGrado}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
           <div className="d-flex gap-2 mt-3">
@@ -565,7 +615,8 @@ const Consumos = () => {
               <table className="table table-hover table-striped">
                 <thead className="table-light">
                   <tr>
-                    <th width="12%">
+                    <th width="5%">#</th>
+                    <th width="20%">
                       <i className="fas fa-calendar me-2"></i>
                       Fecha
                     </th>
@@ -573,21 +624,13 @@ const Consumos = () => {
                       <i className="fas fa-utensils me-2"></i>
                       Servicio
                     </th>
-                    <th width="18%">
-                      <i className="fas fa-graduation-cap me-2"></i>
-                      Grado
+                    <th width="20%">
+                      <i className="fas fa-cube me-2"></i>
+                      Insumo
                     </th>
-                    <th width="15%">
-                      <i className="fas fa-chart-bar me-2"></i>
+                    <th width="20%">
+                      <i className="fas fa-weight me-2"></i>
                       Cantidad
-                    </th>
-                    <th width="25%">
-                      <i className="fas fa-sticky-note me-2"></i>
-                      Observaciones
-                    </th>
-                    <th width="10%">
-                      <i className="fas fa-cogs me-2"></i>
-                      Acciones
                     </th>
                   </tr>
                 </thead>
@@ -595,20 +638,15 @@ const Consumos = () => {
                   {consumos.map((consumo, index) => (
                     <tr key={`${consumo.id_consumo}-${index}`}>
                       <td>
+                        <strong>{index + 1}</strong>
+                      </td>
+                      <td>
                         <div className="d-flex flex-column">
                           <span className="fw-semibold">
                             {new Date(consumo.fecha).toLocaleDateString(
                               "es-ES"
                             )}
                           </span>
-                          <small className="text-muted">
-                            {new Date(consumo.fecha).toLocaleDateString(
-                              "es-ES",
-                              {
-                                weekday: "short",
-                              }
-                            )}
-                          </small>
                         </div>
                       </td>
 
@@ -625,42 +663,26 @@ const Consumos = () => {
                       </td>
 
                       <td>
-                        <div className="d-flex align-items-center">
-                          <span className="badge bg-success me-2">
-                            <i className="fas fa-graduation-cap me-1"></i>
-                          </span>
-                          {obtenerNombreGrado(
-                            consumo.id_grado,
-                            consumo.nombreGrado
-                          )}
-                        </div>
-                      </td>
-
-                      <td>
-                        <span className="badge bg-warning text-dark fs-6">
-                          <i className="fas fa-chart-bar me-1"></i>
-                          {consumo.cantidadConsumida || 0}
+                        <span className="badge bg-info text-dark">
+                          {consumo.nombreInsumo ||
+                            `Insumo #${consumo.id_insumo}` ||
+                            "N/A"}
                         </span>
                       </td>
 
                       <td>
-                        <span className="text-muted">
-                          {consumo.observaciones
-                            ? consumo.observaciones.length > 50
-                              ? consumo.observaciones.substring(0, 50) + "..."
-                              : consumo.observaciones
-                            : "Sin observaciones"}
-                        </span>
-                      </td>
-
-                      <td>
-                        <button
-                          className="btn btn-sm btn-outline-info"
-                          onClick={() => verDetalle(consumo)}
-                          title="Ver detalles"
-                        >
-                          <i className="fas fa-eye"></i>
-                        </button>
+                        {(() => {
+                          const convertida = obtenerMejorUnidad(
+                            consumo.cantidadUtilizada || 0,
+                            consumo.unidadMedida || "Unidades"
+                          );
+                          return (
+                            <span className="badge bg-warning text-dark fs-6">
+                              <i className="fas fa-weight me-1"></i>
+                              {convertida.cantidad} {convertida.unidad}
+                            </span>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))}

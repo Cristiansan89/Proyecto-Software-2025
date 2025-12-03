@@ -1,14 +1,56 @@
-- Pedido manual, donde se realiza un pedido de insumos específico en cualquier momento que se necesite.
-- Pedido generado automaticamente (Proceso automatizado) que se debe generar los día viernes después de 
-la merienda en una hora predeterminada. Donde el sistema envía un aviso a la cocinera por telegram que debe generar pedido (clic en un botón).
-El aviso son tres veces en un tiempo de 10 minutos o hasta haber generado el pedido.
-- Pedido generado automaticamente debe tener en cuenta la planificación de los menús de la semana siguiente y lo que se tiene en stock actualmentes.
-Es decir si en la planificación semanal se tiene x cantidad de comensales para el día lunes que se come fideo y se debería tener en cuenta que en stock actual se tiene
-n cantidad de insumos disponible, entocnes debería tenerse en cuenta la cantidad de insumo que se necesita pedir a los proveedores.
-- Los pedido generado debera ser aprobado luego por la cocinera es decir que se pone de estado pendiente a aprobado y se le envía los proveedores la lista de insumo y cantidad necesaria.
-- Se puede clasificar en varias parte los pedido porque se tendrá pedido de fideo a un proveedor, la carne a otros proveedor. Y así con cada insumo que se necesita se tiene su proveedor.
-- También pedir según la clasificación que se tiene el insumo por proveedor. Es decir un proveedor provee arroz de mala calificación y hay otro proveedor que tiene insumo de buena calificación se le pide a este.
-- Los pedido se envía por mail a los proveedores.
 
 
-No se muestran los datos de las tabla en ListaAsistencia que debe tomar de Asistencia y lo mismo en la ListaAsistenciasService no calcula lo datos de se registra en Asistencia en lista asistencias service debe tomar la cantidad presente.
+Pendientes
+
+- Aplicar todas la funcionalidades de la auditoria y necesito poder generar pdf y csv
+- Verificar los pdf de los reportes.
+- Activar todos los servicio de mensajeria y alertas para probar su conjunto.
+
+  <div className="mt-3">
+                                <button
+                                  className={`btn btn-sm w-100 ${
+                                    completado
+                                      ? "btn-success fw-bold"
+                                      : !todasLasAsistenciasRegistradas()
+                                      ? "btn-secondary"
+                                      : "btn-success"
+                                  }`}
+                                  onClick={() =>
+                                    marcarServicioCompletado(horario.id)
+                                  }
+                                  disabled={
+                                    !completado &&
+                                    !todasLasAsistenciasRegistradas()
+                                  }
+                                  title={
+                                    !todasLasAsistenciasRegistradas() &&
+                                    !completado
+                                      ? "No se puede completar hasta que se registre toda la asistencia"
+                                      : ""
+                                  }
+                                  style={{
+                                    boxShadow: completado
+                                      ? "0 4px 12px rgba(40, 167, 69, 0.5)"
+                                      : "none",
+                                    transform: completado
+                                      ? "scale(1.02)"
+                                      : "scale(1)",
+                                    transition: "all 0.2s ease",
+                                  }}
+                                >
+                                  <i
+                                    className={`fas ${
+                                      completado
+                                        ? "fa-check-circle"
+                                        : "fa-circle"
+                                    } me-1`}
+                                  ></i>
+                                  {completado
+                                    ? `✅ ${horario.nombre} Completado`
+                                    : asistenciaReal[horario.id] > 0
+                                    ? `Marcar ${horario.nombre} como Completado`
+                                    : !todasLasAsistenciasRegistradas()
+                                    ? `⏳ Esperando asistencia para ${horario.nombre}`
+                                    : `Marcar ${horario.nombre} como Completado`}
+                                </button>
+                              </div>

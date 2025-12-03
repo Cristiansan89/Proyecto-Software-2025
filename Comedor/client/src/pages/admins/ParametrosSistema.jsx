@@ -3,6 +3,8 @@ import Parametros from "./Parametros";
 import Alertas from "./Alertas";
 import GeneracionAutomatica from "./GeneracionAutomatica";
 import ConfiguracionEscuela from "../../components/admin/ConfiguracionEscuela";
+import ConfiguracionServicio from "./ConfiguracionServicio";
+import ConfiguracionTelegram from "./ConfiguracionTelegram";
 
 const ParametrosSistema = () => {
   const [activeTab, setActiveTab] = useState("parametros");
@@ -21,6 +23,12 @@ const ParametrosSistema = () => {
       component: <ConfiguracionEscuela />,
     },
     {
+      id: "servicio",
+      label: "Configuración de Servicios",
+      icon: "fas fa-clock",
+      component: <ConfiguracionServicio />,
+    },
+    {
       id: "alertas",
       label: "Alertas",
       icon: "fas fa-bell",
@@ -31,6 +39,12 @@ const ParametrosSistema = () => {
       label: "Generación Automática",
       icon: "fas fa-robot",
       component: <GeneracionAutomatica />,
+    },
+    {
+      id: "telegram",
+      label: "Telegram",
+      icon: "fas fa-paper-plane",
+      component: <ConfiguracionTelegram />,
     },
   ];
 

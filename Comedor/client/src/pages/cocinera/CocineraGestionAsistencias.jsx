@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import servicioService from "../../services/servicioService";
@@ -10,6 +10,7 @@ const CocineraGestionAsistencias = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [servicios, setServicios] = useState([]);
+  const [serviciosDisponibles, setServiciosDisponibles] = useState([]);
   const [grados, setGrados] = useState([]);
   const [gradosFiltrados, setGradosFiltrados] = useState([]);
   const [turnosServicio, setTurnosServicio] = useState([]);
@@ -22,6 +23,7 @@ const CocineraGestionAsistencias = () => {
   });
   const [enlaces, setEnlaces] = useState([]);
   const [mostrarEnlaces, setMostrarEnlaces] = useState(false);
+  const enlacesRef = useRef(null);
 
   // Función para cargar grados filtrados por servicio
   const cargarGradosPorServicio = async (idServicio) => {
@@ -106,6 +108,47 @@ const CocineraGestionAsistencias = () => {
     cargarDatosIniciales();
   }, []);
 
+  useEffect(() => {
+    if (formulario.fecha && servicios.length > 0) {
+      filtrarServiciosDisponibles();
+    }
+  }, [formulario.fecha, servicios]);
+
+  const filtrarServiciosDisponibles = async () => {
+    try {
+      if (!formulario.fecha) {
+        setServiciosDisponibles(servicios);
+        return;
+      }
+
+      // Verificar qué servicios ya tienen asistencias generadas para esta fecha
+      const response = await asistenciasService.obtenerRegistrosAsistencias(
+        `fecha=${formulario.fecha}`
+      );
+
+      if (response.success) {
+        // Obtener IDs de servicios que ya tienen asistencias
+        const serviciosConAsistencias = new Set(
+          response.data.map((asistencia) => asistencia.id_servicio)
+        );
+
+        // Filtrar servicios que NO tienen asistencias generadas
+        const serviciosLibres = servicios.filter((servicio) => {
+          const idServicio = servicio.idServicio || servicio.id_servicio;
+          return !serviciosConAsistencias.has(idServicio);
+        });
+
+        setServiciosDisponibles(serviciosLibres);
+      } else {
+        // Si hay error, mostrar todos los servicios
+        setServiciosDisponibles(servicios);
+      }
+    } catch (error) {
+      console.error("Error al filtrar servicios disponibles:", error);
+      setServiciosDisponibles(servicios);
+    }
+  };
+
   const cargarDatosIniciales = async () => {
     try {
       setLoading(true);
@@ -123,7 +166,10 @@ const CocineraGestionAsistencias = () => {
         api.get("/usuarios"),
       ]);
 
-      setServicios(serviciosData?.filter((s) => s.estado === "Activo") || []);
+      const serviciosActivos =
+        serviciosData?.filter((s) => s.estado === "Activo") || [];
+      setServicios(serviciosActivos);
+      setServiciosDisponibles(serviciosActivos); // Inicialmente todos están disponibles
 
       // Normalizar la estructura de grados para usar id_grado consistentemente
       const gradosActivos =
@@ -305,6 +351,30 @@ const CocineraGestionAsistencias = () => {
 
       setEnlaces(enlacesGenerados);
       setMostrarEnlaces(true);
+
+      // Scroll automático hacia los enlaces generados después de un pequeño delay
+      setTimeout(() => {
+        if (enlacesRef.current) {
+          enlacesRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }, 100);
+
+      // Mostrar mensaje de éxito
+      alert(`✅ Se generaron ${enlacesGenerados.length} enlaces exitosamente`);
+
+      // Actualizar servicios disponibles después de generar enlaces
+      await filtrarServiciosDisponibles();
+
+      // Limpiar selección de servicio y grados después de generar enlaces
+      setFormulario((prev) => ({
+        ...prev,
+        idServicio: "",
+        gradosSeleccionados: [],
+      }));
+      setGradosFiltrados(grados); // Resetear grados filtrados
     } catch (error) {
       console.error("Error al generar enlaces:", error);
       alert("Error al generar enlaces");
@@ -642,15 +712,31 @@ ${user.nombre} ${user.apellido}
                     required
                   >
                     <option value="">Seleccionar servicio</option>
-                    {servicios.map((servicio) => (
-                      <option
-                        key={servicio.idServicio || servicio.id_servicio}
-                        value={servicio.idServicio || servicio.id_servicio}
-                      >
-                        {servicio.nombre}
+                    {serviciosDisponibles.length > 0 ? (
+                      serviciosDisponibles.map((servicio) => (
+                        <option
+                          key={servicio.idServicio || servicio.id_servicio}
+                          value={servicio.idServicio || servicio.id_servicio}
+                        >
+                          {servicio.nombre}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>
+                        No hay servicios disponibles para esta fecha
                       </option>
-                    ))}
+                    )}
                   </select>
+                  {serviciosDisponibles.length === 0 &&
+                    servicios.length > 0 && (
+                      <div className="mt-2 alert alert-info">
+                        <i className="fas fa-info-circle me-2"></i>
+                        <strong>Información:</strong> Todos los servicios ya
+                        tienen enlaces generados para la fecha{" "}
+                        {formulario.fecha}. Si necesita regenerar un enlace,
+                        primero debe eliminar las asistencias existentes.
+                      </div>
+                    )}
                 </div>
               </div>
 
@@ -910,24 +996,50 @@ ${user.nombre} ${user.apellido}
                 />
               </div>
 
-              <div className="d-flex gap-2">
+              <div className="form-actions">
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className={`btn btn-primary ${loading ? "disabled" : ""}`}
                   disabled={
                     loading ||
+                    serviciosDisponibles.length === 0 ||
                     !formulario.idServicio ||
                     formulario.gradosSeleccionados.length === 0
                   }
                 >
-                  <i className="fas fa-link me-2"></i>
-                  {loading ? "Generando..." : "Generar Enlaces"}
+                  {loading ? (
+                    <>
+                      <div
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                      >
+                        <span className="visually-hidden">Generando...</span>
+                      </div>
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-link me-2"></i>
+                      Generar Enlaces
+                    </>
+                  )}
                 </button>
 
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={limpiarFormulario}
+                  onClick={() => {
+                    if (enlaces.length > 0) {
+                      const confirmar = confirm(
+                        "¿Está seguro que desea limpiar el formulario? Se perderán los enlaces generados."
+                      );
+                      if (confirmar) {
+                        limpiarFormulario();
+                      }
+                    } else {
+                      limpiarFormulario();
+                    }
+                  }}
                 >
                   <i className="fas fa-broom me-2"></i>
                   Limpiar
@@ -940,9 +1052,15 @@ ${user.nombre} ${user.apellido}
 
       {/* Panel de enlaces generados */}
       {mostrarEnlaces && enlaces.length > 0 && (
-        <div className="card mt-4">
+        <div ref={enlacesRef} className="card mt-4 fade-in">
           <div className="card-header d-flex justify-content-between align-items-center">
-            <h4>🔗 Enlaces Generados</h4>
+            <div>
+              <h4>🔗 Enlaces Generados</h4>
+              <small className="text-success">
+                <i className="fas fa-check-circle me-1"></i>
+                {enlaces.length} enlaces listos para compartir
+              </small>
+            </div>
             <div>
               <button
                 className="btn btn-primary me-2"
@@ -977,10 +1095,6 @@ ${user.nombre} ${user.apellido}
                     <th width="12%">
                       <i className="fas fa-check-circle me-2"></i>
                       Estado
-                    </th>
-                    <th width="24%">
-                      <i className="fas fa-cogs me-2"></i>
-                      Acciones
                     </th>
                   </tr>
                 </thead>
@@ -1078,65 +1192,6 @@ ${user.nombre} ${user.apellido}
                               </div>
                             </div>
                           )}
-                        </td>
-                        <td>
-                          <div className="btn-group-vertical d-grid gap-1">
-                            <button
-                              className="btn btn-outline-primary btn-sm"
-                              onClick={() => copiarEnlace(enlace.enlace)}
-                              title="Copiar enlace al portapapeles"
-                            >
-                              <i className="fas fa-copy me-1"></i>
-                              Copiar enlace
-                            </button>
-
-                            {enlace.docente?.telefono && (
-                              <button
-                                className="btn btn-outline-info btn-sm"
-                                onClick={() =>
-                                  enviarTelegramIndividual(
-                                    enlace.docente.telefono,
-                                    `🏫 Registro de Asistencia\\n\\n📅 Fecha: ${
-                                      enlace.fecha
-                                    }\\n🍽️ Servicio: ${
-                                      enlace.servicio
-                                    }\\n🎓 Grado: ${
-                                      enlace.grado
-                                    }\\n\\n📱 Enlace: ${enlace.enlace}\\n\\n${
-                                      formulario.mensaje ||
-                                      "Por favor registre las asistencias antes de las 10:00 AM"
-                                    }`,
-                                    enlace.grado,
-                                    enlace.servicio
-                                  )
-                                }
-                                title="Enviar por Telegram individual"
-                              >
-                                <i className="fab fa-telegram me-1"></i>
-                                Telegram
-                              </button>
-                            )}
-
-                            <button
-                              className="btn btn-outline-success btn-sm"
-                              onClick={() => registrarAsistenciaDirecta(enlace)}
-                              title="Registrar asistencia directamente"
-                            >
-                              <i className="fas fa-user-check me-1"></i>
-                              Registrar
-                            </button>
-
-                            <button
-                              className="btn btn-outline-secondary btn-sm"
-                              onClick={() =>
-                                window.open(enlace.enlace, "_blank")
-                              }
-                              title="Abrir enlace en nueva pestaña"
-                            >
-                              <i className="fas fa-external-link-alt me-1"></i>
-                              Abrir
-                            </button>
-                          </div>
                         </td>
                       </tr>
                     );

@@ -199,6 +199,55 @@ const asistenciasService = {
       };
     }
   },
+
+  // Función para procesar automáticamente el registro de asistencias cuando se completa
+  async procesarAsistenciaCompletada(fecha, idServicio, idGrado) {
+    try {
+      const response = await api.post("/asistencias/procesar-completada", {
+        fecha,
+        idServicio,
+        idGrado,
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        message: "Asistencias procesadas y registradas correctamente",
+      };
+    } catch (error) {
+      console.error("Error al procesar asistencia completada:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          "Error al procesar asistencia completada",
+      };
+    }
+  },
+
+  // Función para procesar automáticamente todas las asistencias de una fecha
+  async procesarTodasAsistenciasFecha(fecha) {
+    try {
+      const response = await api.post("/asistencias/procesar-todas-fecha", {
+        fecha,
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        message:
+          response.data?.message || "Asistencias procesadas correctamente",
+      };
+    } catch (error) {
+      console.error("Error al procesar todas las asistencias:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          "Error al procesar todas las asistencias",
+      };
+    }
+  },
 };
 
 export default asistenciasService;

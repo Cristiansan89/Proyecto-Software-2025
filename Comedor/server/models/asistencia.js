@@ -1,9 +1,9 @@
 import { connection } from "./db.js";
 
 export class AsistenciaModel {
-  static async getAll() {
-    const [asistencias] = await connection.query(
-      `SELECT 
+  static async getAll(filtros = {}) {
+    try {
+      let query = `SELECT 
                 a.id_asistencia,
                 a.id_servicio,
                 a.id_alumnoGrado,
@@ -20,9 +20,24 @@ export class AsistenciaModel {
              JOIN Servicios s ON a.id_servicio = s.id_servicio
              JOIN AlumnoGrado ag ON a.id_alumnoGrado = ag.id_alumnoGrado
              JOIN Personas p ON ag.id_persona = p.id_persona
-             ORDER BY a.fecha DESC, a.id_asistencia DESC;`
-    );
-    return asistencias;
+             WHERE 1=1`;
+
+      const params = [];
+
+      // Si hay filtro de fecha, agregarlo
+      if (filtros.fecha) {
+        query += ` AND a.fecha = ?`;
+        params.push(filtros.fecha);
+      }
+
+      query += ` ORDER BY a.fecha DESC, a.id_asistencia DESC;`;
+
+      const [asistencias] = await connection.query(query, params);
+      return asistencias;
+    } catch (error) {
+      console.error("Error en AsistenciaModel.getAll:", error);
+      return [];
+    }
   }
 
   static async getById({ id }) {
@@ -207,7 +222,7 @@ export class AsistenciaModel {
         );
         return this.getById({ id: existing[0].id_asistencia });
       } else {
-        // Crear nueva
+        // Crear nueva - Siempre empezar con 'No' por defecto
         const [result] = await connection.query(
           `INSERT INTO Asistencias (
                         id_servicio, 
@@ -216,7 +231,7 @@ export class AsistenciaModel {
                         tipoAsistencia,
                         estado
                     ) VALUES (?, ?, ?, ?, ?);`,
-          [idServicio, idAlumnoGrado, fecha, tipoAsistencia || "No", estado]
+          [idServicio, idAlumnoGrado, fecha, "No", estado]
         );
         return this.getById({ id: result.insertId });
       }

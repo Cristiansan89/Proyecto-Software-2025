@@ -1,5 +1,6 @@
 import { connection } from "../models/db.js";
 import { ParametroSistemaModel } from "../models/parametrosistema.js";
+import telegramService from "../services/telegramService.js";
 
 // Generar insumos semanales
 export const generarInsumosSemanales = async (req, res) => {
@@ -230,6 +231,32 @@ export const generarPedidosAutomaticos = async (req, res) => {
           error
         );
       }
+    }
+
+    // Enviar notificación por Telegram
+    try {
+      const [parametros] = await connection.query(
+        "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo'",
+        ["TELEGRAM_COCINERA_CHAT_ID"]
+      );
+
+      let chatId =
+        parametros?.[0]?.valor || process.env.TELEGRAM_COCINERA_CHAT_ID;
+
+      if (chatId && pedidosCreados.length > 0) {
+        const mensaje = construirMensajePedidosAutomaticos(pedidosCreados);
+        await telegramService.initialize("sistema");
+        await telegramService.sendMessage(chatId, mensaje, "sistema");
+        console.log(
+          "✅ Notificación de pedidos automáticos enviada a Telegram"
+        );
+      }
+    } catch (error) {
+      console.warn(
+        "⚠️ Error al enviar notificación de pedidos por Telegram:",
+        error.message
+      );
+      // No interrumpir el flujo principal
     }
 
     res.json({
@@ -998,3 +1025,35 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
     });
   }
 };
+
+// Función auxiliar para construir el mensaje de pedidos automáticos
+function construirMensajePedidosAutomaticos(pedidosCreados) {
+  let mensaje = `📦 <b>PEDIDOS AUTOMÁTICOS GENERADOS</b>\n\n`;
+  mensaje += `📅 <b>Fecha:</b> ${new Date().toLocaleDateString("es-ES")}\n`;
+  mensaje += `⏰ <b>Hora:</b> ${new Date().toLocaleTimeString("es-ES")}\n\n`;
+
+  mensaje += `<b>Resumen de Pedidos:</b>\n`;
+  mensaje += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+
+  if (pedidosCreados.length > 0) {
+    pedidosCreados.forEach((pedido, index) => {
+      mensaje += `${index + 1}. <b>${pedido.proveedor}</b>\n`;
+      mensaje += `   📋 ${pedido.items} items\n\n`;
+    });
+  } else {
+    mensaje += `❌ No se generaron pedidos\n\n`;
+  }
+
+  mensaje += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  mensaje += `📊 <b>Total de Pedidos:</b> ${pedidosCreados.length}\n\n`;
+
+  mensaje += `ℹ️ <b>Información:</b>\n`;
+  mensaje += `• Los pedidos se generaron automáticamente\n`;
+  mensaje += `• Verifica el estado en el sistema\n`;
+  mensaje += `• Coordina con los proveedores\n`;
+  mensaje += `• Próxima generación: próximo viernes\n\n`;
+
+  mensaje += `✅ Sistema de generación automática activado`;
+
+  return mensaje;
+}

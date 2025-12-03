@@ -15,6 +15,7 @@ const MenuesDiaria = () => {
   const [detallesReceta, setDetallesReceta] = useState({});
   const [comensalesHoy, setComensalesHoy] = useState({});
   const [asistenciaReal, setAsistenciaReal] = useState({});
+  const [comensalesPorServicio, setComensalesPorServicio] = useState({});
   const [loading, setLoading] = useState(false);
   const [mensajeNotificacion, setMensajeNotificacion] = useState(null);
   const [serviciosCompletados, setServiciosCompletados] = useState({});
@@ -22,32 +23,19 @@ const MenuesDiaria = () => {
 
   // Servicios con orden de aparición en el día
   const HORARIOS_SERVICIOS = [
-    { id: 1, nombre: "Desayuno", hora: "07:30", icono: "☕" },
+    { id: 1, nombre: "Desayuno", hora: "08:00", icono: "☕" },
     { id: 2, nombre: "Almuerzo", hora: "12:00", icono: "🍽️" },
-    { id: 3, nombre: "Merienda", hora: "15:30", icono: "🥪" },
+    { id: 3, nombre: "Merienda", hora: "16:00", icono: "🥪" },
   ];
 
   // Conversiones estándar de unidades
   const CONVERSIONES = {
-    Gramo: { Kilogramo: 1000, Kilogramos: 1000, Gramo: 1, Gramos: 1 },
-    Kilogramo: { Gramo: 0.001, Gramos: 0.001, Kilogramo: 1, Kilogramos: 1 },
-    Mililitro: {
-      Litro: 1000,
-      Litros: 1000,
-      Mililitro: 1,
-      Mililitros: 1,
-    },
-    Litro: {
-      Mililitro: 0.001,
+    Gramos: { Kilogramos: 1000, Gramos: 1 },
+    Kilogramos: { Gramos: 0.001, Kilogramos: 1 },
+    Litros: {
       Mililitros: 0.001,
-      Litro: 1,
       Litros: 1,
     },
-    Unidad: { Unidad: 1, Unidades: 1 },
-    Taza: { Taza: 1 },
-    Cucharadita: { Cucharadita: 1 },
-    Cucharada: { Cucharada: 1 },
-    Pizca: { Pizca: 1 },
   };
 
   // Cargar datos iniciales
@@ -91,14 +79,20 @@ const MenuesDiaria = () => {
       try {
         const asistenciaResponse =
           await asistenciaService.getTotalAsistenciasPorServicio(fechaStr);
-        console.log("👥 Asistencia real del día:", asistenciaResponse);
-        setAsistenciaReal(asistenciaResponse);
-      } catch (error) {
-        console.warn(
-          "⚠️ No se pudo cargar asistencia real, usando comensales estimados",
-          error
+        console.log(
+          "👥 Asistencia real del día (respuesta completa):",
+          asistenciaResponse
         );
+        console.log("👥 Tipo de respuesta:", typeof asistenciaResponse);
+        console.log(
+          "👥 Keys encontradas:",
+          Object.keys(asistenciaResponse || {})
+        );
+        setAsistenciaReal(asistenciaResponse || {});
+      } catch (error) {
+        console.error("❌ Error al cargar asistencia real:", error);
         // Continuar con los comensales estimados si la asistencia no está disponible
+        setAsistenciaReal({});
       }
 
       // 3. Obtener comensales estimados (respaldo)
@@ -113,6 +107,9 @@ const MenuesDiaria = () => {
 
       // 5. Cargar estado de servicios completados
       await cargarEstadoServicios(fechaStr);
+
+      // 6. Cargar comensales registrados por servicio
+      await cargarComensalesPorServicio(fechaStr);
     } catch (error) {
       console.error("Error al cargar datos del día:", error);
       mostrarNotificacion("Error al cargar los datos del día", "error");
@@ -169,14 +166,26 @@ const MenuesDiaria = () => {
     }
   };
 
+  const cargarComensalesPorServicio = async (fechaStr) => {
+    try {
+      const response = await API.get(
+        `/servicios/comensales/por-servicio?fecha=${fechaStr}`
+      );
+      if (response.data) {
+        console.log("📊 Comensales por servicio cargados:", response.data);
+        setComensalesPorServicio(response.data);
+      }
+    } catch (error) {
+      console.warn("No se pudo cargar comensales por servicio:", error);
+    }
+  };
+
   const obtenerMejorUnidad = (cantidad, unidadOriginal) => {
+    // Normalizar la unidad original
+    const unidad = unidadOriginal?.toLowerCase() || "";
+
     // Para gramos: si es >= 1000, convertir a kilogramos
-    if (
-      unidadOriginal === "Gramo" ||
-      unidadOriginal === "Gramos" ||
-      unidadOriginal === "gramo" ||
-      unidadOriginal === "gramos"
-    ) {
+    if (unidad.includes("gramos")) {
       if (cantidad >= 1000) {
         return {
           cantidad: cantidad / 1000,
@@ -187,12 +196,7 @@ const MenuesDiaria = () => {
     }
 
     // Para mililitros: si es >= 1000, convertir a litros
-    if (
-      unidadOriginal === "Mililitro" ||
-      unidadOriginal === "Mililitros" ||
-      unidadOriginal === "mililitro" ||
-      unidadOriginal === "mililitros"
-    ) {
+    if (unidad.includes("mililitros")) {
       if (cantidad >= 1000) {
         return {
           cantidad: cantidad / 1000,
@@ -228,18 +232,34 @@ const MenuesDiaria = () => {
 
     // Calcular cantidad total de cada ingrediente basándose en asistencia real
     return receta.insumos.map((ingrediente) => {
-      const cantidadTotal = ingrediente.cantidadPorPorcion * comensalesServicio;
+      // Asegurarse de parsear cualquier string numérico y permitir coma como separador
+      const cantidadPorPorcion = parseFloat(
+        String(ingrediente.cantidadPorPorcion).replace(/,/g, ".")
+      );
+      const cantidadTotal =
+        (isNaN(cantidadPorPorcion) ? 0 : cantidadPorPorcion) *
+        Number(comensalesServicio);
       const mejorUnidad = obtenerMejorUnidad(
         cantidadTotal,
         ingrediente.unidadPorPorcion
       );
+      console.log(
+        cantidadPorPorcion,
+        comensalesServicio,
+        cantidadTotal,
+        mejorUnidad
+      );
+
+      // Formateo: si es entero mostrar sin decimales, si tiene fracción mostrar 1 decimal
+      const valor = Number(mejorUnidad.cantidad);
+      const cantidadFormateada = Number.isInteger(valor)
+        ? String(valor)
+        : valor.toFixed(1); // Mostrar solo 1 decimal
 
       return {
         ...ingrediente,
         cantidadTotal,
-        cantidadOptimizada: `${mejorUnidad.cantidad.toFixed(2)} ${
-          mejorUnidad.unidad
-        }`,
+        cantidadOptimizada: `${cantidadFormateada} ${mejorUnidad.unidad}`,
       };
     });
   };
@@ -269,6 +289,42 @@ const MenuesDiaria = () => {
           comensales,
           usuario: user?.id_usuario || user?.idUsuario,
         });
+
+        // Registrar consumos en el sistema
+        const ingredientes = calcularIngredientesParaServicio(idServicio);
+
+        // Log para verificar la estructura de los ingredientes
+        if (ingredientes.length > 0) {
+          console.log("🔍 Estructura del primer ingrediente:", ingredientes[0]);
+        }
+
+        // Crear un consumo principal con los detalles de los insumos
+        try {
+          const requestData = {
+            id_servicio: idServicio,
+            id_usuario: user?.id_usuario || user?.idUsuario,
+            fecha: fechaStr,
+            detalles: ingredientes.map((ingrediente) => ({
+              id_insumo: ingrediente.id_insumo || ingrediente.idInsumo,
+              cantidad_utilizada: ingrediente.cantidadTotal,
+              unidad_medida: ingrediente.unidadPorPorcion,
+            })),
+          };
+
+          console.log("📤 Datos a enviar a /consumos:", requestData);
+
+          await API.post("/consumos", requestData);
+          console.log(
+            `✅ Consumos registrados exitosamente para ${
+              HORARIOS_SERVICIOS.find((s) => s.id === idServicio)?.nombre
+            }`
+          );
+        } catch (error) {
+          console.error(
+            `❌ Error al registrar consumos para servicio ${idServicio}:`,
+            error.response?.data || error.message
+          );
+        }
       }
 
       const response = await API.post(
@@ -304,6 +360,70 @@ const MenuesDiaria = () => {
   const mostrarNotificacion = (texto, tipo = "info") => {
     setMensajeNotificacion({ texto, tipo });
     setTimeout(() => setMensajeNotificacion(null), 4000);
+  };
+
+  const imprimirRecetaTicket = (horario, ingredientes, menu) => {
+    const fechaStr = hoy.toISOString().split("T")[0];
+    let contenido = `${"=".repeat(50)}\n`;
+    contenido += `RECETA - ${horario.nombre.toUpperCase()}\n`;
+    contenido += `Fecha: ${fechaStr}\n`;
+    contenido += `Plato: ${menu.nombreReceta}\n`;
+    contenido += `Comensales: ${asistenciaReal[horario.id] || 0}\n`;
+    contenido += `${"=".repeat(50)}\n\n`;
+
+    contenido += `INGREDIENTES REQUERIDOS:\n`;
+    contenido += `${"-".repeat(50)}\n`;
+    ingredientes.forEach((ing) => {
+      contenido += `${ing.nombreInsumo}: ${ing.cantidadOptimizada}\n`;
+    });
+
+    contenido += `\n${"=".repeat(50)}\n`;
+    if (detallesReceta[horario.id]?.instrucciones) {
+      contenido += `INSTRUCCIONES:\n`;
+      contenido += `${detallesReceta[horario.id].instrucciones}\n`;
+      contenido += `${"=".repeat(50)}\n`;
+    }
+
+    // Abrir ventana y aplicar estilo de ticket con ancho fijo 7.8cm y alto automático
+    const ventanaImpresion = window.open(
+      "",
+      "PRINT",
+      "fullscreen=no,toolbar=no,scrollbars=yes"
+    );
+    ventanaImpresion.document.write(
+      `<html><head><title>Receta ${horario.nombre}</title>`
+    );
+    ventanaImpresion.document.write(`
+      <style>
+        @page { size: 7.8cm auto; margin: 5mm; }
+        body {
+          font-family: monospace;
+          white-space: pre-wrap;
+          margin: 0.4cm;
+          width: 7.8cm;
+          box-sizing: border-box;
+          color: #000;
+          font-size: 12px;
+        }
+        .ticket-container { width: 100%; }
+        .title { font-weight: bold; text-align: center; margin-bottom: 6px; }
+        .separator { border-top: 1px dashed #000; margin: 6px 0; }
+      </style>
+    </head><body>`);
+
+    // Insertar todo el contenido (cabecera + ingredientes + instrucciones) UNA sola vez
+    // Asegurar quiebres de palabra para evitar desbordes
+    ventanaImpresion.document.write(
+      '<div class="ticket-container"><pre style="white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word;">' +
+        contenido +
+        "</pre></div>"
+    );
+    ventanaImpresion.document.write("</body></html>");
+    ventanaImpresion.document.close();
+    // Esperar que la ventana cargue antes de invocar el diálogo de impresión
+    ventanaImpresion.onload = () => {
+      setTimeout(() => ventanaImpresion.print(), 200);
+    };
   };
 
   const cambiarFecha = (dias) => {
@@ -354,9 +474,6 @@ const MenuesDiaria = () => {
 
             <div className="text-center">
               <h5 className="mb-0 text-capitalize">{nombreDia}</h5>
-              <small className="text-muted">
-                {hoy.toISOString().split("T")[0]}
-              </small>
             </div>
 
             <button
@@ -449,6 +566,18 @@ const MenuesDiaria = () => {
                             Sin asistencia registrada
                           </span>
                         )}
+
+                        {/* Badge de comensales registrados por servicio */}
+                        {comensalesPorServicio[horario.id]?.comensales_total >
+                          0 && (
+                          <span className="badge bg-info">
+                            <i className="fas fa-user-check me-1"></i>
+                            {
+                              comensalesPorServicio[horario.id].comensales_total
+                            }{" "}
+                            para cocinar
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -492,16 +621,15 @@ const MenuesDiaria = () => {
                                 </p>
                               </div>
                             )}
-
                             {/* Ingredientes requeridos */}
                             {ingredientes.length > 0 && (
                               <div className="ingredientes-section mt-3">
-                                <h6 className="mb-3 text-muted">
-                                  <i className="fas fa-list me-2"></i>
-                                  Ingredientes Requeridos (
-                                  {asistenciaReal[horario.id]} alumnos asisten)
-                                </h6>
-
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                  <h6 className="mb-0 text-muted">
+                                    <i className="fas fa-list me-2"></i>
+                                    Ingredientes Requeridos
+                                  </h6>
+                                </div>
                                 <div className="table-responsive">
                                   <table className="table table-sm table-hover">
                                     <thead className="table-light">
@@ -528,6 +656,52 @@ const MenuesDiaria = () => {
                                 </div>
                               </div>
                             )}
+                            <div
+                              className="btn-group btn-group-sm form-actions"
+                              role="group"
+                            >
+                              {/* Mostrar botones solo si el servicio no está completado */}
+                              {!completado && (
+                                <div
+                                  className="btn-group btn-group-sm"
+                                  role="group"
+                                >
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-info"
+                                    onClick={() =>
+                                      imprimirRecetaTicket(
+                                        horario,
+                                        ingredientes,
+                                        menu
+                                      )
+                                    }
+                                    title="Imprimir receta en formato ticket"
+                                  >
+                                    <i className="fas fa-print me-1"></i>
+                                    Imprimir
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-success"
+                                    onClick={() =>
+                                      marcarServicioCompletado(horario.id)
+                                    }
+                                    title="Marcar este servicio como completado"
+                                  >
+                                    <i className="fas fa-check-circle me-1"></i>
+                                    Completado
+                                  </button>
+                                </div>
+                              )}
+                            
+                              {/* Mostrar mensaje cuando el servicio está completado */}
+                              {completado && (
+                                <div className="mt-3 text-success fw-bold">
+                                  {horario.nombre} completado
+                                </div>
+                              )}
+                            </div>
                           </>
                         ) : (
                           <div className="alert alert-warning mt-3 mb-0">
@@ -539,39 +713,6 @@ const MenuesDiaria = () => {
                             servicio.
                           </div>
                         )}
-
-                        {/* Botón de completado */}
-                        <div className="mt-3">
-                          <button
-                            className={`btn btn-sm w-100 ${
-                              completado
-                                ? "btn-success"
-                                : !todasLasAsistenciasRegistradas()
-                                ? "btn-secondary"
-                                : "btn-outline-success"
-                            }`}
-                            onClick={() => marcarServicioCompletado(horario.id)}
-                            disabled={
-                              !completado && !todasLasAsistenciasRegistradas()
-                            }
-                            title={
-                              !todasLasAsistenciasRegistradas() && !completado
-                                ? "No se puede completar hasta que se registre toda la asistencia"
-                                : ""
-                            }
-                          >
-                            <i
-                              className={`fas ${
-                                completado ? "fa-check-circle" : "fa-circle"
-                              } me-1`}
-                            ></i>
-                            {completado
-                              ? `✅ ${horario.nombre} Completado`
-                              : !todasLasAsistenciasRegistradas()
-                              ? `⏳ Esperando asistencia para ${horario.nombre}`
-                              : `Marcar ${horario.nombre} como Completado`}
-                          </button>
-                        </div>
                       </>
                     )}
                   </div>

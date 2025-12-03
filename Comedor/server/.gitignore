@@ -1,3 +1,44 @@
-# gitignore
-node_modules/
+# ======================================
+# VARIABLES DE ENTORNO Y SECRETOS
+# ======================================
 .env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# ======================================
+# DEPENDENCIAS
+# ======================================
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+
+# ======================================
+# ARCHIVOS DE LOG
+# ======================================
+*.log
+*.log.*
+logs/
+
+# ======================================
+# ARCHIVOS DE SISTEMA
+# ======================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ======================================
+# ARCHIVOS TEMPORALES
+# ======================================
+tmp/
+temp/
+*.tmp
+
+# ======================================
+# SECRETOS Y CREDENCIALES
+# ======================================
+secrets.json
+credentials.json
+private_keys/

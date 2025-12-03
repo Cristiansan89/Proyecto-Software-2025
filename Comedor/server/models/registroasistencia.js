@@ -88,14 +88,14 @@ export class RegistroAsistenciaModel {
                     id_servicio,
                     fecha, 
                     cantidadPresentes
-                ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?);`,
+                ) VALUES (?, ?, ?, ?);`,
         [id_grado, id_servicio, fecha, cantidadPresentes]
       );
 
       const [newAsistencia] = await connection.query(
         `SELECT BIN_TO_UUID(id_asistencia) as id_asistencia 
                  FROM RegistrosAsistencias 
-                 WHERE id_grado = UUID_TO_BIN(?) AND id_servicio = UUID_TO_BIN(?) AND fecha = ?
+                 WHERE id_grado = ? AND id_servicio = ? AND fecha = ?
                  ORDER BY fecha_creacion DESC LIMIT 1;`,
         [id_grado, id_servicio, fecha]
       );
@@ -150,8 +150,8 @@ export class RegistroAsistenciaModel {
       const [rows] = await connection.query(
         `SELECT 
                     BIN_TO_UUID(a.id_asistencia) as id_asistencia,
-                    BIN_TO_UUID(a.id_grado) as id_grado,
-                    BIN_TO_UUID(a.id_servicio) as id_servicio,
+                    a.id_grado,
+                    a.id_servicio,
                     g.nombreGrado,
                     s.nombre as nombreServicio,
                     a.cantidadPresentes,

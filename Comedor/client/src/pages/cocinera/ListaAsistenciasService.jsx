@@ -3,6 +3,8 @@ import { useAuth } from "../../context/AuthContext";
 import asistenciasService from "../../services/asistenciasService";
 import servicioService from "../../services/servicioService";
 import { gradoService } from "../../services/gradoService";
+import { jsPDF } from "jspdf";
+import { autoTable } from "jspdf-autotable";
 
 const ListaAsistenciasService = () => {
   const { user } = useAuth();
@@ -124,7 +126,10 @@ const ListaAsistenciasService = () => {
   };
 
   const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleDateString("es-ES", {
+    // Parsear la fecha en formato YYYY-MM-DD correctamente
+    const [year, month, day] = fecha.split("-");
+    const dateObj = new Date(year, parseInt(month) - 1, day);
+    return dateObj.toLocaleDateString("es-ES", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -136,15 +141,11 @@ const ListaAsistenciasService = () => {
     alert(`
       Detalle del Registro de Asistencia:
       
-      Fecha: ${formatearFecha(registro.fecha)}
+      Fecha: ${registro.fecha || "Sin especificar"}
       Servicio: ${registro.nombreServicio || "Sin especificar"}
       Grado: ${registro.nombreGrado || "Sin especificar"}
       Cantidad de Presentes: ${registro.cantidadPresentes || 0}
-      Fecha de Creación: ${
-        registro.fechaCreacion
-          ? new Date(registro.fechaCreacion).toLocaleString("es-ES")
-          : "N/A"
-      }
+      Fecha de Creación: ${registro.fechaCreacion || "N/A"}
     `);
   };
 
@@ -162,13 +163,11 @@ const ListaAsistenciasService = () => {
       "Fecha Creacion",
     ];
     const csvData = asistencias.map((registro) => [
-      formatearFecha(registro.fecha),
+      registro.fecha || "Sin especificar",
       registro.nombreServicio || "Sin especificar",
       registro.nombreGrado || "Sin especificar",
       registro.cantidadPresentes || 0,
-      registro.fechaCreacion
-        ? new Date(registro.fechaCreacion).toLocaleString("es-ES")
-        : "N/A",
+      registro.fechaCreacion || "N/A",
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -184,6 +183,82 @@ const ListaAsistenciasService = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const exportarPDF = () => {
+    if (asistencias.length === 0) {
+      alert("No hay datos para exportar");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+
+      // Título
+      doc.setFontSize(18);
+      doc.text("Reporte de Asistencias por Servicio", 14, 22);
+
+      // Información
+      doc.setFontSize(11);
+      doc.text(`Generado por: ${user.nombre} ${user.apellido}`, 14, 32);
+      doc.text(
+        `Fecha de generación: ${new Date().toLocaleString("es-ES")}`,
+        14,
+        40
+      );
+      doc.text(`Fecha del reporte: ${formatearFecha(filtros.fecha)}`, 14, 48);
+      doc.text(`Total de registros: ${asistencias.length}`, 14, 56);
+
+      // Preparar datos para tabla
+      const tableData = asistencias.map((registro) => [
+        registro.fecha || "Sin especificar",
+        registro.nombreServicio || "Sin especificar",
+        registro.nombreGrado || "Sin especificar",
+        registro.cantidadPresentes || 0,
+        registro.fechaCreacion || "N/A",
+      ]);
+
+      // Tabla
+      autoTable(doc, {
+        startY: 70,
+        head: [
+          [
+            "Fecha",
+            "Servicio",
+            "Grado",
+            "Cantidad Presentes",
+            "Fecha Creación",
+          ],
+        ],
+        body: tableData,
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [70, 130, 180], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+      });
+
+      // Pie de página
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(
+          `Página ${i} de ${pageCount}`,
+          doc.internal.pageSize.width - 30,
+          doc.internal.pageSize.height - 10
+        );
+      }
+
+      doc.save(
+        `reporte_asistencias_${filtros.fecha.replace(
+          /-/g,
+          ""
+        )}_${Date.now()}.pdf`
+      );
+      alert("✅ Reporte PDF de asistencias generado exitosamente");
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+      alert("❌ Error al generar el reporte PDF");
+    }
   };
 
   if (loading && asistencias.length === 0) {
@@ -322,6 +397,16 @@ const ListaAsistenciasService = () => {
               <i className="fas fa-download me-2"></i>
               Exportar CSV
             </button>
+
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={exportarPDF}
+              disabled={asistencias.length === 0}
+            >
+              <i className="fas fa-file-pdf me-2"></i>
+              Exportar PDF
+            </button>
           </div>
         </div>
       </div>
@@ -368,6 +453,7 @@ const ListaAsistenciasService = () => {
               <table className="table table-hover table-sm">
                 <thead className="table-light">
                   <tr>
+                    <th width="5%">#</th>
                     <th width="15%">
                       <i className="fas fa-calendar me-2"></i>
                       Fecha
@@ -380,17 +466,13 @@ const ListaAsistenciasService = () => {
                       <i className="fas fa-graduation-cap me-2"></i>
                       Grado
                     </th>
-                    <th width="15%">
+                    <th width="20%">
                       <i className="fas fa-users me-2"></i>
                       Cantidad Presentes
                     </th>
                     <th width="20%">
                       <i className="fas fa-clock me-2"></i>
                       Fecha Creación
-                    </th>
-                    <th width="10%">
-                      <i className="fas fa-cogs me-2"></i>
-                      Acciones
                     </th>
                   </tr>
                 </thead>
@@ -402,8 +484,11 @@ const ListaAsistenciasService = () => {
                       }`}
                     >
                       <td>
+                        <strong>{index + 1}</strong>
+                      </td>
+                      <td>
                         <strong className="text-dark">
-                          {new Date(registro.fecha).toLocaleDateString("es-ES")}
+                          {registro.fecha || "Sin fecha"}
                         </strong>
                       </td>
 
@@ -422,30 +507,14 @@ const ListaAsistenciasService = () => {
                       </td>
 
                       <td>
-                        <span className="badge bg-warning text-dark fs-6">
+                        <span className="badge bg-warning text-dark fs-6 justify-content-center d-flex">
                           <i className="fas fa-users me-1"></i>
                           {registro.cantidadPresentes || 0}
                         </span>
                       </td>
 
                       <td>
-                        <small className="text-muted">
-                          {registro.fechaCreacion
-                            ? new Date(
-                                registro.fechaCreacion
-                              ).toLocaleDateString("es-ES")
-                            : "N/A"}
-                        </small>
-                      </td>
-
-                      <td>
-                        <button
-                          className="btn btn-sm btn-outline-info"
-                          onClick={() => verDetalle(registro)}
-                          title="Ver detalles"
-                        >
-                          <i className="fas fa-eye"></i>
-                        </button>
+                        <strong>{registro.fechaCreacion || "N/A"}</strong>
                       </td>
                     </tr>
                   ))}
@@ -459,7 +528,7 @@ const ListaAsistenciasService = () => {
           <div className="card-footer">
             <div className="row text-center">
               <div className="col-md-12">
-                <small className="text-muted">
+                <small className="text-black">
                   <i className="fas fa-info-circle me-1"></i>
                   Mostrando {asistencias.length} registro(s) de asistencia
                   agregados | Última actualización:{" "}

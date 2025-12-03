@@ -132,7 +132,10 @@ const ListaAsistencia = () => {
   };
 
   const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleDateString("es-ES", {
+    // Parsear la fecha en formato YYYY-MM-DD correctamente
+    const [year, month, day] = fecha.split("-");
+    const dateObj = new Date(year, parseInt(month) - 1, day);
+    return dateObj.toLocaleDateString("es-ES", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -231,9 +234,43 @@ ${
         );
 
         if (response.success) {
-          alert(
-            `✅ Estado cambiado exitosamente de "${asistencia.estado}" a "${nuevoEstado}"`
-          );
+          // Si se cambió a "Completado", procesar el registro automático de asistencias
+          if (nuevoEstado === "Completado") {
+            try {
+              const procesarResponse =
+                await asistenciasService.procesarAsistenciaCompletada(
+                  asistencia.fecha,
+                  asistencia.id_servicio,
+                  asistencia.id_grado
+                );
+
+              if (procesarResponse.success) {
+                alert(
+                  `✅ Estado cambiado a "${nuevoEstado}" y registro de asistencia procesado automáticamente.\n\n` +
+                    `📊 Resultado: ${procesarResponse.message}`
+                );
+              } else {
+                alert(
+                  `✅ Estado cambiado exitosamente a "${nuevoEstado}".\n\n` +
+                    `⚠️ Advertencia: No se pudo procesar el registro automático: ${procesarResponse.message}`
+                );
+              }
+            } catch (processingError) {
+              console.error(
+                "Error al procesar registro automático:",
+                processingError
+              );
+              alert(
+                `✅ Estado cambiado exitosamente a "${nuevoEstado}".\n\n` +
+                  `⚠️ Advertencia: Error al procesar el registro automático de asistencias.`
+              );
+            }
+          } else {
+            alert(
+              `✅ Estado cambiado exitosamente de "${asistencia.estado}" a "${nuevoEstado}"`
+            );
+          }
+
           // Recargar los datos para reflejar el cambio
           await cargarAsistencias();
         } else {
@@ -288,9 +325,82 @@ ${
     URL.revokeObjectURL(url);
   };
 
+  const procesarTodasAsistencias = async () => {
+    if (!filtros.fecha) {
+      alert("Por favor seleccione una fecha para procesar");
+      return;
+    }
+
+    // Verificar si hay asistencias para esa fecha
+    const asistenciasFecha = asistencias.filter(
+      (a) => a.fecha === filtros.fecha
+    );
+
+    if (asistenciasFecha.length === 0) {
+      alert("No hay asistencias registradas para esta fecha");
+      return;
+    }
+
+    const confirmar = confirm(
+      `¿Está seguro que desea procesar automáticamente TODAS las asistencias del ${formatearFecha(
+        filtros.fecha
+      )}?\n\n` +
+        `Esto creará/actualizará los registros de asistencia en base a los datos actuales.\n\n` +
+        `Asistencias encontradas: ${asistenciasFecha.length} registros`
+    );
+
+    if (!confirmar) return;
+
+    try {
+      setLoading(true);
+      const response = await asistenciasService.procesarTodasAsistenciasFecha(
+        filtros.fecha
+      );
+
+      if (response.success && response.data?.data) {
+        const { estadisticas, resultados } = response.data.data;
+        const detalles = resultados
+          .filter((r) => r.action !== "error")
+          .map(
+            (r) =>
+              `• ${r.servicio} - ${r.grado}: ${
+                r.cantidadPresentes
+              } presentes (${
+                r.action === "created" ? "creado" : "actualizado"
+              })`
+          )
+          .join("\n");
+
+        const erroresTexto = resultados
+          .filter((r) => r.action === "error")
+          .map((r) => `• ${r.servicio} - ${r.grado}: ${r.error}`)
+          .join("\n");
+
+        alert(
+          `✅ Procesamiento completado!\n\n` +
+            `📊 Estadísticas:\n` +
+            `- Total procesados: ${estadisticas.exitosos}/${estadisticas.total}\n` +
+            `- Errores: ${estadisticas.errores}\n\n` +
+            `📋 Detalles:\n${detalles}` +
+            (erroresTexto ? `\n\n❌ Errores:\n${erroresTexto}` : "")
+        );
+
+        // Recargar asistencias
+        await cargarAsistencias();
+      } else {
+        alert(`❌ Error al procesar asistencias: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error al procesar todas las asistencias:", error);
+      alert("❌ Error inesperado al procesar las asistencias");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const asistenciasFiltradasPorEstado = filtros.estado
     ? asistencias.filter((a) => a.estado === filtros.estado)
-    : asistencias;
+    : asistencias; // Mostrar todas las asistencias
 
   console.log("📊 Debug - Estado filtro:", filtros.estado);
   console.log("📊 Debug - Total asistencias:", asistencias.length);
@@ -460,6 +570,17 @@ ${
               <i className="fas fa-download me-2"></i>
               Exportar CSV
             </button>
+
+            <button
+              type="button"
+              className="btn btn-warning"
+              onClick={procesarTodasAsistencias}
+              disabled={loading || !filtros.fecha || asistencias.length === 0}
+              title="Procesa automáticamente todas las asistencias del día seleccionado"
+            >
+              <i className="fas fa-cogs me-2"></i>
+              {loading ? "Procesando..." : "Procesar Todas"}
+            </button>
           </div>
         </div>
       </div>
@@ -508,62 +629,32 @@ ${
               <table className="table table-hover table-striped">
                 <thead className="table-light">
                   <tr>
-                    <th width="12%">
-                      <i className="fas fa-calendar me-2"></i>
-                      Fecha
-                    </th>
-                    <th width="18%">
-                      <i className="fas fa-utensils me-2"></i>
-                      Servicio
-                    </th>
-                    <th width="18%">
-                      <i className="fas fa-graduation-cap me-2"></i>
-                      Grado
-                    </th>
-                    <th width="20%">
-                      <i className="fas fa-user me-2"></i>
-                      Alumno
-                    </th>
-                    <th width="12%">
-                      <i className="fas fa-check me-2"></i>
-                      Tipo
-                    </th>
-                    <th width="12%">
-                      <i className="fas fa-tasks me-2"></i>
-                      Estado
-                    </th>
-                    <th width="8%">
-                      <i className="fas fa-cogs me-2"></i>
-                      Acciones
-                    </th>
+                    <th>#</th>
+                    <th width="12%">Fecha</th>
+                    <th width="18%">Servicio</th>
+                    <th width="18%">Grado</th>
+                    <th width="20%">Alumno</th>
+                    <th width="12%">Asistencia</th>
+                    <th width="12%">Estado</th>
+                    <th width="8%">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {asistenciasFiltradasPorEstado.map((asistencia, index) => (
                     <tr key={`${asistencia.id_asistencia}-${index}`}>
                       <td>
+                        <strong>{index + 1}</strong>
+                      </td>
+                      <td>
                         <div className="d-flex flex-column">
                           <span className="fw-semibold">
-                            {new Date(asistencia.fecha).toLocaleDateString(
-                              "es-ES"
-                            )}
+                            {asistencia.fecha || "Sin fecha"}
                           </span>
-                          <small className="text-muted">
-                            {new Date(asistencia.fecha).toLocaleDateString(
-                              "es-ES",
-                              {
-                                weekday: "short",
-                              }
-                            )}
-                          </small>
                         </div>
                       </td>
 
                       <td>
                         <div className="d-flex align-items-center">
-                          <span className="badge bg-light text-dark me-2">
-                            <i className="fas fa-utensils me-1"></i>
-                          </span>
                           {obtenerNombreServicio(
                             asistencia.id_servicio,
                             asistencia.nombreServicio
@@ -573,9 +664,6 @@ ${
 
                       <td>
                         <div className="d-flex align-items-center">
-                          <span className="badge bg-light text-dark me-2">
-                            <i className="fas fa-graduation-cap me-1"></i>
-                          </span>
                           {obtenerNombreGrado(
                             asistencia.id_grado,
                             asistencia.nombreGrado
@@ -585,9 +673,6 @@ ${
 
                       <td>
                         <div className="d-flex align-items-center">
-                          <span className="badge bg-info text-white me-2">
-                            <i className="fas fa-user me-1"></i>
-                          </span>
                           <span className="fw-medium">
                             {asistencia.nombreAlumno || "Sin especificar"}
                           </span>

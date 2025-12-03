@@ -146,7 +146,12 @@ export class ServicioModel {
   }
 
   // Marcar un servicio como completado en una fecha específica
-  static async marcarCompletado({ fecha, id_servicio, completado }) {
+  static async marcarCompletado({
+    fecha,
+    id_servicio,
+    completado,
+    comensales_total = 0,
+  }) {
     try {
       // Primero, verificar si existe el registro
       const [exists] = await connection.query(
@@ -159,23 +164,23 @@ export class ServicioModel {
         // Actualizar registro existente
         await connection.query(
           `UPDATE ServiciosCompletados 
-                     SET completado = ?, fecha_actualizacion = NOW()
+                     SET completado = ?, comensales_total = ?, fecha_actualizacion = NOW()
                      WHERE fecha = ? AND id_servicio = ?`,
-          [completado ? 1 : 0, fecha, id_servicio]
+          [completado ? 1 : 0, comensales_total, fecha, id_servicio]
         );
       } else {
         // Crear nuevo registro
         await connection.query(
-          `INSERT INTO ServiciosCompletados (fecha, id_servicio, completado, fecha_creacion)
-                     VALUES (?, ?, ?, NOW())`,
-          [fecha, id_servicio, completado ? 1 : 0]
+          `INSERT INTO ServiciosCompletados (fecha, id_servicio, completado, comensales_total, fecha_creacion)
+                     VALUES (?, ?, ?, ?, NOW())`,
+          [fecha, id_servicio, completado ? 1 : 0, comensales_total]
         );
       }
 
       console.log(
         `✅ Servicio ${id_servicio} marcado como ${
           completado ? "completado" : "pendiente"
-        } en ${fecha}`
+        } en ${fecha} con ${comensales_total} comensales`
       );
 
       return {
@@ -186,6 +191,7 @@ export class ServicioModel {
         fecha,
         id_servicio,
         completado,
+        comensales_total,
       };
     } catch (error) {
       console.error("Error al marcar servicio como completado:", error);
@@ -212,6 +218,40 @@ export class ServicioModel {
       return estado;
     } catch (error) {
       console.error("Error al obtener estado de servicios:", error);
+      throw error;
+    }
+  }
+
+  // Obtener comensales totales por servicio para una fecha específica
+  static async obtenerComensalesPorServicio(fecha) {
+    try {
+      const [registros] = await connection.query(
+        `SELECT 
+          id_servicio,
+          comensales_total,
+          completado,
+          fecha_creacion,
+          fecha_actualizacion
+         FROM ServiciosCompletados
+         WHERE fecha = ?
+         ORDER BY id_servicio`,
+        [fecha]
+      );
+
+      // Convertir a objeto para fácil acceso {id_servicio: {comensales_total, completado}}
+      const comensales = {};
+      registros.forEach((reg) => {
+        comensales[reg.id_servicio] = {
+          comensales_total: reg.comensales_total,
+          completado: Boolean(reg.completado),
+          fecha_creacion: reg.fecha_creacion,
+          fecha_actualizacion: reg.fecha_actualizacion,
+        };
+      });
+
+      return comensales;
+    } catch (error) {
+      console.error("Error al obtener comensales por servicio:", error);
       throw error;
     }
   }

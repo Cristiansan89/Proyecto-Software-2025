@@ -3,6 +3,7 @@ import {
   validatePartialAsistencia,
 } from "../schemas/asistencias.js";
 import { connection } from "../models/db.js";
+import telegramService from "../services/telegramService.js";
 
 export class AsistenciaController {
   constructor({ asistenciaModel }) {
@@ -11,7 +12,14 @@ export class AsistenciaController {
 
   getAll = async (req, res) => {
     try {
-      const asistencias = await this.asistenciaModel.getAll();
+      const { fecha } = req.query;
+      const filtros = {};
+
+      if (fecha) {
+        filtros.fecha = fecha;
+      }
+
+      const asistencias = await this.asistenciaModel.getAll(filtros);
       res.json(asistencias);
     } catch (error) {
       console.error(error);
@@ -290,6 +298,70 @@ export class AsistenciaController {
         resultados.push(resultado);
       }
 
+      // Obtener información del servicio para el mensaje
+      const [servicios] = await connection.query(
+        "SELECT nombre FROM Servicios WHERE idServicio = ?",
+        [idServicio]
+      );
+      const nombreServicio = servicios[0]?.nombre || "Servicio";
+
+      // Obtener grados completados vs pendientes
+      const [gradosPendientes] = await connection.query(
+        `SELECT DISTINCT ag.nombreGrado 
+         FROM AlumnoGrado ag
+         WHERE ag.nombreGrado != ? 
+         AND ag.id_alumnoGrado NOT IN (
+           SELECT DISTINCT ra.id_alumnoGrado 
+           FROM RegistroAsistencias ra 
+           WHERE ra.fechaAsistencia = ? 
+           AND ra.id_servicio = ?
+         )`,
+        [nombreGrado, fecha, idServicio]
+      );
+
+      // Preparar mensaje para Telegram
+      let mensaje = `📋 <b>Registro de Asistencias Completado</b>\n\n`;
+      mensaje += `📅 Fecha: ${fecha}\n`;
+      mensaje += `🍽️ Servicio: ${nombreServicio}\n`;
+      mensaje += `👥 Grado: ${nombreGrado}\n`;
+      mensaje += `✅ Asistencias registradas: ${resultados.length}\n\n`;
+
+      if (gradosPendientes.length > 0) {
+        mensaje += `⏳ <b>Grados Pendientes de Registro:</b>\n`;
+        gradosPendientes.forEach((grado) => {
+          mensaje += `  • ${grado.nombreGrado}\n`;
+        });
+      } else {
+        mensaje += `✨ <b>¡Todos los grados han completado el registro!</b>\n`;
+      }
+
+      // Obtener chat ID de la cocinera desde parámetros del sistema
+      const [parametros] = await connection.query(
+        "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo'",
+        ["TELEGRAM_COCINERA_CHAT_ID"]
+      );
+
+      if (parametros && parametros.length > 0) {
+        const chatId = parametros[0].valor;
+        try {
+          await telegramService.initialize("sistema");
+          await telegramService.sendMessage(chatId, mensaje, "sistema", {
+            parse_mode: "HTML",
+          });
+          console.log(`📨 Notificación enviada a cocinera: ${chatId}`);
+        } catch (error) {
+          console.warn(
+            "⚠️ Error al enviar notificación Telegram:",
+            error.message
+          );
+          // No interrumpir el flujo si falla Telegram
+        }
+      } else {
+        console.warn(
+          "⚠️ Chat ID de cocinera no configurado en parámetros del sistema"
+        );
+      }
+
       res.json({
         message: "Asistencias registradas correctamente",
         registradas: resultados.length,
@@ -403,7 +475,7 @@ export class AsistenciaController {
           a.id_asistencia,
           a.id_servicio,
           a.id_alumnoGrado,
-          a.fecha,
+          DATE_FORMAT(a.fecha, '%Y-%m-%d') as fecha,
           a.tipoAsistencia,
           a.estado,
           g.id_grado,
@@ -479,9 +551,9 @@ export class AsistenciaController {
           a.id_servicio,
           a.id_grado,
           a.cantidadPresentes,
-          a.fecha,
-          a.fecha_creacion,
-          a.fecha_actualizacion,
+          DATE_FORMAT(a.fecha, '%Y-%m-%d') as fecha,
+          DATE_FORMAT(a.fecha_creacion, '%Y-%m-%d %H:%i:%s') as fechaCreacion,
+          DATE_FORMAT(a.fecha_actualizacion, '%Y-%m-%d %H:%i:%s') as fechaActualizacion,
           g.nombreGrado,
           s.nombre as nombreServicio
         FROM RegistrosAsistencias a
@@ -524,6 +596,225 @@ export class AsistenciaController {
       res.status(500).json({
         success: false,
         data: [],
+        message: "Error interno del servidor",
+      });
+    }
+  };
+
+  // Procesar asistencias completadas y crear registro automático
+  procesarAsistenciaCompletada = async (req, res) => {
+    try {
+      const { fecha, idServicio, idGrado } = req.body;
+
+      if (!fecha || !idServicio || !idGrado) {
+        return res.status(400).json({
+          success: false,
+          message: "Faltan parámetros requeridos: fecha, idServicio, idGrado",
+        });
+      }
+
+      // Contar asistencias marcadas como "Presente" para esta fecha/servicio/grado
+      const [countResult] = await connection.query(
+        `SELECT COUNT(*) as cantidadPresentes
+         FROM Asistencias 
+         WHERE fecha = ? 
+         AND id_servicio = ? 
+         AND id_grado = ? 
+         AND tipoAsistencia = 'Si'`,
+        [fecha, idServicio, idGrado]
+      );
+
+      const cantidadPresentes = countResult[0]?.cantidadPresentes || 0;
+
+      // Verificar si ya existe un registro en RegistrosAsistencias para esta combinación
+      const [existingRecord] = await connection.query(
+        `SELECT BIN_TO_UUID(id_asistencia) as id_asistencia, cantidadPresentes
+         FROM RegistrosAsistencias 
+         WHERE fecha = ? 
+         AND id_servicio = ? 
+         AND id_grado = ?`,
+        [fecha, idServicio, idGrado]
+      );
+
+      if (existingRecord.length > 0) {
+        // Actualizar registro existente
+        await connection.query(
+          `UPDATE RegistrosAsistencias 
+           SET cantidadPresentes = ?, fecha_actualizacion = CURRENT_TIMESTAMP
+           WHERE id_asistencia = UUID_TO_BIN(?)`,
+          [cantidadPresentes, existingRecord[0].id_asistencia]
+        );
+
+        res.json({
+          success: true,
+          message: `Registro actualizado: ${cantidadPresentes} presentes`,
+          data: {
+            action: "updated",
+            cantidadPresentes,
+            id_asistencia: existingRecord[0].id_asistencia,
+          },
+        });
+      } else {
+        // Crear nuevo registro
+        await connection.query(
+          `INSERT INTO RegistrosAsistencias (id_grado, id_servicio, fecha, cantidadPresentes)
+           VALUES (?, ?, ?, ?)`,
+          [idGrado, idServicio, fecha, cantidadPresentes]
+        );
+
+        // Obtener el ID del registro recién creado
+        const [newRecord] = await connection.query(
+          `SELECT BIN_TO_UUID(id_asistencia) as id_asistencia
+           FROM RegistrosAsistencias 
+           WHERE fecha = ? AND id_servicio = ? AND id_grado = ?
+           ORDER BY fecha_creacion DESC LIMIT 1`,
+          [fecha, idServicio, idGrado]
+        );
+
+        res.json({
+          success: true,
+          message: `Registro creado: ${cantidadPresentes} presentes`,
+          data: {
+            action: "created",
+            cantidadPresentes,
+            id_asistencia: newRecord[0]?.id_asistencia,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error al procesar asistencia completada:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
+    }
+  };
+
+  // Procesar todas las asistencias de una fecha específica
+  procesarTodasAsistenciasFecha = async (req, res) => {
+    try {
+      const { fecha } = req.body;
+
+      if (!fecha) {
+        return res.status(400).json({
+          success: false,
+          message: "Falta parámetro requerido: fecha",
+        });
+      }
+
+      // Obtener todas las combinaciones únicas de servicio/grado para la fecha
+      const [combinaciones] = await connection.query(
+        `SELECT DISTINCT a.id_servicio, 
+                g.id_grado,
+                g.nombreGrado,
+                s.nombre as nombreServicio
+         FROM Asistencias a
+         JOIN AlumnoGrado ag ON a.id_alumnoGrado = ag.id_alumnoGrado
+         JOIN Grados g ON ag.nombreGrado = g.nombreGrado
+         JOIN Servicios s ON a.id_servicio = s.id_servicio
+         WHERE DATE(a.fecha) = ?`,
+        [fecha]
+      );
+
+      const resultados = [];
+
+      for (const combinacion of combinaciones) {
+        try {
+          // Contar presentes para esta combinación específica
+          const [countResult] = await connection.query(
+            `SELECT COUNT(*) as cantidadPresentes
+             FROM Asistencias a
+             JOIN AlumnoGrado ag ON a.id_alumnoGrado = ag.id_alumnoGrado
+             JOIN Grados g ON ag.nombreGrado = g.nombreGrado
+             WHERE DATE(a.fecha) = ? 
+             AND a.id_servicio = ? 
+             AND g.id_grado = ? 
+             AND a.tipoAsistencia = 'Si'`,
+            [fecha, combinacion.id_servicio, combinacion.id_grado]
+          );
+
+          const cantidadPresentes = countResult[0]?.cantidadPresentes || 0;
+
+          // Verificar si ya existe registro
+          const [existingRecord] = await connection.query(
+            `SELECT id_asistencia
+             FROM RegistrosAsistencias 
+             WHERE fecha = ? 
+             AND id_servicio = ? 
+             AND id_grado = ?`,
+            [fecha, combinacion.id_servicio, combinacion.id_grado]
+          );
+
+          if (existingRecord.length > 0) {
+            // Actualizar
+            await connection.query(
+              `UPDATE RegistrosAsistencias 
+               SET cantidadPresentes = ?, fecha_actualizacion = CURRENT_TIMESTAMP
+               WHERE id_asistencia = ?`,
+              [cantidadPresentes, existingRecord[0].id_asistencia]
+            );
+
+            resultados.push({
+              servicio: combinacion.nombreServicio,
+              grado: combinacion.nombreGrado,
+              cantidadPresentes,
+              action: "updated",
+            });
+          } else {
+            // Crear nuevo
+            await connection.query(
+              `INSERT INTO RegistrosAsistencias (id_grado, id_servicio, fecha, cantidadPresentes)
+               VALUES (?, ?, ?, ?)`,
+              [
+                combinacion.id_grado,
+                combinacion.id_servicio,
+                fecha,
+                cantidadPresentes,
+              ]
+            );
+
+            resultados.push({
+              servicio: combinacion.nombreServicio,
+              grado: combinacion.nombreGrado,
+              cantidadPresentes,
+              action: "created",
+            });
+          }
+        } catch (combError) {
+          console.error(
+            `Error procesando ${combinacion.nombreServicio} - ${combinacion.nombreGrado}:`,
+            combError
+          );
+          resultados.push({
+            servicio: combinacion.nombreServicio,
+            grado: combinacion.nombreGrado,
+            error: combError.message,
+            action: "error",
+          });
+        }
+      }
+
+      const exitosos = resultados.filter((r) => r.action !== "error");
+      const errores = resultados.filter((r) => r.action === "error");
+
+      res.json({
+        success: true,
+        message: `Procesados ${exitosos.length} registros exitosamente${
+          errores.length > 0 ? `, ${errores.length} con errores` : ""
+        }`,
+        data: {
+          resultados,
+          estadisticas: {
+            total: combinaciones.length,
+            exitosos: exitosos.length,
+            errores: errores.length,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error al procesar todas las asistencias:", error);
+      res.status(500).json({
+        success: false,
         message: "Error interno del servidor",
       });
     }

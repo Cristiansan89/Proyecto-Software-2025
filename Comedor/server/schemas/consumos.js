@@ -6,18 +6,26 @@ const uuidRegex =
 
 const consumoSchema = z.object({
   id_servicio: z
-    .string({
-      required_error: "El ID del servicio es requerido",
-      invalid_type_error: "El ID del servicio debe ser un texto",
-    })
-    .regex(uuidRegex, "El ID del servicio debe ser un UUID válido"),
+    .union([
+      z.number({ invalid_type_error: "El ID del servicio debe ser un número" }),
+      z
+        .string({
+          invalid_type_error: "El ID del servicio debe ser un número o texto",
+        })
+        .transform(Number),
+    ])
+    .refine(
+      (val) => !isNaN(val) && val > 0,
+      "El ID del servicio debe ser un número positivo"
+    ),
 
   id_turno: z
     .string({
-      required_error: "El ID del turno es requerido",
       invalid_type_error: "El ID del turno debe ser un texto",
     })
-    .regex(uuidRegex, "El ID del turno debe ser un UUID válido"),
+    .regex(uuidRegex, "El ID del turno debe ser un UUID válido")
+    .optional()
+    .nullable(),
 
   id_usuario: z
     .string({
@@ -66,8 +74,16 @@ const consumoSchema = z.object({
     .array(
       z.object({
         id_insumo: z
-          .string()
-          .regex(uuidRegex, "El ID del insumo debe ser un UUID válido"),
+          .union([
+            z.number({
+              invalid_type_error: "El ID del insumo debe ser un número",
+            }),
+            z.string().transform(Number),
+          ])
+          .refine(
+            (val) => !isNaN(val) && val > 0,
+            "El ID del insumo debe ser un número positivo"
+          ),
         cantidad_utilizada: z
           .number()
           .positive("La cantidad debe ser positiva"),

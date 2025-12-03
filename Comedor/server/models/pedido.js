@@ -6,7 +6,6 @@ export class PedidoModel {
       const [pedidos] = await connection.query(
         `SELECT 
                     BIN_TO_UUID(p.id_pedido) as id_pedido,
-                    BIN_TO_UUID(p.id_planificacion) as id_planificacion,
                     BIN_TO_UUID(p.id_usuario) as id_usuario,
                     p.id_estadoPedido,
                     ep.nombreEstado as estadoPedido,
@@ -40,7 +39,6 @@ export class PedidoModel {
       const [pedidos] = await connection.query(
         `SELECT 
                     BIN_TO_UUID(p.id_pedido) as id_pedido,
-                    BIN_TO_UUID(p.id_planificacion) as id_planificacion,
                     BIN_TO_UUID(p.id_usuario) as id_usuario,
                     p.id_estadoPedido,
                     ep.nombreEstado as estadoPedido,
@@ -185,7 +183,6 @@ export class PedidoModel {
       const [pedidos] = await connection.query(
         `SELECT 
                     BIN_TO_UUID(p.id_pedido) as id_pedido,
-                    BIN_TO_UUID(p.id_planificacion) as id_planificacion,
                     BIN_TO_UUID(p.id_usuario) as id_usuario,
                     p.id_estadoPedido,
                     BIN_TO_UUID(p.id_proveedor) as id_proveedor,
@@ -210,44 +207,12 @@ export class PedidoModel {
     }
   }
 
-  // Método para obtener pedidos por planificación
-  static async getByPlanificacion({ id_planificacion }) {
-    try {
-      const [pedidos] = await connection.query(
-        `SELECT 
-                    BIN_TO_UUID(p.id_pedido) as id_pedido,
-                    BIN_TO_UUID(p.id_planificacion) as id_planificacion,
-                    BIN_TO_UUID(p.id_usuario) as id_usuario,
-                    p.id_estadoPedido,
-                    BIN_TO_UUID(p.id_proveedor) as id_proveedor,
-                    pr.razonSocial as nombreProveedor,
-                    CONCAT(pe.nombre, ' ', pe.apellido) as nombreUsuario,
-                    p.fechaEmision,
-                    p.origen,
-                    p.fechaAprobacion,
-                    p.motivoCancelacion
-                 FROM Pedidos p
-                 JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
-                 JOIN Usuarios u ON p.id_usuario = u.id_usuario
-                 JOIN Personas pe ON u.id_persona = pe.id_persona
-                 WHERE p.id_planificacion = UUID_TO_BIN(?)
-                 ORDER BY p.fechaEmision DESC;`,
-        [id_planificacion]
-      );
-      return pedidos;
-    } catch (error) {
-      console.error("Error al obtener pedidos por planificación:", error);
-      throw new Error("Error al obtener pedidos por planificación");
-    }
-  }
-
   // Método para obtener pedidos por estado
   static async getByEstado({ id_estadoPedido }) {
     try {
       const [pedidos] = await connection.query(
         `SELECT 
                     BIN_TO_UUID(p.id_pedido) as id_pedido,
-                    BIN_TO_UUID(p.id_planificacion) as id_planificacion,
                     BIN_TO_UUID(p.id_usuario) as id_usuario,
                     p.id_estadoPedido,
                     BIN_TO_UUID(p.id_proveedor) as id_proveedor,

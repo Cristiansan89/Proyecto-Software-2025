@@ -10,13 +10,12 @@ export class ConsumoController {
 
   getAll = async (req, res) => {
     try {
-      const { fechaInicio, fechaFin, idServicio, idGrado } = req.query;
+      const { fechaInicio, fechaFin, idServicio } = req.query;
 
       console.log("🔍 Consultando consumos con filtros:", {
         fechaInicio,
         fechaFin,
         idServicio,
-        idGrado,
       });
 
       // Intentar obtener todos los consumos del modelo
@@ -26,7 +25,7 @@ export class ConsumoController {
       // Aplicar filtros en el controlador si se recibieron
       let consumosFiltrados = consumos || [];
 
-      if (fechaInicio || fechaFin || idServicio || idGrado) {
+      if (fechaInicio || fechaFin || idServicio) {
         consumosFiltrados = (consumos || []).filter((consumo) => {
           let cumpleFiltros = true;
 
@@ -52,11 +51,6 @@ export class ConsumoController {
             cumpleFiltros =
               cumpleFiltros &&
               String(consumo.id_servicio) === String(idServicio);
-          }
-
-          if (idGrado) {
-            cumpleFiltros =
-              cumpleFiltros && String(consumo.id_grado) === String(idGrado);
           }
 
           return cumpleFiltros;
@@ -115,7 +109,12 @@ export class ConsumoController {
     try {
       const result = validateConsumo(req.body);
 
+      // Agregar un log para verificar los datos recibidos en el controlador
+      console.log("Datos recibidos en el controlador /consumos:", req.body);
+      console.log("Resultado de validación:", result);
+
       if (!result.success) {
+        console.log("Errores de validación:", result.error.issues);
         return res.status(400).json({
           success: false,
           message: "Datos de entrada inválidos",
@@ -127,6 +126,28 @@ export class ConsumoController {
       }
 
       const newConsumo = await this.consumoModel.create({ input: result.data });
+
+      // Si hay detalles (insumos), insertarlos en la tabla DetalleConsumo
+      if (result.data.detalles && result.data.detalles.length > 0) {
+        console.log("📋 Insertando detalles de consumo:", result.data.detalles);
+
+        try {
+          // El modelo debe manejar la inserción de detalles
+          if (typeof this.consumoModel.createDetalles === "function") {
+            await this.consumoModel.createDetalles({
+              id_consumo: newConsumo.id_consumo,
+              detalles: result.data.detalles,
+              id_jornada: newConsumo.id_jornada,
+              id_servicio: result.data.id_servicio,
+              id_usuario: result.data.id_usuario,
+            });
+            console.log("✅ Detalles de consumo insertados exitosamente");
+          }
+        } catch (error) {
+          console.error("⚠️ Error al insertar detalles de consumo:", error);
+          // Continuar aunque falle la inserción de detalles
+        }
+      }
 
       res.status(201).json({
         success: true,

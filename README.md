@@ -1,6 +1,8 @@
 # Proyecto-Software-2025
 
-Desarrollo de un sistema de gestión para el comedor de una escuela primaria. El proyecto busca optimizar la administración de menús, el control de inventario y el registro de alumnos.
+Desarrollo de un sistema de gestión para el comedor de una escuela primaria. El
+proyecto busca optimizar la administración de menús, el control de inventario y
+el registro de alumnos.
 
 # Sistema de Gestión de Comedor Escolar
 
@@ -8,17 +10,26 @@ Desarrollo de un sistema de gestión para el comedor de una escuela primaria. El
 
 ## 📋 Descripción
 
-Sistema web completo para la gestión integral de un comedor escolar, desarrollado con **Node.js v22.12.0**, **Express v5.1.0** y **MySQL 8.0.42**. Permite administrar inventarios, planificar menús, controlar asistencias y generar reportes detallados del funcionamiento del comedor.
+Sistema web completo para la gestión integral de un comedor escolar,
+desarrollado con **Node.js v22.12.0**, **Express v5.1.0** y **MySQL 8.0.42**.
+Permite administrar inventarios, planificar menús, controlar asistencias y
+generar reportes detallados del funcionamiento del comedor.
 
 ## 🎯 Características Principales
 
-- **Gestión de Usuarios y Roles**: Sistema de autenticación con roles diferenciados (Administrador, Cocinero, Encargado de Inventario, Docente, Supervisor)
-- **Control de Inventario**: Seguimiento en tiempo real de insumos, stock mínimo y movimientos
-- **Planificación de Menús**: Creación y gestión de recetas con cálculo automático de ingredientes
-- **Registro de Asistencias**: Control diario de asistencia por grado y tipo de servicio
+- **Gestión de Usuarios y Roles**: Sistema de autenticación con roles
+  diferenciados (Administrador, Cocinero, Encargado de Inventario, Docente,
+  Supervisor)
+- **Control de Inventario**: Seguimiento en tiempo real de insumos, stock mínimo
+  y movimientos
+- **Planificación de Menús**: Creación y gestión de recetas con cálculo
+  automático de ingredientes
+- **Registro de Asistencias**: Control diario de asistencia por grado y tipo de
+  servicio
 - **Gestión de Proveedores**: Administración de proveedores y pedidos de insumos
 - **Auditoría Completa**: Registro detallado de todas las operaciones del sistema
-- **Reportes y Estadísticas**: Generación de reportes de consumo, inventario y costos
+- **Reportes y Estadísticas**: Generación de reportes de consumo, inventario y
+  costos
 
 ## 🛠️ Tecnologías Utilizadas
 
@@ -41,11 +52,11 @@ El sistema cuenta con 15+ tablas relacionales que gestionan:
 
 ## 🚀 Instalación y Uso
 
-1. Clonar el repositorio
-2. Instalar dependencias: `npm install`
-3. Configurar base de datos con los scripts SQL proporcionados
-4. Configurar variables de entorno
-5. Iniciar servidor: `npm start` o `pnpm run dev`
+1.  Clonar el repositorio
+2.  Instalar dependencias: `npm install`
+3.  Configurar base de datos con los scripts SQL proporcionados
+4.  Configurar variables de entorno
+5.  Iniciar servidor: `npm start` o `pnpm run dev`
 
 ## 📁 Estructura del Proyecto
 
@@ -61,13 +72,14 @@ El sistema cuenta con 15+ tablas relacionales que gestionan:
 │   └── sql/             # Scripts de base de datos
 └── README.md
 ```
-
 ## 👥 Roles del Sistema
 
-- _PARA LA PRUEBA DE BD (en la carga de los datos iniciales se agregan más de un rol, en un futuro se cambiaran para el caso real que sigue abajo ⬇️⬇️⬇️)_
-
-- **Administrador**: Acceso completo al sistema, Gestiona el registro de Alumnos, Docentes, Grados, Insumos, Proveedores, Usuarios, Seguridad, Auditoría.
-- **Cocinera**: Gestión de Asistencias, Consumos, Inventarios, Pedidos, Planificación de Menús, Recetas, Reportes.
+- _PARA LA PRUEBA DE BD (en la carga de los datos iniciales se agregan más de un
+  rol, en un futuro se cambiaran para el caso real que sigue abajo ⬇️⬇️⬇️)_
+- **Administrador**: Acceso completo al sistema, Gestiona el registro de Alumnos,
+  Docentes, Grados, Insumos, Proveedores, Usuarios, Seguridad, Auditoría.
+- **Cocinera**: Gestión de Asistencias, Consumos, Inventarios, Pedidos,
+  Planificación de Menús, Recetas, Reportes.
 - **Docente**: Registra Asistencia del Alumno.
 
 ## 🔒 Seguridad
@@ -80,7 +92,8 @@ El sistema cuenta con 15+ tablas relacionales que gestionan:
 
 ## 📈 Estado del Proyecto
 
-Proyecto en desarrollo activo con funcionalidades core implementadas y en proceso de testing.
+Proyecto en desarrollo activo con funcionalidades core implementadas y en
+proceso de testing.
 
 # Frontend
 
@@ -92,10 +105,10 @@ Proyecto en desarrollo activo con funcionalidades core implementadas y en proces
 
 ## 🚀 Instalación y Uso
 
-1. Clonar el repositorio
-2. Instalar dependencias: `npm install`
-3. Configurar variables de entorno
-4. Iniciar el cliente: `npm start` o `pnpm run dev`
+1.  Clonar el repositorio
+2.  Instalar dependencias: `npm install`
+3.  Configurar variables de entorno
+4.  Iniciar el cliente: `npm start` o `pnpm run dev`
 
 ## 📁 Estructura del Proyecto
 

@@ -5,6 +5,8 @@ import PedidoAutomaticoForm from "../../components/cocinera/PedidoAutomaticoForm
 import pedidoService from "../../services/pedidoService";
 import estadoPedidoService from "../../services/estadoPedidoService";
 import insumoService from "../../services/insumoService";
+import { jsPDF } from "jspdf";
+import { autoTable } from "jspdf-autotable";
 
 const PedidoInsumo = () => {
   const { user } = useAuth();
@@ -296,6 +298,91 @@ const PedidoInsumo = () => {
     }
   };
 
+  const exportarPDFPedidos = () => {
+    console.log("Botón PDF clickeado, pedidos:", pedidos); // Debug
+    // Filtrar solo pedidos aprobados
+    const pedidosAprobados = pedidos.filter(
+      (p) => p.estadoPedido === "Aprobado"
+    );
+
+    if (pedidosAprobados.length === 0) {
+      alert("No hay pedidos aprobados para exportar");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+
+      // Título
+      doc.setFontSize(18);
+      doc.text("Reporte de Pedidos Aprobados", 14, 22);
+
+      // Información
+      doc.setFontSize(11);
+      const nombreUsuario = user
+        ? `${user.nombre} ${user.apellido}`
+        : "Sistema";
+      doc.text(`Generado por: ${nombreUsuario}`, 14, 32);
+      doc.text(
+        `Fecha de generación: ${new Date().toLocaleString("es-ES")}`,
+        14,
+        40
+      );
+      doc.text(
+        `Total de pedidos aprobados: ${pedidosAprobados.length}`,
+        14,
+        48
+      );
+
+      // Preparar datos para tabla
+      const tableData = pedidosAprobados.map((pedido) => [
+        new Date(pedido.fechaEmision).toLocaleDateString("es-ES"),
+        pedido.nombreProveedor,
+        pedido.nombreUsuario,
+        pedido.estadoPedido,
+        pedido.fechaAprobacion
+          ? new Date(pedido.fechaAprobacion).toLocaleDateString("es-ES")
+          : "-",
+      ]);
+
+      // Tabla
+      autoTable(doc, {
+        startY: 60,
+        head: [
+          [
+            "Fecha Emisión",
+            "Proveedor",
+            "Usuario",
+            "Estado",
+            "Fecha Aprobación",
+          ],
+        ],
+        body: tableData,
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [34, 139, 34], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+      });
+
+      // Pie de página
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(
+          `Página ${i} de ${pageCount}`,
+          doc.internal.pageSize.width - 30,
+          doc.internal.pageSize.height - 10
+        );
+      }
+
+      doc.save(`pedidos_aprobados_${new Date().getTime()}.pdf`);
+      alert("✅ Reporte PDF de pedidos aprobados generado exitosamente");
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+      alert("❌ Error al generar el reporte PDF");
+    }
+  };
+
   // Vista de creación de pedido
   if (vistaActual === "crear") {
     return (
@@ -380,7 +467,7 @@ const PedidoInsumo = () => {
 
       {/* Filtros */}
       <div className="card mb-4">
-        <div className="card-header">
+        <div className="card-header text-dark">
           <h5 className="mb-0">
             <i className="fas fa-filter me-2"></i>
             Filtros
@@ -484,10 +571,24 @@ const PedidoInsumo = () => {
               />
             </div>
           </div>
+          <div className="row align-items-center">
+            <div className="col-auto mt-3">
+              <button
+                className="btn btn-danger"
+                onClick={exportarPDFPedidos}
+                disabled={
+                  pedidos.filter((p) => p.estadoPedido === "Aprobado")
+                    .length === 0
+                }
+                title="Exportar solo pedidos aprobados"
+              >
+                <i className="fas fa-file-pdf me-1"></i>
+                Exportar PDF
+              </button>
+            </div>
 
-          <div className="row mt-3">
-            <div className="col-md-12 d-flex gap-2">
-              {hayFiltrosAplicados() && (
+            {hayFiltrosAplicados() && (
+              <div className="col-auto mt-3">
                 <button
                   className="btn btn-outline-secondary"
                   onClick={() =>
@@ -504,8 +605,8 @@ const PedidoInsumo = () => {
                   <i className="fas fa-times me-1"></i>
                   Limpiar Filtros
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -513,7 +614,7 @@ const PedidoInsumo = () => {
       {/* Lista de pedidos */}
       <div className="card">
         <div className="card-header">
-          <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex justify-content-between align-items-center text-dark">
             <h5 className="mb-0">
               <i className="fas fa-list me-2"></i>
               Lista de Pedidos ({pedidosFiltrados.length})

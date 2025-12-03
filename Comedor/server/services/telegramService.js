@@ -2,82 +2,117 @@ import TelegramBot from "node-telegram-bot-api";
 
 class TelegramService {
   constructor() {
-    this.bot = null;
-    this.isReady = false;
-    this.botToken = process.env.TELEGRAM_BOT_TOKEN;
-    this.chatId = process.env.TELEGRAM_CHAT_ID; // Tu chat ID personal o del grupo
-    this.isInitialized = false;
+    this.bots = {
+      sistema: null, // SistemaComedor_Bot - Notificaciones a cocinera
+      docente: null, // DocenteComedor_Bot - Mensajes al docente
+    };
+    this.isReady = {
+      sistema: false,
+      docente: false,
+    };
+    this.botTokens = {
+      sistema: process.env.TELEGRAM_BOT_TOKEN_SISTEMA,
+      docente: process.env.TELEGRAM_BOT_TOKEN_DOCENTE,
+    };
+    this.isInitialized = {
+      sistema: false,
+      docente: false,
+    };
+
+    // Inicializar automáticamente el bot de docentes después de un pequeño delay
+    // para permitir que dotenv termine de cargar
+    setImmediate(() => {
+      this.autoInitializeDocente();
+    });
   }
 
-  async initialize() {
+  async autoInitializeDocente() {
     try {
-      if (this.isInitialized) {
-        return { success: true, message: "Telegram ya está inicializado" };
+      if (this.botTokens.docente) {
+        await this.initialize("docente");
+      }
+    } catch (error) {
+      console.warn(
+        "⚠️ Error en inicialización automática del bot docente:",
+        error.message
+      );
+    }
+  }
+
+  async initialize(botType = "sistema") {
+    try {
+      if (this.isInitialized[botType]) {
+        return {
+          success: true,
+          message: `Telegram ${botType} ya está inicializado`,
+        };
       }
 
-      if (!this.botToken) {
+      const token = this.botTokens[botType];
+      if (!token) {
         console.warn(
-          "⚠️ TELEGRAM_BOT_TOKEN no encontrado en variables de entorno"
+          `⚠️ TELEGRAM_BOT_TOKEN_${botType.toUpperCase()} no encontrado en variables de entorno`
         );
         return {
           success: false,
-          message: "Token de bot de Telegram no configurado",
+          message: `Token de bot ${botType} de Telegram no configurado`,
         };
       }
 
       // Crear instancia del bot
-      this.bot = new TelegramBot(this.botToken, { polling: false });
+      this.bots[botType] = new TelegramBot(token, { polling: false });
 
       // Verificar que el bot funciona
-      const botInfo = await this.bot.getMe();
-      console.log("✅ Bot de Telegram conectado:", botInfo.username);
+      const botInfo = await this.bots[botType].getMe();
+      console.log(`✅ Bot ${botType} de Telegram conectado:`, botInfo.username);
 
-      this.isReady = true;
-      this.isInitialized = true;
+      this.isReady[botType] = true;
+      this.isInitialized[botType] = true;
 
       // Configurar comandos básicos
-      this.setupCommands();
+      this.setupCommands(botType);
 
       return {
         success: true,
-        message: "Bot de Telegram inicializado correctamente",
+        message: `Bot ${botType} de Telegram inicializado correctamente`,
         botInfo: {
           username: botInfo.username,
           firstName: botInfo.first_name,
           id: botInfo.id,
+          type: botType,
         },
       };
     } catch (error) {
-      console.error("❌ Error al inicializar Telegram:", error);
-      this.isReady = false;
+      console.error(`❌ Error al inicializar Telegram ${botType}:`, error);
+      this.isReady[botType] = false;
       return {
         success: false,
-        message: "Error al conectar con Telegram: " + error.message,
+        message: `Error al conectar con Telegram ${botType}: ` + error.message,
       };
     }
   }
 
-  setupCommands() {
+  setupCommands(botType = "sistema") {
     // Configurar comandos básicos del bot
-    if (!this.bot) return;
+    if (!this.bots[botType]) return;
+
+    const bot = this.bots[botType];
 
     // Comando /start
-    this.bot.onText(/\/start/, (msg) => {
+    bot.onText(/\/start/, (msg) => {
       const chatId = msg.chat.id;
-      this.bot.sendMessage(
-        chatId,
-        "🏫 ¡Hola! Soy el bot del Comedor Escolar.\n\n" +
-          "📋 Puedo ayudarte con:\n" +
-          "• Recibir enlaces de asistencias\n" +
-          "• Notificaciones del sistema\n\n" +
-          "📧 Para más información, contacta con el administrador."
-      );
+      const mensaje =
+        botType === "docente"
+          ? "🏫 ¡Hola Docente! Soy el bot para registro de asistencias del Comedor Escolar."
+          : "🏫 ¡Hola! Soy el bot del Comedor Escolar. Recibirás notificaciones sobre el estado de las asistencias.";
+
+      bot.sendMessage(chatId, mensaje);
     });
 
     // Comando /chatid para obtener el ID del chat
-    this.bot.onText(/\/chatid/, (msg) => {
+    bot.onText(/\/chatid/, (msg) => {
       const chatId = msg.chat.id;
-      this.bot.sendMessage(
+      bot.sendMessage(
         chatId,
         `📱 Tu Chat ID es: \`${chatId}\`\n\n` +
           "Proporciona este ID al administrador para recibir notificaciones.",
@@ -85,28 +120,34 @@ class TelegramService {
       );
     });
 
-    console.log("🤖 Comandos de Telegram configurados");
+    console.log(`🤖 Comandos de Telegram ${botType} configurados`);
   }
 
-  async sendMessage(chatId, message, options = {}) {
+  async sendMessage(chatId, message, botType = "sistema", options = {}) {
     try {
-      if (!this.isReady) {
-        const initResult = await this.initialize();
+      if (!this.isReady[botType]) {
+        const initResult = await this.initialize(botType);
         if (!initResult.success) {
           throw new Error(initResult.message);
         }
       }
 
-      const result = await this.bot.sendMessage(chatId, message, {
+      const result = await this.bots[botType].sendMessage(chatId, message, {
         parse_mode: "Markdown",
         disable_web_page_preview: true,
         ...options,
       });
 
-      console.log("✅ Mensaje enviado por Telegram:", result.message_id);
+      console.log(
+        `✅ Mensaje enviado por Telegram ${botType}:`,
+        result.message_id
+      );
       return { success: true, messageId: result.message_id };
     } catch (error) {
-      console.error("❌ Error enviando mensaje por Telegram:", error);
+      console.error(
+        `❌ Error enviando mensaje por Telegram ${botType}:`,
+        error
+      );
       return {
         success: false,
         error: error.message,
@@ -114,20 +155,13 @@ class TelegramService {
     }
   }
 
-  async sendToMainChat(message, options = {}) {
-    if (!this.chatId) {
-      throw new Error("TELEGRAM_CHAT_ID no configurado");
-    }
-    return this.sendMessage(this.chatId, message, options);
-  }
-
-  getStatus() {
+  getStatus(botType = "sistema") {
     return {
-      isReady: this.isReady,
-      isInitialized: this.isInitialized,
-      hasToken: !!this.botToken,
-      hasChatId: !!this.chatId,
-      botInfo: this.isReady ? "Conectado" : "Desconectado",
+      isReady: this.isReady[botType],
+      isInitialized: this.isInitialized[botType],
+      hasToken: !!this.botTokens[botType],
+      botInfo: this.isReady[botType] ? "Conectado" : "Desconectado",
+      botType,
     };
   }
 
@@ -176,16 +210,22 @@ class TelegramService {
     return buttons;
   }
 
-  async sendMessageWithButtons(chatId, message, buttons, options = {}) {
+  async sendMessageWithButtons(
+    chatId,
+    message,
+    buttons,
+    botType = "sistema",
+    options = {}
+  ) {
     try {
-      if (!this.isReady) {
-        const initResult = await this.initialize();
+      if (!this.isReady[botType]) {
+        const initResult = await this.initialize(botType);
         if (!initResult.success) {
           throw new Error(initResult.message);
         }
       }
 
-      const result = await this.bot.sendMessage(chatId, message, {
+      const result = await this.bots[botType].sendMessage(chatId, message, {
         parse_mode: "Markdown",
         disable_web_page_preview: true,
         reply_markup: {
@@ -195,13 +235,13 @@ class TelegramService {
       });
 
       console.log(
-        "✅ Mensaje con botones enviado por Telegram:",
+        `✅ Mensaje con botones enviado por Telegram ${botType}:`,
         result.message_id
       );
       return { success: true, messageId: result.message_id };
     } catch (error) {
       console.error(
-        "❌ Error enviando mensaje con botones por Telegram:",
+        `❌ Error enviando mensaje con botones por Telegram ${botType}:`,
         error
       );
       return {
@@ -209,10 +249,6 @@ class TelegramService {
         error: error.message,
       };
     }
-  }
-
-  getMainChatId() {
-    return this.chatId;
   }
 }
 

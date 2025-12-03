@@ -704,9 +704,9 @@ const CocineraInventario = () => {
 
           {/* Últimos movimientos */}
           <div className="card mt-3">
-            <div className="card-header">
+            <div className="card-header text-dark pb-0">
               <h6>
-                <i className="fas fa-history me-2 pb-0"></i>
+                <i className="fas fa-history me-2"></i>
                 Últimos Movimientos
               </h6>
             </div>

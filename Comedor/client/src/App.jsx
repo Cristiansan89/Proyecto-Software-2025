@@ -15,6 +15,7 @@ import Configuracion from "./pages/admins/Configuracion";
 import ParametrosSistema from "./pages/admins/ParametrosSistema";
 import Persona from "./pages/admins/Personas";
 import PersonaGrado from "./pages/admins/PersonaGrado";
+import Auditoria from "./pages/admins/Auditoria";
 import RegistroAsistenciasMovil from "./pages/movil/RegistroAsistenciasMovil.jsx";
 import TestAsistencias from "./pages/movil/TestAsistencias.jsx";
 import GestionAsistencias from "./pages/docente/GestionAsistencias";
@@ -23,6 +24,7 @@ import DocenteAsistencias from "./pages/docente/DocenteAsistencias";
 import RegistroAsistenciasDocente from "./pages/docente/RegistroAsistenciasDocente";
 import MisAlumnos from "./pages/docente/MisAlumnos";
 import Horarios from "./pages/docente/Horarios";
+import AsistenciaFinalizado from "./pages/docente/AsistenciaFinalizado";
 import AdminLayout from "./layouts/AdminLayout";
 import DocenteLayout from "./layouts/DocenteLayout";
 import CocineraLayout from "./layouts/CocineraLayout";
@@ -110,6 +112,7 @@ function App() {
                         path="/parametros"
                         element={<ParametrosSistema />}
                       />
+                      <Route path="/auditoria" element={<Auditoria />} />
                       <Route
                         path="/configuracion"
                         element={<Configuracion />}
@@ -136,6 +139,10 @@ function App() {
                       <Route
                         path="/registro-asistencias"
                         element={<RegistroAsistenciasDocente />}
+                      />
+                      <Route
+                        path="/asistencias/finalizado"
+                        element={<AsistenciaFinalizado />}
                       />
                       <Route
                         path="/gestionasistencias"

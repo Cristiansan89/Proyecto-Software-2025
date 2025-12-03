@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
+// import ConfiguracionServiciosAutomaticos from "../../components/ConfigServiciosAuto";
 import "../../styles/Parametros.css";
 
 const Parametros = () => {
@@ -215,222 +216,229 @@ const Parametros = () => {
 
   return (
     <div className="container-fluid parametros-container">
-      <div className="page-header">
-        <div className="page-left">
-          <h5 className="page-title">Parámetros del Sistema</h5>
-        </div>
-        <div className="col-md-4 text-end">
-          <button className="btn btn-primary" onClick={handleNuevo}>
-            <i className="fas fa-plus"></i> Nuevo Parámetro
-          </button>
-        </div>
-      </div>
-
-      {mensaje && (
-        <div
-          className={`alert alert-${mensaje.tipo} alert-dismissible fade show`}
-          role="alert"
-        >
-          {mensaje.texto}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setMensaje(null)}
-          ></button>
-        </div>
-      )}
-
-      <div className="card">
-        <div className="card-header bg-light">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Buscar parámetro..."
-                value={filtros.busqueda}
-                onChange={(e) =>
-                  setFiltros((prev) => ({
-                    ...prev,
-                    busqueda: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="col-md-3">
-              <select
-                className="form-select"
-                value={filtros.estado}
-                onChange={(e) =>
-                  setFiltros((prev) => ({
-                    ...prev,
-                    estado: e.target.value,
-                  }))
-                }
-              >
-                <option value="">Todos los estados</option>
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-              </select>
-            </div>
-            <div className="col-md-3">
-              <div className="d-flex align-items-center gap-2">
-                <label className="form-label mb-0 text-nowrap">
-                  <small>Registros:</small>
-                </label>
-                <select
-                  className="form-select form-select-sm"
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
+      {/* Tabs para navegación */}
+      {/* Pestaña de Parámetros */}
+      {true && (
+        <div role="tabpanel">
+          <div className="page-header">
+            <div className="page-left"></div>
+            <div className="col-md-4 text-end">
+              <button className="btn btn-primary" onClick={handleNuevo}>
+                <i className="fas fa-plus"></i> Nuevo Parámetro
+              </button>
             </div>
           </div>
-        </div>
 
-        <div className="card-body">
-          {parametrosPaginados.length === 0 ? (
-            <div className="alert alert-light text-center">
-              No hay parámetros disponibles
-            </div>
-          ) : (
-            <div className="table-container">
-              <table className="table table-striped data-table">
-                <thead className="table-header-fixed">
-                  <tr>
-                    <th width="2%">#</th>
-                    <th width="25%">Nombre</th>
-                    <th width="28%">Valor</th>
-                    <th width="15%">Tipo</th>
-                    <th width="15%">Estado</th>
-                    <th width="15%">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parametrosPaginados.map((param) => (
-                    <tr key={param.id_parametro}>
-                      <td>
-                        <strong>{param.id_parametro}</strong>
-                      </td>
-                      <td className="fw-500">{param.nombreParametro}</td>
-                      <td>
-                        <code className="bg-light p-2 rounded">
-                          {param.valor}
-                        </code>
-                      </td>
-                      <td>
-                        <span className="badge bg-info">
-                          {param.tipoParametro || "Texto"}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            param.estado === "Activo"
-                              ? "bg-success"
-                              : "bg-danger"
-                          }`}
-                        >
-                          {param.estado}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-sm btn-warning me-2"
-                          onClick={() => handleEditar(param)}
-                          title="Editar"
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleEliminar(param.id_parametro)}
-                          title="Eliminar"
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {mensaje && (
+            <div
+              className={`alert alert-${mensaje.tipo} alert-dismissible fade show`}
+              role="alert"
+            >
+              {mensaje.texto}
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setMensaje(null)}
+              ></button>
             </div>
           )}
-        </div>
 
-        {totalPages > 1 && (
-          <div className="card-footer bg-light">
-            <div className="row align-items-center">
-              <div className="col-md-6">
-                <small className="text-muted">
-                  Mostrando {startIndex + 1} a{" "}
-                  {Math.min(startIndex + pageSize, parametrosOrdenados.length)}{" "}
-                  de {parametrosOrdenados.length} parámetros
-                </small>
-              </div>
-              <div className="col-md-6">
-                <nav>
-                  <ul className="pagination justify-content-end mb-0">
-                    <li
-                      className={`page-item ${
-                        currentPage === 1 ? "disabled" : ""
-                      }`}
+          <div className="card">
+            <div className="card-header bg-light">
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Buscar parámetro..."
+                    value={filtros.busqueda}
+                    onChange={(e) =>
+                      setFiltros((prev) => ({
+                        ...prev,
+                        busqueda: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="col-md-3">
+                  <select
+                    className="form-select"
+                    value={filtros.estado}
+                    onChange={(e) =>
+                      setFiltros((prev) => ({
+                        ...prev,
+                        estado: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Todos los estados</option>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                </div>
+                <div className="col-md-3">
+                  <div className="d-flex align-items-center gap-2">
+                    <label className="form-label mb-0 text-nowrap">
+                      <small>Registros:</small>
+                    </label>
+                    <select
+                      className="form-select form-select-sm"
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
                     >
-                      <button
-                        className="page-link"
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                      >
-                        Anterior
-                      </button>
-                    </li>
-                    {[...Array(totalPages)].map((_, i) => (
-                      <li
-                        key={i + 1}
-                        className={`page-item ${
-                          currentPage === i + 1 ? "active" : ""
-                        }`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => setCurrentPage(i + 1)}
-                        >
-                          {i + 1}
-                        </button>
-                      </li>
-                    ))}
-                    <li
-                      className={`page-item ${
-                        currentPage === totalPages ? "disabled" : ""
-                      }`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages)
-                          )
-                        }
-                      >
-                        Siguiente
-                      </button>
-                    </li>
-                  </ul>
-                </nav>
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <div className="card-body">
+              {parametrosPaginados.length === 0 ? (
+                <div className="alert alert-light text-center">
+                  No hay parámetros disponibles
+                </div>
+              ) : (
+                <div className="table-container">
+                  <table className="table table-striped data-table">
+                    <thead className="table-header-fixed">
+                      <tr>
+                        <th width="2%">#</th>
+                        <th width="25%">Nombre</th>
+                        <th width="28%">Valor</th>
+                        <th width="15%">Tipo</th>
+                        <th width="15%">Estado</th>
+                        <th width="15%">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parametrosPaginados.map((param) => (
+                        <tr key={param.id_parametro}>
+                          <td>
+                            <strong>{param.id_parametro}</strong>
+                          </td>
+                          <td className="fw-500">{param.nombreParametro}</td>
+                          <td>
+                            <code className="bg-light p-2 rounded">
+                              {param.valor}
+                            </code>
+                          </td>
+                          <td>
+                            <span className="badge bg-info">
+                              {param.tipoParametro || "Texto"}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className={`badge ${
+                                param.estado === "Activo"
+                                  ? "bg-success"
+                                  : "bg-danger"
+                              }`}
+                            >
+                              {param.estado}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className="btn btn-sm btn-warning me-2"
+                              onClick={() => handleEditar(param)}
+                              title="Editar"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleEliminar(param.id_parametro)}
+                              title="Eliminar"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="card-footer bg-light">
+                <div className="row align-items-center">
+                  <div className="col-md-6">
+                    <small className="text-muted">
+                      Mostrando {startIndex + 1} a{" "}
+                      {Math.min(
+                        startIndex + pageSize,
+                        parametrosOrdenados.length
+                      )}{" "}
+                      de {parametrosOrdenados.length} parámetros
+                    </small>
+                  </div>
+                  <div className="col-md-6">
+                    <nav>
+                      <ul className="pagination justify-content-end mb-0">
+                        <li
+                          className={`page-item ${
+                            currentPage === 1 ? "disabled" : ""
+                          }`}
+                        >
+                          <button
+                            className="page-link"
+                            onClick={() =>
+                              setCurrentPage((prev) => Math.max(prev - 1, 1))
+                            }
+                          >
+                            Anterior
+                          </button>
+                        </li>
+                        {[...Array(totalPages)].map((_, i) => (
+                          <li
+                            key={i + 1}
+                            className={`page-item ${
+                              currentPage === i + 1 ? "active" : ""
+                            }`}
+                          >
+                            <button
+                              className="page-link"
+                              onClick={() => setCurrentPage(i + 1)}
+                            >
+                              {i + 1}
+                            </button>
+                          </li>
+                        ))}
+                        <li
+                          className={`page-item ${
+                            currentPage === totalPages ? "disabled" : ""
+                          }`}
+                        >
+                          <button
+                            className="page-link"
+                            onClick={() =>
+                              setCurrentPage((prev) =>
+                                Math.min(prev + 1, totalPages)
+                              )
+                            }
+                          >
+                            Siguiente
+                          </button>
+                        </li>
+                      </ul>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Modal para crear/editar parámetro */}
       {modalParametro && (
@@ -520,20 +528,20 @@ const Parametros = () => {
                       </select>
                     </div>
                   </div>
-                </div>
-                <div className="form-actions mt-3 mb-3">
-                  <button
-                    type="button"
-                    className="btn btn-secondary me-2"
-                    onClick={handleCerrarModal}
-                  >
-                    <i className="fas fa-times"></i>
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    <i className="fas fa-save"></i>
-                    {editandoId ? "Actualizar" : "Crear"} Parámetro
-                  </button>
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="btn btn-secondary me-2"
+                      onClick={handleCerrarModal}
+                    >
+                      <i className="fas fa-times"></i>
+                      Cancelar
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      <i className="fas fa-save"></i>
+                      {editandoId ? "Actualizar" : "Crear"} Parámetro
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>

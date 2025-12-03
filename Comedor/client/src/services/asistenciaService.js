@@ -73,26 +73,45 @@ const asistenciaService = {
     }
   },
 
-  // Obtener cantidad total de asistentes por servicio
+  // Obtener cantidad total de asistentes por servicio (solo los que marcó como "Si")
   getTotalAsistenciasPorServicio: async (fecha) => {
     try {
-      const asistencias = await asistenciaService.getByFecha(fecha);
+      console.log(`🔍 Buscando asistencias para fecha: ${fecha}`);
+      // Usar el endpoint que retorna registros individuales de asistencia
+      const response = await api.get(`/asistencias`, {
+        params: { fecha },
+      });
+
+      console.log(`📤 Respuesta del API:`, response.data);
+
+      const asistencias = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+
+      console.log(`📊 Asistencias extraídas:`, asistencias);
 
       const totales = {};
 
       if (Array.isArray(asistencias)) {
         asistencias.forEach((registro) => {
-          if (!totales[registro.id_servicio]) {
-            totales[registro.id_servicio] = 0;
+          console.log(
+            `  ➡️ Registro: servicio=${registro.id_servicio}, estado=${registro.estado}`
+          );
+          // Contar registros que NO sean "Pendiente" (es decir, que se hayan completado con cualquier estado)
+          if (registro.estado && registro.estado !== "Pendiente") {
+            if (!totales[registro.id_servicio]) {
+              totales[registro.id_servicio] = 0;
+            }
+            totales[registro.id_servicio] += 1;
           }
-          totales[registro.id_servicio] += 1;
         });
       }
 
+      console.log(`✅ Totales calculados:`, totales);
       return totales;
     } catch (error) {
-      console.error("Error al obtener total de asistencias:", error);
-      throw error;
+      console.error("❌ Error al obtener total de asistencias:", error);
+      return {};
     }
   },
 };

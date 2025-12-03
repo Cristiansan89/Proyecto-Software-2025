@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import "../../../src/styles/CocineraDashboard.css";
 import API from "../../services/api.js";
+import consumosService from "../../services/consumosService";
+import asistenciasService from "../../services/asistenciasService";
+import pedidoService from "../../services/pedidoService";
+import planificacionMenuService from "../../services/planificacionMenuService";
 
 const CocineraDashboard = () => {
   const { user } = useAuth();
@@ -11,9 +15,12 @@ const CocineraDashboard = () => {
     gradosActivos: 0,
     serviciosHoy: 0,
     asistenciasHoy: 0,
+    consumosHoy: 0,
+    pedidosPendientes: 0,
   });
   const [serviciosHoy, setServiciosHoy] = useState([]);
   const [proximosServicios, setProximosServicios] = useState([]);
+  const [detallesConsumosHoy, setDetallesConsumosHoy] = useState([]);
 
   useEffect(() => {
     cargarDashboard();
@@ -23,12 +30,19 @@ const CocineraDashboard = () => {
     try {
       setLoading(true);
 
+      const hoy = new Date().toISOString().split("T")[0];
+      const manana = new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
+
       // Obtener estadísticas básicas
-      const [docentesRes, gradosRes, serviciosRes] = await Promise.all([
-        API.get("/personas"),
-        API.get("/grados"),
-        API.get("/servicios"),
-      ]);
+      const [docentesRes, gradosRes, serviciosRes, planificacionRes] =
+        await Promise.all([
+          API.get("/personas"),
+          API.get("/grados"),
+          API.get("/servicios"),
+          planificacionMenuService.getAll().catch(() => ({ data: [] })),
+        ]);
 
       const docentes =
         docentesRes.data?.filter(
@@ -40,15 +54,74 @@ const CocineraDashboard = () => {
         serviciosRes.data?.filter((servicio) => servicio.estado === "Activo") ||
         [];
 
-      // Simular servicios de hoy y próximos
-      const serviciosDeHoy = generarServiciosHoy(servicios);
-      const proximosServiciosData = generarProximosServicios(servicios);
+      // Filtrar planificaciones de hoy y mañana
+      const planificacionesHoy = (planificacionRes.data || []).filter(
+        (p) => p.fecha && p.fecha.split("T")[0] === hoy
+      );
+      const planificacionesMañana = (planificacionRes.data || []).filter(
+        (p) => p.fecha && p.fecha.split("T")[0] === manana
+      );
+
+      // Obtener datos reales de hoy
+      let consumosHoyCount = 0;
+      let asistenciasHoyCount = 0;
+      let pedidosPendientes = 0;
+
+      try {
+        // Consumos de hoy
+        const consumosRes = await consumosService.obtenerConsumos(
+          `fechaInicio=${hoy}&fechaFin=${hoy}`
+        );
+        if (consumosRes.success && consumosRes.data) {
+          consumosHoyCount = consumosRes.data.length;
+          setDetallesConsumosHoy(consumosRes.data.slice(0, 5)); // Últimos 5 consumos
+        }
+      } catch (error) {
+        console.error("Error al obtener consumos:", error);
+      }
+
+      try {
+        // Asistencias de hoy
+        const asistenciasRes = await asistenciasService.obtenerAsistencias(
+          `fecha=${hoy}`
+        );
+        if (asistenciasRes.success && asistenciasRes.data) {
+          asistenciasHoyCount = asistenciasRes.data.reduce(
+            (sum, reg) => sum + (reg.cantidadPresentes || 0),
+            0
+          );
+        }
+      } catch (error) {
+        console.error("Error al obtener asistencias:", error);
+      }
+
+      try {
+        // Pedidos pendientes de aprobación
+        const pedidosRes = await pedidoService.getAll();
+        if (pedidosRes.data) {
+          pedidosPendientes = pedidosRes.data.filter(
+            (p) => p.estadoPedido === "Pendiente"
+          ).length;
+        }
+      } catch (error) {
+        console.error("Error al obtener pedidos:", error);
+      }
+
+      // Generar servicios de hoy y próximos con datos reales de planificación
+      const serviciosDeHoy = generarServiciosHoy(servicios, planificacionesHoy);
+      const proximosServiciosData = generarProximosServicios(
+        servicios,
+        manana,
+        planificacionesMañana
+      );
 
       setEstadisticas({
         docentesTotal: docentes.length,
         gradosActivos: grados.length,
         serviciosHoy: serviciosDeHoy.length,
-        asistenciasHoy: Math.floor(Math.random() * 150) + 100, // Simulado
+        asistenciasHoy: asistenciasHoyCount,
+        consumosHoy: consumosHoyCount,
+        pedidosPendientes: pedidosPendientes,
       });
 
       setServiciosHoy(serviciosDeHoy);
@@ -60,17 +133,38 @@ const CocineraDashboard = () => {
     }
   };
 
-  const generarServiciosHoy = (servicios) => {
+  const generarServiciosHoy = (servicios, planificaciones = []) => {
     const horariosDelDia = [
-      { nombre: "Desayuno", hora: "07:30", icono: "🥐" },
+      { nombre: "Desayuno", hora: "08:30", icono: "🥐" },
       { nombre: "Almuerzo", hora: "12:00", icono: "🍽️" },
-      { nombre: "Merienda", hora: "15:30", icono: "🥪" },
+      { nombre: "Merienda", hora: "16:00", icono: "🥪" },
     ];
 
     return horariosDelDia.map((horario) => {
       const servicio = servicios.find((s) =>
         s.nombre.toLowerCase().includes(horario.nombre.toLowerCase())
       );
+
+      // Buscar planificaciones para este servicio
+      const planificacionesDelServicio = planificaciones.filter(
+        (p) =>
+          p.idServicio === servicio?.idServicio ||
+          p.id_servicio === servicio?.id_servicio
+      );
+
+      // Construir descripción con grado + servicio + receta
+      const detallesServicio =
+        planificacionesDelServicio
+          .map((p) => {
+            const grado = p.nombreGrado || p.nombre_grado || "";
+            const nombreServicio = p.nombreServicio || p.nombre_servicio || "";
+            const receta = p.nombreReceta || p.nombre_receta || "";
+            return `${grado} - ${nombreServicio}: ${receta}`;
+          })
+          .filter(Boolean)
+          .join(" | ") ||
+        servicio?.descripcion ||
+        `Servicio de ${horario.nombre.toLowerCase()}`;
 
       const ahora = new Date();
       const [hora, minutos] = horario.hora.split(":");
@@ -88,25 +182,25 @@ const CocineraDashboard = () => {
             : ahora.getTime() < horaServicio.getTime() - 30 * 60 * 1000
             ? "pendiente"
             : "en_curso",
-        descripcion:
-          servicio?.descripcion ||
-          `Servicio de ${horario.nombre.toLowerCase()}`,
-        estimadoAlumnos: Math.floor(Math.random() * 80) + 40,
+        descripcion: detallesServicio,
       };
     });
   };
 
-  const generarProximosServicios = (servicios) => {
-    const manana = new Date();
-    manana.setDate(manana.getDate() + 1);
-
+  const generarProximosServicios = (
+    servicios,
+    fechaManana,
+    planificaciones = []
+  ) => {
     return [
-      { nombre: "Desayuno", hora: "07:30", fecha: manana, icono: "🥐" },
-      { nombre: "Almuerzo", hora: "12:00", fecha: manana, icono: "🍽️" },
-    ].map((servicio, index) => ({
-      id: `manana-${index}`,
-      ...servicio,
-      estimadoAlumnos: Math.floor(Math.random() * 80) + 40,
+      { nombre: "Desayuno", hora: "08:30", icono: "🥐" },
+      { nombre: "Almuerzo", hora: "12:00", icono: "🍽️" },
+      { nombre: "Merienda", hora: "16:00", icono: "🥪" },
+    ].map((horario) => ({
+      id: `manana-${horario.nombre}`,
+      nombre: horario.nombre,
+      hora: horario.hora,
+      icono: horario.icono,
     }));
   };
 
@@ -150,7 +244,7 @@ const CocineraDashboard = () => {
   return (
     <div>
       <div>
-        <div className="page-header">
+        <div className="page-header text-dark">
           <h2>
             <i className="fas fa-bowl-rice me-2"></i>
             Bienvenida, {user.nombre} {user.apellido}
@@ -161,27 +255,18 @@ const CocineraDashboard = () => {
       {/* Tarjetas de estadísticas */}
       <div className="dashboard-stats-cocinera">
         <div className="stat-card bg-primary">
-          <div className="stat-icon">
-            <i className="fas fa-chalkboard-teacher"></i>
-          </div>
           <div className="stat-info">
             <h3>{estadisticas.docentesTotal}</h3>
             <p>Docentes Registrados</p>
           </div>
         </div>
         <div className="stat-card bg-success">
-          <div className="stat-icon">
-            <i className="fas fa-school"></i>
-          </div>
           <div className="stat-info">
             <h3>{estadisticas.gradosActivos}</h3>
             <p>Grados Activos</p>
           </div>
         </div>
         <div className="stat-card bg-warning">
-          <div className="stat-icon">
-            <i className="fas fa-utensils"></i>
-          </div>
           <div className="stat-info">
             <h3>{estadisticas.serviciosHoy}</h3>
             <p>Servicios Hoy</p>
@@ -189,9 +274,6 @@ const CocineraDashboard = () => {
         </div>
 
         <div className="stat-card bg-info">
-          <div className="stat-icon">
-            <i className="fas fa-users"></i>
-          </div>
           <div className="stat-info">
             <h3>{estadisticas.asistenciasHoy}</h3>
             <p>Asistencias Hoy</p>
@@ -238,10 +320,6 @@ const CocineraDashboard = () => {
                           <p className="descripcion-servicio">
                             {servicio.descripcion}
                           </p>
-                          <p className="estimado-alumnos">
-                            <i className="fas fa-users me-2"></i>~
-                            {servicio.estimadoAlumnos} alumnos estimados
-                          </p>
                         </div>
                         <span
                           className={`badge bg-${getEstadoColor(
@@ -257,38 +335,126 @@ const CocineraDashboard = () => {
               </div>
             </div>
           </div>
+
+          {/* Consumos recientes */}
+          <div className="card mt-4">
+            <div className="card-header">
+              <h4>
+                <i className="fas fa-chart-bar me-2"></i>
+                Consumos Registrados Hoy
+              </h4>
+            </div>
+            <div className="card-body">
+              {detallesConsumosHoy.length > 0 ? (
+                <div className="table-responsive">
+                  <table className="table table-sm table-hover">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Insumo</th>
+                        <th>Servicio</th>
+                        <th>Cantidad</th>
+                        <th>Hora</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detallesConsumosHoy.map((consumo, index) => (
+                        <tr key={index}>
+                          <td>
+                            <strong>
+                              {consumo.nombreInsumo ||
+                                `Insumo #${consumo.id_insumo}`}
+                            </strong>
+                          </td>
+                          <td>
+                            <span className="badge bg-primary">
+                              {consumo.nombreServicio || "Sin servicio"}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="badge bg-info text-dark">
+                              {consumo.cantidadUtilizada} {consumo.unidadMedida}
+                            </span>
+                          </td>
+                          <td className="text-muted">
+                            <small>
+                              {new Date(
+                                consumo.fechaHoraGeneracion
+                              ).toLocaleTimeString("es-ES")}
+                            </small>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <i className="fas fa-inbox fa-2x text-muted mb-3"></i>
+                  <p className="text-muted">No hay consumos registrados hoy</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Panel lateral */}
         <div className="col-lg-4">
           {/* Próximos servicios */}
-          <div className="card">
+          <div className="card mb-4">
             <div className="card-header">
               <h4>
                 <i className="fas fa-calendar-plus me-2"></i>
-                Próximos Servicios
+                Próximos Servicios (Mañana)
               </h4>
             </div>
             <div className="card-body">
               {proximosServicios.map((servicio) => (
-                <div key={servicio.id} className="proximo-servicio">
+                <div
+                  key={servicio.id}
+                  className="proximo-servicio mb-3 pb-3 border-bottom"
+                >
                   <div className="d-flex align-items-center">
-                    <span className="servicio-icono me-3">
+                    <span className="servicio-icono me-3 fs-4">
                       {servicio.icono}
                     </span>
-                    <div>
-                      <h6>{servicio.nombre}</h6>
-                      <small className="text-muted">
-                        Mañana - {servicio.hora}
-                      </small>
-                      <br />
-                      <small className="text-muted">
-                        ~{servicio.estimadoAlumnos} alumnos
+                    <div className="flex-grow-1">
+                      <h6 className="mb-1">{servicio.nombre}</h6>
+                      <small className="text-muted d-block">
+                        <i className="fas fa-clock me-1"></i>
+                        {servicio.hora}
                       </small>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Alertas y recordatorios */}
+          <div className="card">
+            <div className="card-header text-dark">
+              <h4>
+                <i className="fas fa-bell me-2"></i>
+                Recordatorios Importantes
+              </h4>
+            </div>
+            <div className="card-body">
+              <div className="alert alert-warning alert-dismissible fade show mb-3">
+                <i className="fas fa-exclamation-triangle me-2"></i>
+                <strong>
+                  {" "}
+                  Recuerde Generar la Lista de Asistencia para el Día.
+                </strong>
+                <br />
+              </div>
+
+              <div className="alert alert-info alert-dismissible fade show mb-0">
+                <i className="fas fa-info-circle me-2"></i>
+                <strong>
+                  Verifique que los datos en el sistema esten bien implementados
+                </strong>
+                <br />
+              </div>
             </div>
           </div>
         </div>

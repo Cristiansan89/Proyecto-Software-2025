@@ -100,10 +100,10 @@ const emailTemplates = {
   resetPassword: (userData) => ({
     subject: "Recuperación de Contraseña - Sistema Comedor Escolar",
     html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 15px;">
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #51015aff 0%, #f5576c 100%); padding: 20px; border-radius: 15px;">
                 <div style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                     <div style="text-align: center; margin-bottom: 30px;">
-                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                        <div style="background: linear-gradient(135deg, #51015aff 0%, #f5576c 100%); width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                             <span style="color: white; font-size: 24px;">🔒</span>
                         </div>
                         <h1 style="color: #2c3e50; margin: 0; font-size: 28px;">Recuperación de Contraseña</h1>

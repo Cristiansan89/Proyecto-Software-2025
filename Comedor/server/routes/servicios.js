@@ -18,6 +18,10 @@ export const createServicioRouter = ({ servicioModel }) => {
     "/estado-completado",
     servicioController.obtenerEstadoCompletado
   );
+  serviciosRouter.get(
+    "/comensales/por-servicio",
+    servicioController.obtenerComensalesPorServicio
+  );
 
   // Rutas con parámetros (al final)
   serviciosRouter.get("/:id", servicioController.getById);

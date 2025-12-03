@@ -43,5 +43,17 @@ export const createAsistenciaRouter = ({ asistenciaModel }) => {
     asistenciaController.generateTokenForDocente
   );
 
+  // Procesar asistencias completadas
+  asistenciasRouter.post(
+    "/procesar-completada",
+    asistenciaController.procesarAsistenciaCompletada
+  );
+
+  // Procesar todas las asistencias de una fecha
+  asistenciasRouter.post(
+    "/procesar-todas-fecha",
+    asistenciaController.procesarTodasAsistenciasFecha
+  );
+
   return asistenciasRouter;
 };

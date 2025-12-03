@@ -184,11 +184,12 @@ export class ServicioController {
         });
       }
 
-      // Marcar servicio como completado
+      // Marcar servicio como completado con el número de comensales
       const result = await this.servicioModel.marcarCompletado({
         fecha,
         id_servicio,
         completado,
+        comensales_total: comensales || 0,
       });
 
       // Si se marca como completado (no se desmarca), registrar consumos
@@ -239,6 +240,32 @@ export class ServicioController {
       return res.json(result);
     } catch (error) {
       console.error("Error al obtener estado de servicios:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+  // Obtener comensales totales por servicio para una fecha específica
+  obtenerComensalesPorServicio = async (req, res) => {
+    try {
+      const { fecha } = req.query;
+
+      if (!fecha) {
+        return res.status(400).json({
+          success: false,
+          message: "Se requiere parámetro fecha",
+        });
+      }
+
+      const result = await this.servicioModel.obtenerComensalesPorServicio(
+        fecha
+      );
+
+      return res.json(result);
+    } catch (error) {
+      console.error("Error al obtener comensales por servicio:", error);
       res.status(500).json({
         success: false,
         message: error.message,

@@ -184,18 +184,30 @@ class AlertasInventarioService {
   // Enviar alerta por Telegram
   async enviarAlerta(insumo, numeroEnvio) {
     try {
-      const chatId = process.env.TELEGRAM_CHAT_ID;
+      // Obtener Chat ID de la cocinera desde la BD
+      const { connection } = await import("../models/db.js");
+      const [parametros] = await connection.query(
+        "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo'",
+        ["TELEGRAM_COCINERA_CHAT_ID"]
+      );
+
+      let chatId =
+        parametros?.[0]?.valor || process.env.TELEGRAM_COCINERA_CHAT_ID;
 
       if (!chatId) {
-        console.warn("⚠️ TELEGRAM_CHAT_ID no configurado");
+        console.warn("⚠️ TELEGRAM_COCINERA_CHAT_ID no configurado");
         return;
       }
 
       // Construir mensaje
       const mensaje = this.construirMensajeAlerta(insumo, numeroEnvio);
 
-      // Enviar por Telegram
-      const resultado = await telegramService.sendMessage(chatId, mensaje);
+      // Enviar por Telegram usando el bot del sistema
+      const resultado = await telegramService.sendMessage(
+        chatId,
+        mensaje,
+        "sistema"
+      );
 
       if (resultado.success) {
         console.log(
@@ -224,25 +236,30 @@ class AlertasInventarioService {
     const emoji = insumo.estado === "Agotado" ? "🚨" : "⚠️";
     const estadoTexto = insumo.estado === "Agotado" ? "AGOTADO" : "CRÍTICO";
 
-    let mensaje = `${emoji} *ALERTA DE INVENTARIO*\n\n`;
-    mensaje += `*Estado:* ${estadoTexto}\n`;
-    mensaje += `*Insumo:* ${insumo.nombreInsumo}\n`;
-    mensaje += `*Categoría:* ${insumo.categoria}\n`;
-    mensaje += `*Stock Actual:* ${Math.round(
+    let mensaje = `${emoji} ALERTA DE INVENTARIO\n\n`;
+    mensaje += `Estado: ${estadoTexto}\n`;
+    mensaje += `Insumo: ${insumo.nombreInsumo}\n`;
+    mensaje += `Categoría: ${insumo.categoria}\n`;
+    mensaje += `Stock Actual: ${Math.round(
       parseFloat(insumo.cantidadActual)
     )} ${insumo.unidadMedida}\n`;
-    mensaje += `*Nivel Mínimo:* ${Math.round(
+    mensaje += `Nivel Mínimo: ${Math.round(
       parseFloat(insumo.nivelMinimoAlerta)
     )} ${insumo.unidadMedida}\n`;
-    mensaje += `*Notificación:* ${numeroEnvio}/3\n\n`;
+    mensaje += `Notificación: ${numeroEnvio}/3\n\n`;
 
-    mensaje += "🔔 *Por favor:*\n";
-    mensaje += "• Revisa el inventario del sistema\n";
-    mensaje += "• Ingresa al sistema para confirmar lectura\n";
-    mensaje += "• Coordina la solicitud del insumo\n\n";
+    mensaje += `🔔 Acciones sugeridas:\n`;
+    mensaje += `• Revisa el inventario del sistema\n`;
+    mensaje += `• Verifica los proveedores disponibles\n`;
+    mensaje += `• Realiza un pedido manual si es necesario\n`;
+    mensaje += `• Ingresa al sistema para confirmar lectura\n\n`;
 
-    mensaje +=
-      "⏰ Se enviarán hasta 3 notificaciones hasta que ingreses al sistema.";
+    mensaje += `📊 Sistema de Pedidos Automáticos:\n`;
+    mensaje += `• Los pedidos se generan automáticamente todos los viernes\n`;
+    mensaje += `• Se enviarán hasta 3 notificaciones hasta que ingreses al sistema\n`;
+    mensaje += `• Si necesitas urgencia, realiza un pedido manual\n\n`;
+
+    mensaje += `⏰ <i>Próxima revisión automática en 5 minutos</i>`;
 
     return mensaje;
   }

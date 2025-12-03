@@ -23,5 +23,15 @@ export const createParametroSistemaRouter = ({ parametroSistemaModel }) => {
     parametroSistemaController.updateByClave
   );
 
+  // Endpoints para Telegram
+  parametrosSistemasRouter.post(
+    "/telegram/chat-id-cocinera",
+    parametroSistemaController.guardarChatIdCocinera
+  );
+  parametrosSistemasRouter.get(
+    "/telegram/chat-id-cocinera",
+    parametroSistemaController.obtenerChatIdCocinera
+  );
+
   return parametrosSistemasRouter;
 };

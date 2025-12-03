@@ -103,12 +103,15 @@ CREATE TABLE Consumos(
 -- -----------------------------------------------------
 
 CREATE TABLE DetalleConsumo(
-    id_detalleConsumo    INT               AUTO_INCREMENT,
-    id_consumo           BINARY(16)        NOT NULL,
-    id_insumo            INT               NOT NULL,
-    cantidadUtilizada    DECIMAL(10, 2)    NOT NULL,
-    cantidadCalcula      DECIMAL(10, 2),
-    PRIMARY KEY (id_detalleConsumo)
+    id_detalleConsumo     INT               AUTO_INCREMENT,
+    id_consumo            BINARY(16)        NOT NULL,
+    id_insumo             INT               NOT NULL,
+    idItemReceta          INT,
+    cantidadUtilizada     DECIMAL(10, 2)    NOT NULL,
+    cantidadCalculada     DECIMAL(10, 2),
+    PRIMARY KEY (id_detalleConsumo),
+    CONSTRAINT RefItemsRecetas FOREIGN KEY (idItemReceta) 
+        REFERENCES ItemsRecetas(idItemReceta)
 )ENGINE=INNODB;
 
 
