@@ -55,5 +55,11 @@ export const createAsistenciaRouter = ({ asistenciaModel }) => {
     asistenciaController.procesarTodasAsistenciasFecha
   );
 
+  // 🔧 NUEVO: Generar datos de prueba
+  asistenciasRouter.post(
+    "/generar-datos-prueba",
+    asistenciaController.generarDatosPrueba
+  );
+
   return asistenciasRouter;
 };

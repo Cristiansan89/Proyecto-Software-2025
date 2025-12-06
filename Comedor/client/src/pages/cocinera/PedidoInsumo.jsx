@@ -415,7 +415,7 @@ const PedidoInsumo = () => {
     <div>
       {/* Encabezado */}
       <div className="page-header">
-        <div className="header-left">
+        <div className="header-left mx-3">
           <h1 className="page-title">
             {" "}
             <i className="fas fa-boxes-packing me-2"></i> Gestión de Pedidos

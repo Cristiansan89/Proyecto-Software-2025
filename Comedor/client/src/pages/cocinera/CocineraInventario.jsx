@@ -312,25 +312,14 @@ const CocineraInventario = () => {
   const inventariosPaginados = inventariosOrdenados.slice(startIndex, endIndex);
 
   return (
-    <div className="cocinera-inventario">
-      <div className="page-header mb-3">
+    <div>
+      <div className="page-header">
         <div className="header-left">
           <h1 className="page-title">
             <i className="fas fa-warehouse me-2"></i>
             Control de Inventario
           </h1>
           <p>Gestión de insumos y stock del comedor</p>
-        </div>
-        <div className="col-md-2">
-          <button
-            className="btn btn-success w-100"
-            onClick={() => {
-              setModalMovimiento(true);
-            }}
-          >
-            <i className="fas fa-plus me-2"></i>
-            Movimiento
-          </button>
         </div>
       </div>
 

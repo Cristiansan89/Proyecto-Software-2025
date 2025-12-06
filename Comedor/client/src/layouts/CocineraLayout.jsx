@@ -22,6 +22,7 @@ const CocineraLayout = ({ children }) => {
     if (path.includes("/inventario")) return "inventario";
     if (path.includes("/pedidos")) return "pedidos";
     if (path.includes("/reportes")) return "reportes";
+    if (path.includes("/estadisticas")) return "estadisticas";
     return "dashboard";
   };
 

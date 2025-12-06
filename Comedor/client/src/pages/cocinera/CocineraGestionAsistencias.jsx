@@ -261,6 +261,27 @@ const CocineraGestionAsistencias = () => {
     }));
   };
 
+  // Función para inicializar asistencias en el backend
+  const inicializarAsistencias = async (gradoId) => {
+    try {
+      console.log("📝 Inicializando asistencias para grado:", gradoId);
+      const response = await api.post("/asistencias/inicializar-pendiente", {
+        id_grado: gradoId,
+        id_servicio: parseInt(formulario.idServicio),
+        fecha: formulario.fecha,
+      });
+
+      console.log("✅ Asistencias inicializadas:", response.data);
+      return true;
+    } catch (error) {
+      console.error(
+        "❌ Error al inicializar asistencias:",
+        error.response?.data || error.message
+      );
+      return false;
+    }
+  };
+
   const generarEnlaces = async () => {
     try {
       setLoading(true);
@@ -299,6 +320,16 @@ const CocineraGestionAsistencias = () => {
           (s) =>
             (s.idServicio || s.id_servicio) === parseInt(formulario.idServicio)
         );
+
+        // 🔧 NUEVO: Inicializar asistencias en el backend para este grado
+        const inicializoOk = await inicializarAsistencias(gradoId);
+        if (!inicializoOk) {
+          console.warn(
+            `⚠️ No se pudieron inicializar las asistencias para el grado ${
+              grado?.nombreGrado || grado?.nombre
+            }, pero continuando...`
+          );
+        }
 
         // Encontrar al docente asignado a este grado específico
         const docenteGrado = docentes.find((docente) => {

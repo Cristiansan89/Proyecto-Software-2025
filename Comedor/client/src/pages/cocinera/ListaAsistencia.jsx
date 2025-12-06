@@ -287,6 +287,63 @@ ${
     }
   };
 
+  // 🔧 NUEVO: Cambiar tipo de asistencia (Si/No/Ausente)
+  const cambiarTipoAsistencia = async (asistencia) => {
+    const opciones = "Si (Presente)\nNo (No Confirmado)\nAusente";
+    const tipoActual =
+      asistencia.tipoAsistencia === "Si"
+        ? "Presente"
+        : asistencia.tipoAsistencia === "No"
+        ? "No Confirmado"
+        : "Ausente";
+
+    const nuevoTipo = prompt(
+      `Cambiar tipo de asistencia para ${asistencia.nombreAlumno}\n\nTipo actual: ${tipoActual}\n\nSeleccione:\n${opciones}`,
+      asistencia.tipoAsistencia
+    );
+
+    if (nuevoTipo && ["Si", "No", "Ausente"].includes(nuevoTipo)) {
+      if (nuevoTipo === asistencia.tipoAsistencia) {
+        alert("El tipo de asistencia seleccionado es el mismo que el actual.");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        // Actualizar el tipo de asistencia
+        const response = await asistenciasService.actualizarAsistencia(
+          asistencia.id_asistencia,
+          nuevoTipo
+        );
+
+        if (response && response.success) {
+          const tipoTexto =
+            nuevoTipo === "Si"
+              ? "Presente"
+              : nuevoTipo === "No"
+              ? "No Confirmado"
+              : "Ausente";
+          alert(`✅ Tipo de asistencia cambiado a "${tipoTexto}"`);
+          // Recargar los datos
+          await cargarAsistencias();
+        } else {
+          alert(
+            `❌ Error al actualizar: ${
+              response?.message || "Error desconocido"
+            }`
+          );
+        }
+      } catch (error) {
+        console.error("Error al cambiar tipo de asistencia:", error);
+        alert("❌ Error inesperado al cambiar el tipo de asistencia");
+      } finally {
+        setLoading(false);
+      }
+    } else if (nuevoTipo !== null) {
+      alert("Tipo inválido. Debe ser: Si, No o Ausente");
+    }
+  };
+
   const exportarCSV = () => {
     if (asistencias.length === 0) {
       alert("No hay datos para exportar");
@@ -701,6 +758,16 @@ ${
 
                       <td>
                         <div className="btn-group btn-group-sm" role="group">
+                          {/* 🔧 NUEVO: Botón para cambiar tipo de asistencia */}
+                          <button
+                            type="button"
+                            className="btn btn-outline-info"
+                            title="Cambiar tipo de asistencia (Si/No/Ausente)"
+                            onClick={() => cambiarTipoAsistencia(asistencia)}
+                          >
+                            <i className="fas fa-check-double"></i>
+                          </button>
+
                           {asistencia.estado === "Pendiente" && (
                             <button
                               type="button"

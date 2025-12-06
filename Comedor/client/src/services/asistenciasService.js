@@ -113,6 +113,28 @@ const asistenciasService = {
     }
   },
 
+  // 🔧 NUEVO: Actualizar tipo de asistencia (Si/No/Ausente)
+  async actualizarAsistencia(idAsistencia, tipoAsistencia) {
+    try {
+      const response = await api.patch(`/asistencias/${idAsistencia}`, {
+        tipoAsistencia: tipoAsistencia,
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        message: "Tipo de asistencia actualizado correctamente",
+      };
+    } catch (error) {
+      console.error("Error al actualizar asistencia:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Error al actualizar asistencia",
+      };
+    }
+  },
+
   // Actualizar registro de asistencia
   async actualizarRegistroAsistencia(id, data) {
     try {
@@ -245,6 +267,54 @@ const asistenciasService = {
         message:
           error.response?.data?.message ||
           "Error al procesar todas las asistencias",
+      };
+    }
+  },
+
+  // Inicializar asistencias en estado Pendiente
+  async inicializarAsistencias(id_grado, id_servicio, fecha) {
+    try {
+      const response = await api.post("/asistencias/inicializar-pendiente", {
+        id_grado,
+        id_servicio,
+        fecha,
+      });
+
+      return {
+        success: response.data?.inicializadas > 0,
+        data: response.data,
+        message:
+          response.data?.message || "Asistencias inicializadas correctamente",
+      };
+    } catch (error) {
+      console.error("Error al inicializar asistencias:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Error al inicializar asistencias",
+        data: null,
+      };
+    }
+  },
+
+  // Generar datos de prueba para las estadísticas
+  async generarDatosPrueba() {
+    try {
+      const response = await api.post("/asistencias/generar-datos-prueba");
+
+      return {
+        success: response.data?.success,
+        data: response.data?.data,
+        message:
+          response.data?.message || "Datos de prueba generados correctamente",
+      };
+    } catch (error) {
+      console.error("Error al generar datos de prueba:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Error al generar datos de prueba",
+        data: null,
       };
     }
   },

@@ -819,4 +819,102 @@ export class AsistenciaController {
       });
     }
   };
+
+  // 🔧 NUEVO: Generar datos de prueba para las estadísticas
+  generarDatosPrueba = async (req, res) => {
+    try {
+      console.log("🔧 Generando datos de prueba...");
+
+      const hoy = new Date().toISOString().split("T")[0];
+
+      // Obtener un servicio y un grado activos
+      const [servicios] = await connection.query(
+        "SELECT id_servicio FROM Servicios WHERE estado = 'Activo' LIMIT 1"
+      );
+      const [grados] = await connection.query(
+        "SELECT nombreGrado FROM Grados WHERE estado = 'Activo' LIMIT 1"
+      );
+
+      if (servicios.length === 0 || grados.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "No hay servicios o grados activos para crear datos de prueba",
+        });
+      }
+
+      const idServicio = servicios[0].id_servicio;
+      const nombreGrado = grados[0].nombreGrado;
+
+      // Obtener alumnos del grado
+      const [alumnos] = await connection.query(
+        "SELECT id_alumnoGrado FROM AlumnoGrado WHERE nombreGrado = ? LIMIT 20",
+        [nombreGrado]
+      );
+
+      if (alumnos.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "No hay alumnos en este grado",
+        });
+      }
+
+      console.log(`Creando asistencias para ${alumnos.length} alumnos...`);
+
+      // Crear registros de asistencia
+      const registrosCreados = [];
+      for (const alumno of alumnos) {
+        try {
+          const tipoAsistencia = Math.random() > 0.2 ? "Si" : "No"; // 80% presentes
+          const query = `
+            INSERT INTO Asistencias 
+            (id_servicio, id_alumnoGrado, fecha, tipoAsistencia, estado)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+            tipoAsistencia = VALUES(tipoAsistencia),
+            estado = VALUES(estado)
+          `;
+
+          await connection.query(query, [
+            idServicio,
+            alumno.id_alumnoGrado,
+            hoy,
+            tipoAsistencia,
+            "Completado",
+          ]);
+
+          registrosCreados.push({
+            id_alumnoGrado: alumno.id_alumnoGrado,
+            tipoAsistencia,
+          });
+        } catch (error) {
+          console.warn(
+            `⚠️ Error al crear asistencia para alumno ${alumno.id_alumnoGrado}:`,
+            error.message
+          );
+        }
+      }
+
+      console.log(
+        `✅ Se crearon ${registrosCreados.length} registros de prueba`
+      );
+
+      res.json({
+        success: true,
+        message: `Se generaron ${registrosCreados.length} datos de prueba`,
+        data: {
+          fecha: hoy,
+          servicio: idServicio,
+          grado: nombreGrado,
+          registros: registrosCreados.length,
+        },
+      });
+    } catch (error) {
+      console.error("❌ Error al generar datos de prueba:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al generar datos de prueba",
+      });
+    }
+  };
 }

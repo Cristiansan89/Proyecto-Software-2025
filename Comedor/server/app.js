@@ -36,6 +36,7 @@ import alertasInventarioRouter from "./routes/alertasInventario.js";
 import generacionAutomaticaRouter from "./routes/generacionAutomaticaRoutes.js";
 import escuelaRouter from "./routes/escuela.js";
 import configuracionServicioAutomaticoRouter from "./routes/configuracionServicioAutomatico.js";
+import serviciosRecetasRouter from "./routes/serviciosRecetas.js";
 import alertasService from "./services/alertasInventarioService.js";
 import { schedulerService } from "./services/schedulerService.js";
 
@@ -114,6 +115,7 @@ export const createApp = ({
     "/api/servicio-turnos",
     createServicioTurnoRouter({ servicioTurnoModel })
   );
+  app.use("/api/recetas-servicios", serviciosRecetasRouter);
   app.use("/api/turnos", createTurnoRouter({ turnoModel }));
   app.use(
     "/api/proveedor-insumos",

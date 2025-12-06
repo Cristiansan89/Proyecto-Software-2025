@@ -52,6 +52,12 @@ const CocineraSidebar = ({ collapsed }) => {
       icon: "fas fa-shopping-cart",
       path: "/cocinera/pedidos",
     },
+    {
+      id: "estadisticas",
+      label: "Estadísticas",
+      icon: "fas fa-chart-bar",
+      path: "/cocinera/estadisticas",
+    },
   ];
 
   const isActive = (path) => {

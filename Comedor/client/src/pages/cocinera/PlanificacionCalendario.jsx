@@ -64,6 +64,24 @@ const PlanificacionCalendario = () => {
     return semana;
   };
 
+  // Obtener días de la semana actual que están dentro del rango de planificación
+  const obtenerDíasVisibles = () => {
+    const semana = obtenerSemanaActual();
+    if (!planificacionActiva) {
+      return semana;
+    }
+
+    const fechaInicio = new Date(planificacionActiva.fechaInicio);
+    const fechaFin = new Date(planificacionActiva.fechaFin);
+
+    return semana.filter((fecha) => {
+      const fechaStr = fecha.toISOString().split("T")[0];
+      const inicioStr = fechaInicio.toISOString().split("T")[0];
+      const finStr = fechaFin.toISOString().split("T")[0];
+      return fechaStr >= inicioStr && fechaStr <= finStr;
+    });
+  };
+
   const cambiarSemana = (direccion) => {
     const nuevaSemana = new Date(semanaActual);
     nuevaSemana.setDate(semanaActual.getDate() + direccion * 7);
@@ -80,6 +98,13 @@ const PlanificacionCalendario = () => {
     cargarMenusAsignados();
     cargarComensalesSemana();
   }, [semanaActual]);
+
+  // Recargar menús cuando cambia el estado de la planificación
+  useEffect(() => {
+    if (planificacionActiva) {
+      cargarMenusAsignados();
+    }
+  }, [planificacionActiva?.estado]);
 
   const verificarPlanificacionActiva = async () => {
     try {
@@ -122,28 +147,48 @@ const PlanificacionCalendario = () => {
       return;
     }
 
-    const semana = obtenerSemanaActual();
-    const totalEsperado = diasSemana.length * servicios.length; // 5 días × 3 servicios = 15
+    // Calcular el número de días en el rango de planificación
+    const fechaInicio = new Date(planificacionActiva.fechaInicio);
+    const fechaFin = new Date(planificacionActiva.fechaFin);
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+    const diasEnPlanificacion =
+      Math.ceil((fechaFin - fechaInicio) / millisecondsPerDay) + 1;
+
+    // Solo contar días de lunes a viernes (excluir sábado y domingo)
+    let diasLaborales = 0;
+    for (let i = 0; i < diasEnPlanificacion; i++) {
+      const fecha = new Date(fechaInicio);
+      fecha.setDate(fecha.getDate() + i);
+      const diaSemana = fecha.getDay();
+      // 0 = domingo, 6 = sábado
+      if (diaSemana !== 0 && diaSemana !== 6) {
+        diasLaborales++;
+      }
+    }
+
+    const totalEsperado = diasLaborales * servicios.length; // días laborales × 3 servicios
     const asignados = Object.keys(menusAsignados).length;
 
     console.log(
-      `📊 Verificando calendario: ${asignados}/${totalEsperado} asignados`
+      `📊 Verificando calendario: ${asignados}/${totalEsperado} asignados (${diasLaborales} días laborales)`
     );
 
     if (asignados >= totalEsperado) {
       try {
         // Cambiar estado a Activo automáticamente
+        const planificacionActualizada = {
+          ...planificacionActiva,
+          estado: "Activo",
+        };
+
         await planificacionMenuService.update(
           planificacionActiva.id_planificacion,
-          {
-            ...planificacionActiva,
-            estado: "Activo",
-          }
+          planificacionActualizada
         );
 
         console.log("✅ Planificación activada automáticamente");
-        // Recargar planificación activa para mostrar el nuevo estado
-        await verificarPlanificacionActiva();
+        // Actualizar el estado local sin recargar desde BD
+        setPlanificacionActiva(planificacionActualizada);
       } catch (error) {
         console.error("Error al activar planificación:", error);
       }
@@ -199,21 +244,47 @@ const PlanificacionCalendario = () => {
     try {
       const response = await recetaService.getActivas();
       setRecetasDisponibles(response || []);
+      console.log("📚 Recetas cargadas:", response);
     } catch (error) {
       console.error("Error al cargar recetas disponibles:", error);
       setRecetasDisponibles([]);
     }
   };
 
+  // Función para obtener recetas filtradas por servicio
+  const obtenerRecetasPorServicio = (id_servicio) => {
+    if (!id_servicio) return recetasDisponibles;
+
+    return recetasDisponibles.filter((receta) => {
+      // Si la receta tiene array de servicios, verificar si incluye el servicio actual
+      if (receta.servicios && Array.isArray(receta.servicios)) {
+        return receta.servicios.includes(id_servicio);
+      }
+      // Si no tiene servicios definidos, mostrar para todos
+      return true;
+    });
+  };
+
   const cargarMenusAsignados = async () => {
     try {
-      const semana = obtenerSemanaActual();
-      const fechaInicio = semana[0].toISOString().split("T")[0];
-      const fechaFin = semana[4].toISOString().split("T")[0];
+      let fechaInicio, fechaFin;
 
-      console.log(
-        `📅 Cargando menús para la semana ${fechaInicio} a ${fechaFin}`
-      );
+      // Si hay una planificación activa, cargar el rango completo
+      if (planificacionActiva) {
+        fechaInicio = planificacionActiva.fechaInicio;
+        fechaFin = planificacionActiva.fechaFin;
+        console.log(
+          `📅 Cargando menús para la planificación completa: ${fechaInicio} a ${fechaFin}`
+        );
+      } else {
+        // Si no, cargar solo la semana visible
+        const semana = obtenerSemanaActual();
+        fechaInicio = semana[0].toISOString().split("T")[0];
+        fechaFin = semana[4].toISOString().split("T")[0];
+        console.log(
+          `📅 Cargando menús para la semana ${fechaInicio} a ${fechaFin}`
+        );
+      }
 
       const response = await planificacionMenuService.getMenusSemana(
         fechaInicio,
@@ -353,10 +424,17 @@ const PlanificacionCalendario = () => {
       alert("Menú asignado exitosamente");
     } catch (error) {
       console.error("❌ Error al asignar menú:", error);
-      alert(
-        "Error al asignar el menú: " +
-          (error.response?.data?.message || error.message)
-      );
+
+      // 🔧 MEJORADO: Mostrar mensaje más descriptivo
+      let mensajeError = error.message;
+      if (error.response?.data?.message) {
+        mensajeError = error.response.data.message;
+      } else if (error.response?.status === 409) {
+        mensajeError =
+          "No se permite agregar esta receta en el servicio seleccionado para esta fecha.";
+      }
+
+      alert("Error al asignar el menú: " + mensajeError);
     } finally {
       setLoading(false);
     }
@@ -455,11 +533,35 @@ const PlanificacionCalendario = () => {
             {planificacionActiva && (
               <div className="d-flex gap-2 align-items-center">
                 {planificacionActiva.estado === "Pendiente" && (
-                  <span className="badge bg-warning">
-                    <i className="fas fa-clock me-1"></i>
-                    Planificación Pendiente (Complete el calendario para
-                    activar)
-                  </span>
+                  <>
+                    <span className="badge bg-warning">
+                      <i className="fas fa-clock me-1"></i>
+                      Planificación Pendiente (
+                      {Object.keys(menusAsignados).length} asignaciones)
+                    </span>
+                    <button
+                      className="btn btn-info btn-sm"
+                      onClick={finalizarPlanificacion}
+                      disabled={finalizandoPlanificacion}
+                      title="Complete todas las asignaciones para activar automáticamente"
+                    >
+                      {finalizandoPlanificacion ? (
+                        <>
+                          <span
+                            className="spinner-border spinner-border-sm me-1"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
+                          Finalizando...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-check me-1"></i>
+                          Finalizar Planificación
+                        </>
+                      )}
+                    </button>
+                  </>
                 )}
                 {planificacionActiva.estado === "Activo" && (
                   <button
@@ -507,41 +609,49 @@ const PlanificacionCalendario = () => {
                 <th className="font-italic">
                   <h4>Servicio</h4>
                 </th>
-                {diasSemana.map((dia, index) => (
-                  <th key={dia} width="17%" className="text-center">
-                    <div className="dia-nombre">{dia}</div>
-                    <div className="dia-fecha">
-                      {obtenerSemanaActual()[index].toLocaleDateString(
-                        "es-ES",
-                        {
+                {obtenerDíasVisibles().map((fecha, index) => {
+                  const diaIndex = obtenerSemanaActual().findIndex(
+                    (d) =>
+                      d.toISOString().split("T")[0] ===
+                      fecha.toISOString().split("T")[0]
+                  );
+                  const diaNombre = diasSemana[diaIndex];
+
+                  return (
+                    <th
+                      key={fecha.toISOString().split("T")[0]}
+                      width="17%"
+                      className="text-center"
+                    >
+                      <div className="dia-nombre">{diaNombre}</div>
+                      <div className="dia-fecha">
+                        {fecha.toLocaleDateString("es-ES", {
                           day: "2-digit",
                           month: "2-digit",
-                        }
-                      )}
-                    </div>
-                    {/* Información de comensales del día */}
-                    {(() => {
-                      const fechaStr = obtenerSemanaActual()
-                        [index].toISOString()
-                        .split("T")[0];
-                      const comensalesDia = comensalesPorFecha[fechaStr];
-                      return comensalesDia ? (
-                        <div className="small text-muted mt-1">
-                          <i className="fas fa-users me-1"></i>
-                          {comensalesDia.resumen?.totalDia || 0} comensales
-                        </div>
-                      ) : cargandoComensales ? (
-                        <div className="small text-muted mt-1">
-                          <span
-                            className="spinner-border spinner-border-sm"
-                            role="status"
-                            aria-hidden="true"
-                          ></span>
-                        </div>
-                      ) : null;
-                    })()}
-                  </th>
-                ))}
+                        })}
+                      </div>
+                      {/* Información de comensales del día */}
+                      {(() => {
+                        const fechaStr = fecha.toISOString().split("T")[0];
+                        const comensalesDia = comensalesPorFecha[fechaStr];
+                        return comensalesDia ? (
+                          <div className="small text-muted mt-1">
+                            <i className="fas fa-users me-1"></i>
+                            {comensalesDia.resumen?.totalDia || 0} comensales
+                          </div>
+                        ) : cargandoComensales ? (
+                          <div className="small text-muted mt-1">
+                            <span
+                              className="spinner-border spinner-border-sm"
+                              role="status"
+                              aria-hidden="true"
+                            ></span>
+                          </div>
+                        ) : null;
+                      })()}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -555,8 +665,13 @@ const PlanificacionCalendario = () => {
                       </small>
                     </div>
                   </td>
-                  {diasSemana.map((dia, diaIndex) => {
-                    const fecha = obtenerSemanaActual()[diaIndex];
+                  {obtenerDíasVisibles().map((fecha) => {
+                    const diaIndex = obtenerSemanaActual().findIndex(
+                      (d) =>
+                        d.toISOString().split("T")[0] ===
+                        fecha.toISOString().split("T")[0]
+                    );
+                    const diaNombre = diasSemana[diaIndex];
                     const claveMenu = `${fecha.toISOString().split("T")[0]}_${
                       servicio.id_servicio
                     }`;
@@ -602,7 +717,7 @@ const PlanificacionCalendario = () => {
                                         abrirModalAsignacion(
                                           fecha,
                                           servicio,
-                                          dia
+                                          diaNombre
                                         )
                                       }
                                     >
@@ -613,7 +728,11 @@ const PlanificacionCalendario = () => {
                                       title="Eliminar asignación"
                                       disabled={loading}
                                       onClick={() =>
-                                        eliminarReceta(fecha, servicio, dia)
+                                        eliminarReceta(
+                                          fecha,
+                                          servicio,
+                                          diaNombre
+                                        )
                                       }
                                     >
                                       {loading ? (
@@ -667,7 +786,11 @@ const PlanificacionCalendario = () => {
                                 <button
                                   className="btn btn-outline-success btn-sm w-100"
                                   onClick={() =>
-                                    abrirModalAsignacion(fecha, servicio, dia)
+                                    abrirModalAsignacion(
+                                      fecha,
+                                      servicio,
+                                      diaNombre
+                                    )
                                   }
                                 >
                                   <i className="fas fa-plus me-1"></i>
@@ -760,81 +883,48 @@ const PlanificacionCalendario = () => {
                   </label>
                 </div>
 
-                {/* Información de comensales esperados para este servicio y fecha */}
-                {(() => {
-                  if (!asignacionSeleccionada.fecha) return null;
-                  const fechaStr = asignacionSeleccionada.fecha
-                    .toISOString()
-                    .split("T")[0];
-                  const comensalesDia = comensalesPorFecha[fechaStr];
-                  const servicioComensales = comensalesDia?.servicios?.find(
-                    (s) =>
-                      s.id_servicio ===
-                      asignacionSeleccionada.servicio?.id_servicio
-                  );
-
-                  return servicioComensales ? (
-                    <div className="alert alert-info mb-3">
-                      <div className="d-flex align-items-center">
-                        <i className="fas fa-users me-2"></i>
-                        <div>
-                          <strong>Comensales esperados:</strong>{" "}
-                          {servicioComensales.totalComensales} estudiantes
-                          <div className="small mt-1">
-                            {servicioComensales.turnos?.map((turno, index) => (
-                              <span key={index} className="me-3">
-                                {turno.turno}: {turno.comensales} estudiantes
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : cargandoComensales ? (
-                    <div className="alert alert-light mb-3">
-                      <div className="d-flex align-items-center">
-                        <span
-                          className="spinner-border spinner-border-sm me-2"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
-                        <span>Calculando comensales...</span>
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
-
                 <div className="mb-4">
                   <label htmlFor="recetaSelect" className="form-label">
                     <i className="fas fa-book me-2"></i>
-                    Seleccionar Receta *
+                    Seleccionar Receta * (
+                    {asignacionSeleccionada.servicio?.nombre})
                   </label>
-                  <select
-                    id="recetaSelect"
-                    className="form-select"
-                    value={recetaSeleccionada}
-                    onChange={(e) => setRecetaSeleccionada(e.target.value)}
-                  >
-                    <option value="">-- Seleccione una receta --</option>
-                    {recetasDisponibles.map((receta) => (
-                      <option key={receta.id_receta} value={receta.id_receta}>
-                        {receta.nombreReceta}
-                      </option>
-                    ))}
-                  </select>
+                  {(() => {
+                    const recetasFiltradas = obtenerRecetasPorServicio(
+                      asignacionSeleccionada.servicio?.id_servicio
+                    );
+                    return (
+                      <>
+                        <select
+                          id="recetaSelect"
+                          className="form-select"
+                          value={recetaSeleccionada}
+                          onChange={(e) =>
+                            setRecetaSeleccionada(e.target.value)
+                          }
+                        >
+                          <option value="">-- Seleccione una receta --</option>
+                          {recetasFiltradas.map((receta) => (
+                            <option
+                              key={receta.id_receta}
+                              value={receta.id_receta}
+                            >
+                              {receta.nombreReceta}
+                            </option>
+                          ))}
+                        </select>
+                        {recetasFiltradas.length === 0 && (
+                          <div className="alert alert-warning mt-2 mb-0">
+                            <i className="fas fa-exclamation-triangle me-2"></i>
+                            No hay recetas disponibles para{" "}
+                            {asignacionSeleccionada.servicio?.nombre}. Cree
+                            recetas y asócielas a este servicio.
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
-
-                {recetaSeleccionada && (
-                  <div className="alert alert-info">
-                    <i className="fas fa-info-circle me-2"></i>
-                    <strong>Receta seleccionada:</strong>{" "}
-                    {
-                      recetasDisponibles.find(
-                        (r) => r.id_receta === recetaSeleccionada
-                      )?.nombreReceta
-                    }
-                  </div>
-                )}
 
                 {recetasDisponibles.length === 0 && (
                   <div className="alert alert-warning">
@@ -843,55 +933,57 @@ const PlanificacionCalendario = () => {
                     primero.
                   </div>
                 )}
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={cerrarModalAsignacion}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={asignarMenu}
-                  disabled={!recetaSeleccionada || loading}
-                >
-                  {loading ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      {asignacionSeleccionada &&
-                      menusAsignados[
-                        `${
-                          asignacionSeleccionada.fecha
-                            ?.toISOString()
-                            .split("T")[0]
-                        }_${asignacionSeleccionada.servicio?.id_servicio}`
-                      ]
-                        ? "Cambiando..."
-                        : "Asignando..."}
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-check me-2"></i>
-                      {asignacionSeleccionada &&
-                      menusAsignados[
-                        `${
-                          asignacionSeleccionada.fecha
-                            ?.toISOString()
-                            .split("T")[0]
-                        }_${asignacionSeleccionada.servicio?.id_servicio}`
-                      ]
-                        ? "Cambiar Menú"
-                        : "Asignar Menú"}
-                    </>
-                  )}
-                </button>
+
+                <div className="form-actions mt-3">
+                  <button
+                    type="button"
+                    className="btn btn-secondary me-2"
+                    onClick={cerrarModalAsignacion}
+                  >
+                    <i className="fas fa-times me-2"></i>
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={asignarMenu}
+                    disabled={!recetaSeleccionada || loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        {asignacionSeleccionada &&
+                        menusAsignados[
+                          `${
+                            asignacionSeleccionada.fecha
+                              ?.toISOString()
+                              .split("T")[0]
+                          }_${asignacionSeleccionada.servicio?.id_servicio}`
+                        ]
+                          ? "Cambiando..."
+                          : "Asignando..."}
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-check me-2"></i>
+                        {asignacionSeleccionada &&
+                        menusAsignados[
+                          `${
+                            asignacionSeleccionada.fecha
+                              ?.toISOString()
+                              .split("T")[0]
+                          }_${asignacionSeleccionada.servicio?.id_servicio}`
+                        ]
+                          ? "Cambiar Menú"
+                          : "Asignar Menú"}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

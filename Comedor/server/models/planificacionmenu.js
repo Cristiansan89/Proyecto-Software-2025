@@ -154,7 +154,33 @@ export class PlanificacionMenuModel {
     try {
       await conn.beginTransaction();
 
-      // Eliminar primero las asignaciones de recetas
+      // 1. Eliminar movimientos de inventarios (dependen de Consumos)
+      await conn.query(
+        `DELETE mi FROM MovimientosInventarios mi
+                 JOIN Consumos c ON mi.id_consumo = c.id_consumo
+                 JOIN JornadaPlanificada jp ON c.id_jornada = jp.id_jornada
+                 WHERE jp.id_planificacion = UUID_TO_BIN(?);`,
+        [id]
+      );
+
+      // 2. Eliminar detalles de consumo (dependen de Consumos)
+      await conn.query(
+        `DELETE dc FROM DetalleConsumo dc
+                 JOIN Consumos c ON dc.id_consumo = c.id_consumo
+                 JOIN JornadaPlanificada jp ON c.id_jornada = jp.id_jornada
+                 WHERE jp.id_planificacion = UUID_TO_BIN(?);`,
+        [id]
+      );
+
+      // 3. Eliminar consumos (dependen de JornadaPlanificada)
+      await conn.query(
+        `DELETE c FROM Consumos c
+                 JOIN JornadaPlanificada jp ON c.id_jornada = jp.id_jornada
+                 WHERE jp.id_planificacion = UUID_TO_BIN(?);`,
+        [id]
+      );
+
+      // 4. Eliminar asignaciones de recetas (dependen de JornadaPlanificada)
       await conn.query(
         `DELETE psr FROM PlanificacionServicioReceta psr
                  JOIN JornadaPlanificada jp ON psr.id_jornada = jp.id_jornada
@@ -162,13 +188,13 @@ export class PlanificacionMenuModel {
         [id]
       );
 
-      // Eliminar jornadas planificadas
+      // 5. Eliminar jornadas planificadas (dependen de PlanificacionMenus)
       await conn.query(
         `DELETE FROM JornadaPlanificada WHERE id_planificacion = UUID_TO_BIN(?);`,
         [id]
       );
 
-      // Eliminar la planificación
+      // 6. Eliminar la planificación
       await conn.query(
         `DELETE FROM PlanificacionMenus WHERE id_planificacion = UUID_TO_BIN(?);`,
         [id]
@@ -178,6 +204,7 @@ export class PlanificacionMenuModel {
       return true;
     } catch (error) {
       await conn.rollback();
+      console.error("Error al eliminar planificación:", error);
       return false;
     } finally {
       conn.release();
@@ -490,7 +517,9 @@ export class PlanificacionMenuModel {
       let [planificaciones] = await conn.query(
         `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion
                  FROM PlanificacionMenus 
-                 WHERE fechaInicio <= ? AND fechaFin >= ? AND estado = 'Activo'
+                 WHERE fechaInicio <= ? AND fechaFin >= ? 
+                 AND estado IN ('Pendiente', 'Activo')
+                 ORDER BY estado = 'Activo' DESC
                  LIMIT 1;`,
         [fecha, fecha]
       );
@@ -507,7 +536,7 @@ export class PlanificacionMenuModel {
                         estado
                     ) VALUES (
                         UUID_TO_BIN(?),
-                        ?, ?, 150, 'Activo'
+                        ?, ?, 150, 'Pendiente'
                     );`,
           [id_usuario, fecha, fecha]
         );
@@ -627,7 +656,7 @@ export class PlanificacionMenuModel {
                  LEFT JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
                  LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
                  WHERE pm.fechaInicio <= ? AND pm.fechaFin >= ? 
-                   AND pm.estado = 'Activo'
+                   AND pm.estado IN ('Pendiente', 'Activo')
                  ORDER BY pm.fechaInicio, jp.id_servicio, jp.diaSemana;`,
         [fechaFin, fechaInicio]
       );
@@ -733,7 +762,9 @@ export class PlanificacionMenuModel {
       const [planificaciones] = await conn.query(
         `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion
                  FROM PlanificacionMenus 
-                 WHERE fechaInicio <= ? AND fechaFin >= ? AND estado = 'Activo'
+                 WHERE fechaInicio <= ? AND fechaFin >= ? 
+                   AND estado IN ('Pendiente', 'Activo')
+                 ORDER BY estado = 'Activo' DESC
                  LIMIT 1;`,
         [fecha, fecha]
       );

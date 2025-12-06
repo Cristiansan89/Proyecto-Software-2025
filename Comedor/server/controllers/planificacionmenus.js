@@ -265,6 +265,20 @@ export class PlanificacionMenuController {
       }
     } catch (error) {
       console.error("Error al asignar receta:", error);
+
+      // 🔧 NUEVO: Manejo específico de errores
+      // Si es un error de duplicate key (restricción única violada)
+      if (
+        error.code === "ER_DUP_ENTRY" ||
+        error.message?.includes("Duplicate entry")
+      ) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "No se permite agregar esta receta en el servicio seleccionado para esta fecha. Ya existe una planificación de menú para esta combinación.",
+        });
+      }
+
       res.status(500).json({ message: error.message });
     }
   };

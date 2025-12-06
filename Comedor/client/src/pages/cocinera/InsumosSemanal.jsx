@@ -284,14 +284,16 @@ const InsumosSemanal = () => {
       ([nombreInsumo, datos]) => {
         const mejorUnidad = obtenerMejorUnidad(datos.cantidad, datos.unidad);
         const stockDisponible = datos.cantidad_disponible || 0;
-        const diferencia = stockDisponible - mejorUnidad.cantidad;
+        const diferencia = parseFloat(
+          (stockDisponible - mejorUnidad.cantidad).toFixed(2)
+        );
 
         return [
           nombreInsumo,
           `${datos.cantidad} ${datos.unidad}`,
-          `${mejorUnidad.cantidad} ${mejorUnidad.unidad}`,
+          `${mejorUnidad.cantidad.toFixed(2)} ${mejorUnidad.unidad}`,
           `${stockDisponible} ${datos.unidad_inventario}`,
-          `${diferencia} ${mejorUnidad.unidad}`,
+          `${diferencia.toFixed(2)} ${mejorUnidad.unidad}`,
         ];
       }
     );
@@ -467,9 +469,8 @@ const InsumosSemanal = () => {
                         <tr>
                           <th width="30%">Insumo</th>
                           <th width="25%">Cantidad Insumo</th>
-                          <th width="25%">Cantidad Convertida</th>
-                          <th width="15%">Stock Actual</th>
-                          <th width="15%">Stock Futuros</th>
+                          <th width="25%">Stock Inicial</th>
+                          <th width="25%">Stock Final</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -485,18 +486,14 @@ const InsumosSemanal = () => {
                                 <td width="30%">
                                   <strong>{nombreInsumo}</strong>
                                 </td>
-                                <td width="25%">
-                                  <span className="badge bg-primary">
-                                    {datos.cantidad.toFixed(2)} {datos.unidad}
-                                  </span>
-                                </td>
+
                                 <td width="25%">
                                   <span className="badge bg-success">
                                     {mejorUnidad.cantidad.toFixed(2)}{" "}
                                     {mejorUnidad.unidad}
                                   </span>
                                 </td>
-                                <td width="15%">
+                                <td width="25%">
                                   <span className="badge bg-info text-dark">
                                     {datos.cantidad_disponible
                                       ? datos.cantidad_disponible.toFixed(2)
@@ -504,14 +501,17 @@ const InsumosSemanal = () => {
                                     {datos.unidad_inventario}
                                   </span>
                                 </td>
-                                <td width="15%">
+                                <td width="25%">
                                   {(() => {
                                     const stockDisponible =
                                       datos.cantidad_disponible || 0;
                                     const cantidadNecesaria =
                                       mejorUnidad.cantidad;
-                                    const diferencia =
-                                      stockDisponible - cantidadNecesaria;
+                                    const diferencia = parseFloat(
+                                      (
+                                        stockDisponible - cantidadNecesaria
+                                      ).toFixed(2)
+                                    );
 
                                     const badgeClass =
                                       diferencia >= 0
@@ -519,7 +519,8 @@ const InsumosSemanal = () => {
                                         : "bg-danger";
                                     return (
                                       <span className={`badge ${badgeClass}`}>
-                                        {diferencia} {mejorUnidad.unidad}
+                                        {diferencia.toFixed(2)}{" "}
+                                        {mejorUnidad.unidad}
                                       </span>
                                     );
                                   })()}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
 import API from "../../services/api";
+import recetasServiciosService from "../../services/serviciosRecetasService";
 
 const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   // Función helper para formatear cantidades
@@ -24,7 +25,14 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
     instrucciones: receta?.instrucciones || "",
     unidadSalida: receta?.unidadSalida || "Porcion",
     estado: receta?.estado || "Activo",
+    servicios: receta?.servicios || [], // Array de IDs de servicios
   });
+
+  const [serviciosDisponibles, setServiciosDisponibles] = useState([
+    { id_servicio: 1, nombre: "Desayuno" },
+    { id_servicio: 2, nombre: "Almuerzo" },
+    { id_servicio: 3, nombre: "Merienda" },
+  ]);
 
   const [ingredientes, setIngredientes] = useState([]);
   const [nuevoIngrediente, setNuevoIngrediente] = useState({
@@ -41,6 +49,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   useEffect(() => {
     if (receta && mode !== "create") {
       loadRecetaIngredientes();
+      loadRecetaServicios();
     }
   }, [receta, mode]);
 
@@ -60,6 +69,28 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       }
     } catch (error) {
       setIngredientes([]);
+    }
+  };
+
+  const loadRecetaServicios = async () => {
+    try {
+      const servicios = await recetasServiciosService.getServiciosPorReceta(
+        receta.id_receta
+      );
+      console.log("📚 Servicios cargados para receta:", servicios);
+
+      if (servicios && Array.isArray(servicios)) {
+        // Extraer los IDs de servicios del response
+        const serviciosIds = servicios.map((srv) => srv.id_servicio);
+        console.log("✅ IDs de servicios mapeados:", serviciosIds);
+        setFormData((prev) => ({
+          ...prev,
+          servicios: serviciosIds,
+        }));
+      }
+    } catch (error) {
+      console.error("❌ Error cargando servicios:", error);
+      // No es crítico si falla, continuar sin servicios
     }
   };
 
@@ -98,6 +129,11 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
     if (!formData.unidadSalida) {
       newErrors.unidadSalida = "Debe seleccionar una unidad de salida";
+    }
+
+    // Validar servicios
+    if (formData.servicios.length === 0) {
+      newErrors.servicios = "Debe seleccionar al menos un servicio";
     }
 
     // Validar ingredientes
@@ -176,7 +212,10 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
     try {
       let savedReceta;
       const recetaData = {
-        ...formData,
+        nombreReceta: formData.nombreReceta,
+        instrucciones: formData.instrucciones,
+        unidadSalida: formData.unidadSalida,
+        estado: formData.estado,
         fechaAlta:
           mode === "create" ? new Date().toISOString() : receta.fechaAlta,
       };
@@ -185,6 +224,24 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         // Crear receta
         const recetaResponse = await API.post("/recetas", recetaData);
         savedReceta = recetaResponse.data;
+
+        // Guardar servicios en la tabla ServicioReceta
+        if (formData.servicios.length > 0) {
+          try {
+            console.log(
+              "📚 Guardando servicios para receta:",
+              savedReceta.id_receta
+            );
+            await recetasServiciosService.actualizarServiciosReceta(
+              savedReceta.id_receta,
+              formData.servicios
+            );
+            console.log("✅ Servicios guardados exitosamente");
+          } catch (servicioError) {
+            console.error("❌ Error guardando servicios:", servicioError);
+            throw servicioError;
+          }
+        }
 
         // Agregar ingredientes
         for (const ingrediente of ingredientes) {
@@ -223,6 +280,22 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         // Actualizar receta
         await API.patch(`/recetas/${receta.id_receta}`, recetaData);
 
+        // Actualizar servicios en la tabla ServicioReceta
+        try {
+          console.log(
+            "📚 Actualizando servicios para receta:",
+            receta.id_receta
+          );
+          await recetasServiciosService.actualizarServiciosReceta(
+            receta.id_receta,
+            formData.servicios
+          );
+          console.log("✅ Servicios actualizados exitosamente");
+        } catch (servicioError) {
+          console.error("❌ Error actualizando servicios:", servicioError);
+          throw servicioError;
+        }
+
         // Primero obtenemos los ingredientes existentes para eliminarlos uno por uno
         try {
           const existingIngredients = await API.get(
@@ -252,7 +325,6 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                 // Continuar con el siguiente ingrediente
               }
             }
-          } else {
           }
         } catch (deleteError) {
           console.log(
@@ -383,7 +455,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                   <div className="form-group">
                     <label
                       htmlFor="unidadSalida"
-                      className="form-label required mt-3"
+                      className="form-label required"
                     >
                       Unidad de Salida
                     </label>
@@ -411,7 +483,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                 </div>
                 <div className="col-md-6">
                   <div className="form-group">
-                    <label htmlFor="estado" className="form-label mt-3">
+                    <label htmlFor="estado" className="form-label">
                       Estado
                     </label>
                     <select
@@ -427,13 +499,61 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                     </select>
                   </div>
                 </div>
+                <div className="col-12">
+                  <div className="form-group">
+                    <label className="form-label">
+                      <strong>Servicios Disponibles</strong>
+                    </label>
+                    <div className="d-flex gap-3">
+                      {serviciosDisponibles.map((servicio) => (
+                        <div key={servicio.id_servicio} className="form-check">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id={`servicio-${servicio.id_servicio}`}
+                            checked={formData.servicios.includes(
+                              servicio.id_servicio
+                            )}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  servicios: [
+                                    ...prev.servicios,
+                                    servicio.id_servicio,
+                                  ],
+                                }));
+                              } else {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  servicios: prev.servicios.filter(
+                                    (id) => id !== servicio.id_servicio
+                                  ),
+                                }));
+                              }
+                            }}
+                            disabled={isViewMode}
+                          />
+                          <label
+                            className="form-check-label"
+                            htmlFor={`servicio-${servicio.id_servicio}`}
+                          >
+                            {servicio.nombre}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    {errors.servicios && (
+                      <div className="text-danger small mt-1">
+                        {errors.servicios}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="form-group">
-                <label
-                  htmlFor="instrucciones"
-                  className="form-label required mt-3"
-                >
+                <label htmlFor="instrucciones" className="form-label required">
                   Instrucciones de preparación
                 </label>
                 <textarea

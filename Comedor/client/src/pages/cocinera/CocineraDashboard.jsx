@@ -82,9 +82,8 @@ const CocineraDashboard = () => {
 
       try {
         // Asistencias de hoy
-        const asistenciasRes = await asistenciasService.obtenerAsistencias(
-          `fecha=${hoy}`
-        );
+        const asistenciasRes =
+          await asistenciasService.obtenerRegistrosAsistencias(`fecha=${hoy}`);
         if (asistenciasRes.success && asistenciasRes.data) {
           asistenciasHoyCount = asistenciasRes.data.reduce(
             (sum, reg) => sum + (reg.cantidadPresentes || 0),

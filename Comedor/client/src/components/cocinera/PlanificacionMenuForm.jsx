@@ -237,7 +237,7 @@ const PlanificacionMenuForm = ({
               <div>
                 <div className="card">
                   <div className="card-header">
-                    <h6 className="mb-0">
+                    <h6 className="mb-0 text-black">
                       <i className="fas fa-chart-bar me-2"></i>
                       Detalle del Cálculo de Comensales Estimados
                       <small className="text-muted ms-2">

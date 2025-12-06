@@ -31,13 +31,13 @@ import CocineraLayout from "./layouts/CocineraLayout";
 import CocineraDashboard from "./pages/cocinera/CocineraDashboard";
 import CocineraGestionAsistencias from "./pages/cocinera/GestionAsistencias";
 import CocineraMenu from "./pages/cocinera/CocineraMenu";
-import CocineraInventario from "./pages/cocinera/CocineraInventario";
+import ControlInventario from "./pages/cocinera/ControlInventario";
 import CocineraMenuesDiaria from "./pages/cocinera/CocineraMenuesDiaria";
-import CocineraReportes from "./pages/cocinera/CocineraReportes";
 import CocineraRecetas from "./pages/cocinera/CocineraRecetas";
 import Consumos from "./pages/cocinera/Consumos";
 import PedidoInsumo from "./pages/cocinera/PedidoInsumo";
 import InsumosSemanal from "./pages/cocinera/InsumosSemanal";
+import Estadistica from "./pages/cocinera/Estadistica";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/App.css";
 
@@ -176,9 +176,8 @@ function App() {
                       <Route path="/menu" element={<CocineraMenu />} />
                       <Route
                         path="/inventario"
-                        element={<CocineraInventario />}
+                        element={<ControlInventario />}
                       />
-                      <Route path="/reportes" element={<CocineraReportes />} />
                       <Route
                         path="/menu-diaria"
                         element={<CocineraMenuesDiaria />}
@@ -189,6 +188,7 @@ function App() {
                         path="/insumos-semanal"
                         element={<InsumosSemanal />}
                       />
+                      <Route path="/estadisticas" element={<Estadistica />} />
                     </Routes>
                   </CocineraLayout>
                 </ProtectedRoute>

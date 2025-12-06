@@ -180,6 +180,7 @@ const PlanificacionSemanal = () => {
           <table className="table table-hover">
             <thead className="table-light">
               <tr>
+                <th>#</th>
                 <th>Período</th>
                 <th>Usuario Creador</th>
                 <th>Comensales Estimados</th>
@@ -188,8 +189,11 @@ const PlanificacionSemanal = () => {
               </tr>
             </thead>
             <tbody>
-              {planificaciones.map((planificacion) => (
+              {planificaciones.map((planificacion, index) => (
                 <tr key={planificacion.id_planificacion}>
+                  <td>
+                    <strong>{index + 1}</strong>
+                  </td>
                   <td>
                     <div>
                       <strong>

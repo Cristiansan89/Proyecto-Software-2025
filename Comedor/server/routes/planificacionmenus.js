@@ -10,20 +10,20 @@ export const createPlanificacionMenuRouter = ({ planificacionMenuModel }) => {
 
   // Endpoints especializados - ANTES de las rutas con parámetros
   planificacionMenusRouter.get(
-    "/fecha/:fecha",
-    planificacionMenuController.getByFecha
+    "/comensales/turno-servicio",
+    planificacionMenuController.calcularComensalesPorTurnoYServicio
   );
   planificacionMenusRouter.get(
-    "/servicio/:id_servicio",
-    planificacionMenuController.getByServicio
+    "/comensales/fecha",
+    planificacionMenuController.calcularComensalesPorServicioYFecha
+  );
+  planificacionMenusRouter.get(
+    "/comensales/resumen",
+    planificacionMenuController.obtenerResumenComensales
   );
   planificacionMenusRouter.get(
     "/rango-fechas/reporte",
     planificacionMenuController.getByRangoFechas
-  );
-  planificacionMenusRouter.get(
-    "/menu-del-dia/:fecha/:id_servicio",
-    planificacionMenuController.getMenuDelDia
   );
   planificacionMenusRouter.get(
     "/semana",
@@ -49,6 +49,14 @@ export const createPlanificacionMenuRouter = ({ planificacionMenuModel }) => {
     planificacionMenuController.getRecetasPorJornada
   );
   planificacionMenusRouter.get(
+    "/fecha/:fecha",
+    planificacionMenuController.getByFecha
+  );
+  planificacionMenusRouter.get(
+    "/servicio/:id_servicio",
+    planificacionMenuController.getByServicio
+  );
+  planificacionMenusRouter.get(
     "/usuario/:id_usuario",
     planificacionMenuController.getByUsuario
   );
@@ -56,25 +64,19 @@ export const createPlanificacionMenuRouter = ({ planificacionMenuModel }) => {
     "/estado/:estado",
     planificacionMenuController.getByEstado
   );
+  planificacionMenusRouter.get(
+    "/menu-del-dia/:fecha/:id_servicio",
+    planificacionMenuController.getMenuDelDia
+  );
 
-  // Rutas principales CRUD
+  // Rutas principales CRUD - AL FINAL
   planificacionMenusRouter.get("/", planificacionMenuController.getAll);
-  planificacionMenusRouter.get("/:id", planificacionMenuController.getById);
   planificacionMenusRouter.post(
     "/",
     authRequired,
     planificacionMenuController.create
   );
-  planificacionMenusRouter.delete(
-    "/:id",
-    authRequired,
-    planificacionMenuController.delete
-  );
-  planificacionMenusRouter.patch(
-    "/:id",
-    authRequired,
-    planificacionMenuController.update
-  );
+  planificacionMenusRouter.get("/:id", planificacionMenuController.getById);
   planificacionMenusRouter.patch(
     "/:id/finalizar",
     authRequired,
@@ -84,19 +86,15 @@ export const createPlanificacionMenuRouter = ({ planificacionMenuModel }) => {
     "/:id/completa",
     planificacionMenuController.getPlanificacionCompleta
   );
-
-  // Rutas para cálculo automático de comensales
-  planificacionMenusRouter.get(
-    "/comensales/turno-servicio",
-    planificacionMenuController.calcularComensalesPorTurnoYServicio
+  planificacionMenusRouter.patch(
+    "/:id",
+    authRequired,
+    planificacionMenuController.update
   );
-  planificacionMenusRouter.get(
-    "/comensales/fecha",
-    planificacionMenuController.calcularComensalesPorServicioYFecha
-  );
-  planificacionMenusRouter.get(
-    "/comensales/resumen",
-    planificacionMenuController.obtenerResumenComensales
+  planificacionMenusRouter.delete(
+    "/:id",
+    authRequired,
+    planificacionMenuController.delete
   );
 
   return planificacionMenusRouter;
