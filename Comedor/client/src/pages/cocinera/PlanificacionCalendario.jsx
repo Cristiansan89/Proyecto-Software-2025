@@ -55,31 +55,64 @@ const PlanificacionCalendario = () => {
     const dif = inicio.getDate() - dia + (dia === 0 ? -6 : 1);
     inicio.setDate(dif);
 
+    console.log(`🗓️ Calculando semana desde: ${semanaActual.toISOString()}`);
+    console.log(`   - Día de la semana original: ${dia}`);
+    console.log(
+      `   - Fecha de inicio de semana calculada: ${
+        inicio.toISOString().split("T")[0]
+      }`
+    );
+
     const semana = [];
     for (let i = 0; i < 5; i++) {
       const fecha = new Date(inicio);
       fecha.setDate(inicio.getDate() + i);
       semana.push(fecha);
+      console.log(
+        `   - Día ${i}: ${
+          fecha.toISOString().split("T")[0]
+        } (${fecha.toLocaleDateString("es-ES", { weekday: "long" })})`
+      );
     }
     return semana;
   };
 
-  // Obtener días de la semana actual que están dentro del rango de planificación
-  const obtenerDíasVisibles = () => {
-    const semana = obtenerSemanaActual();
+  // Verificar si una fecha específica está dentro del rango de planificación
+  const estaFechaEnRangoPlanificacion = (fecha) => {
     if (!planificacionActiva) {
-      return semana;
+      console.log(
+        `❌ No hay planificación activa para fecha: ${
+          fecha.toISOString().split("T")[0]
+        }`
+      );
+      return false; // Sin planificación, no se puede asignar
     }
 
-    const fechaInicio = new Date(planificacionActiva.fechaInicio);
-    const fechaFin = new Date(planificacionActiva.fechaFin);
+    const fechaStr = fecha.toISOString().split("T")[0];
 
-    return semana.filter((fecha) => {
-      const fechaStr = fecha.toISOString().split("T")[0];
-      const inicioStr = fechaInicio.toISOString().split("T")[0];
-      const finStr = fechaFin.toISOString().split("T")[0];
-      return fechaStr >= inicioStr && fechaStr <= finStr;
-    });
+    // Normalizar las fechas de inicio y fin eliminando la hora/timezone
+    const inicioStr = new Date(planificacionActiva.fechaInicio)
+      .toISOString()
+      .split("T")[0];
+    const finStr = new Date(planificacionActiva.fechaFin)
+      .toISOString()
+      .split("T")[0];
+
+    const resultado = fechaStr >= inicioStr && fechaStr <= finStr;
+
+    // Solo log si no está en rango para debug
+    if (!resultado) {
+      console.log(`❌ ${fechaStr} fuera de rango: ${inicioStr} a ${finStr}`);
+    } else {
+      console.log(`✅ ${fechaStr} en rango de planificación`);
+    }
+
+    return resultado;
+  };
+
+  // Siempre mostrar lunes a viernes (calendario fijo)
+  const obtenerDíasVisibles = () => {
+    return obtenerSemanaActual(); // Siempre los 5 días laborales
   };
 
   const cambiarSemana = (direccion) => {
@@ -127,13 +160,29 @@ const PlanificacionCalendario = () => {
         setSemanaActual(fechaInicioPlanificacion);
         setPlanificacionActiva(planificacion);
         console.log(
-          `✅ Planificación ${planificacion.estado.toLowerCase()} encontrada. Inicializando calendario desde ${
-            planificacion.fechaInicio
+          `✅ Planificación ${planificacion.estado.toLowerCase()} encontrada:`
+        );
+        console.log(`   - ID: ${planificacion.id_planificacion}`);
+        console.log(
+          `   - Fecha inicio: ${
+            new Date(planificacion.fechaInicio).toISOString().split("T")[0]
+          }`
+        );
+        console.log(
+          `   - Fecha fin: ${
+            new Date(planificacion.fechaFin).toISOString().split("T")[0]
+          }`
+        );
+        console.log(`   - Estado: ${planificacion.estado}`);
+        console.log(
+          `   - Inicializando calendario desde ${
+            new Date(planificacion.fechaInicio).toISOString().split("T")[0]
           }`
         );
       } else {
         // Si no hay planificación activa o pendiente, usar la semana actual
         setPlanificacionActiva(null);
+        console.log(`❌ No se encontró planificación activa ni pendiente`);
       }
     } catch (error) {
       console.error("Error al verificar planificación activa:", error);
@@ -253,16 +302,36 @@ const PlanificacionCalendario = () => {
 
   // Función para obtener recetas filtradas por servicio
   const obtenerRecetasPorServicio = (id_servicio) => {
-    if (!id_servicio) return recetasDisponibles;
+    console.log(`🔍 Filtrando recetas para servicio ID: ${id_servicio}`);
+    console.log(`📚 Total recetas disponibles: ${recetasDisponibles.length}`);
 
-    return recetasDisponibles.filter((receta) => {
-      // Si la receta tiene array de servicios, verificar si incluye el servicio actual
+    if (!id_servicio) {
+      console.log("⚠️ No hay ID de servicio, devolviendo todas las recetas");
+      return recetasDisponibles;
+    }
+
+    const recetasFiltradas = recetasDisponibles.filter((receta) => {
+      // Las recetas ahora vienen con un array de servicios desde el backend
       if (receta.servicios && Array.isArray(receta.servicios)) {
-        return receta.servicios.includes(id_servicio);
+        const pertenece = receta.servicios.includes(id_servicio);
+        console.log(
+          `   ${pertenece ? "✅" : "❌"} ${receta.nombreReceta} - servicios: [${
+            receta.servicios
+          }] - ${pertenece ? "SÍ" : "NO"} incluye ${id_servicio}`
+        );
+        return pertenece;
+      } else {
+        console.log(`   ❌ ${receta.nombreReceta} - Sin servicios asociados`);
+        return false;
       }
-      // Si no tiene servicios definidos, mostrar para todos
-      return true;
     });
+
+    console.log(
+      `✅ Recetas filtradas para servicio ${id_servicio}: ${recetasFiltradas.length}`
+    );
+    recetasFiltradas.forEach((r) => console.log(`   - ${r.nombreReceta}`));
+
+    return recetasFiltradas;
   };
 
   const cargarMenusAsignados = async () => {
@@ -274,7 +343,9 @@ const PlanificacionCalendario = () => {
         fechaInicio = planificacionActiva.fechaInicio;
         fechaFin = planificacionActiva.fechaFin;
         console.log(
-          `📅 Cargando menús para la planificación completa: ${fechaInicio} a ${fechaFin}`
+          `📅 Cargando menús para la planificación completa: ${
+            new Date(fechaInicio).toISOString().split("T")[0]
+          } a ${new Date(fechaFin).toISOString().split("T")[0]}`
         );
       } else {
         // Si no, cargar solo la semana visible
@@ -610,25 +681,33 @@ const PlanificacionCalendario = () => {
                   <h4>Servicio</h4>
                 </th>
                 {obtenerDíasVisibles().map((fecha, index) => {
-                  const diaIndex = obtenerSemanaActual().findIndex(
-                    (d) =>
-                      d.toISOString().split("T")[0] ===
-                      fecha.toISOString().split("T")[0]
-                  );
-                  const diaNombre = diasSemana[diaIndex];
+                  const diaNombre = diasSemana[index];
+                  const estaDentroDePlanificacion =
+                    estaFechaEnRangoPlanificacion(fecha);
 
                   return (
                     <th
                       key={fecha.toISOString().split("T")[0]}
                       width="17%"
-                      className="text-center"
+                      className={`text-center ${
+                        estaDentroDePlanificacion ? "" : "dia-no-planificado"
+                      }`}
                     >
                       <div className="dia-nombre">{diaNombre}</div>
-                      <div className="dia-fecha">
+                      <div
+                        className={`dia-fecha ${
+                          estaDentroDePlanificacion ? "" : "text-muted"
+                        }`}
+                      >
                         {fecha.toLocaleDateString("es-ES", {
                           day: "2-digit",
                           month: "2-digit",
                         })}
+                        {!estaDentroDePlanificacion && (
+                          <small className="d-block text-muted">
+                            (No planificado)
+                          </small>
+                        )}
                       </div>
                       {/* Información de comensales del día */}
                       {(() => {
@@ -665,20 +744,17 @@ const PlanificacionCalendario = () => {
                       </small>
                     </div>
                   </td>
-                  {obtenerDíasVisibles().map((fecha) => {
-                    const diaIndex = obtenerSemanaActual().findIndex(
-                      (d) =>
-                        d.toISOString().split("T")[0] ===
-                        fecha.toISOString().split("T")[0]
-                    );
-                    const diaNombre = diasSemana[diaIndex];
+                  {obtenerDíasVisibles().map((fecha, index) => {
+                    const diaNombre = diasSemana[index];
+                    const estaDentroDePlanificacion =
+                      estaFechaEnRangoPlanificacion(fecha);
                     const claveMenu = `${fecha.toISOString().split("T")[0]}_${
                       servicio.id_servicio
                     }`;
                     const menuAsignado = menusAsignados[claveMenu];
 
                     return (
-                      <td key={diaIndex} className="menu-cell">
+                      <td key={index} className="menu-cell">
                         <div className="menu-slot">
                           {menuAsignado ? (
                             <div
@@ -712,7 +788,12 @@ const PlanificacionCalendario = () => {
                                   <>
                                     <button
                                       className="btn-action btn-edit btn-sm me-1"
-                                      title="Cambiar receta"
+                                      title={
+                                        estaDentroDePlanificacion
+                                          ? "Cambiar receta"
+                                          : "Esta fecha está fuera del rango de planificación"
+                                      }
+                                      disabled={!estaDentroDePlanificacion}
                                       onClick={() =>
                                         abrirModalAsignacion(
                                           fecha,
@@ -725,8 +806,14 @@ const PlanificacionCalendario = () => {
                                     </button>
                                     <button
                                       className="btn-action btn-delete btn-sm"
-                                      title="Eliminar asignación"
-                                      disabled={loading}
+                                      title={
+                                        estaDentroDePlanificacion
+                                          ? "Eliminar asignación"
+                                          : "Esta fecha está fuera del rango de planificación"
+                                      }
+                                      disabled={
+                                        loading || !estaDentroDePlanificacion
+                                      }
                                       onClick={() =>
                                         eliminarReceta(
                                           fecha,
@@ -783,19 +870,26 @@ const PlanificacionCalendario = () => {
                                 ) : null;
                               })()}
                               {planificacionActiva?.estado === "Pendiente" ? (
-                                <button
-                                  className="btn btn-outline-success btn-sm w-100"
-                                  onClick={() =>
-                                    abrirModalAsignacion(
-                                      fecha,
-                                      servicio,
-                                      diaNombre
-                                    )
-                                  }
-                                >
-                                  <i className="fas fa-plus me-1"></i>
-                                  Asignar Menú
-                                </button>
+                                estaDentroDePlanificacion ? (
+                                  <button
+                                    className="btn btn-outline-success btn-sm w-100"
+                                    onClick={() =>
+                                      abrirModalAsignacion(
+                                        fecha,
+                                        servicio,
+                                        diaNombre
+                                      )
+                                    }
+                                  >
+                                    <i className="fas fa-plus me-1"></i>
+                                    Asignar Menú
+                                  </button>
+                                ) : (
+                                  <div className="text-muted small text-center">
+                                    <i className="fas fa-ban me-1"></i>
+                                    Día no planificado
+                                  </div>
+                                )
                               ) : planificacionActiva?.estado === "Activo" ? (
                                 <div className="text-muted small text-center">
                                   <i className="fas fa-lock me-1"></i>

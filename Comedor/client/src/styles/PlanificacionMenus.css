@@ -662,3 +662,43 @@
 .modal-body {
   overflow-y: auto;
 }
+
+/* ===== ESTILOS PARA DÍAS NO PLANIFICADOS ===== */
+.dia-no-planificado {
+  background-color: #f8f9fa !important;
+  opacity: 0.6;
+  position: relative;
+}
+
+.dia-no-planificado::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    rgba(0, 0, 0, 0.05) 5px,
+    rgba(0, 0, 0, 0.05) 10px
+  );
+  pointer-events: none;
+}
+
+.dia-no-planificado .btn-outline-success {
+  background-color: #e9ecef !important;
+  border-color: #ced4da !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.dia-no-planificado .btn-outline-success:hover,
+.dia-no-planificado .btn-outline-success:focus {
+  background-color: #e9ecef !important;
+  border-color: #ced4da !important;
+  color: #6c757d !important;
+  box-shadow: none !important;
+}
