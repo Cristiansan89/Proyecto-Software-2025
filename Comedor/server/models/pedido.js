@@ -794,11 +794,31 @@ export class PedidoModel {
   // Método para cambiar estado de pedido
   static async cambiarEstado({ id, estado }) {
     try {
+      // Primero, obtener el id_estadoPedido basado en el nombre del estado
+      let idEstado;
+
+      if (typeof estado === "number") {
+        // Si ya es un número, usarlo directamente
+        idEstado = estado;
+      } else {
+        // Si es un string, buscar el id_estadoPedido correspondiente
+        const [estadoResult] = await connection.query(
+          `SELECT id_estadoPedido FROM EstadoPedido WHERE nombreEstado = ?`,
+          [estado]
+        );
+
+        if (!estadoResult || estadoResult.length === 0) {
+          throw new Error(`Estado de pedido no encontrado: ${estado}`);
+        }
+
+        idEstado = estadoResult[0].id_estadoPedido;
+      }
+
       await connection.query(
         `UPDATE Pedidos
                  SET id_estadoPedido = ?
                  WHERE id_pedido = UUID_TO_BIN(?);`,
-        [estado, id]
+        [idEstado, id]
       );
 
       return this.getById({ id });

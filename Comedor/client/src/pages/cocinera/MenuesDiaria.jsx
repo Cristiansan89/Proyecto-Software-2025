@@ -20,6 +20,16 @@ const MenuesDiaria = () => {
   const [mensajeNotificacion, setMensajeNotificacion] = useState(null);
   const [serviciosCompletados, setServiciosCompletados] = useState({});
   const [asistenciasCompletas, setAsistenciasCompletas] = useState(false);
+  const [hayPlanificacion, setHayPlanificacion] = useState(true);
+
+  // Función HELPER para obtener la fecha en formato YYYY-MM-DD sin problemas de zona horaria
+  const obtenerFechaFormato = (fecha = null) => {
+    const d = fecha ? new Date(fecha) : new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   // Servicios con orden de aparición en el día
   const HORARIOS_SERVICIOS = [
@@ -46,33 +56,150 @@ const MenuesDiaria = () => {
   const cargarDatosDelDia = async () => {
     setLoading(true);
     try {
-      const fechaStr = hoy.toISOString().split("T")[0];
-      const fechaFin = new Date(hoy);
-      fechaFin.setDate(hoy.getDate() + 1);
-      const fechaFinStr = fechaFin.toISOString().split("T")[0];
-
+      const fechaStr = obtenerFechaFormato(hoy);
       console.log(`📅 Cargando datos para el día ${fechaStr}`);
 
       // 1. Verificar asistencias registradas
       await verificarAsistenciasRegistradas(fechaStr);
 
-      // 2. Obtener menús del día
-      const menusResponse = await planificacionMenuService.getMenusSemana(
-        fechaStr,
-        fechaStr
-      );
-      console.log("📋 Menús del día:", menusResponse);
+      // 2. Obtener menús de la semana (rango completo de planificación activa o pendiente)
+      // Obtener primero la planificación activa o pendiente para saber el rango de fechas
+      let menusResponse = [];
+      try {
+        // Intentar primero con Activo, si no hay resultados, usar Pendiente
+        console.log("🔍 Buscando planificaciones con estado Activo...");
+        let planificacionesResponse = await API.get(
+          "/planificacion-menus/estado/Activo"
+        );
+        let planificacionesActivas =
+          planificacionesResponse.data?.data ||
+          planificacionesResponse.data ||
+          [];
+
+        console.log(
+          `📊 Planificaciones Activas encontradas: ${
+            Array.isArray(planificacionesActivas)
+              ? planificacionesActivas.length
+              : 0
+          }`
+        );
+
+        // Si no hay planificaciones activas, buscar pendientes
+        if (
+          !Array.isArray(planificacionesActivas) ||
+          planificacionesActivas.length === 0
+        ) {
+          console.log(
+            "⚠️ No hay planificaciones Activas, buscando Pendientes..."
+          );
+          planificacionesResponse = await API.get(
+            "/planificacion-menus/estado/Pendiente"
+          );
+          planificacionesActivas =
+            planificacionesResponse.data?.data ||
+            planificacionesResponse.data ||
+            [];
+          console.log(
+            `📊 Planificaciones Pendientes encontradas: ${
+              Array.isArray(planificacionesActivas)
+                ? planificacionesActivas.length
+                : 0
+            }`
+          );
+        }
+
+        console.log(
+          `📊 Total Planificaciones encontradas: ${
+            Array.isArray(planificacionesActivas)
+              ? planificacionesActivas.length
+              : 0
+          }`
+        );
+        console.log("📋 Estructura de respuesta:", {
+          data: planificacionesActivas,
+        });
+
+        if (
+          Array.isArray(planificacionesActivas) &&
+          planificacionesActivas.length > 0
+        ) {
+          // Usar la primera planificación (más reciente)
+          const planificacion = planificacionesActivas[0];
+          console.log(`✅ Planificación encontrada:`, {
+            id: planificacion.id,
+            fechaInicio: planificacion.fechaInicio,
+            fechaFin: planificacion.fechaFin,
+            estado: planificacion.estado,
+            comensalesEstimados: planificacion.comensalesEstimados,
+          });
+
+          // Buscar menús dentro del rango de la planificación
+          menusResponse = await planificacionMenuService.getMenusSemana(
+            planificacion.fechaInicio,
+            planificacion.fechaFin
+          );
+        } else {
+          console.warn(
+            "⚠️ No hay planificaciones disponibles (ni Activas ni Pendientes)"
+          );
+          setHayPlanificacion(false);
+        }
+
+        console.log(
+          "📋 Menús encontrados:",
+          menusResponse.length,
+          menusResponse
+        );
+      } catch (error) {
+        console.error(
+          "❌ Error al obtener menús:",
+          error.response?.data || error.message
+        );
+        menusResponse = [];
+      }
 
       const menusMap = {};
       if (menusResponse && Array.isArray(menusResponse)) {
+        console.log(`🔍 Buscando menús para fecha: "${fechaStr}"`);
+        console.log(`📊 Total de menús en respuesta: ${menusResponse.length}`);
+
+        // Log de todas las fechas disponibles
+        const fechasDisponibles = [
+          ...new Set(menusResponse.map((m) => m.fecha)),
+        ];
+        console.log(
+          `📅 Fechas disponibles en la respuesta:`,
+          fechasDisponibles
+        );
+
         for (const menu of menusResponse) {
-          if (menu.id_receta) {
+          const fechaMenuNormalizada = menu.fecha ? menu.fecha.trim() : null;
+          const coincideFecha = fechaMenuNormalizada === fechaStr;
+
+          console.log(`   Menú encontrado:`, {
+            fecha: menu.fecha,
+            fechaNormalizada: fechaMenuNormalizada,
+            buscando: fechaStr,
+            id_servicio: menu.id_servicio,
+            nombreServicio: menu.nombreServicio,
+            id_receta: menu.id_receta,
+            nombreReceta: menu.nombreReceta,
+            coincideFecha: coincideFecha,
+            tieneReceta: !!menu.id_receta,
+          });
+
+          // Filtrar solo los menús del día actual
+          if (coincideFecha && menu.id_receta) {
+            console.log(
+              `   ✅ Agregando menú a menusMap para servicio ${menu.id_servicio}`
+            );
             menusMap[menu.id_servicio] = menu;
             // Cargar detalles de la receta
             await cargarDetallesReceta(menu.id_receta, menu.id_servicio);
           }
         }
       }
+      console.log(`📋 Menús activados para hoy:`, menusMap);
       setMenuDia(menusMap);
 
       // 3. Obtener asistencia real del día
@@ -88,7 +215,21 @@ const MenuesDiaria = () => {
           "👥 Keys encontradas:",
           Object.keys(asistenciaResponse || {})
         );
-        setAsistenciaReal(asistenciaResponse || {});
+
+        // Asegurarse de que es un objeto
+        const asistenciaReal =
+          asistenciaResponse && typeof asistenciaResponse === "object"
+            ? asistenciaResponse
+            : {};
+
+        console.log("👥 Asistencia Real a guardar:", asistenciaReal);
+        console.log("👥 Verificación individual:", {
+          servicio1: asistenciaReal[1],
+          servicio2: asistenciaReal[2],
+          servicio3: asistenciaReal[3],
+        });
+
+        setAsistenciaReal(asistenciaReal);
       } catch (error) {
         console.error("❌ Error al cargar asistencia real:", error);
         // Continuar con los comensales estimados si la asistencia no está disponible
@@ -266,7 +407,7 @@ const MenuesDiaria = () => {
 
   const marcarServicioCompletado = async (idServicio) => {
     try {
-      const fechaStr = hoy.toISOString().split("T")[0];
+      const fechaStr = obtenerFechaFormato(hoy);
 
       // Obtener comensales para este servicio
       const comensales = comensalesHoy[idServicio] || 0;
@@ -363,67 +504,93 @@ const MenuesDiaria = () => {
   };
 
   const imprimirRecetaTicket = (horario, ingredientes, menu) => {
-    const fechaStr = hoy.toISOString().split("T")[0];
-    let contenido = `${"=".repeat(50)}\n`;
+    const fechaStr = obtenerFechaFormato(hoy);
+    let contenido = `${"=".repeat(34)}\n`;
     contenido += `RECETA - ${horario.nombre.toUpperCase()}\n`;
     contenido += `Fecha: ${fechaStr}\n`;
     contenido += `Plato: ${menu.nombreReceta}\n`;
     contenido += `Comensales: ${asistenciaReal[horario.id] || 0}\n`;
-    contenido += `${"=".repeat(50)}\n\n`;
+    contenido += `${"=".repeat(34)}\n\n`;
 
     contenido += `INGREDIENTES REQUERIDOS:\n`;
-    contenido += `${"-".repeat(50)}\n`;
+    contenido += `${"-".repeat(34)}\n`;
     ingredientes.forEach((ing) => {
       contenido += `${ing.nombreInsumo}: ${ing.cantidadOptimizada}\n`;
     });
 
-    contenido += `\n${"=".repeat(50)}\n`;
+    contenido += `\n${"=".repeat(34)}\n`;
     if (detallesReceta[horario.id]?.instrucciones) {
       contenido += `INSTRUCCIONES:\n`;
       contenido += `${detallesReceta[horario.id].instrucciones}\n`;
-      contenido += `${"=".repeat(50)}\n`;
+      contenido += `${"=".repeat(34)}\n`;
     }
 
-    // Abrir ventana y aplicar estilo de ticket con ancho fijo 7.8cm y alto automático
-    const ventanaImpresion = window.open(
-      "",
-      "PRINT",
-      "fullscreen=no,toolbar=no,scrollbars=yes"
-    );
-    ventanaImpresion.document.write(
-      `<html><head><title>Receta ${horario.nombre}</title>`
-    );
-    ventanaImpresion.document.write(`
-      <style>
-        @page { size: 7.8cm auto; margin: 5mm; }
-        body {
-          font-family: monospace;
-          white-space: pre-wrap;
-          margin: 0.4cm;
-          width: 7.8cm;
-          box-sizing: border-box;
-          color: #000;
-          font-size: 12px;
-        }
-        .ticket-container { width: 100%; }
-        .title { font-weight: bold; text-align: center; margin-bottom: 6px; }
-        .separator { border-top: 1px dashed #000; margin: 6px 0; }
-      </style>
-    </head><body>`);
+    // Crear un elemento iframe invisible para imprimir
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
 
-    // Insertar todo el contenido (cabecera + ingredientes + instrucciones) UNA sola vez
-    // Asegurar quiebres de palabra para evitar desbordes
-    ventanaImpresion.document.write(
-      '<div class="ticket-container"><pre style="white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word;">' +
-        contenido +
-        "</pre></div>"
-    );
-    ventanaImpresion.document.write("</body></html>");
-    ventanaImpresion.document.close();
-    // Esperar que la ventana cargue antes de invocar el diálogo de impresión
-    ventanaImpresion.onload = () => {
-      setTimeout(() => ventanaImpresion.print(), 200);
-    };
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+    iframeDoc.write(`<!DOCTYPE html>
+      <html>
+      <head>
+        <title>Receta ${horario.nombre}</title>
+        <style>
+          @page { 
+            size: 8cm 20cm; 
+            margin: 2mm;
+          }
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            color: #000;
+            font-size: 11px;
+            width: 8cm;
+            padding: 2mm;
+            line-height: 1.3;
+          }
+          .ticket-container { 
+            width: 100%;
+          }
+          pre {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: pre-wrap;
+          }
+          @media print {
+            body { 
+              margin: 0; 
+              padding: 2mm;
+              width: 8cm;
+            }
+            .ticket-container {
+              width: 6cm;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="ticket-container"><pre>${contenido}</pre></div>
+      </body>
+      </html>`);
+    iframeDoc.close();
+
+    // Imprimir después de que el contenido esté listo
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      // Remover el iframe después de imprimir
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 500);
+    }, 250);
   };
 
   const cambiarFecha = (dias) => {
@@ -555,9 +722,22 @@ const MenuesDiaria = () => {
 
                       {/* Badge de asistencia real */}
                       <div className="d-flex gap-2 flex-wrap justify-content-end">
-                        {asistenciaReal[horario.id] > 0 ? (
-                          <span className="badge bg-success">
-                            <i className="fas fa-check-circle me-1"></i>
+                        {asistenciaReal[horario.id] !== undefined &&
+                        asistenciaReal[horario.id] !== null ? (
+                          <span
+                            className={`badge ${
+                              asistenciaReal[horario.id] > 0
+                                ? "bg-success"
+                                : "bg-warning text-dark"
+                            }`}
+                          >
+                            <i
+                              className={`fas ${
+                                asistenciaReal[horario.id] > 0
+                                  ? "fa-check-circle"
+                                  : "fa-user-slash"
+                              } me-1`}
+                            ></i>
                             {asistenciaReal[horario.id]} presentes
                           </span>
                         ) : (
@@ -694,7 +874,7 @@ const MenuesDiaria = () => {
                                   </button>
                                 </div>
                               )}
-                            
+
                               {/* Mostrar mensaje cuando el servicio está completado */}
                               {completado && (
                                 <div className="mt-3 text-success fw-bold">
@@ -723,11 +903,23 @@ const MenuesDiaria = () => {
 
           {/* Estado sin menús - Solo muestra si es día laboral */}
           {!loading && esDialaboral() && Object.keys(menuDia).length === 0 && (
-            <div className="alert alert-info">
-              <i className="fas fa-info-circle me-2"></i>
-              No hay menús planificados para hoy. Verifica la planificación del
-              día.
-            </div>
+            <>
+              {!hayPlanificacion ? (
+                <div className="alert alert-warning">
+                  <i className="fas fa-exclamation-triangle me-2"></i>
+                  <strong>No hay planificación semanal disponible.</strong>
+                  <br />
+                  Debes crear una planificación de menús en la sección de
+                  "Planificación de Menús" antes de poder ver los menús del día.
+                </div>
+              ) : (
+                <div className="alert alert-info">
+                  <i className="fas fa-info-circle me-2"></i>
+                  No hay menús planificados para hoy. Verifica la planificación
+                  del día.
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

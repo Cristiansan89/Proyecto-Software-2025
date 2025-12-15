@@ -29,7 +29,7 @@ const planificacionMenuSchema = z.object({
     })
     .int()
     .min(0, "Los comensales estimados no pueden ser negativos")
-    .default(0),
+    .optional(),
   estado: z
     .enum(["Pendiente", "Activo", "Cancelado", "Finalizado"], {
       invalid_type_error: "Estado inválido",

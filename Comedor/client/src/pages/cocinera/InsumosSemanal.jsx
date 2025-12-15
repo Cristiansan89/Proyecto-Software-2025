@@ -89,6 +89,11 @@ const InsumosSemanal = () => {
     setSemanaActual(nuevaSemana);
   };
 
+  const irAPlanificacionMenus = () => {
+    // Navegar usando React Router
+    navigate("/planificacion-menus");
+  };
+
   const cargarDatosSemanales = async () => {
     setLoading(true);
     try {
@@ -191,12 +196,20 @@ const InsumosSemanal = () => {
       }
 
       // Otros errores
-      setMensaje({
-        tipo: "error",
-        texto: `Error al cargar insumos: ${
-          error.message || "Error de conexión"
-        }`,
-      });
+      if (error.response?.status === 400) {
+        setMensaje({
+          tipo: "warning",
+          texto:
+            "No hay planificación activa para esta semana. Por favor, cree una planificación primero en la sección 'Planificación de Menús'.",
+        });
+      } else {
+        setMensaje({
+          tipo: "error",
+          texto: `Error al cargar insumos: ${
+            error.message || "Error de conexión"
+          }`,
+        });
+      }
       setInsumosRequeridos({});
     }
   };
@@ -246,6 +259,30 @@ const InsumosSemanal = () => {
     }
 
     return { cantidad, unidad: unidadOriginal };
+  };
+
+  const convertirCantidadEntre = (cantidad, unidadOrigen, unidadDestino) => {
+    if (unidadOrigen === unidadDestino) return cantidad;
+
+    const CONVERSIONES = {
+      Gramo: { Kilogramo: 0.001, Kilogramos: 0.001, Gramo: 1, Gramos: 1 },
+      Gramos: { Kilogramo: 0.001, Kilogramos: 0.001, Gramo: 1, Gramos: 1 },
+      Kilogramo: { Gramo: 1000, Gramos: 1000, Kilogramo: 1, Kilogramos: 1 },
+      Kilogramos: { Gramo: 1000, Gramos: 1000, Kilogramo: 1, Kilogramos: 1 },
+      Mililitro: { Litro: 0.001, Litros: 0.001, Mililitro: 1, Mililitros: 1 },
+      Mililitros: { Litro: 0.001, Litros: 0.001, Mililitro: 1, Mililitros: 1 },
+      Litro: { Mililitro: 1000, Mililitros: 1000, Litro: 1, Litros: 1 },
+      Litros: { Mililitro: 1000, Mililitros: 1000, Litro: 1, Litros: 1 },
+      Unidad: { Unidad: 1, Unidades: 1 },
+      Unidades: { Unidad: 1, Unidades: 1 },
+    };
+
+    const conversiones = CONVERSIONES[unidadOrigen];
+    if (!conversiones || !conversiones[unidadDestino]) {
+      return cantidad; // No se puede convertir
+    }
+
+    return cantidad * conversiones[unidadDestino];
   };
 
   const generarPDF = () => {
@@ -446,9 +483,43 @@ const InsumosSemanal = () => {
           )}
 
           {!loading && menusSemanales.length === 0 && (
-            <div className="alert alert-info">
-              <i className="fas fa-info-circle me-2"></i>
-              No hay menús planificados para esta semana
+            <div
+              className="alert alert-warning d-flex align-items-center"
+              role="alert"
+            >
+              <i className="fas fa-exclamation-triangle me-3 fs-4"></i>
+              <div>
+                <h6 className="alert-heading mb-2">
+                  No hay menús planificados para esta semana
+                </h6>
+                <p className="mb-2">
+                  Para generar insumos semanales, necesita crear una
+                  planificación de menús primero.
+                </p>
+                <div className="d-flex gap-2">
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={irAPlanificacionMenus}
+                  >
+                    <i className="fas fa-calendar-plus me-1"></i>
+                    Ir a Planificación de Menús
+                  </button>
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() => cambiarSemana(-1)}
+                  >
+                    <i className="fas fa-chevron-left me-1"></i>
+                    Ver semana anterior
+                  </button>
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() => cambiarSemana(1)}
+                  >
+                    Ver semana siguiente
+                    <i className="fas fa-chevron-right ms-1"></i>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -470,7 +541,7 @@ const InsumosSemanal = () => {
                           <th width="30%">Insumo</th>
                           <th width="25%">Cantidad Insumo</th>
                           <th width="25%">Stock Inicial</th>
-                          <th width="25%">Stock Final</th>
+                          <th width="20%">Stock Final</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -481,10 +552,39 @@ const InsumosSemanal = () => {
                               datos.unidad
                             );
 
+                            // Convertir stock disponible a la mejorUnidad para comparación correcta
+                            const stockDisponibleEnMejorUnidad =
+                              convertirCantidadEntre(
+                                datos.cantidad_disponible || 0,
+                                datos.unidad_inventario,
+                                mejorUnidad.unidad
+                              );
+
+                            const cantidadNecesaria = mejorUnidad.cantidad;
+                            const diferencia = parseFloat(
+                              (
+                                stockDisponibleEnMejorUnidad - cantidadNecesaria
+                              ).toFixed(2)
+                            );
+
+                            const esFaltante = diferencia < 0;
+
+                            // Clase para la fila: danger si es negativo
+                            let classRow = "";
+                            if (esFaltante) {
+                              classRow = "table-danger"; // Rojo - negativo
+                            }
+
                             return (
-                              <tr key={nombreInsumo}>
+                              <tr key={nombreInsumo} className={classRow}>
                                 <td width="30%">
                                   <strong>{nombreInsumo}</strong>
+                                  {esFaltante && (
+                                    <div className="small text-danger">
+                                      <i className="fas fa-exclamation-triangle me-1"></i>
+                                      Faltante
+                                    </div>
+                                  )}
                                 </td>
 
                                 <td width="25%">
@@ -501,29 +601,14 @@ const InsumosSemanal = () => {
                                     {datos.unidad_inventario}
                                   </span>
                                 </td>
-                                <td width="25%">
-                                  {(() => {
-                                    const stockDisponible =
-                                      datos.cantidad_disponible || 0;
-                                    const cantidadNecesaria =
-                                      mejorUnidad.cantidad;
-                                    const diferencia = parseFloat(
-                                      (
-                                        stockDisponible - cantidadNecesaria
-                                      ).toFixed(2)
-                                    );
-
-                                    const badgeClass =
-                                      diferencia >= 0
-                                        ? "bg-success"
-                                        : "bg-danger";
-                                    return (
-                                      <span className={`badge ${badgeClass}`}>
-                                        {diferencia.toFixed(2)}{" "}
-                                        {mejorUnidad.unidad}
-                                      </span>
-                                    );
-                                  })()}
+                                <td width="20%">
+                                  <span
+                                    className={`badge ${
+                                      esFaltante ? "bg-danger" : "bg-success"
+                                    }`}
+                                  >
+                                    {diferencia.toFixed(2)} {mejorUnidad.unidad}
+                                  </span>
                                 </td>
                               </tr>
                             );
@@ -562,7 +647,7 @@ const InsumosSemanal = () => {
                     <i className="fas fa-shopping-cart me-1"></i>
                     {generandoPedidos
                       ? "Sistema generando pedidos..."
-                      : "Generación Automática (Sistema)"}
+                      : "Generar Pedidos por Faltantes"}
                   </button>
                 </div>
               </>

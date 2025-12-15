@@ -18,6 +18,20 @@ const PlanificacionCalendario = () => {
     console.log("user?.id_usuario:", user?.id_usuario);
     console.log("user?.idUsuario:", user?.idUsuario);
     console.log("user?.id:", user?.id);
+
+    // Validar UUID si hay usuario
+    if (user?.idUsuario || user?.id_usuario) {
+      const usuarioId = user?.idUsuario || user?.id_usuario;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      console.log("✅ Validación UUID:", {
+        usuarioId,
+        esUUIDValido: uuidRegex.test(usuarioId),
+        longitud: usuarioId?.length,
+        formato: typeof usuarioId,
+      });
+    }
+
     console.log("===================");
   }, [user]);
   const [servicios, setServicios] = useState([
@@ -259,33 +273,165 @@ const PlanificacionCalendario = () => {
       const faltantes = totalEsperado - asignados;
       if (
         !confirm(
-          `Faltan ${faltantes} asignaciones de menú. ¿Desea finalizar la planificación de todas formas?`
+          `Faltan ${faltantes} asignaciones de menú. ¿Desea activar la planificación de todas formas?`
         )
       ) {
         return;
       }
     }
 
-    if (
-      !confirm(
-        "¿Está seguro de que desea finalizar esta planificación? Esta acción no se puede deshacer."
-      )
-    ) {
+    // Cambiar mensaje según el estado actual
+    const mensaje =
+      planificacionActiva.estado === "Pendiente"
+        ? "¿Está seguro de que desea activar esta planificación?"
+        : "¿Está seguro de que desea finalizar esta planificación? Esta acción no se puede deshacer.";
+
+    if (!confirm(mensaje)) {
       return;
     }
 
     setFinalizandoPlanificacion(true);
     try {
-      await planificacionMenuService.finalizar(
-        planificacionActiva.id_planificacion
-      );
-      alert("Planificación finalizada exitosamente");
+      if (planificacionActiva.estado === "Pendiente") {
+        // Cambiar de Pendiente a Activo - enviar solo los campos necesarios
+        const datosActualizacion = {
+          estado: "Activo",
+        };
+
+        console.log("📤 Actualizando planificación a Activo:", {
+          id: planificacionActiva.id_planificacion,
+          datos: datosActualizacion,
+        });
+
+        await planificacionMenuService.update(
+          planificacionActiva.id_planificacion,
+          datosActualizacion
+        );
+        alert("Planificación activada exitosamente");
+      } else if (planificacionActiva.estado === "Activo") {
+        // Cambiar de Activo a Finalizado
+        console.log(
+          "📤 Finalizando planificación:",
+          planificacionActiva.id_planificacion
+        );
+
+        await planificacionMenuService.finalizar(
+          planificacionActiva.id_planificacion
+        );
+        alert("Planificación finalizada exitosamente");
+      }
+
       await verificarPlanificacionActiva();
     } catch (error) {
-      console.error("Error al finalizar planificación:", error);
-      alert("Error al finalizar la planificación: " + error.message);
+      console.error("Error al actualizar planificación:", error);
+
+      // Mostrar información más detallada del error
+      let mensajeError = "Error al actualizar la planificación";
+
+      if (error.response?.data?.errors) {
+        // Error de validación con detalles específicos
+        const errores = error.response.data.errors
+          .map((err) => `${err.field}: ${err.message}`)
+          .join("\n");
+        mensajeError = `Errores de validación:\n${errores}`;
+        console.log("🔍 Errores de validación:", error.response.data.errors);
+      } else if (error.response?.data?.message) {
+        mensajeError = error.response.data.message;
+      } else {
+        mensajeError += ": " + error.message;
+      }
+
+      alert(mensajeError);
     } finally {
       setFinalizandoPlanificacion(false);
+    }
+  };
+
+  const crearPlanificacionSemanal = async () => {
+    if (!confirm("¿Desea crear una nueva planificación para esta semana?")) {
+      return;
+    }
+
+    // Verificar que hay usuario autenticado
+    if (!user?.idUsuario && !user?.id_usuario) {
+      alert("Error: Usuario no autenticado");
+      return;
+    }
+
+    // Validar que el ID del usuario es un UUID válido
+    const usuarioId = user?.idUsuario || user?.id_usuario;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    console.log("🔍 Validando usuario ID:", usuarioId);
+    console.log("🔍 Formato UUID válido:", uuidRegex.test(usuarioId));
+
+    if (!uuidRegex.test(usuarioId)) {
+      alert(
+        `Error: El ID del usuario no tiene formato UUID válido: ${usuarioId}`
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const semana = obtenerSemanaActual();
+      const fechaInicio = semana[0].toISOString().split("T")[0];
+      const fechaFin = semana[4].toISOString().split("T")[0];
+
+      const nuevaPlanificacion = {
+        id_usuario: usuarioId,
+        fechaInicio,
+        fechaFin,
+        comensalesEstimados: 0,
+        estado: "Pendiente",
+      };
+
+      console.log("📅 Creando planificación:", nuevaPlanificacion);
+
+      const resultado = await planificacionMenuService.create(
+        nuevaPlanificacion
+      );
+
+      console.log("✅ Planificación creada:", resultado);
+      alert("Planificación creada exitosamente. Ahora puede asignar menús.");
+
+      // Recargar planificaciones
+      await verificarPlanificacionActiva();
+    } catch (error) {
+      console.error("❌ Error al crear planificación:", error);
+
+      // Mostrar mensaje más específico según el tipo de error
+      let mensajeError = "Error al crear planificación";
+
+      if (error.response?.data?.errors) {
+        // Error de validación con detalles específicos
+        const errores = error.response.data.errors
+          .map((err) => `${err.field}: ${err.message}`)
+          .join("\n");
+        mensajeError = `Errores de validación:\n${errores}`;
+      } else if (error.response?.data?.message) {
+        mensajeError = error.response.data.message;
+      } else if (error.response?.status) {
+        mensajeError = `Error ${error.response.status}: ${
+          error.response.statusText || error.message
+        }`;
+      } else {
+        mensajeError += ": " + error.message;
+      }
+
+      alert(mensajeError);
+
+      // Mostrar información adicional en consola para debug
+      console.log("🔍 Detalles del error:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        usuario: user,
+        planificacion: nuevaPlanificacion,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -459,8 +605,18 @@ const PlanificacionCalendario = () => {
     console.log("Usuario actual:", user);
     console.log("ID del usuario:", user?.idUsuario || user?.id_usuario);
 
-    if (!user?.idUsuario && !user?.id_usuario) {
+    const usuarioId = user?.idUsuario || user?.id_usuario;
+    if (!usuarioId) {
       alert("Error: Usuario no autenticado");
+      return;
+    }
+
+    // Validar formato UUID del usuario
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(usuarioId)) {
+      console.error("❌ ID de usuario inválido:", usuarioId);
+      alert(`Error: El ID del usuario no es válido: ${usuarioId}`);
       return;
     }
 
@@ -470,7 +626,7 @@ const PlanificacionCalendario = () => {
         fecha: asignacionSeleccionada.fecha.toISOString().split("T")[0],
         id_servicio: asignacionSeleccionada.servicio.id_servicio,
         id_receta: recetaSeleccionada,
-        id_usuario: user?.idUsuario || user?.id_usuario || null,
+        id_usuario: usuarioId,
       };
 
       console.log("📤 Datos de asignación:", datosAsignacion);
@@ -611,7 +767,7 @@ const PlanificacionCalendario = () => {
                       {Object.keys(menusAsignados).length} asignaciones)
                     </span>
                     <button
-                      className="btn btn-info btn-sm"
+                      className="btn btn-success btn-sm"
                       onClick={finalizarPlanificacion}
                       disabled={finalizandoPlanificacion}
                       title="Complete todas las asignaciones para activar automáticamente"
@@ -623,12 +779,12 @@ const PlanificacionCalendario = () => {
                             role="status"
                             aria-hidden="true"
                           ></span>
-                          Finalizando...
+                          Activando...
                         </>
                       ) : (
                         <>
-                          <i className="fas fa-check me-1"></i>
-                          Finalizar Planificación
+                          <i className="fas fa-play me-1"></i>
+                          Activar Planificación
                         </>
                       )}
                     </button>
@@ -666,10 +822,12 @@ const PlanificacionCalendario = () => {
               </div>
             )}
             {!planificacionActiva && (
-              <span className="badge bg-warning">
-                <i className="fas fa-exclamation-triangle me-1"></i>
-                No hay planificación activa
-              </span>
+              <div className="d-flex gap-2 align-items-center">
+                <span className="badge bg-warning">
+                  <i className="fas fa-exclamation-triangle me-1"></i>
+                  No hay planificación para esta semana
+                </span>
+              </div>
             )}
           </div>
         </div>

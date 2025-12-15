@@ -73,41 +73,53 @@ const asistenciaService = {
     }
   },
 
-  // Obtener cantidad total de asistentes por servicio (solo los que marcó como "Si")
+  // Obtener cantidad total de asistentes por servicio (solo los que marcó como "Si"/presentes)
   getTotalAsistenciasPorServicio: async (fecha) => {
     try {
       console.log(`🔍 Buscando asistencias para fecha: ${fecha}`);
-      // Usar el endpoint que retorna registros individuales de asistencia
-      const response = await api.get(`/asistencias`, {
+      // Usar el endpoint que retorna RegistrosAsistencias (con cantidadPresentes agregada)
+      const response = await api.get(`/asistencias/lista/servicio`, {
         params: { fecha },
       });
 
-      console.log(`📤 Respuesta del API:`, response.data);
+      console.log(`📤 Response.data:`, response.data);
 
-      const asistencias = Array.isArray(response.data)
+      const registros = Array.isArray(response.data)
         ? response.data
         : response.data?.data || [];
 
-      console.log(`📊 Asistencias extraídas:`, asistencias);
+      console.log(`📊 Total de registros: ${registros.length}`);
 
       const totales = {};
 
-      if (Array.isArray(asistencias)) {
-        asistencias.forEach((registro) => {
+      if (Array.isArray(registros) && registros.length > 0) {
+        // Usar cantidadPresentes directamente de cada registro
+        // Cada registro es un resumen por grado+servicio
+        registros.forEach((registro) => {
+          const servicio = registro.id_servicio;
+          const cantidad = registro.cantidadPresentes || 0;
+
+          // Log detallado
           console.log(
-            `  ➡️ Registro: servicio=${registro.id_servicio}, estado=${registro.estado}`
+            `  📊 Grado: ${registro.nombreGrado} - Servicio: ${servicio} (${registro.nombreServicio}) - Presentes: ${cantidad}`
           );
-          // Contar registros que NO sean "Pendiente" (es decir, que se hayan completado con cualquier estado)
-          if (registro.estado && registro.estado !== "Pendiente") {
-            if (!totales[registro.id_servicio]) {
-              totales[registro.id_servicio] = 0;
+
+          if (servicio) {
+            // Sumar cantidad de presentes por servicio
+            if (!totales[servicio]) {
+              totales[servicio] = 0;
             }
-            totales[registro.id_servicio] += 1;
+            totales[servicio] += cantidad;
+            console.log(
+              `  ✅ Acumulando en servicio ${servicio} - Total actual: ${totales[servicio]}`
+            );
           }
         });
+        console.log(`✅ Resumen final por servicio:`, totales);
+      } else {
+        console.log(`⚠️ No hay asistencias para fecha ${fecha}`);
       }
 
-      console.log(`✅ Totales calculados:`, totales);
       return totales;
     } catch (error) {
       console.error("❌ Error al obtener total de asistencias:", error);

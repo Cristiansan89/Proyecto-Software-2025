@@ -928,6 +928,20 @@ export class PlanificacionMenuModel {
         throw new Error("La fecha es requerida");
       }
 
+      // Primero, intentar obtener la planificación activa para esta fecha
+      const [planificacionesActivas] = await connection.query(
+        `SELECT comensalesEstimados 
+         FROM PlanificacionMenus 
+         WHERE (estado = 'Activo' OR estado = 'Pendiente')
+         AND DATE(fechaInicio) <= ? 
+         AND DATE(fechaFin) >= ?
+         LIMIT 1`,
+        [fecha, fecha]
+      );
+
+      const comensalesEstimados =
+        planificacionesActivas[0]?.comensalesEstimados || 0;
+
       // Obtener todos los servicios activos
       const [servicios] = await connection.query(
         `SELECT s.id_servicio, s.nombre 
@@ -972,14 +986,35 @@ export class PlanificacionMenuModel {
         });
       }
 
+      const totalCalculado = comensalesPorServicio.reduce(
+        (sum, s) => sum + s.totalComensales,
+        0
+      );
+
+      // Si no hay datos de comensales reales pero hay estimados, usar los estimados
+      const totalFinal =
+        totalCalculado > 0 ? totalCalculado : comensalesEstimados;
+
+      // Si hay comensales calculados, distribuirlos proporcionalmente entre servicios
+      let serviciosFinales = comensalesPorServicio;
+      if (totalCalculado === 0 && comensalesEstimados > 0) {
+        // Distribuir comensalesEstimados entre los 3 servicios (asumiendo 3 servicios: Desayuno, Almuerzo, Merienda)
+        const comensalesPorServicioEstimado = Math.floor(
+          comensalesEstimados / (servicios.length || 1)
+        );
+        serviciosFinales = comensalesPorServicio.map((s) => ({
+          ...s,
+          totalComensales: comensalesPorServicioEstimado,
+        }));
+      }
+
       return {
         fecha,
-        servicios: comensalesPorServicio,
+        servicios: serviciosFinales,
         resumen: {
-          totalDia: comensalesPorServicio.reduce(
-            (sum, s) => sum + s.totalComensales,
-            0
-          ),
+          totalDia: totalFinal,
+          comensalesEstimados: comensalesEstimados,
+          esEstimado: totalCalculado === 0 && comensalesEstimados > 0,
         },
       };
     } catch (error) {

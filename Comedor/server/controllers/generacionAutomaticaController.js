@@ -5,15 +5,15 @@ import telegramService from "../services/telegramService.js";
 // Generar insumos semanales
 export const generarInsumosSemanales = async (req, res) => {
   try {
-    // Obtener la planificación activa
+    // Obtener la planificación activa o pendiente
     const [planificaciones] = await connection.query(
-      "SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados FROM PlanificacionMenus WHERE estado = 'Activo' LIMIT 1"
+      "SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados FROM PlanificacionMenus WHERE estado IN ('Activo', 'Pendiente') ORDER BY estado = 'Activo' DESC, fechaInicio DESC LIMIT 1"
     );
 
     if (!planificaciones || planificaciones.length === 0) {
       return res.status(400).json({
         success: false,
-        mensaje: "No hay planificación activa",
+        mensaje: "No hay planificación activa o pendiente",
       });
     }
 
@@ -407,15 +407,16 @@ export const finalizarPlanificacionesAutomaticas = async (req, res) => {
 // Obtener insumos semanales generados
 export const obtenerInsumosSemanales = async (req, res) => {
   try {
-    // Obtener la planificación activa
+    // Obtener la planificación activa o pendiente
     const [planificaciones] = await connection.query(
-      "SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados FROM PlanificacionMenus WHERE estado = 'Activo' LIMIT 1"
+      "SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados FROM PlanificacionMenus WHERE estado IN ('Activo', 'Pendiente') ORDER BY estado = 'Activo' DESC, fechaInicio DESC LIMIT 1"
     );
 
     if (!planificaciones || planificaciones.length === 0) {
       return res.status(400).json({
         success: false,
-        mensaje: "No hay planificación activa",
+        mensaje:
+          "No hay planificación activa o pendiente. Por favor, cree una planificación semanal primero.",
       });
     }
 
@@ -598,18 +599,6 @@ export const obtenerInsumosSemanales = async (req, res) => {
 
     const insumos = Object.values(insumosMap);
 
-    // Log de resumen final
-    console.log(`\n🎯 RESUMEN FINAL - INSUMOS SEMANALES CALCULADOS:`);
-    console.log(`═══════════════════════════════════════════════`);
-    insumos.forEach((insumo) => {
-      const diferencia = insumo.cantidad_disponible - insumo.cantidad;
-      const estado = diferencia >= 0 ? "✅ SUFICIENTE" : "⚠️ FALTA";
-      console.log(
-        `📦 ${insumo.nombre}: ${insumo.cantidad} ${insumo.unidad} | Inventario: ${insumo.cantidad_disponible} ${insumo.unidad_inventario} | ${estado}`
-      );
-    });
-    console.log(`═══════════════════════════════════════════════\n`);
-
     console.log(`✅ Total de insumos únicos calculados: ${insumos.length}`);
 
     res.json({
@@ -669,6 +658,31 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
     return { cantidad, unidad: unidadOriginal };
   };
 
+  // Función para convertir cantidad entre unidades
+  const convertirCantidadEntre = (cantidad, unidadOrigen, unidadDestino) => {
+    if (unidadOrigen === unidadDestino) return cantidad;
+
+    const CONVERSIONES = {
+      Gramo: { Kilogramo: 0.001, Kilogramos: 0.001, Gramo: 1, Gramos: 1 },
+      Gramos: { Kilogramo: 0.001, Kilogramos: 0.001, Gramo: 1, Gramos: 1 },
+      Kilogramo: { Gramo: 1000, Gramos: 1000, Kilogramo: 1, Kilogramos: 1 },
+      Kilogramos: { Gramo: 1000, Gramos: 1000, Kilogramo: 1, Kilogramos: 1 },
+      Mililitro: { Litro: 0.001, Litros: 0.001, Mililitro: 1, Mililitros: 1 },
+      Mililitros: { Litro: 0.001, Litros: 0.001, Mililitro: 1, Mililitros: 1 },
+      Litro: { Mililitro: 1000, Mililitros: 1000, Litro: 1, Litros: 1 },
+      Litros: { Mililitro: 1000, Mililitros: 1000, Litro: 1, Litros: 1 },
+      Unidad: { Unidad: 1, Unidades: 1 },
+      Unidades: { Unidad: 1, Unidades: 1 },
+    };
+
+    const conversiones = CONVERSIONES[unidadOrigen];
+    if (!conversiones || !conversiones[unidadDestino]) {
+      return cantidad; // No se puede convertir
+    }
+
+    return cantidad * conversiones[unidadDestino];
+  };
+
   try {
     console.log(
       "\n📦 INICIANDO GENERACIÓN DE PEDIDOS POR INSUMOS FALTANTES..."
@@ -676,7 +690,7 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
 
     // 1. Obtener insumos semanales con cálculos
     const [planificaciones] = await connection.query(
-      "SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin FROM PlanificacionMenus WHERE estado = 'Activo' LIMIT 1"
+      "SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados FROM PlanificacionMenus WHERE estado = 'Activo' LIMIT 1"
     );
 
     if (!planificaciones || planificaciones.length === 0) {
@@ -732,10 +746,24 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
 
     // 3. Calcular insumos requeridos
     const insumosMap = {};
+
+    // Obtener comensales estimados de la planificación
+    const comensalesEstimados = planificacion.comensalesEstimados || 0;
+
+    // Distribuir comensales estimados entre los 3 servicios
+    // Si comensalesEstimados es 0, no se pueden calcular los insumos
+    if (comensalesEstimados === 0 || comensalesEstimados === null) {
+      return res.status(400).json({
+        success: false,
+        mensaje:
+          "La planificación no tiene comensales estimados. Por favor, especifique la cantidad de comensales en la planificación.",
+      });
+    }
+
     const comensalesPorServicio = {
-      Desayuno: 119,
-      Almuerzo: 119,
-      Merienda: 109,
+      Desayuno: Math.floor(comensalesEstimados / 3),
+      Almuerzo: Math.floor(comensalesEstimados / 3),
+      Merienda: Math.ceil(comensalesEstimados / 3), // Usar ceil para el último servicio para que sume correctamente
     };
 
     for (const jornada of jornadas) {
@@ -802,7 +830,16 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
       const cantidadNecesariaOriginal = insumo.cantidad;
       const mejorUnidad = obtenerMejorUnidad(insumo.cantidad, insumo.unidad);
       const stockDisponible = insumo.cantidad_disponible || 0;
-      const diferencia = stockDisponible - cantidadNecesariaOriginal; // Usar cantidad original
+
+      // Convertir stock disponible a la mejorUnidad para comparación correcta
+      const stockDisponibleEnMejorUnidad = convertirCantidadEntre(
+        stockDisponible,
+        insumo.unidad_inventario,
+        mejorUnidad.unidad
+      );
+
+      // IMPORTANTE: Comparar usando la cantidad convertida a la mejor unidad
+      const diferencia = stockDisponibleEnMejorUnidad - mejorUnidad.cantidad;
 
       console.log(`\n📦 Insumo: ${insumo.nombre}`);
       console.log(
@@ -819,10 +856,15 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
         `   📦 Stock actual: ${stockDisponible} ${insumo.unidad_inventario}`
       );
       console.log(
+        `   📦 Stock en mejor unidad: ${stockDisponibleEnMejorUnidad.toFixed(
+          2
+        )} ${mejorUnidad.unidad}`
+      );
+      console.log(
         `   📈 Stock máximo: ${insumo.stock_maximo || "No definido"}`
       );
       console.log(
-        `   🔢 Diferencia: ${diferencia} (${
+        `   🔢 Diferencia: ${diferencia.toFixed(2)} ${mejorUnidad.unidad} (${
           diferencia < 0 ? "FALTANTE" : "SUFICIENTE"
         })`
       );
@@ -832,25 +874,48 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
         console.log(
           `   ⚠️ ¡FALTANTE DETECTADO! Faltan ${Math.abs(diferencia).toFixed(
             2
-          )} ${insumo.unidad}`
+          )} ${mejorUnidad.unidad}`
         );
 
         // Usar stock máximo o calcular cantidad a pedir
         let cantidadAPedir = insumo.stock_maximo || 0;
+        let cantidadAPedirEnMejorUnidad = 0;
+        let cantidadAPedirEnUnidadInventario = 0;
 
         // Si no hay stock máximo definido, pedir al menos lo que falta más un 20%
         if (!cantidadAPedir || cantidadAPedir <= 0) {
-          cantidadAPedir = Math.abs(diferencia) * 1.2; // 20% extra como buffer
+          cantidadAPedirEnMejorUnidad = Math.abs(diferencia) * 1.2; // 20% extra como buffer en mejorUnidad
           console.log(
-            `   📋 Sin stock máximo, pidiendo faltante + 20%: ${cantidadAPedir.toFixed(
+            `   📋 Sin stock máximo, pidiendo faltante + 20%: ${cantidadAPedirEnMejorUnidad.toFixed(
               2
-            )} ${insumo.unidad}`
+            )} ${mejorUnidad.unidad}`
           );
         } else {
+          // Stock máximo está en unidad_inventario, convertir a mejorUnidad primero
+          cantidadAPedirEnMejorUnidad = convertirCantidadEntre(
+            cantidadAPedir,
+            insumo.unidad_inventario,
+            mejorUnidad.unidad
+          );
           console.log(
-            `   📋 Usando stock máximo: ${cantidadAPedir} ${insumo.unidad}`
+            `   📋 Usando stock máximo: ${cantidadAPedir} ${
+              insumo.unidad_inventario
+            } = ${cantidadAPedirEnMejorUnidad.toFixed(2)} ${mejorUnidad.unidad}`
           );
         }
+
+        // Convertir cantidadAPedir de mejorUnidad a la unidad del inventario
+        cantidadAPedirEnUnidadInventario = convertirCantidadEntre(
+          cantidadAPedirEnMejorUnidad,
+          mejorUnidad.unidad,
+          insumo.unidad_inventario
+        );
+
+        console.log(
+          `   📦 Cantidad a pedir en unidad del inventario: ${cantidadAPedirEnUnidadInventario.toFixed(
+            2
+          )} ${insumo.unidad_inventario}`
+        );
 
         insumosFaltantes.push({
           id_insumo: insumo.id_insumo,
@@ -862,7 +927,7 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
           stock_maximo: insumo.stock_maximo || 0,
           unidad: insumo.unidad, // Usar unidad original para base de datos
           unidad_original: insumo.unidad, // Mantener original
-          cantidad_a_pedir: cantidadAPedir,
+          cantidad_a_pedir: cantidadAPedirEnUnidadInventario,
         });
 
         // Obtener proveedores del insumo
@@ -889,8 +954,8 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
           pedidosAGenerar[idProveedor].items.push({
             id_insumo: insumo.id_insumo,
             nombreInsumo: insumo.nombre,
-            cantidad_a_pedir: cantidadAPedir,
-            unidad: insumo.unidad, // Usar unidad original
+            cantidad_a_pedir: cantidadAPedirEnUnidadInventario,
+            unidad: insumo.unidad_inventario, // Usar unidad del inventario
             stock_maximo: insumo.stock_maximo || 0,
             cantidad_actual: stockDisponible,
           });
@@ -927,36 +992,19 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
 
         const idEstadoPendiente = estadoPendiente[0].id_estadoPedido;
 
-        // Usar planificación activa o generar UUID por defecto
-        let idPlanificacionBin, idUsuarioBin;
-
-        if (planificaciones[0]?.id_planificacion) {
-          const [planifBin] = await connection.query(
-            "SELECT UUID_TO_BIN(?) as id_bin",
-            [planificaciones[0].id_planificacion]
-          );
-          idPlanificacionBin = planifBin[0].id_bin;
-        } else {
-          const [newUUID] = await connection.query(
-            "SELECT UUID_TO_BIN(UUID()) as id_bin"
-          );
-          idPlanificacionBin = newUUID[0].id_bin;
-        }
-
         // Para pedidos automáticos, no asignar usuario inicialmente (será asignado al aprobar)
         // El campo 'origen' = 'Generado' identifica que es un proceso automático del sistema
 
-        // Crear pedido automático del sistema
+        // Crear pedido automático del sistema (sin id_planificacion que fue eliminado)
         const [result] = await connection.query(
-          "INSERT INTO Pedidos (id_planificacion, id_usuario, id_estadoPedido, id_proveedor, fechaEmision, origen) VALUES (?, NULL, ?, UUID_TO_BIN(?), NOW(), 'Generado')",
-          [idPlanificacionBin, idEstadoPendiente, pedido.id_proveedor]
+          "INSERT INTO Pedidos (id_usuario, id_estadoPedido, id_proveedor, fechaEmision, origen) VALUES (NULL, ?, UUID_TO_BIN(?), NOW(), 'Generado')",
+          [idEstadoPendiente, pedido.id_proveedor]
         );
 
-        // El resultado contiene el ID como BINARY, necesitamos obtener el UUID generado
-        // Para obtener el ID del pedido que acabamos de crear
+        // Obtener el ID del pedido que acabamos de crear
         const [pedidoCreado] = await connection.query(
-          "SELECT BIN_TO_UUID(id_pedido) as id_pedido_uuid, id_pedido as id_pedido_bin FROM Pedidos WHERE id_planificacion = ? AND id_usuario IS NULL AND id_estadoPedido = ? AND id_proveedor = UUID_TO_BIN(?) ORDER BY fechaEmision DESC LIMIT 1",
-          [idPlanificacionBin, idEstadoPendiente, pedido.id_proveedor]
+          "SELECT BIN_TO_UUID(id_pedido) as id_pedido_uuid, id_pedido as id_pedido_bin FROM Pedidos WHERE id_usuario IS NULL AND id_estadoPedido = ? AND id_proveedor = UUID_TO_BIN(?) AND origen = 'Generado' ORDER BY fechaEmision DESC LIMIT 1",
+          [idEstadoPendiente, pedido.id_proveedor]
         );
 
         if (!pedidoCreado || pedidoCreado.length === 0) {

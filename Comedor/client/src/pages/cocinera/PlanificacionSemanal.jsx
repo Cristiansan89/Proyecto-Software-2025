@@ -56,7 +56,7 @@ const PlanificacionSemanal = () => {
     setFormularioPlanificacion({
       fechaInicio: "",
       fechaFin: "",
-      comensalesEstimados: "",
+      comensalesEstimados: null,
       estado: "Pendiente",
     });
     setModalVisible(true);
@@ -118,7 +118,7 @@ const PlanificacionSemanal = () => {
     setFormularioPlanificacion({
       fechaInicio: "",
       fechaFin: "",
-      comensalesEstimados: "",
+      comensalesEstimados: null,
       estado: "Pendiente",
     });
   };
@@ -218,9 +218,17 @@ const PlanificacionSemanal = () => {
                   </td>
                   <td>{planificacion.nombreUsuario}</td>
                   <td>
-                    <span className="badge bg-info fs-6">
-                      {planificacion.comensalesEstimados}
-                    </span>
+                    {planificacion.comensalesEstimados &&
+                    planificacion.comensalesEstimados > 0 ? (
+                      <span className="badge bg-info fs-6">
+                        {planificacion.comensalesEstimados}
+                      </span>
+                    ) : (
+                      <span className="text-muted small">
+                        <i className="fas fa-info-circle me-1"></i>
+                        No especificado
+                      </span>
+                    )}
                   </td>
                   <td>
                     <span
