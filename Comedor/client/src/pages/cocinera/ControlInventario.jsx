@@ -15,6 +15,7 @@ const ControlInventario = () => {
   const [modalMovimiento, setModalMovimiento] = useState(false);
   const [inventarios, setInventarios] = useState([]);
   const [tiposMerma, setTiposMerma] = useState([]);
+  const [alertas, setAlertas] = useState([]);
   const [nuevoMovimiento, setNuevoMovimiento] = useState({
     id_insumo: "",
     tipoMovimiento: "Entrada",
@@ -44,6 +45,10 @@ const ControlInventario = () => {
   // Cargar inventarios y tipos de merma
   useEffect(() => {
     cargarDatos();
+    cargarAlertas();
+    // Recargar alertas cada 30 segundos
+    const interval = setInterval(cargarAlertas, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const cargarDatos = async () => {
@@ -56,6 +61,25 @@ const ControlInventario = () => {
       setTiposMerma(mermaRes.data || []);
     } catch (error) {
       console.error("Error al cargar datos:", error);
+    }
+  };
+
+  const cargarAlertas = async () => {
+    try {
+      const response = await API.get("/alertas-inventario/no-vistas/listar");
+      // Ya vienen solo alertas no vistas del servidor
+      setAlertas(response.data || []);
+    } catch (error) {
+      console.error("Error al cargar alertas:", error);
+    }
+  };
+
+  const marcarAlertaComoVista = async (id_alerta) => {
+    try {
+      await API.put(`/alertas-inventario/${id_alerta}/visto`);
+      setAlertas(alertas.filter((alerta) => alerta.id_alerta !== id_alerta));
+    } catch (error) {
+      console.error("Error al marcar alerta como vista:", error);
     }
   };
 
@@ -165,23 +189,64 @@ const ControlInventario = () => {
         </div>
       </div>
 
+      {/* Alertas de Inventario */}
+      {alertas.length > 0 && (
+        <div className="alertas-container mb-4">
+          {alertas.map((alerta) => (
+            <div
+              key={alerta.id_alerta}
+              className="alert alert-warning alert-dismissible fade show"
+              role="alert"
+            >
+              <div className="d-flex justify-content-between align-items-start">
+                <div>
+                  <strong>
+                    <i className="fas fa-exclamation-triangle me-2"></i>
+                    {alerta.nombreInsumo}
+                  </strong>
+                  <p className="mb-0 mt-2">
+                    Stock actual:{" "}
+                    <strong>
+                      {Math.round(parseFloat(alerta.cantidadActual || 0))}
+                    </strong>{" "}
+                    {alerta.unidadMedida}
+                    <br />
+                    Nivel mínimo: <strong>{alerta.stockMinimo}</strong>{" "}
+                    {alerta.unidadMedida}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-warning"
+                  onClick={() => marcarAlertaComoVista(alerta.id_alerta)}
+                  title="Marcar como visto"
+                >
+                  <i className="fas fa-check me-1"></i>
+                  Visto
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Modal de Movimiento - Renderizado fuera del árbol del DOM */}
       {modalMovimiento &&
         createPortal(
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <div className="modal-header">
+          <div className="control-inventario__modal-overlay">
+            <div className="control-inventario__modal-content">
+              <div className="control-inventario__modal-header">
                 <h2 className="page-title text-white">
                   Registrar Movimiento de Inventario
                 </h2>
                 <button
-                  className="modal-close text-white"
+                  className="control-inventario__modal-close text-white"
                   onClick={() => setModalMovimiento(false)}
                 >
                   <i className="fas fa-times"></i>
                 </button>
               </div>
-              <div className="modal-body">
+              <div className="control-inventario__modal-body">
                 {/* Notificación */}
                 {mensajeNotificacion && (
                   <div
@@ -318,7 +383,7 @@ const ControlInventario = () => {
                       </div>
                       <div className="col-md-4">
                         <span
-                          className="input-group-text"
+                          className="control-inventario__input-group-text"
                           style={{ width: "130px", fontSize: "18px" }}
                         >
                           <strong>

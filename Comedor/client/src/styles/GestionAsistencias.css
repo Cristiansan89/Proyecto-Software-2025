@@ -139,12 +139,14 @@
   margin: 0;
 }
 
-.table thead th {
+.table thead tr th,
+.table thead tr th {
   background: #f8f9fa;
   border-bottom: 2px solid #dee2e6;
-  font-weight: 600;
+  font-weight: 800;
   padding: 1rem;
-  color: #495057;
+  font-size: 15px;
+  color: #000000;
   vertical-align: middle;
 }
 

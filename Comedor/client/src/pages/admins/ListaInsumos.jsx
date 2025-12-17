@@ -437,14 +437,14 @@ const ListaInsumos = () => {
         <div className="modal-overlay">
           <div className="modal-content insumo-modal">
             <div className="modal-header">
-              <h5 className="modal-title">
+              <h3 className="modal-title">
                 <i className="fas fa-box me-2"></i>
                 {modalMode === "create"
                   ? "Nuevo Insumo"
                   : modalMode === "edit"
                   ? "Editar Insumo"
                   : "Detalles del Insumo"}
-              </h5>
+              </h3>
               <button
                 type="button"
                 className="modal-close"

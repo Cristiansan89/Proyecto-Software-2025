@@ -203,7 +203,6 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
 
       onSave(result);
     } catch (error) {
-
       if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
@@ -236,14 +235,11 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
       <form onSubmit={handleSubmit}>
         <div className="form-sections">
           <div>
-            <h5 className="section-title">
-              <i className="fas fa-user-clock me-2"></i>
-              Reemplazo de Docente
-            </h5>
+            <h5 className="section-title">Reemplazo de Docente</h5>
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="idPersona" className="form-label required mt-3">
+                <label htmlFor="idPersona" className="form-label required">
                   Docente Suplente
                 </label>
                 {isCreateMode ? (
@@ -308,7 +304,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
               <div className="form-group">
                 <label
                   htmlFor="idDocenteTitular"
-                  className="form-label required mt-3"
+                  className="form-label required "
                 >
                   Docente Titular a Reemplazar
                 </label>
@@ -390,7 +386,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
 
             {formData.nombreGrado && (
               <div className="form-group">
-                <label className="form-label mt-3">Grado</label>
+                <label className="form-label ">Grado</label>
                 <input
                   type="text"
                   className="form-control"
@@ -407,10 +403,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label
-                  htmlFor="fechaInicio"
-                  className="form-label required mt-3"
-                >
+                <label htmlFor="fechaInicio" className="form-label required ">
                   Fecha de Inicio
                 </label>
                 <input
@@ -430,7 +423,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="fechaFin" className="form-label mt-3">
+                <label htmlFor="fechaFin" className="form-label ">
                   Fecha de Fin (opcional)
                 </label>
                 <input
@@ -456,7 +449,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="motivo" className="form-label required mt-3">
+                <label htmlFor="motivo" className="form-label required ">
                   Motivo del Reemplazo
                 </label>
                 <select
@@ -483,7 +476,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="cicloLectivo" className="form-label mt-3">
+              <label htmlFor="cicloLectivo" className="form-label ">
                 Ciclo Lectivo
               </label>
               <input

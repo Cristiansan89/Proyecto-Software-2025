@@ -313,7 +313,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
       // Pasar datos al callback del componente padre
       onSave(savedPersona, usuarioCreado);
     } catch (error) {
-
       // Mostrar error al usuario
       if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);
@@ -339,13 +338,10 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
         <div className="form-sections">
           {/* Información Personal */}
           <div>
-            <h5 className="section-title">
-              <i className="fas fa-user me-2"></i>
-              Información Personal
-            </h5>
+            <h4 className="section-title">Información Personal</h4>
 
             <div className="form-group">
-              <label htmlFor="idRol" className="form-label required mt-3">
+              <label htmlFor="idRol" className="form-label required">
                 Rol de la Persona
               </label>
               <select
@@ -384,7 +380,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="nombre" className="form-label required mt-3">
+                <label htmlFor="nombre" className="form-label required">
                   Nombre
                 </label>
                 <input
@@ -405,7 +401,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="apellido" className="form-label required mt-3">
+                <label htmlFor="apellido" className="form-label required">
                   Apellido
                 </label>
                 <input
@@ -428,7 +424,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="dni" className="form-label required mt-3">
+                <label htmlFor="dni" className="form-label required">
                   Número de Documento
                 </label>
                 <input
@@ -449,7 +445,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
               <div className="form-group">
                 <label
                   htmlFor="fechaNacimiento"
-                  className="form-label required mt-3"
+                  className="form-label required"
                 >
                   Fecha de Nacimiento
                 </label>
@@ -475,7 +471,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="genero" className="form-label required mt-3">
+                <label htmlFor="genero" className="form-label required">
                   Género
                 </label>
                 <select
@@ -500,7 +496,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
               {/* Estado */}
 
               <div className="form-group">
-                <label htmlFor="estado" className="form-label mt-3">
+                <label htmlFor="estado" className="form-label required">
                   Estado
                 </label>
                 <select
@@ -529,7 +525,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                 <div className="form-group">
                   <label
                     htmlFor="nombreUsuario"
-                    className="form-label required mt-3"
+                    className="form-label required"
                   >
                     Nombre de Usuario
                   </label>
@@ -565,10 +561,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                 </div>
 
                 <div className="form-group">
-                  <label
-                    htmlFor="userEmail"
-                    className="form-label required mt-3"
-                  >
+                  <label htmlFor="userEmail" className="form-label required">
                     Email de Usuario
                   </label>
                   <input
@@ -590,10 +583,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label
-                    htmlFor="userTelefono"
-                    className="form-label required mt-3"
-                  >
+                  <label htmlFor="userTelefono" className="form-label required">
                     Teléfono de Usuario
                   </label>
                   <input
@@ -621,10 +611,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label
-                    htmlFor="password"
-                    className="form-label required mt-3"
-                  >
+                  <label htmlFor="password" className="form-label required">
                     Contraseña
                   </label>
                   <input
@@ -648,7 +635,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                 <div className="form-group">
                   <label
                     htmlFor="confirmPassword"
-                    className="form-label required mt-3"
+                    className="form-label required"
                   >
                     Confirmar Contraseña
                   </label>
@@ -673,7 +660,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="estadoUsuario" className="form-label mt-3">
+                  <label htmlFor="estadoUsuario" className="form-label">
                     Estado de Usuario
                   </label>
                   <select
@@ -696,7 +683,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
           {/* Información de Usuario - Solo en modo visualización para roles que habilitan cuenta */}
           {habilitaCuentaUsuario && isViewMode && (
-            <div className="mt-4">
+            <div className="mt-2">
               <h5 className="section-title">
                 <i className="fas fa-user-shield me-2"></i>
                 Información de Cuenta de Usuario

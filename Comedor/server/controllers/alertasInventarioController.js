@@ -236,4 +236,118 @@ export class AlertasInventarioController {
       });
     }
   }
+
+  // Obtener todas las alertas no vistas
+  static async obtenerAlertasNoVistas(req, res) {
+    try {
+      const alertas = await AlertaInventarioModel.obtenerNoVistas();
+      res.json(alertas);
+    } catch (error) {
+      console.error("Error al obtener alertas no vistas:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al obtener alertas",
+        error: error.message,
+      });
+    }
+  }
+
+  // Marcar alerta como vista
+  static async marcarAlertaComoVista(req, res) {
+    try {
+      const { id_alerta } = req.params;
+
+      if (!id_alerta) {
+        return res.status(400).json({
+          success: false,
+          message: "id_alerta es requerido",
+        });
+      }
+
+      await AlertaInventarioModel.marcarComoVisto(id_alerta);
+      res.json({
+        success: true,
+        message: "Alerta marcada como vista",
+      });
+    } catch (error) {
+      console.error("Error al marcar alerta como vista:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al marcar alerta como vista",
+        error: error.message,
+      });
+    }
+  }
+
+  // Confirmar alerta recibida por Telegram
+  static async confirmarAlertaTelegram(req, res) {
+    try {
+      const { id_insumo, numero_envio } = req.body;
+
+      if (!id_insumo) {
+        return res.status(400).json({
+          success: false,
+          message: "id_insumo es requerido",
+        });
+      }
+
+      // Marcar la alerta como resuelta
+      await AlertaInventarioModel.marcarComoResuelta({ id_insumo });
+
+      res.json({
+        success: true,
+        message: "✅ Alerta confirmada. Gracias por la confirmación.",
+      });
+    } catch (error) {
+      console.error("Error al confirmar alerta por Telegram:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al confirmar alerta",
+        error: error.message,
+      });
+    }
+  }
+
+  // Manejar webhook de Telegram (para callbacks de botones)
+  static async manejarWebhookTelegram(req, res) {
+    try {
+      const { callback_query } = req.body;
+
+      if (!callback_query) {
+        return res.status(400).json({
+          success: false,
+          message: "callback_query es requerido",
+        });
+      }
+
+      const { data } = callback_query;
+      const [, id_insumo] = data.match(/confirmado_(\d+)/) || [];
+
+      if (!id_insumo) {
+        return res.status(400).json({
+          success: false,
+          message: "No se pudo extraer id_insumo del callback",
+        });
+      }
+
+      // Marcar la alerta como resuelta
+      await AlertaInventarioModel.marcarComoResuelta({ id_insumo });
+
+      console.log(
+        `✅ Alerta confirmada por Telegram para insumo: ${id_insumo}`
+      );
+
+      res.json({
+        success: true,
+        message: "Alerta confirmada",
+      });
+    } catch (error) {
+      console.error("Error al manejar webhook de Telegram:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al procesar webhook",
+        error: error.message,
+      });
+    }
+  }
 }

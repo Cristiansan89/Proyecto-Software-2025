@@ -191,7 +191,6 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
 
       onSave(result);
     } catch (error) {
-
       if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
@@ -224,14 +223,11 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
       <form onSubmit={handleSubmit}>
         <div className="form-sections">
           <div>
-            <h5 className="section-title">
-              <i className="fas fa-user-graduate me-2"></i>
-              Asignación de Alumno a Grado
-            </h5>
+            <h5 className="section-title">Asignación de Alumno a Grado</h5>
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="idPersona" className="form-label required mt-3">
+                <label htmlFor="idPersona" className="form-label required ">
                   Alumno
                 </label>
                 {isCreateMode ? (
@@ -304,10 +300,7 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
               </div>
 
               <div className="form-group">
-                <label
-                  htmlFor="nombreGrado"
-                  className="form-label required mt-3"
-                >
+                <label htmlFor="nombreGrado" className="form-label required ">
                   Grado
                 </label>
                 <Select
@@ -340,10 +333,7 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
             </div>
 
             <div className="form-group">
-              <label
-                htmlFor="cicloLectivo"
-                className="form-label required mt-3"
-              >
+              <label htmlFor="cicloLectivo" className="form-label required ">
                 Ciclo Lectivo
               </label>
               <input

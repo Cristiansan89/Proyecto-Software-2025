@@ -1,11 +1,20 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import auditoriaService from "../../services/auditoriaService";
+import AuditoriaForm from "../../components/admin/AuditoriaForm";
 import "../../styles/Auditoria.css";
 
 const Auditoria = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
+  const [showPDFForm, setShowPDFForm] = useState(false);
+  const [estadisticas, setEstadisticas] = useState({
+    totalRegistros: 0,
+    usuariosUnicos: 0,
+    modulosAfectados: 0,
+    accionesEliminar: 0,
+  });
   const [filtros, setFiltros] = useState({
     fechaInicio: new Date(new Date().setDate(new Date().getDate() - 7))
       .toISOString()
@@ -16,88 +25,13 @@ const Auditoria = () => {
     modulo: "",
   });
 
-  // Datos de ejemplo para demostración
-  const logsPrueba = [
-    {
-      id: 1,
-      fecha: "2025-12-01T10:30:00Z",
-      usuario: "admin@sistema.com",
-      nombreUsuario: "Juan Pérez",
-      accion: "CREAR",
-      modulo: "Insumos",
-      descripcion: "Creó nuevo insumo: Arroz Blanco",
-      ip: "192.168.1.100",
-      detalles: { id_insumo: 15, nombre: "Arroz Blanco", cantidad: 50 },
-    },
-    {
-      id: 2,
-      fecha: "2025-12-01T09:15:00Z",
-      usuario: "cocinera@sistema.com",
-      nombreUsuario: "María García",
-      accion: "ACTUALIZAR",
-      modulo: "Inventario",
-      descripcion: "Actualizó stock de insumo: Tomates",
-      ip: "192.168.1.105",
-      detalles: { id_inventario: 8, cantidad_anterior: 20, cantidad_nueva: 35 },
-    },
-    {
-      id: 3,
-      fecha: "2025-12-01T08:45:00Z",
-      usuario: "docente@sistema.com",
-      nombreUsuario: "Carlos López",
-      accion: "CONSULTAR",
-      modulo: "Asistencias",
-      descripcion: "Consultó lista de asistencias del grado 5°A",
-      ip: "192.168.1.102",
-      detalles: { id_grado: 5, fecha: "2025-12-01" },
-    },
-    {
-      id: 4,
-      fecha: "2025-11-30T16:20:00Z",
-      usuario: "admin@sistema.com",
-      nombreUsuario: "Juan Pérez",
-      accion: "ELIMINAR",
-      modulo: "Usuarios",
-      descripcion: "Eliminó usuario: test@sistema.com",
-      ip: "192.168.1.100",
-      detalles: { id_usuario_eliminado: 25, email: "test@sistema.com" },
-    },
-    {
-      id: 5,
-      fecha: "2025-11-30T14:10:00Z",
-      usuario: "cocinera@sistema.com",
-      nombreUsuario: "María García",
-      accion: "CREAR",
-      modulo: "Pedidos",
-      descripcion: "Creó nuevo pedido de insumos",
-      ip: "192.168.1.105",
-      detalles: { id_pedido: 12, total_items: 8, estado: "Pendiente" },
-    },
-    {
-      id: 6,
-      fecha: "2025-11-30T11:30:00Z",
-      usuario: "admin@sistema.com",
-      nombreUsuario: "Juan Pérez",
-      accion: "CONFIGURAR",
-      modulo: "Sistema",
-      descripcion: "Modificó parámetros del sistema",
-      ip: "192.168.1.100",
-      detalles: {
-        parametro: "limite_stock_minimo",
-        valor_anterior: 10,
-        valor_nuevo: 15,
-      },
-    },
-  ];
-
   const acciones = [
-    "CREAR",
-    "ACTUALIZAR",
-    "ELIMINAR",
-    "CONSULTAR",
-    "LOGIN",
-    "LOGOUT",
-    "CONFIGURAR",
+    "Registrar",
+    "Modificar",
+    "Eliminar",
+    "Buscar",
+    "Consultar",
+    "Exportar",
   ];
   const modulos = [
     "Usuarios",
@@ -107,65 +41,44 @@ const Auditoria = () => {
     "Asistencias",
     "Sistema",
     "Reportes",
+    "Alertas",
   ];
 
   useEffect(() => {
     cargarLogs();
+    cargarEstadisticas();
   }, [filtros]);
 
   const cargarLogs = async () => {
     try {
       setLoading(true);
+      const response = await auditoriaService.obtenerLogs(filtros);
 
-      // Simular carga de datos
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // Aplicar filtros a los datos de prueba
-      let logsFiltrados = [...logsPrueba];
-
-      if (filtros.fechaInicio) {
-        logsFiltrados = logsFiltrados.filter(
-          (log) =>
-            new Date(log.fecha).toISOString().split("T")[0] >=
-            filtros.fechaInicio
-        );
+      if (response.success) {
+        setLogs(response.data || []);
+      } else {
+        setLogs([]);
       }
-
-      if (filtros.fechaFin) {
-        logsFiltrados = logsFiltrados.filter(
-          (log) =>
-            new Date(log.fecha).toISOString().split("T")[0] <= filtros.fechaFin
-        );
-      }
-
-      if (filtros.usuario) {
-        logsFiltrados = logsFiltrados.filter(
-          (log) =>
-            log.nombreUsuario
-              .toLowerCase()
-              .includes(filtros.usuario.toLowerCase()) ||
-            log.usuario.toLowerCase().includes(filtros.usuario.toLowerCase())
-        );
-      }
-
-      if (filtros.accion) {
-        logsFiltrados = logsFiltrados.filter(
-          (log) => log.accion === filtros.accion
-        );
-      }
-
-      if (filtros.modulo) {
-        logsFiltrados = logsFiltrados.filter(
-          (log) => log.modulo === filtros.modulo
-        );
-      }
-
-      setLogs(logsFiltrados);
     } catch (error) {
       console.error("Error al cargar logs:", error);
       setLogs([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cargarEstadisticas = async () => {
+    try {
+      const response = await auditoriaService.obtenerEstadisticas({
+        fechaInicio: filtros.fechaInicio,
+        fechaFin: filtros.fechaFin,
+      });
+
+      if (response.success) {
+        setEstadisticas(response.data || {});
+      }
+    } catch (error) {
+      console.error("Error al cargar estadísticas:", error);
     }
   };
 
@@ -209,6 +122,7 @@ const Auditoria = () => {
       LOGIN: "fas fa-sign-in-alt text-primary",
       LOGOUT: "fas fa-sign-out-alt text-secondary",
       CONFIGURAR: "fas fa-cog text-dark",
+      DESCARGAR: "fas fa-download text-secondary",
     };
     return iconos[accion] || "fas fa-info-circle text-muted";
   };
@@ -222,20 +136,26 @@ const Auditoria = () => {
       LOGIN: "primary",
       LOGOUT: "secondary",
       CONFIGURAR: "dark",
+      DESCARGAR: "secondary",
     };
     return colores[accion] || "muted";
   };
 
   const verDetalles = (log) => {
-    const detallesTexto = JSON.stringify(log.detalles, null, 2);
+    const detallesTexto = log.detalles
+      ? JSON.stringify(log.detalles, null, 2)
+      : "Sin detalles adicionales";
+
     alert(`📋 DETALLES DEL LOG
 
-🕒 Fecha: ${formatearFecha(log.fecha)}
-👤 Usuario: ${log.nombreUsuario} (${log.usuario})
+🕒 Fecha: ${formatearFecha(log.fecha_creacion)}
+👤 Usuario: ${log.nombre_usuario || "Sin usuario"} (${
+      log.email_usuario || "Sin email"
+    })
 🔧 Acción: ${log.accion}
 📦 Módulo: ${log.modulo}
 📝 Descripción: ${log.descripcion}
-🌐 IP: ${log.ip}
+🌐 IP: ${log.ip_origen || "Sin IP"}
 
 📄 Detalles adicionales:
 ${detallesTexto}`);
@@ -257,12 +177,14 @@ ${detallesTexto}`);
     ];
 
     const csvData = logs.map((log) => [
-      formatearFecha(log.fecha),
-      `${log.nombreUsuario} (${log.usuario})`,
+      formatearFecha(log.fecha_creacion),
+      `${log.nombre_usuario || "Sin usuario"} (${
+        log.email_usuario || "Sin email"
+      })`,
       log.accion,
       log.modulo,
       log.descripcion,
-      log.ip,
+      log.ip_origen || "Sin IP",
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -301,48 +223,44 @@ ${detallesTexto}`);
       {/* Estadísticas rápidas */}
       <div className="row mb-4">
         <div className="col-md-3">
-          <div className="card stats-card">
+          <div className="card auditoria__stats-card">
             <div className="card-body text-center">
               <i className="fas fa-list-ol stats-icon text-primary"></i>
-              <h3 className="stats-number text-primary">{logs.length}</h3>
+              <h3 className="stats-number text-primary">
+                {estadisticas.totalRegistros || 0}
+              </h3>
               <p className="stats-label">Total Registros</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card stats-card">
+          <div className="card auditoria__stats-card">
             <div className="card-body text-center">
               <i className="fas fa-calendar-day stats-icon text-success"></i>
               <h3 className="stats-number text-success">
-                {
-                  logs.filter(
-                    (l) =>
-                      new Date(l.fecha).toDateString() ===
-                      new Date().toDateString()
-                  ).length
-                }
+                {estadisticas.usuariosUnicos || 0}
               </h3>
-              <p className="stats-label">Hoy</p>
+              <p className="stats-label">Usuarios Únicos</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card stats-card">
+          <div className="card auditoria__stats-card">
             <div className="card-body text-center">
               <i className="fas fa-users stats-icon text-info"></i>
               <h3 className="stats-number text-info">
-                {new Set(logs.map((l) => l.usuario)).size}
+                {estadisticas.modulosAfectados || 0}
               </h3>
-              <p className="stats-label">Usuarios Activos</p>
+              <p className="stats-label">Módulos Afectados</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card stats-card">
+          <div className="card auditoria__stats-card">
             <div className="card-body text-center">
               <i className="fas fa-exclamation-triangle stats-icon text-warning"></i>
               <h3 className="stats-number text-warning">
-                {logs.filter((l) => l.accion === "ELIMINAR").length}
+                {estadisticas.accionesEliminar || 0}
               </h3>
               <p className="stats-label">Acciones Críticas</p>
             </div>
@@ -351,14 +269,14 @@ ${detallesTexto}`);
       </div>
 
       {/* Filtros */}
-      <div className="card mb-4">
-        <div className="card-header">
-          <h5 className="card-title mb-0">
+      <div className="card auditoria__card">
+        <div className="auditoria__card-header">
+          <h5 className="auditoria__card-title">
             <i className="fas fa-filter me-2"></i>
             Filtros de Auditoría
           </h5>
         </div>
-        <div className="card-body">
+        <div className="auditoria__card-body">
           <div className="row g-3">
             <div className="col-md-2">
               <label htmlFor="fechaInicio" className="form-label">
@@ -472,8 +390,19 @@ ${detallesTexto}`);
             </button>
             <button
               type="button"
+              className="btn btn-danger"
+              onClick={() => setShowPDFForm(true)}
+            >
+              <i className="fas fa-file-pdf me-2"></i>
+              Generar PDF
+            </button>
+            <button
+              type="button"
               className="btn btn-outline-primary"
-              onClick={() => cargarLogs()}
+              onClick={() => {
+                cargarLogs();
+                cargarEstadisticas();
+              }}
               disabled={loading}
             >
               <i className="fas fa-sync-alt me-1"></i>
@@ -484,16 +413,16 @@ ${detallesTexto}`);
       </div>
 
       {/* Tabla de logs */}
-      <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="card-title mb-0">
+      <div className="card auditoria__card">
+        <div className="auditoria__card-header">
+          <h5 className="auditoria__card-title">
             <i className="fas fa-list me-2"></i>
             Registro de Actividades
           </h5>
-          <span className="badge bg-primary">{logs.length} registros</span>
+          <span className="badge badge-primary">{logs.length} registros</span>
         </div>
 
-        <div className="card-body">
+        <div className="auditoria__card-body">
           {loading ? (
             <div className="text-center py-4">
               <div className="spinner-border text-primary" role="status">
@@ -510,9 +439,9 @@ ${detallesTexto}`);
               </p>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead className="table-light">
+            <div className="auditoria__table-responsive">
+              <table className="table auditoria__table auditoria__table-hover">
+                <thead className="auditoria__table-light">
                   <tr>
                     <th width="15%">
                       <i className="fas fa-clock me-2"></i>
@@ -542,65 +471,68 @@ ${detallesTexto}`);
                 </thead>
                 <tbody>
                   {logs.map((log) => (
-                    <tr key={log.id}>
+                    <tr key={log.id_auditoria}>
                       <td>
-                        <div className="d-flex flex-column">
-                          <span className="fw-semibold">
-                            {new Date(log.fecha).toLocaleDateString("es-ES")}
+                        <div className="auditoria__fecha-info">
+                          <span className="auditoria__fecha-date">
+                            {new Date(log.fecha_creacion).toLocaleDateString(
+                              "es-ES"
+                            )}
                           </span>
-                          <small className="text-muted">
-                            {new Date(log.fecha).toLocaleTimeString("es-ES")}
+                          <small className="auditoria__fecha-time">
+                            {new Date(log.fecha_creacion).toLocaleTimeString(
+                              "es-ES"
+                            )}
                           </small>
                         </div>
                       </td>
 
                       <td>
-                        <div className="d-flex flex-column">
-                          <span className="fw-semibold">
-                            {log.nombreUsuario}
+                        <div className="auditoria__usuario-info">
+                          <span className="auditoria__usuario-nombre">
+                            {log.nombre_usuario || "Sin usuario"}
                           </span>
-                          <small className="text-muted">{log.usuario}</small>
-                          <small className="text-muted">
+                          <small className="auditoria__usuario-email">
+                            {log.email_usuario || "Sin email"}
+                          </small>
+                          <small className="auditoria__usuario-ip">
                             <i className="fas fa-globe-americas me-1"></i>
-                            {log.ip}
+                            {log.ip_origen || "Sin IP"}
                           </small>
                         </div>
                       </td>
 
                       <td>
                         <span
-                          className={`badge bg-${obtenerColorAccion(
-                            log.accion
-                          )}`}
+                          className={`badge auditoria__accion-${log.accion.toLowerCase()}`}
                         >
                           <i
-                            className={obtenerIconoAccion(log.accion).replace(
-                              /text-\w+/,
-                              ""
-                            )}
+                            className={
+                              obtenerIconoAccion(log.accion).split(" ")[0] +
+                              " " +
+                              obtenerIconoAccion(log.accion).split(" ")[1]
+                            }
                           ></i>
                           {log.accion}
                         </span>
                       </td>
 
                       <td>
-                        <span className="badge bg-secondary">
+                        <span className="badge badge-secondary">
                           <i className="fas fa-cube me-1"></i>
                           {log.modulo}
                         </span>
                       </td>
 
                       <td>
-                        <span className="text-muted">
-                          {log.descripcion.length > 60
-                            ? log.descripcion.substring(0, 60) + "..."
-                            : log.descripcion}
+                        <span className="text-muted text-truncate-custom">
+                          {log.descripcion}
                         </span>
                       </td>
 
                       <td>
                         <button
-                          className="btn btn-sm btn-outline-info"
+                          className="btn btn-sm auditoria__btn-outline-info"
                           onClick={() => verDetalles(log)}
                           title="Ver detalles completos"
                         >
@@ -616,7 +548,7 @@ ${detallesTexto}`);
         </div>
 
         {logs.length > 0 && (
-          <div className="card-footer">
+          <div className="auditoria__card-footer">
             <div className="row text-center">
               <div className="col-md-12">
                 <small className="text-muted">
@@ -630,6 +562,9 @@ ${detallesTexto}`);
           </div>
         )}
       </div>
+
+      {/* Modal para generar PDF */}
+      <AuditoriaForm show={showPDFForm} onHide={() => setShowPDFForm(false)} />
     </div>
   );
 };

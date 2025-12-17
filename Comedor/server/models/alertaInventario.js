@@ -146,4 +146,64 @@ export class AlertaInventarioModel {
       throw new Error("Error al marcar alertas como resueltas");
     }
   }
+
+  // Obtener alertas no vistas
+  static async obtenerNoVistas() {
+    try {
+      const [alertas] = await connection.query(
+        `SELECT 
+          aa.id_alerta,
+          aa.id_insumo,
+          aa.tipo_alerta,
+          aa.contador_envios,
+          aa.fecha_primera_alerta,
+          aa.fecha_ultima_alerta,
+          aa.visto,
+          i.nombreInsumo,
+          i.unidadMedida,
+          inv.cantidadActual,
+          inv.nivelMinimoAlerta as stockMinimo
+         FROM AlertasInventario aa
+         JOIN Insumos i ON aa.id_insumo = i.id_insumo
+         JOIN Inventarios inv ON aa.id_insumo = inv.id_insumo
+         WHERE aa.visto = false AND aa.estado = 'activa'
+         ORDER BY aa.fecha_ultima_alerta DESC`
+      );
+      return alertas;
+    } catch (error) {
+      console.error("Error al obtener alertas no vistas:", error);
+      throw error;
+    }
+  }
+
+  // Marcar alerta como vista
+  static async marcarComoVisto(id_alerta) {
+    try {
+      await connection.query(
+        `UPDATE AlertasInventario 
+         SET visto = true, fecha_vista = NOW()
+         WHERE id_alerta = ?`,
+        [id_alerta]
+      );
+    } catch (error) {
+      console.error("Error al marcar alerta como vista:", error);
+      throw error;
+    }
+  }
+
+  // Actualizar contador de envíos
+  static async actualizarContador({ id_insumo, contador_envios }) {
+    try {
+      const [result] = await connection.query(
+        `UPDATE AlertasInventario 
+         SET contador_envios = ?, fecha_ultima_alerta = NOW()
+         WHERE id_insumo = ? AND estado = 'activa'`,
+        [contador_envios, id_insumo]
+      );
+      return result;
+    } catch (error) {
+      console.error("Error al actualizar contador de alertas:", error);
+      throw error;
+    }
+  }
 }

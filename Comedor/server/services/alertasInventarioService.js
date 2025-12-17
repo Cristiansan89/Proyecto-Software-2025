@@ -67,6 +67,15 @@ class AlertasInventarioService {
   // Verificar y enviar alertas
   async verificarYEnviarAlertas() {
     try {
+      // Verificar si las alertas están habilitadas
+      const alertasHabilitadas = await this.verificarAlertasHabilitadas();
+      if (!alertasHabilitadas) {
+        console.log(
+          "ℹ️ Alertas deshabilitadas en configuración. Saltando verificación."
+        );
+        return;
+      }
+
       // Obtener insumos con stock bajo
       const insumosConStockBajo =
         await InventarioModel.getInsumosConStockBajo();
@@ -93,6 +102,28 @@ class AlertasInventarioService {
       }
     } catch (error) {
       console.error("❌ Error en verificación de alertas:", error);
+    }
+  }
+
+  // Verificar si las alertas están habilitadas en los parámetros
+  async verificarAlertasHabilitadas() {
+    try {
+      const { connection } = await import("../models/db.js");
+      const [parametros] = await connection.query(
+        "SELECT valor FROM Parametros WHERE nombreParametro = 'ALERTAS_INVENTARIO_HABILITADAS' AND estado = 'Activo' LIMIT 1"
+      );
+
+      if (!parametros || parametros.length === 0) {
+        // Si no existe el parámetro, asumir que está habilitado por defecto
+        return true;
+      }
+
+      const valor = parametros[0].valor;
+      return valor === "true" || valor === "1" || valor === 1 || valor === true;
+    } catch (error) {
+      console.error("Error verificando si alertas están habilitadas:", error);
+      // En caso de error, permitir alertas por defecto
+      return true;
     }
   }
 
@@ -154,22 +185,27 @@ class AlertasInventarioService {
       if (alerta) {
         // Verificar si ya se han enviado 3 alertas
         if (alerta.contador_envios >= 3) {
-          await AlertaInventarioModel.marcarComoCompletada({
-            id_insumo: insumo.id_insumo,
-          });
           console.log(
-            `⚠️ Límite de alertas alcanzado para: ${insumo.nombreInsumo}`
+            `⚠️ Límite de alertas alcanzado para: ${insumo.nombreInsumo} (${alerta.contador_envios}/3)`
           );
           return;
         }
 
-        // Actualizar contador y enviar
-        await this.enviarAlerta(insumo, alerta.contador_envios + 1);
+        // Incrementar contador y enviar
+        const nuevoContador = alerta.contador_envios + 1;
+        await this.enviarAlerta(insumo, nuevoContador);
+
+        // Actualizar contador en la BD
+        await AlertaInventarioModel.actualizarContador({
+          id_insumo: insumo.id_insumo,
+          contador_envios: nuevoContador,
+        });
       } else {
         // Crear nueva alerta y enviar
         await AlertaInventarioModel.create({
           id_insumo: insumo.id_insumo,
           tipo_alerta: insumo.estado,
+          contador_envios: 1,
         });
         await this.enviarAlerta(insumo, 1);
       }
@@ -199,27 +235,51 @@ class AlertasInventarioService {
         return;
       }
 
+      // Obtener parámetro de Telegram habilitado
+      const [telegramparam] = await connection.query(
+        "SELECT valor FROM Parametros WHERE nombreParametro = 'TELEGRAM_HABILITADO' AND estado = 'Activo' LIMIT 1"
+      );
+
+      const telegramHabilitado =
+        !telegramparam ||
+        telegramparam[0]?.valor === "true" ||
+        telegramparam[0]?.valor === "1";
+      if (!telegramHabilitado) {
+        console.log(
+          "ℹ️ Telegram deshabilitado en configuración. Alerta no enviada."
+        );
+        return;
+      }
+
       // Construir mensaje
       const mensaje = this.construirMensajeAlerta(insumo, numeroEnvio);
+
+      // Crear botones de confirmación
+      const opciones = {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "✅ Confirmado - He recibido la alerta",
+                callback_data: `confirmado_${insumo.id_insumo}_${numeroEnvio}`,
+              },
+            ],
+          ],
+        },
+      };
 
       // Enviar por Telegram usando el bot del sistema
       const resultado = await telegramService.sendMessage(
         chatId,
         mensaje,
-        "sistema"
+        "sistema",
+        opciones
       );
 
       if (resultado.success) {
         console.log(
           `✅ Alerta enviada a Telegram - ${insumo.nombreInsumo} (Envío ${numeroEnvio}/3)`
         );
-
-        // Actualizar contador en DB
-        await AlertaInventarioModel.create({
-          id_insumo: insumo.id_insumo,
-          tipo_alerta: insumo.estado,
-          contador_envios: numeroEnvio,
-        });
       } else {
         console.error(
           `❌ Error enviando alerta por Telegram:`,
@@ -239,29 +299,38 @@ class AlertasInventarioService {
     let mensaje = `${emoji} ALERTA DE INVENTARIO\n\n`;
     mensaje += `Estado: ${estadoTexto}\n`;
     mensaje += `Insumo: ${insumo.nombreInsumo}\n`;
-    mensaje += `Categoría: ${insumo.categoria}\n`;
+    mensaje += `Categoría: ${insumo.categoria || "No especificada"}\n`;
     mensaje += `Stock Actual: ${Math.round(
       parseFloat(insumo.cantidadActual)
     )} ${insumo.unidadMedida}\n`;
     mensaje += `Nivel Mínimo: ${Math.round(
       parseFloat(insumo.nivelMinimoAlerta)
-    )} ${insumo.unidadMedida}\n`;
-    mensaje += `Notificación: ${numeroEnvio}/3\n\n`;
+    )} ${insumo.unidadMedida}\n\n`;
+
+    // Mostrar el contador de notificaciones de forma clara
+    const barra = this.crearBarra(numeroEnvio, 3);
+    mensaje += `📊 Notificación: ${numeroEnvio}/3\n`;
+    mensaje += `${barra}\n\n`;
 
     mensaje += `🔔 Acciones sugeridas:\n`;
     mensaje += `• Revisa el inventario del sistema\n`;
     mensaje += `• Verifica los proveedores disponibles\n`;
-    mensaje += `• Realiza un pedido manual si es necesario\n`;
-    mensaje += `• Ingresa al sistema para confirmar lectura\n\n`;
+    mensaje += `• Realiza un pedido manual si es necesario\n\n`;
 
-    mensaje += `📊 Sistema de Pedidos Automáticos:\n`;
-    mensaje += `• Los pedidos se generan automáticamente todos los viernes\n`;
-    mensaje += `• Se enviarán hasta 3 notificaciones hasta que ingreses al sistema\n`;
-    mensaje += `• Si necesitas urgencia, realiza un pedido manual\n\n`;
+    mensaje += `📋 Por favor, haz clic en el botón de confirmación\n`;
+    mensaje += `para indicar que has recibido esta alerta.\n\n`;
 
-    mensaje += `⏰ <i>Próxima revisión automática en 5 minutos</i>`;
+    mensaje += `⏰ Si no confirmas, recibirás más notificaciones\n`;
+    mensaje += `hasta ${3 - numeroEnvio} vez(ces) más.`;
 
     return mensaje;
+  }
+
+  // Crear barra de progreso visual
+  crearBarra(actual, total) {
+    const lleno = "🟦".repeat(actual);
+    const vacio = "⬜".repeat(total - actual);
+    return `[${lleno}${vacio}]`;
   }
 
   // Método para recalcular todos los estados de inventario

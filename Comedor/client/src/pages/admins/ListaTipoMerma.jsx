@@ -97,7 +97,7 @@ const ListaTipoMerma = () => {
         </div>
         <div className="header-actions">
           <button className="btn btn-primary" onClick={handleNuevo}>
-            <i className="fas fa-plus me-2"></i> Agregar Tipo de Merma
+            <i className="fas fa-plus me-2"></i>Nuevo Tipo de Merma
           </button>
         </div>
       </div>
@@ -181,16 +181,18 @@ const ListaTipoMerma = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h5 className="modal-title">
+              <h4 className="modal-title">
+                <i className="fas fa-tags me-2"></i>
                 {modalMode === "crear"
                   ? "Nuevo Tipo de Merma"
                   : "Editar Tipo de Merma"}
-              </h5>
+              </h4>
               <button
-                type="button"
-                className="btn-close"
+                className="modal-close text-white"
                 onClick={handleCerrarModal}
-              ></button>
+              >
+                <i className="fas fa-times"></i>
+              </button>
             </div>
             <div className="modal-body">
               <TipoMermaForm

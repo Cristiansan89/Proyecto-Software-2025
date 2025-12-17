@@ -128,7 +128,6 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
         stockMaximo: Number(formData.stockMaximo),
       };
 
-
       let savedInsumo;
 
       if (mode === "create") {
@@ -139,7 +138,6 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
 
       onSave(savedInsumo);
     } catch (error) {
-
       // Mostrar error al usuario
       if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);
@@ -180,16 +178,10 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
         <div className="form-sections">
           {/* Información Básica */}
           <div>
-            <h5 className="section-title">
-              <i className="fas fa-info-circle me-2"></i>
-              Información Básica
-            </h5>
+            <h5 className="section-title">Información Básica</h5>
 
             <div className="form-group">
-              <label
-                htmlFor="nombreInsumo"
-                className="form-label required mt-3"
-              >
+              <label htmlFor="nombreInsumo" className="form-label required ">
                 Nombre del Insumo
               </label>
               <input
@@ -211,7 +203,7 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="descripcion" className="form-label mt-3">
+              <label htmlFor="descripcion" className="form-label ">
                 Descripción
               </label>
               <textarea
@@ -236,7 +228,7 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="categoria" className="form-label mt-3">
+              <label htmlFor="categoria" className="form-label ">
                 Categoría
               </label>
               <select
@@ -256,10 +248,7 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
             </div>
 
             <div className="form-group">
-              <label
-                htmlFor="unidadMedida"
-                className="form-label required mt-3"
-              >
+              <label htmlFor="unidadMedida" className="form-label required ">
                 Unidad de Medida
               </label>
               <select
@@ -286,14 +275,11 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
 
             {/* Información de Stock */}
             <div className="mt-5">
-              <h5 className="section-title">
-                <i className="fas fa-warehouse me-2"></i>
-                Control de Stock
-              </h5>
+              <h5 className="section-title">Control de Stock</h5>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="stockMinimo" className="form-label mt-3">
+                  <label htmlFor="stockMinimo" className="form-label ">
                     Stock Mínimo
                   </label>
                   <input
@@ -317,7 +303,7 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                   </small>
                 </div>
                 <div className="form-group">
-                  <label htmlFor="stockMaximo" className="form-label mt-3">
+                  <label htmlFor="stockMaximo" className="form-label ">
                     Stock Máximo
                   </label>
                   <input
@@ -342,7 +328,7 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                 </div>
                 <div>
                   <div className="form-group">
-                    <label htmlFor="stockActual" className="form-label mt-3">
+                    <label htmlFor="stockActual" className="form-label ">
                       Stock Actual
                     </label>
                     <input
@@ -375,7 +361,7 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                 Number(formData.stockMinimo) > 0 &&
                 Number(formData.stockActual) <=
                   Number(formData.stockMinimo) && (
-                  <div className="alert alert-warning mt-3">
+                  <div className="alert alert-warning ">
                     <i className="fas fa-exclamation-triangle me-2"></i>
                     <strong>Atención:</strong> El stock actual está por debajo o
                     igual al mínimo establecido.
@@ -384,7 +370,7 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
 
               {/* Estado */}
               <div className="form-group">
-                <label htmlFor="estado" className="form-label mt-3">
+                <label htmlFor="estado" className="form-label ">
                   Estado
                 </label>
                 <select

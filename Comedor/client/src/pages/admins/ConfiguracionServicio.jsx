@@ -214,61 +214,39 @@ const ConfiguracionServiciosAutomaticos = () => {
 
   return (
     <div className="configuracion-servicios-container">
-      <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="card-title mb-0">
+      <div className="page-header">
+        <div className="header-left">
+          <h1 className="page-title">
             <i className="fas fa-clock me-2"></i>
             Configuración de Servicios Automáticos
-          </h5>
+          </h1>
+          <p>Administra las configuraciones de servicios automáticos</p>
+        </div>
+        <div className="header-actions">
           <button
-            className="btn btn-success btn-sm"
+            className="btn btn-primary-new"
             onClick={() => handleAbrirModal()}
           >
-            <i className="fas fa-plus me-1"></i>
+            <i className="fas fa-plus"></i>
             Agregar Configuración
           </button>
         </div>
+      </div>
 
-        <div className="card-body">
-          {error && (
-            <div
-              className="alert alert-danger alert-dismissible fade show"
-              role="alert"
-            >
-              <i className="fas fa-exclamation-circle me-2"></i>
-              {error}
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setError("")}
-              ></button>
-            </div>
-          )}
-
-          {success && (
-            <div
-              className="alert alert-success alert-dismissible fade show"
-              role="alert"
-            >
-              <i className="fas fa-check-circle me-2"></i>
-              {success}
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setSuccess("")}
-              ></button>
-            </div>
-          )}
-
-          {configuraciones.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="fas fa-inbox fa-3x text-muted mb-3"></i>
-              <p className="text-muted">No hay configuraciones creadas</p>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover table-sm">
-                <thead className="table-light">
+      <div className="table-container">
+        {loading ? (
+          <div className="loading-spinner">
+            <i className="fas fa-spinner fa-spin"></i>
+            <p>Cargando grados...</p>
+          </div>
+        ) : (
+          <div className="scrollable-table">
+            <div className="table-body-scroll">
+              <table
+                className="table table-striped data-table"
+                style={{ width: "100%" }}
+              >
+                <thead className="table-header-fixed">
                   <tr>
                     <th>Servicio</th>
                     <th>Hora Inicio</th>
@@ -335,8 +313,8 @@ const ConfiguracionServiciosAutomaticos = () => {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
@@ -346,13 +324,15 @@ const ConfiguracionServiciosAutomaticos = () => {
             <div>
               <div className="modal-header">
                 <h5 className="modal-title">
+                  <i className="fas fa-clock me-2"></i>
                   {editando ? "Editar Configuración" : "Nueva Configuración"}
                 </h5>
                 <button
-                  type="button"
-                  className="btn-close"
+                  className="modal-close text-white"
                   onClick={() => setModalAbierto(false)}
-                ></button>
+                >
+                  <i className="fas fa-times"></i>
+                </button>
               </div>
               <form onSubmit={handleGuardar}>
                 <div className="modal-body">

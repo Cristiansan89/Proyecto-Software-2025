@@ -283,12 +283,13 @@ const ListaTurnos = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>
+              <h4>
+                <i className="fas fa-clock me-2"></i>
                 {modalMode === "create" && "Crear Nuevo Turno"}
                 {modalMode === "edit" && "Editar Turno"}
                 {modalMode === "view" && "Ver Turno"}
-              </h3>
-              <button className="modal-close" onClick={handleCancel}>
+              </h4>
+              <button className="modal-close text-white" onClick={handleCancel}>
                 <i className="fas fa-times"></i>
               </button>
             </div>

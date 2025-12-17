@@ -24,7 +24,13 @@ const TipoMermaForm = ({ tipoMerma, mode, onSave, onCancel }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let valorPermitido = value; // Variable para almacenar el valor procesado
+
+    if (name === "nombre") {
+      // Permitir solo letras y espacios en el campo nombre
+      valorPermitido = value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, "");
+    }
+    setFormData((prev) => ({ ...prev, [name]: valorPermitido }));
 
     // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[name]) {
@@ -80,10 +86,7 @@ const TipoMermaForm = ({ tipoMerma, mode, onSave, onCancel }) => {
       <div className="form-sections">
         {/* Información del Tipo de Merma */}
         <div>
-          <h5 className="section-title">
-            <i className="fas fa-magnifying-glass-minus"></i>
-            Información del Tipo de Merma
-          </h5>
+          <h5 className="section-title">Información del Tipo de Merma</h5>
           <div className="mb-3">
             <label htmlFor="nombre" className="form-label">
               Nombre <span className="text-danger">*</span>

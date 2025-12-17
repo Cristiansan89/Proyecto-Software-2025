@@ -97,7 +97,7 @@ const ListaEstadoPedido = () => {
         </div>
         <div className="header-actions">
           <button className="btn btn-primary" onClick={handleNuevo}>
-            <i className="fas fa-plus me-2"></i> Agregar Estado de Pedido
+            <i className="fas fa-plus me-2"></i>Nuevo Estado de Pedido
           </button>
         </div>
       </div>
@@ -129,13 +129,13 @@ const ListaEstadoPedido = () => {
                 </thead>
                 <tbody>
                   {estadosPedido.map((estado) => (
-                    <tr key={estado.id_estado_pedido}>
+                    <tr key={estado.id_estadoPedido}>
                       <td>
-                        <strong>{estado.id_estado_pedido}</strong>
+                        <strong>{estado.id_estadoPedido}</strong>
                       </td>
                       <td>
-                        <i className="fas fa-tag me-2"></i>
-                        {estado.nombre}
+                        <i className="fas fa-clipboard-check me-2"></i>
+                        <strong>{estado.nombreEstado}</strong>
                       </td>
                       <td>{estado.descripcion || "-"}</td>
                       <td>
@@ -183,16 +183,18 @@ const ListaEstadoPedido = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h5 className="modal-title">
+              <h4 className="modal-title">
+                <i className="fas fa-clipboard-list"></i>
                 {modalMode === "create"
                   ? "Nuevo Estado de Pedido"
                   : "Editar Estado de Pedido"}
-              </h5>
+              </h4>
               <button
-                type="button"
-                className="btn-close"
+                className="modal-close text-white"
                 onClick={handleCerrarModal}
-              ></button>
+              >
+                <i className="fas fa-times"></i>
+              </button>
             </div>
             <div className="modal-body">
               <EstadoPedidoForm

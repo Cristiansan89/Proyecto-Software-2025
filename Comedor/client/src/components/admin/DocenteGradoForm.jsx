@@ -201,7 +201,9 @@ const DocenteGradoForm = ({ docenteGrado, mode, onSave, onCancel }) => {
         <div className="form-sections">
           <div>
             <div className="form-group">
-              <label htmlFor="idPersona" className="form-label required mt-3">
+              <h5 className="section-title">Asignación de Docente a Grado</h5>
+
+              <label htmlFor="idPersona" className="form-label required ">
                 Docente
               </label>
               {isCreateMode ? (
@@ -272,7 +274,7 @@ const DocenteGradoForm = ({ docenteGrado, mode, onSave, onCancel }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="nombreGrado" className="form-label required mt-3">
+              <label htmlFor="nombreGrado" className="form-label required ">
                 Grado
               </label>
               <Select
@@ -312,10 +314,7 @@ const DocenteGradoForm = ({ docenteGrado, mode, onSave, onCancel }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label
-                  htmlFor="fechaAsignado"
-                  className="form-label required mt-3"
-                >
+                <label htmlFor="fechaAsignado" className="form-label required ">
                   Fecha de Asignación
                 </label>
                 <input
@@ -336,10 +335,7 @@ const DocenteGradoForm = ({ docenteGrado, mode, onSave, onCancel }) => {
               </div>
 
               <div className="form-group">
-                <label
-                  htmlFor="cicloLectivo"
-                  className="form-label required mt-3"
-                >
+                <label htmlFor="cicloLectivo" className="form-label required ">
                   Ciclo Lectivo
                 </label>
                 <input

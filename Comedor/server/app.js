@@ -37,6 +37,7 @@ import generacionAutomaticaRouter from "./routes/generacionAutomaticaRoutes.js";
 import escuelaRouter from "./routes/escuela.js";
 import configuracionServicioAutomaticoRouter from "./routes/configuracionServicioAutomatico.js";
 import serviciosRecetasRouter from "./routes/serviciosRecetas.js";
+import auditoriaRouter from "./routes/auditoria.js";
 import alertasService from "./services/alertasInventarioService.js";
 import { schedulerService } from "./services/schedulerService.js";
 
@@ -134,6 +135,7 @@ export const createApp = ({
     "/api/configuracion-servicios-automaticos",
     configuracionServicioAutomaticoRouter
   );
+  app.use("/api/auditoria", auditoriaRouter);
 
   // Inicializar servicio de alertas
   alertasService

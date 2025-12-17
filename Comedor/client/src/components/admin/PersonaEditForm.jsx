@@ -100,7 +100,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
         // No llamar onCancel aquí, el componente padre se encargará de cerrar
       }
     } catch (error) {
-
       // Mostrar error al usuario
       if (error.response?.data?.message) {
         alert(`Error: ${error.response.data.message}`);
@@ -125,14 +124,11 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
         <div className="form-sections">
           {/* Información Personal */}
           <div>
-            <h5 className="section-title">
-              <i className="fas fa-user me-2"></i>
-              Información Personal
-            </h5>
+            <h4 className="section-title">Información Personal</h4>
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="nombre" className="form-label required mt-3">
+                <label htmlFor="nombre" className="form-label required">
                   Nombre
                 </label>
                 <input
@@ -153,7 +149,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="apellido" className="form-label required mt-3">
+                <label htmlFor="apellido" className="form-label required">
                   Apellido
                 </label>
                 <input
@@ -176,7 +172,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="dni" className="form-label required mt-3">
+                <label htmlFor="dni" className="form-label required">
                   Número de Documento
                 </label>
                 <input
@@ -197,7 +193,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
               <div className="form-group">
                 <label
                   htmlFor="fechaNacimiento"
-                  className="form-label required mt-3"
+                  className="form-label required"
                 >
                   Fecha de Nacimiento
                 </label>
@@ -223,7 +219,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="genero" className="form-label required mt-3">
+                <label htmlFor="genero" className="form-label required">
                   Género
                 </label>
                 <select
@@ -248,7 +244,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
               {/* Estado */}
 
               <div className="form-group">
-                <label htmlFor="estado" className="form-label mt-3">
+                <label htmlFor="estado" className="form-label required">
                   Estado
                 </label>
                 <select

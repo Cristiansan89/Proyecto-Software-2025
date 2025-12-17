@@ -851,7 +851,10 @@ const GestionRolesPermisos = () => {
                       ? "Editar Permiso"
                       : "Ver Permiso"}
                   </h5>
-                  <button className="modal-close" onClick={closeModal}>
+                  <button
+                    className="modal-close text-white"
+                    onClick={closeModal}
+                  >
                     <i className="fas fa-times"></i>
                   </button>
                 </div>
@@ -1063,7 +1066,7 @@ const GestionRolesPermisos = () => {
         <div className="header-left">
           <h2 className="page-title-sub">Asignación de Permisos a Roles</h2>
         </div>
-        <div className="header-actions">
+        <div className="header-actions text-white">
           <button
             className="btn btn-primary-new"
             onClick={() => {
@@ -1156,7 +1159,7 @@ const GestionRolesPermisos = () => {
                   Asignar Permisos a Rol
                 </h5>
                 <button
-                  className="modal-close"
+                  className="modal-close text-white"
                   onClick={() => {
                     setShowAsignarPermisosForm(false);
                     setRolSeleccionadoParaEditar(null);
@@ -1361,10 +1364,11 @@ const GestionRolesPermisos = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
+                  <i className="fas fa-user-shield me-2"></i>
                   {editandoRol ? "Editar Rol" : "Nuevo Rol"}
                 </h5>
                 <button
-                  className="modal-close"
+                  className="modal-close text-white"
                   onClick={() => {
                     setMostrarFormularioRol(false);
                     setEditandoRol(null);

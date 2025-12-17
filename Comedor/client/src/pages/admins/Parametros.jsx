@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
+import ParametrosForm from "../../components/admin/ParametrosForm";
 // import ConfiguracionServiciosAutomaticos from "../../components/ConfigServiciosAuto";
 import "../../styles/Parametros.css";
 
@@ -43,12 +44,14 @@ const Parametros = () => {
     }
   };
 
+  const handleInputChangeName = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validarFormulario = () => {
@@ -221,10 +224,13 @@ const Parametros = () => {
       {true && (
         <div role="tabpanel">
           <div className="page-header">
-            <div className="page-left"></div>
-            <div className="col-md-4 text-end">
-              <button className="btn btn-primary" onClick={handleNuevo}>
-                <i className="fas fa-plus"></i> Nuevo Parámetro
+            <div className="header-left">
+              <h2 className="page-title-sub">Gestión de Parámetros</h2>
+            </div>
+            <div className="header-actions">
+              <button className="btn btn-primary-new" onClick={handleNuevo}>
+                <i className="fas fa-plus"></i>
+                Nuevo Parámetro
               </button>
             </div>
           </div>
@@ -440,114 +446,16 @@ const Parametros = () => {
         </div>
       )}
 
-      {/* Modal para crear/editar parámetro */}
-      {modalParametro && (
-        <div
-          className="modal d-block"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-        >
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {editandoId ? "Editar Parámetro" : "Nuevo Parámetro"}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleCerrarModal}
-                ></button>
-              </div>
-              <form onSubmit={handleGuardar}>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label htmlFor="nombreParametro" className="form-label">
-                      Nombre del Parámetro{" "}
-                      <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="nombreParametro"
-                      name="nombreParametro"
-                      value={formData.nombreParametro}
-                      onChange={handleInputChange}
-                      placeholder="Ej: HORA_PEDIDO_AUTOMATICO"
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label htmlFor="valor" className="form-label">
-                      Valor <span className="text-danger">*</span>
-                    </label>
-                    <textarea
-                      className="form-control"
-                      id="valor"
-                      name="valor"
-                      value={formData.valor}
-                      onChange={handleInputChange}
-                      placeholder="Ingrese el valor del parámetro"
-                      rows="3"
-                    ></textarea>
-                  </div>
-
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="tipoParametro" className="form-label">
-                        Tipo de Parámetro
-                      </label>
-                      <select
-                        className="form-select"
-                        id="tipoParametro"
-                        name="tipoParametro"
-                        value={formData.tipoParametro}
-                        onChange={handleInputChange}
-                      >
-                        <option value="Texto">Texto</option>
-                        <option value="Numero">Número</option>
-                        <option value="Booleano">
-                          Booleano (Verdadero/Falso)
-                        </option>
-                        <option value="Fecha">Fecha</option>
-                      </select>
-                    </div>
-
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="estado" className="form-label">
-                        Estado
-                      </label>
-                      <select
-                        className="form-select"
-                        id="estado"
-                        name="estado"
-                        value={formData.estado}
-                        onChange={handleInputChange}
-                      >
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="form-actions">
-                    <button
-                      type="button"
-                      className="btn btn-secondary me-2"
-                      onClick={handleCerrarModal}
-                    >
-                      <i className="fas fa-times"></i>
-                      Cancelar
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      <i className="fas fa-save"></i>
-                      {editandoId ? "Actualizar" : "Crear"} Parámetro
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Componente del formulario modal */}
+      <ParametrosForm
+        modalParametro={modalParametro}
+        editandoId={editandoId}
+        formData={formData}
+        onCerrarModal={handleCerrarModal}
+        onGuardar={handleGuardar}
+        onInputChange={handleInputChange}
+        onInputChangeName={handleInputChangeName}
+      />
     </div>
   );
 };

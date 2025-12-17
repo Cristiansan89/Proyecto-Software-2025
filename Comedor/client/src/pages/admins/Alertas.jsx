@@ -148,50 +148,62 @@ const Alertas = () => {
         {
           nombreParametro: "ALERTAS_INVENTARIO_HABILITADAS",
           valor: alertas.alertasInventarioHabilitadas,
+          tipo: "Booleano",
         },
         {
           nombreParametro: "ALERTAS_AGOTADO_HABILITADAS",
           valor: alertas.alertasAgotadoHabilitadas,
+          tipo: "Booleano",
         },
         {
           nombreParametro: "ALERTAS_CRITICO_HABILITADAS",
           valor: alertas.alertasCriticoHabilitadas,
+          tipo: "Booleano",
         },
         {
           nombreParametro: "ALERTAS_BAJO_HABILITADAS",
           valor: alertas.alertasBajoHabilitadas,
+          tipo: "Booleano",
         },
         {
           nombreParametro: "PORCENTAJE_ALERTA_CRITICO",
           valor: alertas.porcentajeAlertaCritico,
+          tipo: "Numero",
         },
         {
           nombreParametro: "PORCENTAJE_ALERTA_BAJO",
           valor: alertas.porcentajeAlertaBajo,
+          tipo: "Numero",
         },
         {
           nombreParametro: "TELEGRAM_HABILITADO",
           valor: alertas.telegramHabilitado,
+          tipo: "Booleano",
         },
         {
           nombreParametro: "CANTIDAD_REINTENTOS_TELEGRAM",
           valor: alertas.cantidadReintentosTelegram,
+          tipo: "Numero",
         },
         {
           nombreParametro: "INTERVALO_REINTENTOS_TELEGRAM",
           valor: alertas.intervaloReintentosTelegram,
+          tipo: "Numero",
         },
         {
           nombreParametro: "EMAIL_HABILITADO",
           valor: alertas.emailHabilitado,
+          tipo: "Booleano",
         },
         {
           nombreParametro: "DESTINATARIO_EMAIL",
           valor: alertas.destinatarioEmail,
+          tipo: "Texto",
         },
         {
           nombreParametro: "NOTIFICACIONES_UI_HABILITADAS",
           valor: alertas.notificacionesUIHabilitadas,
+          tipo: "Booleano",
         },
       ];
 
@@ -214,20 +226,10 @@ const Alertas = () => {
             return;
           }
 
-          // Determinar el tipo de parámetro correcto
-          let tipoParametro;
-          if (typeof op.valor === "number") {
-            tipoParametro = "Numero";
-          } else if (typeof op.valor === "boolean") {
-            tipoParametro = "Booleano";
-          } else {
-            tipoParametro = "Texto";
-          }
-
           const payload = {
             nombreParametro: op.nombreParametro,
             valor: String(op.valor),
-            tipoParametro,
+            tipoParametro: op.tipo,
             estado: "Activo",
           };
 
@@ -246,12 +248,13 @@ const Alertas = () => {
 
       setMensaje({
         tipo: "success",
-        texto: "Configuración de alertas actualizada correctamente",
+        texto: "✅ Configuración de alertas actualizada correctamente",
       });
 
       // Recargar configuración después de guardar
       await cargarConfiguracionAlertas();
     } catch (error) {
+      console.error("Error al guardar:", error);
       setMensaje({
         tipo: "error",
         texto:

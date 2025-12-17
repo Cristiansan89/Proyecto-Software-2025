@@ -421,17 +421,17 @@ const ListaUsuarios = () => {
             <div className="modal-header">
               <h3>
                 {modalMode === "view" && (
-                  <>
+                  <h3 className="text-white">
                     <i className="fas fa-eye"></i> Detalle del Usuario
-                  </>
+                  </h3>
                 )}
                 {modalMode === "edit" && (
-                  <>
+                  <h3 className="text-white">
                     <i className="fas fa-pencil-alt"></i> Editar Usuario
-                  </>
+                  </h3>
                 )}
               </h3>
-              <button className="modal-close" onClick={closeModal}>
+              <button className="modal-close text-white" onClick={closeModal}>
                 <i className="fas fa-times"></i>
               </button>
             </div>

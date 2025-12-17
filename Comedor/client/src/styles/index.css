@@ -4591,3 +4591,7 @@ textarea.form-control {
   z-index: 100002;
   z-index: 10003;
 }
+
+.table-header-fixed {
+  font-size: 50px;
+}

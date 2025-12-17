@@ -30,9 +30,25 @@ const ConfiguracionEscuela = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    let valorFinal = value;
+
+    if (name === "telefono") {
+      if (!value.startsWith("+54")) {
+        valorFinal = "+54" + value;
+      }
+    }
+
+    const numeros = value.substring(3).replace(/\D/g, ""); // \D quita todo lo que no se número
+    const numerosLimitados = numeros.slice(0, 10); // Limitar a 10 dígitos después del +54
+    valorFinal = "+54" + numerosLimitados;
+
+    if (name === "nombre") {
+      valorFinal = value.replace(/[^A-Za-z0-9ñÑáéíóúÁÉÍÓÚ\s]/g, "");
+    }
+
     setDatos((prevDatos) => ({
       ...prevDatos,
-      [name]: value,
+      [name]: valorFinal,
     }));
   };
 
@@ -122,7 +138,8 @@ const ConfiguracionEscuela = () => {
                       name="telefono"
                       value={datos.telefono}
                       onChange={handleChange}
-                      placeholder="(011) 1234-5678"
+                      placeholder="+543764000000"
+                      maxLength={13}
                     />
                   </div>
 
@@ -186,11 +203,11 @@ const ConfiguracionEscuela = () => {
       <div className="row mt-4">
         <div className="col-12">
           <div className="card">
-            <div className="card-header bg-light">
-              <h6 className="mb-0">
+            <div className="card-header bg-light text-dark">
+              <h5 className="mb-0">
                 <i className="fas fa-eye me-2"></i>
                 Vista Previa en Documentos
-              </h6>
+              </h5>
             </div>
             <div className="card-body bg-light">
               <div className="text-center border rounded p-3 bg-white">

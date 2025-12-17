@@ -346,11 +346,12 @@ const ListaServicios = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>
+              <h4>
+                <i className="fas fa-utensils me-2"></i>
                 {modalMode === "create" && "Crear Nuevo Servicio"}
                 {modalMode === "edit" && "Editar Servicio"}
                 {modalMode === "view" && "Ver Servicio"}
-              </h3>
+              </h4>
               <button className="modal-close" onClick={handleCancel}>
                 <i className="fas fa-times"></i>
               </button>

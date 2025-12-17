@@ -483,11 +483,11 @@ const ListaPersonas = () => {
         <div className="modal-overlay">
           <div className="modal-content persona-modal">
             <div className="modal-header">
-              <h3>
+              <h3 className="text-white">
                 <i className="fas fa-user-plus me-2"></i>
                 Nueva Persona
               </h3>
-              <button className="modal-close" onClick={closeModal}>
+              <button className="modal-close text-white" onClick={closeModal}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
@@ -508,7 +508,7 @@ const ListaPersonas = () => {
         <div className="modal-overlay">
           <div className="modal-content persona-modal">
             <div className="modal-header">
-              <h3>
+              <h3 className="text-white">
                 {modalMode === "edit" && (
                   <>
                     <i className="fas fa-user-edit me-2"></i>
@@ -522,7 +522,7 @@ const ListaPersonas = () => {
                   </>
                 )}
               </h3>
-              <button className="modal-close" onClick={closeModal}>
+              <button className="modal-close text-white" onClick={closeModal}>
                 <i className="fas fa-times"></i>
               </button>
             </div>

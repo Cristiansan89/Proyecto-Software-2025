@@ -81,4 +81,22 @@ router.post(
   AlertasInventarioController.limpiarObsoletas
 );
 
+// Obtener alertas no vistas (para la cocinera) - ANTES de las rutas parametrizadas
+router.get(
+  "/no-vistas/listar",
+  AlertasInventarioController.obtenerAlertasNoVistas
+);
+
+// Marcar alerta como vista
+router.put(
+  "/:id_alerta/visto",
+  AlertasInventarioController.marcarAlertaComoVista
+);
+
+// Confirmar alerta por Telegram (sin autenticación requerida)
+router.post(
+  "/telegram/confirmar",
+  AlertasInventarioController.confirmarAlertaTelegram
+);
+
 export default router;
