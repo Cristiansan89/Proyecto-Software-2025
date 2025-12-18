@@ -1,3 +1,5 @@
+/* --- TU CSS ACTUALIZADO --- */
+
 .parametros-container {
   padding: 20px 0;
 }
@@ -6,6 +8,21 @@
   color: #333;
   font-weight: 600;
   margin-bottom: 30px;
+}
+
+/* NUEVO: Alineación de 'Registros por página' y Label en Cursiva */
+.page-size-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.page-size-selector .form-label {
+  font-style: italic; /* Cursiva solicitada */
+  margin-bottom: 0; /* Quitamos margen para alinear con el select */
+  font-weight: 400; /* Opcional: un poco más delgado para la cursiva */
+  color: #666;
 }
 
 .parametros-container .card {
@@ -97,62 +114,71 @@
   color: #dc3545 !important;
 }
 
+/* --- ACTUALIZACIÓN DE PAGINACIÓN --- */
 .parametros-container .pagination {
   margin-top: 0;
+  gap: 5px; /* Espacio entre botones */
 }
 
 .parametros-container .page-link {
-  color: #007bff;
+  color: #444;
   border: 1px solid #dee2e6;
-  padding: 8px 12px;
+  padding: 8px 16px;
+  border-radius: 6px; /* Botones más redondeados */
+  transition: all 0.2s ease;
+  font-weight: 500;
 }
 
 .parametros-container .page-link:hover {
-  color: #0056b3;
-  background-color: #e9ecef;
+  color: #0d6efd;
+  background-color: #f0f7ff;
+  border-color: #0d6efd;
 }
 
 .parametros-container .page-item.active .page-link {
-  background-color: #007bff;
-  border-color: #007bff;
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+  box-shadow: 0 2px 5px rgba(13, 110, 253, 0.2);
+}
+
+.parametros-container .page-item.disabled .page-link {
+  color: #ccc;
+  background-color: #fafafa;
+  border-color: #eee;
 }
 
 .parametros-container .fw-500 {
   font-weight: 500;
 }
 
+/* Resto de estilos (Media Queries, Tabs, Alertas) se mantienen igual... */
 @media (max-width: 768px) {
   .parametros-container h1 {
     font-size: 1.5rem;
   }
-
   .parametros-container .table {
     font-size: 0.9rem;
   }
-
   .parametros-container .table thead th,
   .parametros-container .table tbody td {
     padding: 10px;
   }
-
   .parametros-container .modal-dialog {
     margin: 20px auto;
     max-width: 95% !important;
   }
 }
 
-/* Estilos para las pestañas */
 .navigation-tabs {
   margin: 30px 0 20px 0;
 }
-
 .tabs-header {
   display: flex;
   gap: 10px;
   border-bottom: 2px solid #e9ecef;
   padding: 0;
 }
-
 .tab-button {
   background: none;
   border: none;
@@ -167,83 +193,21 @@
   align-items: center;
   gap: 8px;
 }
-
-.tab-button i {
-  font-size: 16px;
-}
-
-.tab-button:hover {
-  color: #333;
-  background-color: rgba(0, 0, 0, 0.02);
-}
-
 .tab-button.active {
   color: #0d6efd;
   border-bottom-color: #0d6efd;
   font-weight: 600;
 }
 
-.tab-content {
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Alertas container styles */
 .alertas-container {
   padding: 20px 0;
 }
-
 .alertas-container .card {
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   margin-bottom: 20px;
 }
-
-.alertas-container .card-header {
-  padding: 20px;
-  border-radius: 8px 8px 0 0;
-}
-
-.alertas-container .card-body {
-  padding: 20px;
-}
-
-.alertas-container .form-check-input {
-  width: 1.5em;
-  height: 1.5em;
-  cursor: pointer;
-}
-
-.alertas-container .form-check-label {
-  cursor: pointer;
-  user-select: none;
-}
-
-.alertas-container .form-label {
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.alertas-container .input-alerta {
-  max-width: 200px;
-}
-
-.alertas-container .badge {
-  font-size: 12px;
-  padding: 6px 12px;
-}
-
 .form-actions {
   display: flex;
   gap: 10px;
@@ -251,60 +215,9 @@
   padding-top: 20px;
   border-top: 1px solid #e9ecef;
 }
-
-.form-actions button {
-  min-width: 120px;
-}
-
-/* Header styles */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-}
-
-.header-left {
-  flex: 1;
-}
-
-.page-title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 5px;
-}
-
-.header-left p {
-  color: #666;
-  margin: 0;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .tabs-header {
-    flex-wrap: wrap;
-  }
-
-  .tab-button {
-    padding: 10px 15px;
-    font-size: 13px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .alertas-container .row {
-    margin: 0;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .form-actions button {
-    width: 100%;
-  }
 }

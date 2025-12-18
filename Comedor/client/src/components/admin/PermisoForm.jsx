@@ -57,9 +57,16 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    let valorPermitido = value;
+
+    // Validar solo letras y espacios para el nombre del permiso
+    if (name === "nombrePermiso") {
+      valorPermitido = value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, "");
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: valorPermitido,
     }));
 
     // Limpiar error del campo si existía
@@ -115,8 +122,7 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
       };
 
       await onSave(dataToSend);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const isReadOnly = mode === "view";

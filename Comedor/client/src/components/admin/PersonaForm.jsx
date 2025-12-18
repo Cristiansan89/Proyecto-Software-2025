@@ -90,9 +90,19 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   // Manejar cambios en los campos del formulario
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let valorPermitido = value;
+
+    if (name === "nombre" || name === "apellido") {
+      // Permitir solo letras y espacios en los campos nombre y apellido
+      valorPermitido = value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, "");
+    } else if (name === "dni") {
+      // Permitir solo números en el campo dni
+      const soloNumeros = value.replace(/[^0-9]/g, "");
+      valorPermitido = soloNumeros.slice(0, 8); // Máximo 8 caracteres
+    }
 
     setFormData((prev) => {
-      const newData = { ...prev, [name]: value };
+      const newData = { ...prev, [name]: valorPermitido };
 
       // Si cambia el rol, verificar si habilita cuenta de usuario
       if (name === "idRol") {
@@ -159,9 +169,21 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   // Manejar cambios en los campos del formulario de usuario
   const handleUserInputChange = (e) => {
     const { name, value } = e.target;
+    let valorPermitido = value;
+
+    if (name === "telefono") {
+      // Permitir solo números y espacios en el campo teléfono
+      if (!value.startsWith("+54")) {
+        valorPermitido = "+54";
+      }
+      const numeros = value.substring(3).replace(/\D/g, ""); // \D quita todo lo que no sea número
+      const numerosLimitados = numeros.slice(0, 10); // Limitar a 10 dígitos después del +54
+      valorPermitido = "+54" + numerosLimitados;
+    }
+
     setUserFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: valorPermitido,
     }));
 
     // Limpiar error del campo cuando el usuario empiece a escribir
@@ -595,6 +617,8 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                     }`}
                     value={userFormData.telefono}
                     onChange={handleUserInputChange}
+                    maxLength="13"
+                    inputMode="tel"
                     placeholder="Teléfono para la cuenta de usuario"
                   />
                   {userErrors.telefono && (
@@ -604,7 +628,8 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                   )}
                   <small className="form-text text-muted">
                     <i className="fas fa-info-circle me-1"></i>
-                    La fecha de alta se establecerá automáticamente
+                    Ingrese el número de teléfono luego del +54 con la
+                    caracteristica de área sin 15.
                   </small>
                 </div>
               </div>

@@ -18,9 +18,20 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let valorPermitido = value;
+
+    if (name === "nombre" || name === "apellido") {
+      // Permitir solo letras y espacios en los campos nombre y apellido
+      valorPermitido = value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, "");
+    } else if (name === "dni") {
+      // Permitir solo números en el campo dni
+      const soloNumeros = value.replace(/[^0-9]/g, "");
+      valorPermitido = soloNumeros.slice(0, 8); // Máximo 8 caracteres
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: valorPermitido,
     }));
     // Clear any validation error for this field while the user types
     setErrors((prev) => {

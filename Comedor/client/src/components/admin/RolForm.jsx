@@ -23,9 +23,16 @@ const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    let valorPermitido = value;
+
+    if (name === "nombreRol") {
+      // Permitir solo letras y espacios en el campo nombreRol
+      valorPermitido = value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, "");
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: valorPermitido,
     }));
 
     // Limpiar error del campo si existía
@@ -73,8 +80,7 @@ const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
       };
 
       await onSave(dataToSend);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const isReadOnly = mode === "view";

@@ -1,9 +1,33 @@
 import { useState } from "react";
 
 const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
+  // Función para formatear el CUIT
+  const formatCUIT = (cuit) => {
+    // Eliminar caracteres no numéricos
+    const digits = cuit.replace(/\D/g, "");
+
+    // Limitar a 11 dígitos
+    const limitedDigits = digits.slice(0, 11);
+
+    // Aplicar máscara
+    if (limitedDigits.length <= 2) {
+      return limitedDigits;
+    } else if (limitedDigits.length <= 10) {
+      return `${limitedDigits.slice(0, 2)}-${limitedDigits.slice(
+        2,
+        limitedDigits.length - 1
+      )}-${limitedDigits.slice(-1)}`;
+    } else {
+      return `${limitedDigits.slice(0, 2)}-${limitedDigits.slice(
+        2,
+        10
+      )}-${limitedDigits.slice(10)}`;
+    }
+  };
+
   const [formData, setFormData] = useState({
     razonSocial: proveedor?.razonSocial || "",
-    CUIT: proveedor?.CUIT || "",
+    CUIT: proveedor?.CUIT ? formatCUIT(proveedor.CUIT) : "",
     direccion: proveedor?.direccion || "",
     telefono: proveedor?.telefono || "",
     mail: proveedor?.mail || "",
@@ -15,10 +39,31 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let valorPermitido = value;
+
+    // Validaciones específicas por campo
+    if (name === "razonSocial") {
+      // Permitir solo letras, números, guiones y espacios para razón social
+      valorPermitido = value.replace(/[^A-ZÑÁÉÍÓÚ0-9\s_-]/gi, "");
+    } else if (name === "CUIT") {
+      // Permitir solo números y guiones para CUIT
+      valorPermitido = formatCUIT(value);
+    } else if (name === "telefono") {
+      // Permitir solo números y espacios en el campo teléfono
+      if (!value.startsWith("+54")) {
+        valorPermitido = "+54";
+      }
+      const numeros = value.substring(3).replace(/\D/g, ""); // \D quita todo lo que no sea número
+      const numerosLimitados = numeros.slice(0, 10); // Limitar a 10 dígitos después del +54
+      valorPermitido = "+54" + numerosLimitados;
+    } else if (name === "mail") {
+      // Permitir solo caracteres válidos para email
+      valorPermitido = value.replace(/[^a-zA-Z0-9@._-]/g, "");
+    }
 
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: valorPermitido,
     }));
 
     // Limpiar error del campo cuando el usuario empiece a escribir
@@ -33,6 +78,9 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
   const validateForm = () => {
     const newErrors = {};
 
+    // Extraemos solo los números para validar la longitud real del CUIT
+    const cuitDigits = formData.CUIT.replace(/\D/g, "");
+
     // Validaciones requeridas
     if (!formData.razonSocial.trim()) {
       newErrors.razonSocial = "La razón social es requerida";
@@ -42,8 +90,8 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
 
     if (!formData.CUIT.trim()) {
       newErrors.CUIT = "El CUIT es requerido";
-    } else if (formData.CUIT.length < 11 || formData.CUIT.length > 13) {
-      newErrors.CUIT = "El CUIT debe tener entre 11 y 13 caracteres";
+    } else if (cuitDigits.length !== 11) {
+      newErrors.CUIT = "El CUIT debe tener 11 dígitos";
     }
 
     if (!formData.mail.trim()) {
@@ -81,7 +129,8 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
       // Preparar datos para enviar al backend
       const proveedorData = {
         razonSocial: formData.razonSocial.trim(),
-        CUIT: formData.CUIT.trim(),
+        //CUIT: formData.CUIT.trim(),
+        CUIT: formData.CUIT.replace(/\D/g, ""), // Enviar solo números al backend
         direccion: formData.direccion.trim() || null,
         telefono: formData.telefono.trim() || null,
         mail: formData.mail.trim(),
@@ -151,7 +200,7 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                 value={formData.CUIT}
                 onChange={handleInputChange}
                 disabled={isViewMode}
-                placeholder="Ingrese el CUIT del proveedor (ej: 20-12345678-9)"
+                placeholder="Ingrese el CUIT del proveedor 30-12345678-9"
                 maxLength="13"
               />
               {errors.CUIT && (
@@ -196,12 +245,18 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                   value={formData.telefono}
                   onChange={handleInputChange}
                   disabled={isViewMode}
-                  placeholder="Ingrese número teléfono"
-                  maxLength="20"
+                  maxLength="13"
+                  inputMode="tel"
+                  placeholder="Teléfono"
                 />
                 {errors.telefono && (
                   <div className="invalid-feedback">{errors.telefono}</div>
                 )}
+                <small className="form-text text-muted">
+                  <i className="fas fa-info-circle me-1"></i>
+                  Ingrese el número de teléfono luego del +54 con la
+                  caracteristica de área sin 15.
+                </small>
               </div>
 
               <div className="form-group">

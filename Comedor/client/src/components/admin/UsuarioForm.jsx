@@ -18,9 +18,21 @@ const UsuarioForm = ({ usuario, mode, onCancel }) => {
   // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
+    let valorPermitido = value;
+
+    if (name === "telefono") {
+      // Permitir solo números y espacios en el campo teléfono
+      if (!value.startsWith("+54")) {
+        valorPermitido = "+54";
+      }
+      const numeros = value.substring(3).replace(/\D/g, ""); // \D quita todo lo que no sea número
+      const numerosLimitados = numeros.slice(0, 10); // Limitar a 10 dígitos después del +54
+      valorPermitido = "+54" + numerosLimitados;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: valorPermitido,
     }));
 
     // Validación simple
@@ -74,6 +86,7 @@ const UsuarioForm = ({ usuario, mode, onCancel }) => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }; // Manejar el envío del formulario
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -179,8 +192,10 @@ const UsuarioForm = ({ usuario, mode, onCancel }) => {
                 className={`form-control ${
                   errors.telefono ? "is-invalid" : ""
                 }`}
-                value={formData.telefono || ""}
+                value={formData.telefono}
                 onChange={handleChange}
+                maxLength="13"
+                inputMode="tel"
                 placeholder="Teléfono para la cuenta de usuario"
                 disabled={isViewMode}
               />
@@ -189,7 +204,8 @@ const UsuarioForm = ({ usuario, mode, onCancel }) => {
               )}
               <small className="form-text text-muted">
                 <i className="fas fa-info-circle me-1"></i>
-                La fecha de alta se establecerá automáticamente
+                Ingrese el número de teléfono luego del +54 con la
+                caracteristica de área sin 15.
               </small>
             </div>
           </div>
