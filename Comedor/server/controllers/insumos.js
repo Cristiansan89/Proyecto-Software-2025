@@ -66,6 +66,18 @@ export class InsumoController {
   delete = async (req, res) => {
     try {
       const { id } = req.params;
+
+      // Verificar si el insumo tiene relaciones activas
+      const hasActiveRelations = await this.insumoModel.hasActiveRelations({
+        id,
+      });
+      if (hasActiveRelations) {
+        return res.status(409).json({
+          message:
+            "No se puede eliminar el insumo porque está vinculado a registros activos",
+        });
+      }
+
       const deleted = await this.insumoModel.delete({ id });
 
       if (!deleted) {

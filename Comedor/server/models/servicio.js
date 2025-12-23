@@ -71,6 +71,20 @@ export class ServicioModel {
     }
   }
 
+  static async hasActiveRelations({ id }) {
+    const [result] = await connection.query(
+      `SELECT COUNT(*) as count
+       FROM ConfiguracionServicioAutomatico
+       WHERE id_servicio = ? AND estado = 'Activo'
+       UNION ALL
+       SELECT COUNT(*) as count
+       FROM ServicioTurno
+       WHERE id_servicio = ?`,
+      [id, id]
+    );
+    return result.some((r) => r.count > 0);
+  }
+
   static async update({ id, input }) {
     const { nombre, descripcion, estado } = input;
 

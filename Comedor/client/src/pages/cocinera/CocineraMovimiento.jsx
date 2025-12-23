@@ -273,16 +273,6 @@ const CocineraMovimiento = () => {
           </h1>
           <p>Historial de entradas, salidas y merma de insumos</p>
         </div>
-        <div>
-          <button className="btn btn-danger me-2" onClick={generarPDF}>
-            <i className="fas fa-file-pdf me-1"></i>
-            Exportar PDF
-          </button>
-          <button className="btn btn-success" onClick={exportarCSV}>
-            <i className="fas fa-download me-1"></i>
-            Descargar CSV
-          </button>
-        </div>
       </div>
 
       {/* Filtros */}
@@ -375,6 +365,16 @@ const CocineraMovimiento = () => {
               </button>
             </div>
           </div>
+          <div className="mt-3">
+            <button className="btn btn-danger me-2" onClick={generarPDF}>
+              <i className="fas fa-file-pdf me-1"></i>
+              Exportar PDF
+            </button>
+            <button className="btn btn-success" onClick={exportarCSV}>
+              <i className="fas fa-download me-1"></i>
+              Descargar CSV
+            </button>
+          </div>
         </div>
       </div>
 
@@ -432,8 +432,8 @@ const CocineraMovimiento = () => {
             </div>
           ) : (
             <>
-              <div className="table-responsive">
-                <table className="table table-hover table-striped">
+              <div className="table-container">
+                <table className="table table-striped data-table">
                   <thead className="table-light">
                     <tr>
                       <th width="5%">#</th>

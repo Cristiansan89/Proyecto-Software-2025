@@ -83,6 +83,17 @@ export class GradoController {
       const { id } = req.params;
       console.log("GradoController: Eliminando grado con ID:", id);
 
+      // Verificar si el grado tiene relaciones activas
+      const hasActiveRelations = await this.gradoModel.hasActiveRelations({
+        id,
+      });
+      if (hasActiveRelations) {
+        return res.status(409).json({
+          message:
+            "No se puede eliminar el grado porque está vinculado a registros activos",
+        });
+      }
+
       const deleted = await this.gradoModel.delete({ id });
       console.log("GradoController: Resultado de eliminación:", deleted);
 
@@ -112,11 +123,9 @@ export class GradoController {
         (error.message.includes("referencia") ||
           error.message.includes("usado"))
       ) {
-        return res
-          .status(409)
-          .json({
-            message: "No se puede eliminar el grado porque está en uso",
-          });
+        return res.status(409).json({
+          message: "No se puede eliminar el grado porque está en uso",
+        });
       }
       res.status(500).json({ message: "Error interno del servidor" });
     }

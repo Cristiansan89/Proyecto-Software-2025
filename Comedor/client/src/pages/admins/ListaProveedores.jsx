@@ -126,11 +126,9 @@ const ListaProveedores = () => {
         loadProveedores();
       } catch (error) {
         console.error("Error al eliminar proveedor:", error);
-        if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
-        } else {
-          alert("Error al eliminar el proveedor");
-        }
+        const errorMessage =
+          error.response?.data?.message || "Error al eliminar el proveedor";
+        alert(`⚠️ ${errorMessage}`);
       }
     }
   };
@@ -174,6 +172,18 @@ const ListaProveedores = () => {
         alert("Error al asignar insumos");
       }
     }
+  };
+
+  const formatCUIT = (cuit) => {
+    if (!cuit) return "";
+    const clearned = cuit.toString().replace(/\D/g, "");
+    if (clearned.length === 11) {
+      return `${clearned.slice(0, 2)}-${clearned.slice(2, 10)}-${clearned.slice(
+        10
+      )}`;
+    }
+
+    return cuit;
   };
 
   const handleCloseModal = () => {
@@ -342,7 +352,7 @@ const ListaProveedores = () => {
                       </td>
                       <td>
                         <div className="contact-info">
-                          <h6>{proveedor.CUIT}</h6>
+                          <h6>{formatCUIT(proveedor.CUIT)}</h6>
                         </div>
                       </td>
                       <td>

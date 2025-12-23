@@ -32,7 +32,7 @@ import CocineraDashboard from "./pages/cocinera/CocineraDashboard";
 import CocineraGestionAsistencias from "./pages/cocinera/GestionAsistencias";
 import CocineraMenu from "./pages/cocinera/CocineraMenu";
 import ControlInventario from "./pages/cocinera/ControlInventario";
-import CocineraMenuesDiaria from "./pages/cocinera/CocineraMenuesDiaria";
+import MenuesDiaria from "./pages/cocinera/MenuesDiaria";
 import CocineraRecetas from "./pages/cocinera/CocineraRecetas";
 import Consumos from "./pages/cocinera/Consumos";
 import PedidoInsumo from "./pages/cocinera/PedidoInsumo";
@@ -178,10 +178,7 @@ function App() {
                         path="/inventario"
                         element={<ControlInventario />}
                       />
-                      <Route
-                        path="/menu-diaria"
-                        element={<CocineraMenuesDiaria />}
-                      />
+                      <Route path="/menu-diaria" element={<MenuesDiaria />} />
                       <Route path="/pedidos" element={<PedidoInsumo />} />
                       <Route path="/consumos" element={<Consumos />} />
                       <Route

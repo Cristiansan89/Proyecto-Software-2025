@@ -449,9 +449,9 @@ const ListaAsistenciasService = () => {
               </p>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover table-sm">
-                <thead className="table-light">
+            <div className="table-container">
+              <table className="table table-striped data-table">
+                <thead className="table-header-fixed">
                   <tr>
                     <th width="5%">#</th>
                     <th width="15%">
@@ -462,11 +462,11 @@ const ListaAsistenciasService = () => {
                       <i className="fas fa-utensils me-2"></i>
                       Servicio
                     </th>
-                    <th width="20%">
+                    <th width="10%">
                       <i className="fas fa-graduation-cap me-2"></i>
                       Grado
                     </th>
-                    <th width="20%">
+                    <th width="26%">
                       <i className="fas fa-users me-2"></i>
                       Cantidad Presentes
                     </th>
@@ -506,8 +506,8 @@ const ListaAsistenciasService = () => {
                         </span>
                       </td>
 
-                      <td>
-                        <span className="badge bg-warning text-dark fs-6 justify-content-center d-flex">
+                      <td className="text-center">
+                        <span className="badge bg-warning text-dark fs-6">
                           <i className="fas fa-users me-1"></i>
                           {registro.cantidadPresentes || 0}
                         </span>

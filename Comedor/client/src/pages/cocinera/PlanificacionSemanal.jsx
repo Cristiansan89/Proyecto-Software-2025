@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import PlanificacionMenuForm from "../../components/cocinera/PlanificacionMenuForm";
 import "../../styles/PlanificacionMenus.css";
@@ -6,36 +7,22 @@ import "../../styles/PlanificacionMenus.css";
 const PlanificacionSemanal = () => {
   const [planificaciones, setPlanificaciones] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalTipo, setModalTipo] = useState("crear");
-  const [planificacionSeleccionada, setPlanificacionSeleccionada] =
-    useState(null);
-  const [formularioPlanificacion, setFormularioPlanificacion] = useState({
-    fechaInicio: "",
-    fechaFin: "",
-    comensalesEstimados: "",
-    estado: "Pendiente",
-  });
-
-  // Función para formatear fechas para inputs de tipo date
-  const formatearFechaParaInput = (fecha) => {
-    if (!fecha) return "";
-    const date = new Date(fecha);
-    // Ajustar para zona horaria local
-    const offset = date.getTimezoneOffset();
-    const fechaLocal = new Date(date.getTime() + offset * 60 * 1000);
-    return fechaLocal.toISOString().split("T")[0];
-  };
+  const [showModal, setShowModal] = useState(false); // DEBUG: Inicializar en false
+  const [modalMode, setModalMode] = useState("create"); // 'create', 'edit', 'view'
+  const [selectedPlanificacion, setSelectedPlanificacion] = useState(null);
 
   useEffect(() => {
-    cargarPlanificaciones();
+    loadPlanificaciones();
   }, []);
 
-  const cargarPlanificaciones = async () => {
+  useEffect(() => {
+    console.log("🔍 showModal actualizado:", showModal);
+  }, [showModal]);
+
+  const loadPlanificaciones = async () => {
     setLoading(true);
     try {
       const response = await planificacionMenuService.getAll();
-
       if (Array.isArray(response)) {
         setPlanificaciones(response);
       } else {
@@ -50,135 +37,80 @@ const PlanificacionSemanal = () => {
     }
   };
 
-  const abrirModalNuevaPlanificacion = () => {
-    setModalTipo("crear");
-    setPlanificacionSeleccionada(null);
-    setFormularioPlanificacion({
-      fechaInicio: "",
-      fechaFin: "",
-      comensalesEstimados: null,
-      estado: "Pendiente",
-    });
-    setModalVisible(true);
+  const openModal = (mode, planificacion = null) => {
+    setModalMode(mode);
+    setSelectedPlanificacion(planificacion);
+    setShowModal(true);
   };
 
-  const handleVerPlanificacion = (planificacion) => {
-    setPlanificacionSeleccionada(planificacion);
-    setFormularioPlanificacion({
-      fechaInicio: formatearFechaParaInput(planificacion.fechaInicio),
-      fechaFin: formatearFechaParaInput(planificacion.fechaFin),
-      comensalesEstimados: planificacion.comensalesEstimados || "",
-      estado: planificacion.estado || "Activo",
-    });
-    setModalTipo("ver");
-    setModalVisible(true);
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedPlanificacion(null);
+    setModalMode("create");
   };
 
-  const handleEditarPlanificacion = (planificacion) => {
-    setPlanificacionSeleccionada(planificacion);
-    setFormularioPlanificacion({
-      fechaInicio: formatearFechaParaInput(planificacion.fechaInicio),
-      fechaFin: formatearFechaParaInput(planificacion.fechaFin),
-      comensalesEstimados: planificacion.comensalesEstimados || "",
-      estado: planificacion.estado || "Activo",
-    });
-    setModalTipo("editar");
-    setModalVisible(true);
+  const handleSavePlanificacion = async () => {
+    await loadPlanificaciones();
+    closeModal();
   };
 
-  const handleEliminarPlanificacion = async (planificacion) => {
+  const handleDelete = async (planificacionId) => {
     if (
-      !confirm(
-        `¿Está seguro de que desea eliminar la planificación del ${planificacion.fechaInicio} al ${planificacion.fechaFin}?`
-      )
+      window.confirm("¿Está seguro de que desea eliminar esta planificación?")
     ) {
-      return;
+      try {
+        await planificacionMenuService.delete(planificacionId);
+        alert("Planificación eliminada correctamente");
+        await loadPlanificaciones();
+      } catch (error) {
+        console.error("❌ Error al eliminar planificación:", error);
+        const errorMessage = error.response?.data?.message || error.message;
+        alert(`⚠️ ${errorMessage}`);
+      }
     }
-
-    setLoading(true);
-    try {
-      const resultado = await planificacionMenuService.delete(
-        planificacion.id_planificacion
-      );
-
-      await cargarPlanificaciones();
-      alert("Planificación eliminada exitosamente");
-    } catch (error) {
-      console.error("❌ Error al eliminar planificación:", error);
-      alert("Error al eliminar la planificación: " + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cerrarModal = () => {
-    setModalVisible(false);
-    setModalTipo("crear");
-    setPlanificacionSeleccionada(null);
-    setFormularioPlanificacion({
-      fechaInicio: "",
-      fechaFin: "",
-      comensalesEstimados: null,
-      estado: "Pendiente",
-    });
-  };
-
-  const manejarCambioFormulario = (e) => {
-    const { name, value } = e.target;
-    setFormularioPlanificacion((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const onSuccessForm = async () => {
-    await cargarPlanificaciones();
-    cerrarModal();
   };
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4>
-          <i className="fas fa-calendar-week me-2"></i>
-          Planificaciones Semanales
-        </h4>
+    <div className="content-page">
+      <div className="page-header">
+        <div className="header-left">
+          <h1 className="page-title-sub">Planificaciones Semanales</h1>
+        </div>
         <div className="header-actions">
           <button
-            className="btn btn-success"
-            onClick={() => abrirModalNuevaPlanificacion()}
+            className="btn btn-primary-new"
+            onClick={() => openModal("create")}
           >
-            <i className="fas fa-plus me-2"></i>
+            <i className="fas fa-plus"></i>
             Nueva Planificación
           </button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Cargando...</span>
+      <div className="table-container">
+        {loading ? (
+          <div className="loading-spinner">
+            <i className="fas fa-spinner fa-spin"></i>
+            <p>Cargando planificaciones...</p>
           </div>
-        </div>
-      ) : planificaciones.length === 0 ? (
-        <div className="text-center py-5">
-          <i className="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
-          <h5 className="text-muted">No hay planificaciones creadas</h5>
-          <p className="text-muted">
-            Comience creando una nueva planificación de menú
-          </p>
-          <button
-            className="btn btn-primary"
-            onClick={() => abrirModalNuevaPlanificacion()}
-          >
-            <i className="fas fa-plus me-2"></i>
-            Crear Primera Planificación
-          </button>
-        </div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-hover">
-            <thead className="table-light">
+        ) : planificaciones.length === 0 ? (
+          <div className="text-center py-5">
+            <i className="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
+            <h5 className="text-muted">No hay planificaciones creadas</h5>
+            <p className="text-muted">
+              Comience creando una nueva planificación de menú
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => openModal("create")}
+            >
+              <i className="fas fa-plus me-2"></i>
+              Crear Primera Planificación
+            </button>
+          </div>
+        ) : (
+          <table className="table table-striped data-tabla">
+            <thead className="table-header-fixed">
               <tr>
                 <th>#</th>
                 <th>Período</th>
@@ -246,26 +178,26 @@ const PlanificacionSemanal = () => {
                     </span>
                   </td>
                   <td>
-                    <div className="btn-group btn-group-sm">
+                    <div className="action-buttons">
                       <button
-                        className="btn btn-outline-primary"
-                        title="Ver detalle"
-                        onClick={() => handleVerPlanificacion(planificacion)}
+                        className="btn-action btn-view"
+                        title="Ver detalles"
+                        onClick={() => openModal("view", planificacion)}
                       >
                         <i className="fas fa-eye"></i>
                       </button>
                       <button
-                        className="btn btn-outline-warning"
+                        className="btn-action btn-edit"
                         title="Editar"
-                        onClick={() => handleEditarPlanificacion(planificacion)}
+                        onClick={() => openModal("edit", planificacion)}
                       >
                         <i className="fas fa-edit"></i>
                       </button>
                       <button
-                        className="btn btn-outline-danger"
+                        className="btn-action btn-delete"
                         title="Eliminar"
                         onClick={() =>
-                          handleEliminarPlanificacion(planificacion)
+                          handleDelete(planificacion.id_planificacion)
                         }
                       >
                         <i className="fas fa-trash"></i>
@@ -276,18 +208,51 @@ const PlanificacionSemanal = () => {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
+        )}
+      </div>
 
-      <PlanificacionMenuForm
-        visible={modalVisible}
-        modalTipo={modalTipo}
-        planificacionSeleccionada={planificacionSeleccionada}
-        formularioPlanificacion={formularioPlanificacion}
-        onFormChange={manejarCambioFormulario}
-        onClose={cerrarModal}
-        onSuccess={onSuccessForm}
-      />
+      {/* Modal para crear/editar/ver planificación - Renderizado en Portal para cubrir toda la pantalla */}
+      {showModal &&
+        createPortal(
+          <div className="modal-overlay-planificacion">
+            <div className="modal-content planificacion-modal">
+              <div className="modal-header">
+                <h3 className="text-white">
+                  {modalMode === "create" && (
+                    <>
+                      <i className="fas fa-calendar-plus me-2"></i>
+                      Nueva Planificación
+                    </>
+                  )}
+                  {modalMode === "edit" && (
+                    <>
+                      <i className="fas fa-calendar-edit me-2"></i>
+                      Editar Planificación
+                    </>
+                  )}
+                  {modalMode === "view" && (
+                    <>
+                      <i className="fas fa-calendar me-2"></i>
+                      Detalles de Planificación
+                    </>
+                  )}
+                </h3>
+                <button className="modal-close text-white" onClick={closeModal}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="modal-body">
+                <PlanificacionMenuForm
+                  planificacion={selectedPlanificacion}
+                  mode={modalMode}
+                  onSave={handleSavePlanificacion}
+                  onCancel={closeModal}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

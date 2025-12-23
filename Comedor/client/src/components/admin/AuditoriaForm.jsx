@@ -380,156 +380,143 @@ const AuditoriaForm = ({ show, onHide }) => {
               )}
 
               <form>
-                <div className="row mb-3">
+                <div className="row">
                   <div className="col-md-6">
-                    <div className="mb-3">
-                      <label htmlFor="fechaInicio" className="form-label">
-                        <i className="fas fa-calendar me-2"></i>
-                        Fecha Inicio
-                      </label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        id="fechaInicio"
-                        name="fechaInicio"
-                        value={filtros.fechaInicio}
-                        onChange={handleFiltroChange}
-                        max={filtros.fechaFin}
-                      />
-                    </div>
+                    <label htmlFor="fechaInicio" className="form-label">
+                      <i className="fas fa-calendar me-2"></i>
+                      Fecha Inicio
+                    </label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      id="fechaInicio"
+                      name="fechaInicio"
+                      value={filtros.fechaInicio}
+                      onChange={handleFiltroChange}
+                      max={filtros.fechaFin}
+                    />
                   </div>
-                  <div className="col-md-6">
-                    <div className="mb-3">
-                      <label htmlFor="fechaFin" className="form-label">
-                        <i className="fas fa-calendar me-2"></i>
-                        Fecha Fin
-                      </label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        id="fechaFin"
-                        name="fechaFin"
-                        value={filtros.fechaFin}
-                        onChange={handleFiltroChange}
-                        min={filtros.fechaInicio}
-                      />
-                    </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="fechaFin" className="form-label">
+                      <i className="fas fa-calendar me-2"></i>
+                      Fecha Fin
+                    </label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      id="fechaFin"
+                      name="fechaFin"
+                      value={filtros.fechaFin}
+                      onChange={handleFiltroChange}
+                      min={filtros.fechaInicio}
+                    />
                   </div>
                 </div>
 
                 <div className="row mb-3">
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <label htmlFor="usuario" className="form-label">
-                        <i className="fas fa-user me-2"></i>
-                        Usuario
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="usuario"
-                        name="usuario"
-                        value={filtros.usuario}
-                        onChange={handleFiltroChange}
-                        placeholder="Buscar en descripción..."
-                      />
-                    </div>
+                  <div>
+                    <label htmlFor="usuario" className="form-label">
+                      <i className="fas fa-user me-2"></i>
+                      Usuario
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="usuario"
+                      name="usuario"
+                      value={filtros.usuario}
+                      onChange={handleFiltroChange}
+                      placeholder="Buscar en descripción..."
+                    />
                   </div>
                 </div>
                 <div className="row mb-3">
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <label htmlFor="accion" className="form-label">
-                        <i className="fas fa-bolt me-2"></i>
-                        Acción
-                      </label>
-                      <select
-                        className="form-select"
-                        id="accion"
-                        name="accion"
-                        value={filtros.accion}
-                        onChange={handleFiltroChange}
-                      >
-                        <option value="">Todas las acciones</option>
-                        {acciones.map((accion) => (
-                          <option key={accion} value={accion}>
-                            {accion}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className="col-md-6">
+                    <label htmlFor="accion" className="form-label">
+                      <i className="fas fa-bolt me-2"></i>
+                      Acción
+                    </label>
+                    <select
+                      className="form-select"
+                      id="accion"
+                      name="accion"
+                      value={filtros.accion}
+                      onChange={handleFiltroChange}
+                    >
+                      <option value="">Todas las acciones</option>
+                      {acciones.map((accion) => (
+                        <option key={accion} value={accion}>
+                          {accion}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="col-md-4">
-                    <div className="mb-3">
-                      <label htmlFor="modulo" className="form-label">
-                        <i className="fas fa-cubes me-2"></i>
-                        Módulo
-                      </label>
-                      <select
-                        className="form-select"
-                        id="modulo"
-                        name="modulo"
-                        value={filtros.modulo}
-                        onChange={handleFiltroChange}
-                      >
-                        <option value="">Todos los módulos</option>
-                        {modulos.map((modulo) => (
-                          <option key={modulo} value={modulo}>
-                            {modulo}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+
+                  <div className="col-md-6">
+                    <label htmlFor="modulo" className="form-label">
+                      <i className="fas fa-cubes me-2"></i>
+                      Módulo
+                    </label>
+                    <select
+                      className="form-select"
+                      id="modulo"
+                      name="modulo"
+                      value={filtros.modulo}
+                      onChange={handleFiltroChange}
+                    >
+                      <option value="">Todos los módulos</option>
+                      {modulos.map((modulo) => (
+                        <option key={modulo} value={modulo}>
+                          {modulo}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                <div className="row mb-3">
+                <div className="row">
                   <div className="col">
-                    <div className="mb-3">
-                      <label className="form-label">
-                        Opciones del informe:
-                      </label>
-                      <div className="d-flex gap-3 mt-2">
-                        <div className="form-check">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="incluirEstadisticas"
-                            name="incluirEstadisticas"
-                            checked={filtros.incluirEstadisticas}
-                            onChange={handleFiltroChange}
-                          />
-                          <label
-                            className="form-check-label"
-                            htmlFor="incluirEstadisticas"
-                          >
-                            Incluir resumen estadístico
-                          </label>
-                        </div>
-                        <div className="form-check">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="incluirDetalles"
-                            name="incluirDetalles"
-                            checked={filtros.incluirDetalles}
-                            onChange={handleFiltroChange}
-                          />
-                          <label
-                            className="form-check-label"
-                            htmlFor="incluirDetalles"
-                          >
-                            Incluir información adicional
-                          </label>
-                        </div>
+                    <label className="form-label">Opciones del informe:</label>
+                    <div className="d-flex gap-3 mt-2">
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="incluirEstadisticas"
+                          name="incluirEstadisticas"
+                          checked={filtros.incluirEstadisticas}
+                          onChange={handleFiltroChange}
+                        />
+                        <label
+                          className="form-check-label"
+                          htmlFor="incluirEstadisticas"
+                        >
+                          Incluir resumen estadístico
+                        </label>
+                      </div>
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="incluirDetalles"
+                          name="incluirDetalles"
+                          checked={filtros.incluirDetalles}
+                          onChange={handleFiltroChange}
+                        />
+                        <label
+                          className="form-check-label"
+                          htmlFor="incluirDetalles"
+                        >
+                          Incluir información adicional
+                        </label>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-top pt-3">
+                <div className="border-top pt-2 mt-2">
                   <h6>Vista previa de datos:</h6>
-                  <div className="bg-light p-3 rounded">
+                  <div className="bg-light rounded">
                     <div className="row">
                       <div className="col">
                         <small className="text-muted">
@@ -568,64 +555,64 @@ const AuditoriaForm = ({ show, onHide }) => {
                   </div>
                 </div>
               </form>
-            </div>
 
-            <div className="form-actions mt-3">
-              <button
-                type="button"
-                className="btn btn-secondary me-2"
-                onClick={onHide}
-                disabled={loading || generatingPDF}
-              >
-                <i className="fas fa-times"></i>
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary me-2"
-                onClick={cargarDatos}
-                disabled={loading || generatingPDF}
-              >
-                {loading ? (
-                  <>
-                    <div
-                      className="spinner-border spinner-border-sm me-2"
-                      role="status"
-                    >
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                    Cargando datos...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-sync-alt me-2"></i>
-                    Cargar datos
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={generarPDF}
-                disabled={loading || generatingPDF}
-              >
-                {generatingPDF ? (
-                  <>
-                    <div
-                      className="spinner-border spinner-border-sm me-2"
-                      role="status"
-                    >
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                    Generando PDF...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-file-pdf me-2"></i>
-                    Generar PDF
-                  </>
-                )}
-              </button>
+              <div className="form-actions mt-3">
+                <button
+                  type="button"
+                  className="btn btn-secondary me-2"
+                  onClick={onHide}
+                  disabled={loading || generatingPDF}
+                >
+                  <i className="fas fa-times"></i>
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary me-2"
+                  onClick={cargarDatos}
+                  disabled={loading || generatingPDF}
+                >
+                  {loading ? (
+                    <>
+                      <div
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                      >
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                      Cargando datos...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-sync-alt me-2"></i>
+                      Cargar datos
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={generarPDF}
+                  disabled={loading || generatingPDF}
+                >
+                  {generatingPDF ? (
+                    <>
+                      <div
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                      >
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                      Generando PDF...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-file-pdf me-2"></i>
+                      Generar PDF
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

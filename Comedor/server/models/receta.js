@@ -115,6 +115,19 @@ export class RecetaModel {
     }
   }
 
+  static async hasActiveRelations({ id }) {
+    const [result] = await connection.query(
+      `SELECT COUNT(*) as count
+       FROM ItemsRecetas
+       WHERE id_receta = UUID_TO_BIN(?)\n       UNION ALL
+       SELECT COUNT(*) as count
+       FROM RecetaServicio
+       WHERE id_receta = UUID_TO_BIN(?)`,
+      [id, id]
+    );
+    return result.some((r) => r.count > 0);
+  }
+
   static async update({
     id,
     nombreReceta,

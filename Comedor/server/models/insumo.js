@@ -185,6 +185,24 @@ export class InsumoModel {
     }
   }
 
+  static async hasActiveRelations({ id }) {
+    const [result] = await connection.query(
+      `SELECT COUNT(*) as count
+       FROM ItemsRecetas
+       WHERE id_insumo = ?
+       UNION ALL
+       SELECT COUNT(*) as count
+       FROM Inventarios
+       WHERE id_insumo = ?
+       UNION ALL
+       SELECT COUNT(*) as count
+       FROM ProveedorInsumo
+       WHERE id_insumo = ? AND estado = 'Activo'`,
+      [id, id, id]
+    );
+    return result.some((r) => r.count > 0);
+  }
+
   static async update({ id, input }) {
     const {
       nombreInsumo,

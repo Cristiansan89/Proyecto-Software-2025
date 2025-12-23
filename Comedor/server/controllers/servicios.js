@@ -75,6 +75,17 @@ export class ServicioController {
       const { id } = req.params;
       console.log("ServicioController: Eliminando servicio con ID:", id);
 
+      // Verificar si el servicio tiene relaciones activas
+      const hasActiveRelations = await this.servicioModel.hasActiveRelations({
+        id,
+      });
+      if (hasActiveRelations) {
+        return res.status(409).json({
+          message:
+            "No se puede eliminar el servicio porque está vinculado a registros activos",
+        });
+      }
+
       const deleted = await this.servicioModel.delete({ id });
       console.log("ServicioController: Resultado de eliminación:", deleted);
 

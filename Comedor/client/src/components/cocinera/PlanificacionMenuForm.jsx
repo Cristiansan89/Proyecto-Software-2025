@@ -1,22 +1,22 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import planificacionMenuService from "../../services/planificacionMenuService";
 
-const PlanificacionMenuForm = ({
-  visible,
-  modalTipo,
-  planificacionSeleccionada,
-  formularioPlanificacion,
-  onFormChange,
-  onClose,
-  onSuccess,
-}) => {
+const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    fechaInicio: "",
+    fechaFin: "",
+    comensalesEstimados: "",
+    estado: "Pendiente",
+  });
+
   const [loading, setLoading] = useState(false);
-  const [calculandoComensales, setCalculandoComensales] = useState(false);
-  const [comensalesCalculados, setComensalesCalculados] = useState(null);
-  const [mostrarDetalleComensales, setMostrarDetalleComensales] =
-    useState(false);
+  const [calculatingDiners, setCalculatingDiners] = useState(false);
+  const [dinersCalculated, setDinersCalculated] = useState(null);
+  const [showDinersDetail, setShowDinersDetail] = useState(false);
 
   const estados = [
     { value: "Pendiente", label: "Pendiente" },
@@ -25,314 +25,325 @@ const PlanificacionMenuForm = ({
     { value: "Cancelado", label: "Cancelado" },
   ];
 
-  const calcularComensalesAutomaticos = async () => {
-    if (!formularioPlanificacion.fechaInicio) {
+  // Función para formatear fechas
+  const formatDateForInput = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const offset = d.getTimezoneOffset();
+    const localDate = new Date(d.getTime() + offset * 60 * 1000);
+    return localDate.toISOString().split("T")[0];
+  };
+
+  // Inicializar formulario cuando se abre el modal
+  useEffect(() => {
+    if (mode === "create") {
+      setFormData({
+        fechaInicio: "",
+        fechaFin: "",
+        comensalesEstimados: "",
+        estado: "Pendiente",
+      });
+    } else if (planificacion) {
+      setFormData({
+        fechaInicio: formatDateForInput(planificacion.fechaInicio),
+        fechaFin: formatDateForInput(planificacion.fechaFin),
+        comensalesEstimados: planificacion.comensalesEstimados || "",
+        estado: planificacion.estado || "Activo",
+      });
+    }
+    setDinersCalculated(null);
+    setShowDinersDetail(false);
+  }, [planificacion, mode]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const calculateDinersAutomatically = async () => {
+    if (!formData.fechaInicio) {
       alert("Por favor seleccione primero la fecha de inicio");
       return;
     }
 
-    setCalculandoComensales(true);
+    setCalculatingDiners(true);
     try {
-      const datosComensales =
+      const dataDiners =
         await planificacionMenuService.calcularComensalesPorFecha(
-          formularioPlanificacion.fechaInicio
+          formData.fechaInicio
         );
 
-      setComensalesCalculados(datosComensales);
+      setDinersCalculated(dataDiners);
 
-      // Actualizar el formulario con el total calculado
-      const totalComensales = datosComensales.resumen?.totalDia || 0;
-      onFormChange({
-        target: {
-          name: "comensalesEstimados",
-          value: totalComensales.toString(),
-        },
-      });
+      const totalDiners = dataDiners.resumen?.totalDia || 0;
+      setFormData((prev) => ({
+        ...prev,
+        comensalesEstimados: totalDiners.toString(),
+      }));
 
-      setMostrarDetalleComensales(true);
+      setShowDinersDetail(true);
     } catch (error) {
+      // Manejar error 401
+      if (error.response?.status === 401) {
+        alert("Sesión expirada. Por favor, inicia sesión nuevamente.");
+        navigate("/login");
+        return;
+      }
       alert("Error al calcular comensales automáticamente: " + error.message);
     } finally {
-      setCalculandoComensales(false);
+      setCalculatingDiners(false);
     }
   };
 
-  // Resetear comensales calculados cuando cambia el modal
-  useEffect(() => {
-    if (!visible) {
-      setComensalesCalculados(null);
-      setMostrarDetalleComensales(false);
-    }
-  }, [visible]);
-
-  const manejarSubmitFormulario = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validar que fecha de fin sea posterior a fecha de inicio
+    if (formData.fechaInicio && formData.fechaFin) {
+      if (new Date(formData.fechaFin) < new Date(formData.fechaInicio)) {
+        alert("La fecha de fin debe ser posterior a la fecha de inicio");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
-      const datosParaEnviar = {
-        ...formularioPlanificacion,
+      const dataToSend = {
+        ...formData,
         id_usuario: user?.idUsuario || user?.id_usuario || null,
-        comensalesEstimados:
-          parseInt(formularioPlanificacion.comensalesEstimados) || 0,
-        estado: formularioPlanificacion.estado || "Pendiente",
+        comensalesEstimados: parseInt(formData.comensalesEstimados) || 0,
+        estado: formData.estado || "Pendiente",
       };
 
-      // Debug: Mostrar datos que se envían
-      console.log("=== DATOS A ENVIAR ===");
-      console.log("Usuario:", user);
-      console.log("Datos para enviar:", datosParaEnviar);
-      console.log("===================");
+      console.log("Enviando datos:", dataToSend);
 
-      let resultado;
-      if (modalTipo === "crear") {
-        resultado = await planificacionMenuService.create(datosParaEnviar);
-        alert("Planificación creada exitosamente");
+      if (mode === "create") {
+        await planificacionMenuService.create(dataToSend);
+        alert("Planificación creada correctamente");
       } else {
-        resultado = await planificacionMenuService.update(
-          planificacionSeleccionada.id_planificacion,
-          datosParaEnviar
+        await planificacionMenuService.update(
+          planificacion.id_planificacion,
+          dataToSend
         );
-        alert("Planificación actualizada exitosamente");
+        alert("Planificación actualizada correctamente");
       }
 
-      onSuccess();
+      onSave();
     } catch (error) {
-      console.error("=== ERROR AL CREAR PLANIFICACIÓN ===");
-      console.error("Error completo:", error);
-      console.error("Response data:", error.response?.data);
-      console.error("Status:", error.response?.status);
-      console.error("===========================");
+      console.error("Error al guardar planificación:", error);
 
-      let errorMessage = "Error al guardar la planificación: ";
-
-      if (error.response?.data?.errors) {
-        // Si hay errores de validación específicos, mostrarlos
-        const validationErrors = error.response.data.errors
-          .map((err) => `${err.field}: ${err.message}`)
-          .join(", ");
-        errorMessage += validationErrors;
-      } else {
-        errorMessage += error.response?.data?.message || error.message;
+      // Manejar error 401
+      if (error.response?.status === 401) {
+        alert("Sesión expirada. Por favor, inicia sesión nuevamente.");
+        navigate("/login");
+        return;
       }
 
-      alert(errorMessage);
+      const errorMessage = error.response?.data?.message || error.message;
+      alert(`Error al guardar: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!visible) return null;
+  const isViewMode = mode === "view";
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h5 className="modal-title">
-            <i className="fas fa-calendar-alt me-2"></i>
-            {modalTipo === "crear"
-              ? "Nueva Planificación"
-              : modalTipo === "editar"
-              ? "Editar Planificación"
-              : "Detalles de Planificación"}
-          </h5>
-          <button
-            type="button"
-            className="btn-close"
-            onClick={onClose}
-          ></button>
+    <div>
+      <form onSubmit={handleSubmit} id="planificacionForm">
+        <div className="row">
+          <div className="col-md-6 mb-3">
+            <label htmlFor="fechaInicio" className="form-label">
+              Fecha de Inicio
+            </label>
+            <input
+              type="date"
+              className="form-control"
+              id="fechaInicio"
+              name="fechaInicio"
+              value={formData.fechaInicio}
+              onChange={handleInputChange}
+              required
+              readOnly={isViewMode}
+            />
+          </div>
+          <div className="col-md-6 mb-3">
+            <label htmlFor="fechaFin" className="form-label">
+              Fecha de Fin
+            </label>
+            <input
+              type="date"
+              className="form-control"
+              id="fechaFin"
+              name="fechaFin"
+              value={formData.fechaFin}
+              onChange={handleInputChange}
+              required
+              readOnly={isViewMode}
+            />
+          </div>
         </div>
-        <div className="modal-body">
-          <form id="formPlanificacion" onSubmit={manejarSubmitFormulario}>
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label htmlFor="fechaInicio" className="form-label">
-                  Fecha de Inicio
-                </label>
-                <input
-                  type="date"
-                  className="form-control"
-                  id="fechaInicio"
-                  name="fechaInicio"
-                  value={formularioPlanificacion.fechaInicio}
-                  onChange={onFormChange}
-                  required
-                  readOnly={modalTipo === "ver"}
-                />
-              </div>
-              <div className="col-md-6 mb-3">
-                <label htmlFor="fechaFin" className="form-label">
-                  Fecha de Fin
-                </label>
-                <input
-                  type="date"
-                  className="form-control"
-                  id="fechaFin"
-                  name="fechaFin"
-                  value={formularioPlanificacion.fechaFin}
-                  onChange={onFormChange}
-                  required
-                  readOnly={modalTipo === "ver"}
-                />
-              </div>
-            </div>
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label htmlFor="estado" className="form-label">
-                  Estado
-                </label>
-                <select
-                  className="form-control"
-                  id="estado"
-                  name="estado"
-                  value={formularioPlanificacion.estado || "Pendiente"}
-                  onChange={onFormChange}
-                  required
-                  disabled={modalTipo === "ver"}
-                >
-                  <option value="">-- Seleccionar estado --</option>
-                  {estados.map((estado) => (
-                    <option key={estado.value} value={estado.value}>
-                      {estado.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
 
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label htmlFor="comensalesEstimados" className="form-label">
-                  Comensales Estimados
-                </label>
+        <div className="row">
+          <div className="col-md-6 mb-3">
+            <label htmlFor="estado" className="form-label">
+              Estado
+            </label>
+            <select
+              className="form-control"
+              id="estado"
+              name="estado"
+              value={formData.estado || "Pendiente"}
+              onChange={handleInputChange}
+              required
+              disabled={isViewMode}
+            >
+              <option value="">-- Seleccionar estado --</option>
+              {estados.map((estado) => (
+                <option key={estado.value} value={estado.value}>
+                  {estado.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                {modalTipo !== "ver" && (
-                  <button
-                    type="button"
-                    className="btn btn-outline-primary"
-                    onClick={calcularComensalesAutomaticos}
-                    disabled={
-                      calculandoComensales ||
-                      !formularioPlanificacion.fechaInicio
-                    }
-                    title="Calcular automáticamente según matrícula actual"
-                  >
-                    {calculandoComensales ? (
-                      <span
-                        className="spinner-border spinner-border-sm"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                    ) : (
-                      <i className="fas fa-calculator"></i>
-                    )}
-                    Obtener Comensales
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Detalles del cálculo de comensales */}
-            {mostrarDetalleComensales && comensalesCalculados && (
-              <div>
-                <div className="card">
-                  <div className="card-header">
-                    <h6 className="mb-0 text-black">
-                      <i className="fas fa-chart-bar me-2"></i>
-                      Detalle del Cálculo de Comensales Estimados
-                      <small className="text-muted ms-2">
-                        ({comensalesCalculados.fecha})
-                      </small>
-                    </h6>
-                  </div>
-                  <div className="card-body">
-                    <div className="row">
-                      {comensalesCalculados.servicios?.map(
-                        (servicio, index) => (
-                          <div key={index} className="col-md-4 mb-3">
-                            <div className="border rounded p-3">
-                              <h6 className="text-primary">
-                                <i className="fas fa-utensils me-1"></i>
-                                {servicio.nombreServicio}
-                              </h6>
-                              <p className="mb-1">
-                                <strong>
-                                  Total: {servicio.totalComensales}
-                                </strong>
-                              </p>
-                              {servicio.turnos?.map((turno, tIndex) => (
-                                <div key={tIndex} className="small text-muted">
-                                  <strong>{turno.turno}:</strong>{" "}
-                                  {turno.comensales} estudiantes
-                                  <div className="ms-2">
-                                    {turno.grados?.map((grado, gIndex) => (
-                                      <div key={gIndex} className="text-xs">
-                                        • {grado.grado}:{" "}
-                                        {grado.cantidadEstudiantes}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
-                    <div className="alert alert-info mt-3">
-                      <i className="fas fa-info-circle me-2"></i>
-                      <strong>Total de comensales para el día:</strong>{" "}
-                      <strong>{comensalesCalculados.resumen?.totalDia}</strong>
-                      <div className="small mt-1">
-                        Este cálculo se basa en la matrícula actual de
-                        estudiantes por grado y turno.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="form-actions mt-3">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={onClose}
-              >
-                <i className="fas fa-times me-2"></i>
-                {modalTipo === "ver" ? "Cerrar" : "Cancelar"}
-              </button>
-              {modalTipo !== "ver" && (
+          <div className="col-md-6 mb-3">
+            <label htmlFor="comensalesEstimados" className="form-label">
+              Comensales Estimados
+            </label>
+            <div className="input-group">
+              <input
+                type="number"
+                className="form-control"
+                id="comensalesEstimados"
+                name="comensalesEstimados"
+                value={formData.comensalesEstimados}
+                onChange={handleInputChange}
+                min="0"
+                required
+                readOnly={isViewMode}
+                placeholder="Ingrese número de comensales"
+              />
+              {!isViewMode && (
                 <button
-                  type="submit"
-                  className="btn btn-primary"
-                  form="formPlanificacion"
-                  disabled={loading}
-                  onClick={manejarSubmitFormulario}
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={calculateDinersAutomatically}
+                  disabled={calculatingDiners || !formData.fechaInicio}
+                  title="Calcular automáticamente según matrícula actual"
                 >
-                  {loading ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Guardando...
-                    </>
+                  {calculatingDiners ? (
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                   ) : (
-                    <>
-                      <i className="fas fa-save me-2"></i>
-                      {modalTipo === "crear"
-                        ? "Crear Planificación"
-                        : "Guardar Cambios"}
-                    </>
+                    <i className="fas fa-calculator"></i>
                   )}
                 </button>
               )}
             </div>
-          </form>
+          </div>
         </div>
-      </div>
+
+        {/* Detalles del cálculo de comensales */}
+        {showDinersDetail && dinersCalculated && (
+          <div className="card mb-3">
+            <div className="card-header">
+              <h6 className="mb-0 text-black">
+                <i className="fas fa-chart-bar me-2"></i>
+                Detalle del Cálculo de Comensales Estimados
+                <small className="text-muted ms-2">
+                  ({dinersCalculated.fecha})
+                </small>
+              </h6>
+            </div>
+            <div className="card-body">
+              <div className="row">
+                {dinersCalculated.servicios?.map((servicio, index) => (
+                  <div key={index} className="col-md-4 mb-3">
+                    <div className="border rounded p-3">
+                      <h6 className="text-primary">
+                        <i className="fas fa-utensils me-1"></i>
+                        {servicio.nombreServicio}
+                      </h6>
+                      <p className="mb-1">
+                        <strong>Total: {servicio.totalComensales}</strong>
+                      </p>
+                      {servicio.turnos?.map((turno, tIndex) => (
+                        <div key={tIndex} className="small text-muted">
+                          <strong>{turno.turno}:</strong> {turno.comensales}{" "}
+                          estudiantes
+                          <div className="ms-2">
+                            {turno.grados?.map((grado, gIndex) => (
+                              <div key={gIndex} className="text-xs">
+                                • {grado.grado}: {grado.cantidadEstudiantes}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="alert alert-info mt-3">
+                <div>
+                  <i className="fas fa-info-circle me-2"></i>
+                  <strong>Total de comensales para el día:</strong>{" "}
+                  <strong>{dinersCalculated.resumen?.totalDia}</strong>
+                  <small className="d-block mt-1 me-2">
+                    Este cálculo se basa en la matrícula actual de estudiantes
+                    por grado y turno.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="form-actions mt-4">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onCancel}
+          >
+            <i className="fas fa-times me-2"></i>
+            {isViewMode ? "Cerrar" : "Cancelar"}
+          </button>
+          {!isViewMode && (
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-save me-2"></i>
+                  {mode === "create"
+                    ? "Crear Planificación"
+                    : "Guardar Cambios"}
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </form>
     </div>
   );
 };

@@ -407,11 +407,16 @@ const Consumos = () => {
 
   if (loading && consumos.length === 0) {
     return (
-      <div className="consumos__loading-container">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando consumos...</span>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "50vh" }}
+      >
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Cargando consumos...</span>
+          </div>
+          <p className="mt-3">Cargando registros de consumos...</p>
         </div>
-        <p className="mt-3">Cargando registros de consumos...</p>
       </div>
     );
   }
@@ -419,7 +424,7 @@ const Consumos = () => {
   return (
     <div>
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
           <h1 className="page-title">
             <i className="fas fa-chart-bar me-2"></i>
@@ -432,62 +437,58 @@ const Consumos = () => {
       </div>
 
       {/* Estadísticas */}
+      {/*
       <div className="row mb-4">
         <div className="col-md-3">
-          <div className="consumos__card consumos__stats-card">
+          <div className="card h-100">
             <div className="card-body text-center">
-              <i className="fas fa-list-ol stats-icon text-primary"></i>
-              <h3 className="stats-number text-primary">
-                {estadisticas.totalRegistros}
-              </h3>
-              <p className="stats-label">Total Registros</p>
+              <i className="fas fa-list-ol fs-2 text-primary mb-3 d-block"></i>
+              <h3 className="text-primary">{estadisticas.totalRegistros}</h3>
+              <p className="text-muted small mb-0">Total Registros</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="consumos__card consumos__stats-card">
+          <div className="card h-100">
             <div className="card-body text-center">
-              <i className="fas fa-utensils stats-icon text-success"></i>
-              <h3 className="stats-number text-success">
-                {estadisticas.totalConsumos}
-              </h3>
-              <p className="stats-label">Total Consumos</p>
+              <i className="fas fa-utensils fs-2 text-success mb-3 d-block"></i>
+              <h3 className="text-success">{estadisticas.totalConsumos}</h3>
+              <p className="text-muted small mb-0">Total Consumos</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="consumos__card consumos__stats-card">
+          <div className="card h-100">
             <div className="card-body text-center">
-              <i className="fas fa-chart-line stats-icon text-info"></i>
-              <h3 className="stats-number text-info">
-                {estadisticas.promedioConsumos}
-              </h3>
-              <p className="stats-label">Promedio por Registro</p>
+              <i className="fas fa-chart-line fs-2 text-info mb-3 d-block"></i>
+              <h3 className="text-info">{estadisticas.promedioConsumos}</h3>
+              <p className="text-muted small mb-0">Promedio por Registro</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="consumos__card consumos__stats-card">
+          <div className="card h-100">
             <div className="card-body text-center">
-              <i className="fas fa-trophy stats-icon text-warning"></i>
-              <h6 className="stats-number text-warning">
+              <i className="fas fa-trophy fs-2 text-warning mb-3 d-block"></i>
+              <h6 className="text-warning">
                 {estadisticas.servicioMasConsumido || "N/A"}
               </h6>
-              <p className="stats-label">Servicio Más Consumido</p>
+              <p className="text-muted small mb-0">Servicio Más Consumido</p>
             </div>
           </div>
         </div>
       </div>
+      */}
 
       {/* Filtros */}
-      <div className="consumos__card mb-4">
-        <div className="consumos__card-header">
-          <h5 className="consumos__card-title mb-0">
+      <div className="card mb-3">
+        <div className="card-header">
+          <h5 className="mb-0">
             <i className="fas fa-filter me-2"></i>
             Filtros de Búsqueda
           </h5>
         </div>
-        <div className="consumos__card-body">
+        <div className="card-body">
           <div className="row g-3">
             <div className="col-md-3">
               <label htmlFor="fechaInicio" className="form-label">
@@ -547,7 +548,7 @@ const Consumos = () => {
           <div className="d-flex gap-2 mt-3">
             <button
               type="button"
-              className="consumos__btn consumos__btn-secondary"
+              className="btn btn-secondary"
               onClick={limpiarFiltros}
             >
               <i className="fas fa-broom me-2"></i>
@@ -556,7 +557,7 @@ const Consumos = () => {
 
             <button
               type="button"
-              className="consumos__btn consumos__btn-success"
+              className="btn btn-success"
               onClick={exportarCSV}
               disabled={consumos.length === 0}
             >
@@ -566,7 +567,7 @@ const Consumos = () => {
 
             <button
               type="button"
-              className="consumos__btn consumos__btn-danger"
+              className="btn btn-danger"
               onClick={exportarPDF}
               disabled={consumos.length === 0}
             >
@@ -576,16 +577,15 @@ const Consumos = () => {
           </div>
         </div>
       </div>
-
       {/* Lista de Consumos */}
-      <div className="consumos__card">
-        <div className="consumos__card-header d-flex justify-content-between align-items-center">
-          <h5 className="consumos__card-title mb-0">
+      <div className="card">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">
             <i className="fas fa-list me-2"></i>
             Registros de Consumos
           </h5>
           <button
-            className="consumos__btn consumos__btn-outline-primary consumos__btn-sm"
+            className="btn btn-outline-primary btn-sm"
             onClick={() => cargarConsumos()}
             disabled={loading}
           >
@@ -594,7 +594,7 @@ const Consumos = () => {
           </button>
         </div>
 
-        <div className="consumos__card-body">
+        <div className="card-body">
           {loading ? (
             <div className="text-center py-4">
               <div className="spinner-border text-primary" role="status">
@@ -611,9 +611,9 @@ const Consumos = () => {
               </p>
             </div>
           ) : (
-            <div className="consumos__table-responsive">
-              <table className="consumos__table consumos__table-hover consumos__table-striped">
-                <thead className="consumos__table-light">
+            <div className="table-container">
+              <table className="table table-striped data-table">
+                <thead className="table-light">
                   <tr>
                     <th width="5%">#</th>
                     <th width="20%">
@@ -693,7 +693,7 @@ const Consumos = () => {
         </div>
 
         {consumos.length > 0 && (
-          <div className="consumos__card-footer">
+          <div className="card-footer">
             <div className="row text-center">
               <div className="col-md-12">
                 <small className="text-muted">

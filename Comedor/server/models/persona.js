@@ -1,10 +1,10 @@
-import { connection } from './db.js'
+import { connection } from "./db.js";
 
 export class PersonaModel {
-    static async getAll({ nombreRol } = {}) {
-        if (nombreRol) {
-            const [personas] = await connection.query(
-                `SELECT 
+  static async getAll({ nombreRol } = {}) {
+    if (nombreRol) {
+      const [personas] = await connection.query(
+        `SELECT 
                     p.id_persona as idPersona,
                     p.nombreRol,
                     p.nombre, 
@@ -18,13 +18,13 @@ export class PersonaModel {
                 FROM Personas p
                 WHERE p.nombreRol = ?
                 ORDER BY p.apellido, p.nombre;`,
-                [nombreRol]
-            )
-            return personas
-        }
+        [nombreRol]
+      );
+      return personas;
+    }
 
-        const [personas] = await connection.query(
-            `SELECT 
+    const [personas] = await connection.query(
+      `SELECT 
                 id_persona as idPersona,
                 nombreRol,
                 nombre, 
@@ -37,13 +37,13 @@ export class PersonaModel {
                 estado
             FROM Personas
             ORDER BY apellido, nombre;`
-        )
-        return personas
-    }
+    );
+    return personas;
+  }
 
-    static async getById({ id }) {
-        const [personas] = await connection.query(
-            `SELECT 
+  static async getById({ id }) {
+    const [personas] = await connection.query(
+      `SELECT 
                 id_persona as idPersona,
                 nombreRol,
                 nombre, 
@@ -56,26 +56,26 @@ export class PersonaModel {
                 estado
             FROM Personas
             WHERE id_persona = ?;`,
-            [id]
-        )
-        if (personas.length === 0) return null
-        return personas[0]
-    }
+      [id]
+    );
+    if (personas.length === 0) return null;
+    return personas[0];
+  }
 
-    static async create({ input }) {
-        const {
-            nombreRol,
-            nombre,
-            apellido,
-            dni,
-            fechaNacimiento,
-            genero = 'Otros',
-            estado = 'Activo'
-        } = input
+  static async create({ input }) {
+    const {
+      nombreRol,
+      nombre,
+      apellido,
+      dni,
+      fechaNacimiento,
+      genero = "Otros",
+      estado = "Activo",
+    } = input;
 
-        try {
-            const [result] = await connection.query(
-                `INSERT INTO Personas (
+    try {
+      const [result] = await connection.query(
+        `INSERT INTO Personas (
                     nombreRol, 
                     nombre, 
                     apellido, 
@@ -84,93 +84,103 @@ export class PersonaModel {
                     genero,
                     estado
                 ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
-                [nombreRol, nombre, apellido, dni, fechaNacimiento, genero, estado]
-            )
+        [nombreRol, nombre, apellido, dni, fechaNacimiento, genero, estado]
+      );
 
-            return this.getById({ id: result.insertId })
-        } catch (error) {
-            if (error.code === 'ER_DUP_ENTRY') {
-                throw new Error('El DNI ya existe')
-            }
-            throw new Error('Error al crear la persona')
-        }
+      return this.getById({ id: result.insertId });
+    } catch (error) {
+      if (error.code === "ER_DUP_ENTRY") {
+        throw new Error("El DNI ya existe");
+      }
+      throw new Error("Error al crear la persona");
     }
+  }
 
-    static async delete({ id }) {
-        try {
-            await connection.query(
-                `DELETE FROM Personas
+  static async delete({ id }) {
+    try {
+      await connection.query(
+        `DELETE FROM Personas
                  WHERE id_persona = ?;`,
-                [id]
-            )
-            return true
-        } catch (error) {
-            return false
-        }
+        [id]
+      );
+      return true;
+    } catch (error) {
+      return false;
     }
+  }
 
-    static async update({ id, input }) {
-        const {
-            nombreRol,
-            nombre,
-            apellido,
-            dni,
-            fechaNacimiento,
-            genero,
-            estado
-        } = input
+  static async hasActiveUsers({ id }) {
+    const [result] = await connection.query(
+      `SELECT COUNT(*) as count
+             FROM Usuarios
+             WHERE id_persona = ? AND estado = 'Activo';`,
+      [id]
+    );
+    return result[0].count > 0;
+  }
 
-        try {
-            const updates = []
-            const values = []
+  static async update({ id, input }) {
+    const {
+      nombreRol,
+      nombre,
+      apellido,
+      dni,
+      fechaNacimiento,
+      genero,
+      estado,
+    } = input;
 
-            if (nombreRol) {
-                updates.push('nombreRol = ?')
-                values.push(nombreRol)
-            }
-            if (nombre) {
-                updates.push('nombre = ?')
-                values.push(nombre)
-            }
-            if (apellido) {
-                updates.push('apellido = ?')
-                values.push(apellido)
-            }
-            if (dni) {
-                updates.push('dni = ?')
-                values.push(dni)
-            }
-            if (fechaNacimiento) {
-                updates.push('fechaNacimiento = ?')
-                values.push(fechaNacimiento)
-            }
-            if (genero) {
-                updates.push('genero = ?')
-                values.push(genero)
-            }
-            if (estado) {
-                updates.push('estado = ?')
-                values.push(estado)
-            }
+    try {
+      const updates = [];
+      const values = [];
 
-            if (updates.length === 0) return this.getById({ id })
+      if (nombreRol) {
+        updates.push("nombreRol = ?");
+        values.push(nombreRol);
+      }
+      if (nombre) {
+        updates.push("nombre = ?");
+        values.push(nombre);
+      }
+      if (apellido) {
+        updates.push("apellido = ?");
+        values.push(apellido);
+      }
+      if (dni) {
+        updates.push("dni = ?");
+        values.push(dni);
+      }
+      if (fechaNacimiento) {
+        updates.push("fechaNacimiento = ?");
+        values.push(fechaNacimiento);
+      }
+      if (genero) {
+        updates.push("genero = ?");
+        values.push(genero);
+      }
+      if (estado) {
+        updates.push("estado = ?");
+        values.push(estado);
+      }
 
-            updates.push('fechaModificacion = NOW()')
-            values.push(id)
+      if (updates.length === 0) return this.getById({ id });
 
-            await connection.query(
-                `UPDATE Personas
-                 SET ${updates.join(', ')}
+      updates.push("fechaModificacion = NOW()");
+      values.push(id);
+
+      await connection.query(
+        `UPDATE Personas
+                 SET ${updates.join(", ")}
                  WHERE id_persona = ?;`,
-                values
-            )
+        values
+      );
 
-            return this.getById({ id })
-        } catch (error) {
-            if (error.code === 'ER_DUP_ENTRY') {
-                throw new Error('El DNI ya existe')
-            }
-            throw new Error('Error al actualizar la persona')
-        }
+      return this.getById({ id });
+    } catch (error) {
+      if (error.code === "ER_DUP_ENTRY") {
+        throw new Error("El DNI ya existe");
+      }
+      throw new Error("Error al actualizar la persona");
     }
+  }
 }

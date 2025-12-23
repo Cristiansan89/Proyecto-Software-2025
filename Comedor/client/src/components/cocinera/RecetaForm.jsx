@@ -660,8 +660,8 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                           type="number"
                           id="ingrediente_cantidad"
                           className="form-control"
-                          step="0.01"
-                          min="0"
+                          step="1"
+                          min="1"
                           value={nuevoIngrediente.cantidadPorPorcion}
                           onChange={(e) =>
                             setNuevoIngrediente({

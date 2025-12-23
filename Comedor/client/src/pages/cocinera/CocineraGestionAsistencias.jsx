@@ -701,9 +701,9 @@ ${user.nombre} ${user.apellido}
         </div>
       </div>
       <div className="page-header-cocinera">
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Generar Enlaces de Asistencia</span>
+        <div className="card shadow-sm">
+          <div className="card-header bg-light text-dark">
+            <h5 className="mb-0">Generar Enlaces de Asistencia</h5>
           </div>
           <div className="card-body">
             <form
@@ -792,9 +792,10 @@ ${user.nombre} ${user.apellido}
                 {!formulario.idServicio ? (
                   <div className="alert alert-info">
                     <i className="fas fa-info-circle me-2"></i>
-                    <strong>Primero selecciona un servicio</strong> para ver los
-                    grados disponibles según los turnos asociados a ese
-                    servicio.
+                    <strong>
+                      Primero selecciona un servicio para ver los grados
+                      disponibles según los turnos asociados a ese servicio.
+                    </strong>
                   </div>
                 ) : (
                   <div className="grados-selection">

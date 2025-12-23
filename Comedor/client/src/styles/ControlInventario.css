@@ -278,3 +278,8 @@
 .input-group .input-group-text {
   height: auto !important;
 }
+
+.movimiento-modal {
+  max-width: 800px;
+  width: 95%;
+}

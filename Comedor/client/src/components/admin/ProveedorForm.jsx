@@ -44,7 +44,7 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
     // Validaciones específicas por campo
     if (name === "razonSocial") {
       // Permitir solo letras, números, guiones y espacios para razón social
-      valorPermitido = value.replace(/[^A-ZÑÁÉÍÓÚ0-9\s_-]/gi, "");
+      valorPermitido = value.replace(/[^A-ZáéíóúÁÉÍÓÚÑñ0-9\s_-]/gi, "");
     } else if (name === "CUIT") {
       // Permitir solo números y guiones para CUIT
       valorPermitido = formatCUIT(value);

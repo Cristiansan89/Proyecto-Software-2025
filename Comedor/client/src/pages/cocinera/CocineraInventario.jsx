@@ -479,8 +479,8 @@ const CocineraInventario = () => {
                   </p>
                 </div>
               ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover table-striped">
+                <div className="table-container">
+                  <table className="table table-striped data-table">
                     <thead>
                       <tr>
                         <th>#</th>
@@ -565,12 +565,10 @@ const CocineraInventario = () => {
                                 </small>
                               </div>
                             </td>
-                            <td>
-                              <small className="text-muted">
-                                {new Date(
-                                  inventario.fechaUltimaActualizacion
-                                ).toLocaleDateString("es-ES")}
-                              </small>
+                            <td className="text-center">
+                              {new Date(
+                                inventario.fechaUltimaActualizacion
+                              ).toLocaleDateString("es-ES")}
                             </td>
                           </tr>
                         );

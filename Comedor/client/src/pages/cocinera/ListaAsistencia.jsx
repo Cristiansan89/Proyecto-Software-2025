@@ -682,9 +682,9 @@ ${
               </p>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover table-striped">
-                <thead className="table-light">
+            <div className="table-container">
+              <table className="table table-striped data-table">
+                <thead className="table-header-fixed">
                   <tr>
                     <th>#</th>
                     <th width="12%">Fecha</th>

@@ -1,7 +1,36 @@
 import axios from "axios";
 
+// Función para obtener la URL base correcta
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  const currentUrl = window.location.origin;
+
+  // Si viene del .env, validar que no sea una IP privada
+  if (envUrl) {
+    // Si el .env contiene localhost o 127.0.0.1, usarlo
+    if (envUrl.includes("localhost") || envUrl.includes("127.0.0.1")) {
+      return envUrl;
+    }
+    // Si contiene ngrok, usarlo
+    if (envUrl.includes("ngrok-free.dev")) {
+      return envUrl;
+    }
+    // Si contiene una IP privada (192.168.x.x), redirigir a localhost
+    if (envUrl.includes("192.168")) {
+      return "http://localhost:3000/api";
+    }
+  }
+
+  // Si accedemos desde una IP privada, siempre usar localhost
+  if (currentUrl.includes("192.168")) {
+    return "http://localhost:3000/api";
+  }
+
+  return envUrl || "http://localhost:3000/api";
+};
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/api",
+  baseURL: getBaseURL(),
   headers: {
     "Content-Type": "application/json",
   },

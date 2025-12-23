@@ -496,29 +496,6 @@ const InsumosSemanal = () => {
                   Para generar insumos semanales, necesita crear una
                   planificación de menús primero.
                 </p>
-                <div className="d-flex gap-2">
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={irAPlanificacionMenus}
-                  >
-                    <i className="fas fa-calendar-plus me-1"></i>
-                    Ir a Planificación de Menús
-                  </button>
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={() => cambiarSemana(-1)}
-                  >
-                    <i className="fas fa-chevron-left me-1"></i>
-                    Ver semana anterior
-                  </button>
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={() => cambiarSemana(1)}
-                  >
-                    Ver semana siguiente
-                    <i className="fas fa-chevron-right ms-1"></i>
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -534,8 +511,8 @@ const InsumosSemanal = () => {
                     Insumos Requeridos para la Semana
                   </h5>
 
-                  <div className="table-responsive">
-                    <table className="table table-hover table-sm">
+                  <div className="table-container mt-3">
+                    <table className="table table-striped data-table">
                       <thead className="table-light">
                         <tr>
                           <th width="30%">Insumo</th>

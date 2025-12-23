@@ -92,6 +92,17 @@ export class ProveedorModel {
     }
   }
 
+  // Verificar si un proveedor tiene insumos activos asignados
+  static async hasActiveInsumos({ id }) {
+    const [result] = await connection.query(
+      `SELECT COUNT(*) as count
+       FROM ProveedorInsumo
+       WHERE id_proveedor = UUID_TO_BIN(?) AND estado = 'Activo';`,
+      [id]
+    );
+    return result[0].count > 0;
+  }
+
   static async update({ id, input }) {
     const { razonSocial, CUIT, direccion, telefono, mail, estado } = input;
 

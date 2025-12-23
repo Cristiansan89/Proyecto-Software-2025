@@ -142,16 +142,6 @@ const ListaPersonas = () => {
     ? Math.ceil(filteredPersonas.length / itemsPerPage)
     : 0;
 
-  console.log("ListaPersonas: Estado actual -", {
-    personas: personas.length,
-    filteredPersonas: filteredPersonas.length,
-    currentPersonas: currentPersonas.length,
-    searchQuery,
-    filterTipo,
-    filterEstado,
-    loading,
-  });
-
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
   };

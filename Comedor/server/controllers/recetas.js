@@ -70,6 +70,18 @@ export class RecetaController {
   delete = async (req, res) => {
     try {
       const { id } = req.params;
+
+      // Verificar si la receta tiene relaciones activas
+      const hasActiveRelations = await this.recetaModel.hasActiveRelations({
+        id,
+      });
+      if (hasActiveRelations) {
+        return res.status(409).json({
+          message:
+            "No se puede eliminar la receta porque está vinculada a registros activos",
+        });
+      }
+
       const deleted = await this.recetaModel.delete({ id });
 
       // Si no se encuentra el Receta, responde con 404

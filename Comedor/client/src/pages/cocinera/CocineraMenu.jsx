@@ -2,23 +2,15 @@ import { useState, useEffect } from "react";
 import PlanificacionSemanal from "../../pages/cocinera/PlanificacionSemanal";
 import PlanificacionCalendario from "../../pages/cocinera/PlanificacionCalendario";
 import InsumosSemanal from "../../pages/cocinera/InsumosSemanal";
-import PlanificacionMenuForm from "../../components/cocinera/PlanificacionMenuForm";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import "../../styles/PlanificacionMenus.css";
 
 const PlanificacionMenus = () => {
   const [activeTab, setActiveTab] = useState("planificacion");
-  const [modalVisible, setModalVisible] = useState(false);
   const [planificacionSeleccionada, setPlanificacionSeleccionada] =
     useState(null);
   const [planificaciones, setPlanificaciones] = useState([]);
   const [cargandoPlanificaciones, setCargandoPlanificaciones] = useState(false);
-  const [formularioPlanificacion, setFormularioPlanificacion] = useState({
-    fechaInicio: "",
-    fechaFin: "",
-    comensalesEstimados: "",
-    estado: "",
-  });
 
   // Cargar planificaciones al montar
   useEffect(() => {
@@ -67,42 +59,6 @@ const PlanificacionMenus = () => {
         setPlanificacionSeleccionada(planificacionASeleccionar);
       }
     }
-  };
-
-  const abrirModalNuevaPlanificacion = () => {
-    setFormularioPlanificacion({
-      fechaInicio: "",
-      fechaFin: "",
-      comensalesEstimados: "",
-      estado: "",
-    });
-    setModalVisible(true);
-  };
-
-  const cerrarModal = () => {
-    setModalVisible(false);
-    setFormularioPlanificacion({
-      fechaInicio: "",
-      fechaFin: "",
-      comensalesEstimados: "",
-      estado: "",
-    });
-  };
-
-  const manejarCambioFormulario = (e) => {
-    const { name, value } = e.target;
-    setFormularioPlanificacion((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const onSuccessForm = async () => {
-    // Recargar planificaciones
-    await cargarPlanificaciones();
-    cerrarModal();
-    // Cambiar a pestaña de calendario automáticamente
-    setActiveTab("calendario");
   };
 
   const handleSeleccionarPlanificacion = (planificacion) => {
@@ -236,16 +192,6 @@ const PlanificacionMenus = () => {
       <div className="tab-content">
         {tabs.find((tab) => tab.id === activeTab)?.component}
       </div>
-
-      <PlanificacionMenuForm
-        visible={modalVisible}
-        modalTipo="crear"
-        planificacionSeleccionada={null}
-        formularioPlanificacion={formularioPlanificacion}
-        onFormChange={manejarCambioFormulario}
-        onClose={cerrarModal}
-        onSuccess={onSuccessForm}
-      />
     </div>
   );
 };
