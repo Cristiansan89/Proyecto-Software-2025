@@ -93,7 +93,7 @@ const ListaTipoMerma = () => {
     <div>
       <div className="page-header">
         <div className="header-left">
-          <h2 className="page-title-sub">Gestión de Tipos de Mermas</h2>
+          <h2 className="page-title-sub">Gestionar Tipos de Mermas</h2>
         </div>
         <div className="header-actions">
           <button className="btn btn-primary" onClick={handleNuevo}>

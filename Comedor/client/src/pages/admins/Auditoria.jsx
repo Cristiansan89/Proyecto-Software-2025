@@ -154,11 +154,7 @@ const Auditoria = () => {
     })
 🔧 Acción: ${log.accion}
 📦 Módulo: ${log.modulo}
-📝 Descripción: ${log.descripcion}
-🌐 IP: ${log.ip_origen || "Sin IP"}
-
-📄 Detalles adicionales:
-${detallesTexto}`);
+📝 Descripción: ${log.descripcion}`);
   };
 
   const exportarLogs = () => {
@@ -396,6 +392,7 @@ ${detallesTexto}`);
               <i className="fas fa-file-pdf me-2"></i>
               Generar PDF
             </button>
+
             <button
               type="button"
               className="btn btn-outline-primary"
@@ -439,9 +436,9 @@ ${detallesTexto}`);
               </p>
             </div>
           ) : (
-            <div className="auditoria__table-responsive">
-              <table className="table auditoria__table auditoria__table-hover">
-                <thead className="auditoria__table-light">
+            <div className="table-container">
+              <table className="table table-striped data-table">
+                <thead className="table-light">
                   <tr>
                     <th width="15%">
                       <i className="fas fa-clock me-2"></i>
@@ -494,10 +491,6 @@ ${detallesTexto}`);
                           </span>
                           <small className="auditoria__usuario-email">
                             {log.email_usuario || "Sin email"}
-                          </small>
-                          <small className="auditoria__usuario-ip">
-                            <i className="fas fa-globe-americas me-1"></i>
-                            {log.ip_origen || "Sin IP"}
                           </small>
                         </div>
                       </td>

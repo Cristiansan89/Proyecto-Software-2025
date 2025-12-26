@@ -1,5 +1,7 @@
 import express from "express";
 import { corsMiddleware } from "./middlewares/cors.js";
+import { auditoriaMiddleware } from "./middlewares/auditoria.js";
+import { authRequired } from "./middlewares/auth.js";
 import { createAuthRouter } from "./routes/auth.js";
 
 // Importar todas las rutas
@@ -73,12 +75,15 @@ export const createApp = ({
   app.use(corsMiddleware());
   app.disable("x-powered-by");
 
-  // Rutas públicas (no requieren autenticación)
+  // Rutas públicas (no requieren autenticación ni auditoría)
   app.use("/api/auth", createAuthRouter({ usuarioModel }));
   app.use("/api/asistencias", createAsistenciaRouter({ asistenciaModel }));
 
-  // Comentamos temporalmente el middleware de autenticación
-  // app.use(authRequired)
+  // Middleware de autenticación - ACTIVADO
+  app.use(authRequired);
+
+  // Middleware de auditoría para todas las rutas siguientes
+  app.use(auditoriaMiddleware("Sistema", "CONSULTAR"));
 
   // Todas las rutas ahora son públicas
   app.use("/api/roles", createRolRouter({ rolModel }));

@@ -77,12 +77,10 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       const servicios = await recetasServiciosService.getServiciosPorReceta(
         receta.id_receta
       );
-      console.log("📚 Servicios cargados para receta:", servicios);
 
       if (servicios && Array.isArray(servicios)) {
         // Extraer los IDs de servicios del response
         const serviciosIds = servicios.map((srv) => srv.id_servicio);
-        console.log("✅ IDs de servicios mapeados:", serviciosIds);
         setFormData((prev) => ({
           ...prev,
           servicios: serviciosIds,
@@ -96,9 +94,17 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let nombrePermitido = value;
+
+    if (name === "nombreReceta") {
+      // Limitar el nombre de la receta a 25 caracteres solo letra y número
+      nombrePermitido = value
+        .replace(/[^a-zA-ZáéíóúÁÉÍÓÚ0-9]/g, " ")
+        .slice(0, 25);
+    }
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: nombrePermitido,
     }));
 
     // Limpiar error del campo cuando el usuario empiece a escribir
@@ -228,15 +234,10 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         // Guardar servicios en la tabla ServicioReceta
         if (formData.servicios.length > 0) {
           try {
-            console.log(
-              "📚 Guardando servicios para receta:",
-              savedReceta.id_receta
-            );
             await recetasServiciosService.actualizarServiciosReceta(
               savedReceta.id_receta,
               formData.servicios
             );
-            console.log("✅ Servicios guardados exitosamente");
           } catch (servicioError) {
             console.error("❌ Error guardando servicios:", servicioError);
             throw servicioError;
@@ -250,7 +251,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
             cantidadPorPorcion: parseInt(ingrediente.cantidadPorPorcion) || 0,
             unidadPorPorcion: normalizarUnidad(ingrediente.unidadPorPorcion),
           };
-          console.log("📤 Enviando ingrediente:", payload);
+
           try {
             await API.post(
               `/recetas/${savedReceta.id_receta}/insumos`,
@@ -259,20 +260,6 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           } catch (addError) {
             console.error("❌ Error completo:", addError);
             console.error("Response:", addError.response?.data);
-            if (addError.response?.data?.errors) {
-              console.log(
-                "❌ Errores de validación detallados:",
-                addError.response.data.errors
-              );
-              addError.response.data.errors.forEach((err, idx) => {
-                console.log(`  Error ${idx}:`, err);
-              });
-            } else {
-              console.log(
-                "❌ Error sin detalles de validación:",
-                addError.response?.data?.message || addError.message
-              );
-            }
             throw addError;
           }
         }
@@ -282,15 +269,10 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
         // Actualizar servicios en la tabla ServicioReceta
         try {
-          console.log(
-            "📚 Actualizando servicios para receta:",
-            receta.id_receta
-          );
           await recetasServiciosService.actualizarServiciosReceta(
             receta.id_receta,
             formData.servicios
           );
-          console.log("✅ Servicios actualizados exitosamente");
         } catch (servicioError) {
           console.error("❌ Error actualizando servicios:", servicioError);
           throw servicioError;
@@ -301,77 +283,34 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           const existingIngredients = await API.get(
             `/recetas/${receta.id_receta}/insumos`
           );
-          console.log(
-            "📋 Ingredientes existentes completos:",
-            existingIngredients.data
-          );
 
           if (existingIngredients.data && existingIngredients.data.insumos) {
-            console.log(
-              `🗑️ Eliminando ${existingIngredients.data.insumos.length} ingredientes existentes...`
-            );
             for (const ingrediente of existingIngredients.data.insumos) {
               try {
                 await API.delete(`/recetas/insumos/${ingrediente.id_item}`);
-                console.log(
-                  "✅ Ingrediente eliminado exitosamente:",
-                  ingrediente.id_item
-                );
               } catch (delError) {
-                console.log(
-                  "❌ Error eliminando ingrediente individual:",
-                  delError
-                );
                 // Continuar con el siguiente ingrediente
               }
             }
           }
         } catch (deleteError) {
-          console.log(
-            "❌ Error general al eliminar ingredientes existentes:",
-            deleteError
-          );
           // Continuar con la adición de nuevos ingredientes
         }
 
         // Agregar ingredientes actualizados
-        console.log(
-          `➕ Agregando ${ingredientes.length} ingredientes actualizados...`
-        );
+
         for (const ingrediente of ingredientes) {
-          console.log({
-            id_insumo: ingrediente.id_insumo,
-            cantidadPorPorcion: ingrediente.cantidadPorPorcion,
-            unidadPorPorcion: ingrediente.unidadPorPorcion,
-          });
           try {
             const payload = {
               id_insumo: ingrediente.id_insumo,
               cantidadPorPorcion: parseInt(ingrediente.cantidadPorPorcion) || 0,
               unidadPorPorcion: normalizarUnidad(ingrediente.unidadPorPorcion),
             };
-            console.log("📤 Enviando ingrediente:", payload);
+
             await API.post(`/recetas/${receta.id_receta}/insumos`, payload);
           } catch (addError) {
             console.error("❌ Error completo:", addError);
             console.error("Response completa:", addError.response?.data);
-            console.log("📋 Payload enviado fue:", payload);
-            if (addError.response?.data?.errors) {
-              console.log(
-                "❌ Errores de validación detallados:",
-                addError.response.data.errors
-              );
-              addError.response.data.errors.forEach((err, idx) => {
-                console.log(
-                  `  Error ${idx}: Campo "${err.field}" - ${err.message}`
-                );
-              });
-            } else {
-              console.log(
-                "❌ Error sin detalles de validación:",
-                addError.response?.data?.message || addError.message
-              );
-            }
             throw addError; // Re-lanzar para abortar el proceso
           }
         }
@@ -390,17 +329,8 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         setErrors(apiErrors);
         alert("Error de validación. Revise los campos marcados en rojo.");
       } else if (error.response?.data?.message) {
-        console.log(
-          "❌ Mensaje de error de la API:",
-          error.response.data.message
-        );
         alert(`Error: ${error.response.data.message}`);
       } else if (error.response) {
-        console.log(
-          "❌ Error de respuesta HTTP:",
-          error.response.status,
-          error.response.data
-        );
         alert(
           `Error del servidor (${error.response.status}): ${error.response.statusText}`
         );

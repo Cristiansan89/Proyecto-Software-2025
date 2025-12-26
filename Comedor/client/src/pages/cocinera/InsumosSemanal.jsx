@@ -429,7 +429,7 @@ const InsumosSemanal = () => {
   const semana = obtenerSemanaActual();
 
   return (
-    <div className="container-fluid mt-4">
+    <div className="container-fluid mt-1">
       <div className="card shadow-sm">
         <div className="card-header bg-light text-dark">
           <div className="d-flex justify-content-between align-items-center">

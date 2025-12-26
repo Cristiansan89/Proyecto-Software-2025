@@ -208,7 +208,7 @@ const ListaAlumnosGrados = () => {
   return (
     <div className="alumnos-grados-page">
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
           <h2 className="page-title-sub">Alumnos por Grado</h2>
         </div>
@@ -221,116 +221,120 @@ const ListaAlumnosGrados = () => {
       </div>
 
       {/* Filtros y búsqueda */}
-      <div className="filters-section">
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Buscar por nombre, apellido, DNI o grado..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
+      <div className="page-header mb-3">
+        <div className="header-left">
+          <div className="filters-section">
+            <div className="search-bar">
+              <input
+                type="text"
+                placeholder="Buscar por nombre, apellido, DNI o grado..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
 
-        <div className="filter-actions">
-          <select
-            className="filter-select"
-            value={gradoFilter}
-            onChange={(e) => setGradoFilter(e.target.value)}
-            disabled={loadingGrados}
-          >
-            <option value="">Todos los grados</option>
-            {loadingGrados ? (
-              <option disabled>Cargando grados...</option>
-            ) : (
-              grados.map((grado) => (
-                <option
-                  key={grado.idGrado || grado.id}
-                  value={grado.nombreGrado}
+            <div className="filter-actions">
+              <select
+                className="filter-select"
+                value={gradoFilter}
+                onChange={(e) => setGradoFilter(e.target.value)}
+                disabled={loadingGrados}
+              >
+                <option value="">Todos los grados</option>
+                {loadingGrados ? (
+                  <option disabled>Cargando grados...</option>
+                ) : (
+                  grados.map((grado) => (
+                    <option
+                      key={grado.idGrado || grado.id}
+                      value={grado.nombreGrado}
+                    >
+                      {grado.nombreGrado}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              <select
+                className="filter-select"
+                value={cicloFilter}
+                onChange={(e) => setCicloFilter(e.target.value)}
+              >
+                <option value="">Todos los ciclos</option>
+                {/* TODO: Aplicar filtro por ciclo en service */}
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+              </select>
+
+              {(searchTerm ||
+                gradoFilter ||
+                cicloFilter !== new Date().getFullYear().toString()) && (
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setGradoFilter("");
+                    setCicloFilter(new Date().getFullYear().toString());
+                  }}
+                  title="Limpiar filtros"
                 >
-                  {grado.nombreGrado}
-                </option>
-              ))
-            )}
-          </select>
-
-          <select
-            className="filter-select"
-            value={cicloFilter}
-            onChange={(e) => setCicloFilter(e.target.value)}
-          >
-            <option value="">Todos los ciclos</option>
-            {/* TODO: Aplicar filtro por ciclo en service */}
-            <option value="2024">2024</option>
-            <option value="2025">2025</option>
-            <option value="2026">2026</option>
-          </select>
-
-          {(searchTerm ||
-            gradoFilter ||
-            cicloFilter !== new Date().getFullYear().toString()) && (
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={() => {
-                setSearchTerm("");
-                setGradoFilter("");
-                setCicloFilter(new Date().getFullYear().toString());
-              }}
-              title="Limpiar filtros"
-            >
-              <i className="fas fa-times"></i>
-              Limpiar
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Acciones en lote */}
-      {selectedAlumnos.length > 0 && (
-        <div className="bulk-actions">
-          <span className="selected-count">
-            {selectedAlumnos.length} asignación(es) seleccionada(s)
-          </span>
-          <div className="bulk-buttons">
-            <button
-              className="btn btn-danger btn-sm"
-              onClick={handleBulkDelete}
-            >
-              <i className="fas fa-trash"></i>
-              Eliminar seleccionadas
-            </button>
+                  <i className="fas fa-times"></i>
+                  Limpiar
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Informaci\u00f3n de resultados y paginaci\u00f3n */}
-      <div className="results-info">
-        <div className="results-count">
-          Mostrando {paginatedAlumnos.length} de {filteredAlumnos.length}{" "}
-          alumnos{" "}
-          {searchTerm && (
-            <span className="filter-indicator">
-              filtrado por "{searchTerm}"
-            </span>
+          {/* Acciones en lote */}
+          {selectedAlumnos.length > 0 && (
+            <div className="bulk-actions">
+              <span className="selected-count">
+                {selectedAlumnos.length} asignación(es) seleccionada(s)
+              </span>
+              <div className="bulk-buttons">
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={handleBulkDelete}
+                >
+                  <i className="fas fa-trash"></i>
+                  Eliminar seleccionadas
+                </button>
+              </div>
+            </div>
           )}
-        </div>
-        <div className="page-size-selector d-flex align-items-center gap-2">
-          <label className="mb-0">
-            <strong>Registros por página:</strong>
-          </label>
-          <select
-            className="form-select form-select-sm"
-            style={{ width: "70px" }}
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-          </select>
+
+          {/* Información de resultados y paginación */}
+          <div className="results-info mb-1">
+            <div className="results-count">
+              Mostrando {paginatedAlumnos.length} de {filteredAlumnos.length}{" "}
+              alumnos{" "}
+              {searchTerm && (
+                <span className="filter-indicator">
+                  filtrado por "{searchTerm}"
+                </span>
+              )}
+            </div>
+            <div className="page-size-selector d-flex align-items-center gap-2">
+              <label className="mb-0">
+                <strong>Registros por página:</strong>
+              </label>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: "70px" }}
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 

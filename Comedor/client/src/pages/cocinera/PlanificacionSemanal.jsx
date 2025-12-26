@@ -74,7 +74,7 @@ const PlanificacionSemanal = () => {
     <div className="content-page">
       <div className="page-header">
         <div className="header-left">
-          <h1 className="page-title-sub">Planificaciones Semanales</h1>
+          <h2 className="page-title-sub">Planificaciones Semanales</h2>
         </div>
         <div className="header-actions">
           <button

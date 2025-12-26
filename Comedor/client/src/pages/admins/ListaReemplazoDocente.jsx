@@ -226,9 +226,9 @@ const ListaReemplazosGrados = () => {
   return (
     <div className="reemplazos-page">
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
-          <h1 className="page-title-sub">Reemplazos de Docentes</h1>
+          <h2 className="page-title-sub">Reemplazos de Docentes</h2>
         </div>
         <div className="header-actions">
           <button className="btn btn-primary-new" onClick={handleCreate}>
@@ -239,108 +239,115 @@ const ListaReemplazosGrados = () => {
       </div>
 
       {/* Filtros y búsqueda */}
-      <div className="filters-section">
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Buscar por suplente, titular, grado o DNI..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
+      <div className="page-header mb-3">
+        <div className="header-left">
+          <div className="filters-section">
+            <div className="search-bar">
+              <input
+                type="text"
+                placeholder="Buscar por suplente, titular, grado o DNI..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
 
-        <div className="filter-actions">
-          <select
-            className="filter-select"
-            value={gradoFilter}
-            onChange={(e) => setGradoFilter(e.target.value)}
-            disabled={loadingGrados}
-          >
-            <option value="">Todos los grados</option>
-            {loadingGrados ? (
-              <option disabled>Cargando grados...</option>
-            ) : (
-              grados.map((grado) => (
-                <option key={grado.idGrado || grado.id} value={grado.nombre}>
-                  {grado.nombre}
-                </option>
-              ))
-            )}
-          </select>
+            <div className="filter-actions">
+              <select
+                className="filter-select"
+                value={gradoFilter}
+                onChange={(e) => setGradoFilter(e.target.value)}
+                disabled={loadingGrados}
+              >
+                <option value="">Todos los grados</option>
+                {loadingGrados ? (
+                  <option disabled>Cargando grados...</option>
+                ) : (
+                  grados.map((grado) => (
+                    <option
+                      key={grado.idGrado || grado.id}
+                      value={grado.nombre}
+                    >
+                      {grado.nombre}
+                    </option>
+                  ))
+                )}
+              </select>
 
-          <select
-            className="filter-select"
-            value={estadoFilter}
-            onChange={(e) => setEstadoFilter(e.target.value)}
-          >
-            <option value="">Todos los estados</option>
-            {estadosUnicos.map((estado) => (
-              <option key={estado} value={estado}>
-                {estado}
-              </option>
-            ))}
-          </select>
+              <select
+                className="filter-select"
+                value={estadoFilter}
+                onChange={(e) => setEstadoFilter(e.target.value)}
+              >
+                <option value="">Todos los estados</option>
+                {estadosUnicos.map((estado) => (
+                  <option key={estado} value={estado}>
+                    {estado}
+                  </option>
+                ))}
+              </select>
 
-          <select
-            className="filter-select"
-            value={motivoFilter}
-            onChange={(e) => setMotivoFilter(e.target.value)}
-          >
-            <option value="">Todos los motivos</option>
-            {motivosUnicos.map((motivo) => (
-              <option key={motivo} value={motivo}>
-                {motivo}
-              </option>
-            ))}
-          </select>
+              <select
+                className="filter-select"
+                value={motivoFilter}
+                onChange={(e) => setMotivoFilter(e.target.value)}
+              >
+                <option value="">Todos los motivos</option>
+                {motivosUnicos.map((motivo) => (
+                  <option key={motivo} value={motivo}>
+                    {motivo}
+                  </option>
+                ))}
+              </select>
 
-          {(searchTerm || gradoFilter || estadoFilter || motivoFilter) && (
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={() => {
-                setSearchTerm("");
-                setGradoFilter("");
-                setEstadoFilter("");
-                setMotivoFilter("");
-              }}
-              title="Limpiar filtros"
-            >
-              <i className="fas fa-times"></i>
-              Limpiar
-            </button>
-          )}
-        </div>
-      </div>
+              {(searchTerm || gradoFilter || estadoFilter || motivoFilter) && (
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setGradoFilter("");
+                    setEstadoFilter("");
+                    setMotivoFilter("");
+                  }}
+                  title="Limpiar filtros"
+                >
+                  <i className="fas fa-times"></i>
+                  Limpiar
+                </button>
+              )}
+            </div>
+          </div>
 
-      {/* Información de resultados y paginación */}
-      <div className="results-info">
-        <div className="results-count">
-          Mostrando {paginatedReemplazos.length} de {filteredReemplazos.length}{" "}
-          reemplazos{" "}
-          {searchTerm && (
-            <span className="filter-indicator">
-              filtrado por "{searchTerm}"
-            </span>
-          )}
-        </div>
-        <div className="page-size-selector d-flex align-items-center gap-2">
-          <label className="mb-0">
-            <strong>Registros por página:</strong>
-          </label>
-          <select
-            className="form-select form-select-sm"
-            style={{ width: "70px" }}
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-          </select>
+          {/* Información de resultados y paginación */}
+          <div className="results-info">
+            <div className="results-count">
+              Mostrando {paginatedReemplazos.length} de{" "}
+              {filteredReemplazos.length} reemplazos{" "}
+              {searchTerm && (
+                <span className="filter-indicator">
+                  filtrado por "{searchTerm}"
+                </span>
+              )}
+            </div>
+            <div className="page-size-selector d-flex align-items-center gap-2">
+              <label className="mb-0">
+                <strong>Registros por página:</strong>
+              </label>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: "70px" }}
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 

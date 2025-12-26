@@ -179,7 +179,7 @@ const ListaInsumos = () => {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
           <h1 className="page-title">
             <i className="fas fa-boxes me-2"></i>
@@ -196,240 +196,244 @@ const ListaInsumos = () => {
         </div>
       </div>
 
-      <div className="search-filters">
-        <div className="search-bar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Buscar por nombre, descripción, unidad o categoría..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="filter-actions">
-          <select
-            className="filter-select"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="todos">Todos los estados</option>
-            <option value="Activo">Activos</option>
-            <option value="Inactivo">Inactivos</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Selector de tamaño de página y Paginación */}
-      <div className="page-size-selector d-flex align-items-center gap-2 ml-2 mb-2">
-        <label className="mb-0">
-          <strong>
-            <i>Registros por página</i>:
-          </strong>
-        </label>
-        <select
-          className="form-select"
-          style={{ width: "60px" }}
-          value={pageSize}
-          onChange={(e) => {
-            setPageSize(Number(e.target.value));
-            setCurrentPage(1);
-          }}
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-        </select>
-        <span className="ms-2 text-muted">
-          Total: {filteredInsumos.length} registros
-        </span>
-      </div>
-
-      <div className="table-container">
-        {loading ? (
-          <div className="loading-spinner">
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Cargando insumos...</p>
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className="table table-striped data-table table-sm">
-              <thead>
-                <tr>
-                  <th style={{ fontSize: "0.75rem" }}>#</th>
-                  <th style={{ fontSize: "0.75rem" }}>Insumo</th>
-                  <th style={{ fontSize: "0.75rem" }}>Descripción</th>
-                  <th style={{ fontSize: "0.75rem" }}>Categoría</th>
-                  <th style={{ fontSize: "0.75rem" }}>Unidad</th>
-                  <th style={{ fontSize: "0.75rem" }}>Stock Mín.</th>
-                  <th style={{ fontSize: "0.75rem" }}>Stock Actual</th>
-                  <th style={{ fontSize: "0.75rem" }}>Stock Máx.</th>
-                  <th style={{ fontSize: "0.75rem" }}>Estado</th>
-                  <th style={{ fontSize: "0.75rem" }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedInsumos.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="no-data">
-                      No se encontraron insumos
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedInsumos.map((insumo, index) => {
-                    const stockStatus = getStockStatus(insumo);
-                    return (
-                      <tr key={insumo.idInsumo || index}>
-                        <td style={{ fontSize: "0.75rem" }}>
-                          <strong>
-                            {(currentPage - 1) * pageSize + index + 1}
-                          </strong>
-                        </td>
-                        <td
-                          className="truncate-cell"
-                          title={insumo.nombreInsumo}
-                          style={{ fontSize: "0.75rem" }}
-                        >
-                          {insumo.nombreInsumo || "-"}
-                        </td>
-                        <td
-                          className="truncate-cell"
-                          title={insumo.descripcion}
-                          style={{ fontSize: "0.75rem" }}
-                        >
-                          {insumo.descripcion || "Sin descripción"}
-                        </td>
-                        <td style={{ fontSize: "0.75rem" }}>
-                          {insumo.categoria || ""}
-                        </td>
-                        <td style={{ fontSize: "0.75rem" }}>
-                          {insumo.unidadMedida || ""}
-                        </td>
-                        <td style={{ fontSize: "0.75rem" }}>
-                          {formatStockActual(insumo.stockMinimo)}
-                        </td>
-                        <td style={{ fontSize: "0.75rem" }}>
-                          <span className={`fw-bold ${stockStatus.color}`}>
-                            {formatStockActual(insumo.stockActual)}
-                          </span>
-                        </td>
-                        <td style={{ fontSize: "0.75rem" }}>
-                          {formatStockActual(insumo.stockMaximo)}
-                        </td>
-                        <td style={{ fontSize: "0.75rem" }}>
-                          <span
-                            className={`status-badge-insumo ${String(
-                              insumo.estado || ""
-                            ).toLowerCase()}`}
-                          >
-                            {insumo.estado || ""}
-                          </span>
-                        </td>
-                        <td>
-                          <div
-                            className="action-buttons"
-                            style={{ gap: "2px" }}
-                          >
-                            <button
-                              className="btn-action btn-view"
-                              onClick={() => handleView(insumo)}
-                              title="Ver detalles"
-                              style={{
-                                padding: "4px 6px",
-                                fontSize: "0.75rem",
-                              }}
-                            >
-                              <i className="fas fa-eye"></i>
-                            </button>
-                            <button
-                              className="btn-action btn-edit"
-                              onClick={() => handleEdit(insumo)}
-                              title="Editar"
-                              style={{
-                                padding: "4px 6px",
-                                fontSize: "0.75rem",
-                              }}
-                            >
-                              <i className="fas fa-edit"></i>
-                            </button>
-                            <button
-                              className="btn-action btn-delete"
-                              onClick={() => handleDelete(insumo)}
-                              title="Eliminar"
-                              style={{
-                                padding: "4px 6px",
-                                fontSize: "0.75rem",
-                              }}
-                            >
-                              <i className="fas fa-trash"></i>
-                            </button>
-                            <button
-                              className={`btn-action ${
-                                insumo.estado === "Activo"
-                                  ? "btn-delete"
-                                  : "btn-assign"
-                              }`}
-                              onClick={() =>
-                                handleChangeStatus(
-                                  insumo,
-                                  insumo.estado === "Activo"
-                                    ? "Inactivo"
-                                    : "Activo"
-                                )
-                              }
-                              title={
-                                insumo.estado === "Activo"
-                                  ? "Desactivar"
-                                  : "Activar"
-                              }
-                              style={{
-                                padding: "4px 6px",
-                                fontSize: "0.75rem",
-                              }}
-                            >
-                              <i
-                                className={`fas ${
-                                  insumo.estado === "Activo"
-                                    ? "fa-times"
-                                    : "fa-check"
-                                }`}
-                              ></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-            {totalPages > 1 && (
-              <div className="table-footer">
-                <div className="pagination">
-                  <button
-                    className="pagination-btn"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <i className="fas fa-chevron-left"></i>
-                  </button>
-                  <div className="pagination-info">
-                    Página {currentPage} de {totalPages} (
-                    {filteredInsumos.length} registros)
-                  </div>
-                  <button
-                    className="pagination-btn"
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  >
-                    <i className="fas fa-chevron-right"></i>
-                  </button>
-                </div>
+      <div className="tab-content">
+        {/* Filtros y Búsqueda */}
+        <div className="page-header mb-3">
+          <div className="header-left">
+            <div className="search-filters">
+              <div className="search-bar">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Buscar por nombre, descripción, unidad o categoría..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-            )}
+              <div className="filter-actions">
+                <select
+                  className="filter-select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="todos">Todos los estados</option>
+                  <option value="Activo">Activos</option>
+                  <option value="Inactivo">Inactivos</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Selector de tamaño de página y Paginación */}
+            <div className="page-size-selector mt-3">
+              <span className="text-dark">Registros por página</span>
+              <select
+                className="form-select"
+                style={{ width: "60px" }}
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+              <span className="ms-2 text-muted">
+                Total {filteredInsumos.length} registros
+              </span>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Tabla de Insumos */}
+        <div className="table-container">
+          {loading ? (
+            <div className="loading-spinner">
+              <i className="fas fa-spinner fa-spin"></i>
+              <p>Cargando insumos...</p>
+            </div>
+          ) : (
+            <div className="table-container">
+              <table className="table table-striped data-table table-sm">
+                <thead>
+                  <tr>
+                    <th style={{ fontSize: "0.75rem" }}>#</th>
+                    <th style={{ fontSize: "0.75rem" }}>Insumo</th>
+                    <th style={{ fontSize: "0.75rem" }}>Descripción</th>
+                    <th style={{ fontSize: "0.75rem" }}>Categoría</th>
+                    <th style={{ fontSize: "0.75rem" }}>Unidad</th>
+                    <th style={{ fontSize: "0.75rem" }}>Stock Mín.</th>
+                    <th style={{ fontSize: "0.75rem" }}>Stock Actual</th>
+                    <th style={{ fontSize: "0.75rem" }}>Stock Máx.</th>
+                    <th style={{ fontSize: "0.75rem" }}>Estado</th>
+                    <th style={{ fontSize: "0.75rem" }}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedInsumos.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="no-data">
+                        No se encontraron insumos
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedInsumos.map((insumo, index) => {
+                      const stockStatus = getStockStatus(insumo);
+                      return (
+                        <tr key={insumo.idInsumo || index}>
+                          <td style={{ fontSize: "0.75rem" }}>
+                            <strong>
+                              {(currentPage - 1) * pageSize + index + 1}
+                            </strong>
+                          </td>
+                          <td
+                            className="truncate-cell"
+                            title={insumo.nombreInsumo}
+                            style={{ fontSize: "0.75rem" }}
+                          >
+                            {insumo.nombreInsumo || "-"}
+                          </td>
+                          <td
+                            className="truncate-cell"
+                            title={insumo.descripcion}
+                            style={{ fontSize: "0.75rem" }}
+                          >
+                            {insumo.descripcion || "Sin descripción"}
+                          </td>
+                          <td style={{ fontSize: "0.75rem" }}>
+                            {insumo.categoria || ""}
+                          </td>
+                          <td style={{ fontSize: "0.75rem" }}>
+                            {insumo.unidadMedida || ""}
+                          </td>
+                          <td style={{ fontSize: "0.75rem" }}>
+                            {formatStockActual(insumo.stockMinimo)}
+                          </td>
+                          <td style={{ fontSize: "0.75rem" }}>
+                            <span className={`fw-bold ${stockStatus.color}`}>
+                              {formatStockActual(insumo.stockActual)}
+                            </span>
+                          </td>
+                          <td style={{ fontSize: "0.75rem" }}>
+                            {formatStockActual(insumo.stockMaximo)}
+                          </td>
+                          <td style={{ fontSize: "0.75rem" }}>
+                            <span
+                              className={`status-badge-insumo ${String(
+                                insumo.estado || ""
+                              ).toLowerCase()}`}
+                            >
+                              {insumo.estado || ""}
+                            </span>
+                          </td>
+                          <td>
+                            <div
+                              className="action-buttons"
+                              style={{ gap: "2px" }}
+                            >
+                              <button
+                                className="btn-action btn-view"
+                                onClick={() => handleView(insumo)}
+                                title="Ver detalles"
+                                style={{
+                                  padding: "4px 6px",
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                <i className="fas fa-eye"></i>
+                              </button>
+                              <button
+                                className="btn-action btn-edit"
+                                onClick={() => handleEdit(insumo)}
+                                title="Editar"
+                                style={{
+                                  padding: "4px 6px",
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                <i className="fas fa-edit"></i>
+                              </button>
+                              <button
+                                className="btn-action btn-delete"
+                                onClick={() => handleDelete(insumo)}
+                                title="Eliminar"
+                                style={{
+                                  padding: "4px 6px",
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                              <button
+                                className={`btn-action ${
+                                  insumo.estado === "Activo"
+                                    ? "btn-delete"
+                                    : "btn-assign"
+                                }`}
+                                onClick={() =>
+                                  handleChangeStatus(
+                                    insumo,
+                                    insumo.estado === "Activo"
+                                      ? "Inactivo"
+                                      : "Activo"
+                                  )
+                                }
+                                title={
+                                  insumo.estado === "Activo"
+                                    ? "Desactivar"
+                                    : "Activar"
+                                }
+                                style={{
+                                  padding: "4px 6px",
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                <i
+                                  className={`fas ${
+                                    insumo.estado === "Activo"
+                                      ? "fa-times"
+                                      : "fa-check"
+                                  }`}
+                                ></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+              {totalPages > 1 && (
+                <div className="table-footer">
+                  <div className="pagination">
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+                    <div className="pagination-info">
+                      Página {currentPage} de {totalPages} (
+                      {filteredInsumos.length} registros)
+                    </div>
+                    <button
+                      className="pagination-btn"
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                    >
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal */}

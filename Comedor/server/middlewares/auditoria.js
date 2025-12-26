@@ -14,8 +14,14 @@ const auditoriaMiddleware = (modulo, accion) => {
       // Verificar si fue exitoso
       const esExitoso = res.statusCode < 400 && data.success !== false;
 
-      // Solo registrar si fue exitoso
-      if (esExitoso) {
+      // Solo registrar si fue exitoso Y es una acción que modifica datos
+      // POST (crear), PUT/PATCH (actualizar), DELETE (eliminar)
+      // NO registrar GET (consultas)
+      const metodoModifica = ["POST", "PUT", "PATCH", "DELETE"].includes(
+        req.method
+      );
+
+      if (esExitoso && metodoModifica) {
         // Obtener información del usuario
         const usuario = req.user || {};
         const ip =
@@ -25,56 +31,67 @@ const auditoriaMiddleware = (modulo, accion) => {
           "";
         const userAgent = req.headers["user-agent"] || "";
 
+        // Mapear el método HTTP a la acción de auditoría
+        let accionAuditoria = "CONSULTAR";
+        if (req.method === "POST") accionAuditoria = "CREAR";
+        else if (req.method === "PUT" || req.method === "PATCH")
+          accionAuditoria = "ACTUALIZAR";
+        else if (req.method === "DELETE") accionAuditoria = "ELIMINAR";
+
+        // Obtener nombre del usuario
+        const nombreUsuario =
+          usuario.nombreUsuario ||
+          usuario.nombre ||
+          usuario.nombreUsuario ||
+          "Sistema";
+
+        console.log(
+          `📝 Auditoría: ${accionAuditoria} en ${modulo} por ${nombreUsuario}`
+        );
+
         // Preparar descripción basada en la acción
-        let descripcion = `${accion} en ${modulo}`;
+        let descripcion = `${accionAuditoria} en ${modulo}`;
         let detalles = null;
 
         // Capturar detalles según el tipo de acción
-        if (accion === "CREAR") {
+        if (accionAuditoria === "CREAR") {
           descripcion = `Creó un nuevo registro en ${modulo}`;
           detalles = {
             recursoCreado: data.data?.id || data.data?.id_resource || "N/A",
             datos: req.body,
           };
-        } else if (accion === "ACTUALIZAR") {
+        } else if (accionAuditoria === "ACTUALIZAR") {
           descripcion = `Actualizó un registro en ${modulo}`;
           detalles = {
             idRecurso: req.params.id || req.params.idRecurso,
             cambios: req.body,
           };
-        } else if (accion === "ELIMINAR") {
+        } else if (accionAuditoria === "ELIMINAR") {
           descripcion = `Eliminó un registro de ${modulo}`;
           detalles = {
             idRecursoEliminado: req.params.id || req.params.idRecurso,
           };
-        } else if (accion === "CONSULTAR") {
-          descripcion = `Consultó datos de ${modulo}`;
-          detalles = {
-            filtros: req.query,
-            resultados: data.data?.length || 0,
-          };
-        } else if (accion === "DESCARGAR") {
-          descripcion = `Descargó reporte de ${modulo}`;
-          detalles = {
-            formato: req.query.formato || "PDF",
-            parametros: req.query,
-          };
         }
 
-        // Registrar en auditoría (sin esperar respuesta)
-        AuditoriaLog.crear({
-          id_usuario: usuario.id_usuario || usuario.idUsuario || null,
-          nombreUsuario: usuario.nombre || usuario.nombreUsuario || "Sistema",
-          email: usuario.email || "",
-          accion,
-          modulo,
-          descripcion,
-          detalles,
-          ip: ip.split(",")[0].trim(),
-          userAgent,
-        }).catch((error) => {
-          console.error("Error al registrar en auditoría:", error);
-        });
+        // Registrar en auditoría
+        const idUsuarioAuditoria =
+          usuario.id_usuario || usuario.idUsuario || usuario.id;
+
+        if (idUsuarioAuditoria) {
+          AuditoriaLog.crear({
+            id_usuario: idUsuarioAuditoria,
+            nombreUsuario: nombreUsuario,
+            email: usuario.email || "",
+            accion: accionAuditoria,
+            modulo,
+            descripcion,
+            detalles,
+            ip: ip.split(",")[0].trim(),
+            userAgent,
+          }).catch((error) => {
+            console.error("❌ Error al registrar en auditoría:", error);
+          });
+        }
       }
 
       // Llamar al método original

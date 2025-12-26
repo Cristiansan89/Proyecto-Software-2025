@@ -17,7 +17,7 @@ import Persona from "./pages/admins/Personas";
 import PersonaGrado from "./pages/admins/PersonaGrado";
 import Auditoria from "./pages/admins/Auditoria";
 import RegistroAsistenciasMovil from "./pages/movil/RegistroAsistenciasMovil.jsx";
-import TestAsistencias from "./pages/movil/TestAsistencias.jsx";
+import RegistroExitoso from "./pages/movil/RegistroExitoso.jsx";
 import GestionAsistencias from "./pages/docente/GestionAsistencias";
 import DocenteDashboard from "./pages/docente/DocenteDashboard";
 import DocenteAsistencias from "./pages/docente/DocenteAsistencias";
@@ -78,11 +78,8 @@ function App() {
               element={<RegistroAsistenciasMovil />}
             />
 
-            {/* Ruta de prueba para debuggear asistencias */}
-            <Route
-              path="/test/asistencias/:token"
-              element={<TestAsistencias />}
-            />
+            {/* Ruta pública para registro exitoso */}
+            <Route path="/registro-exitoso" element={<RegistroExitoso />} />
 
             {/* Rutas protegidas del panel administrativo */}
             <Route

@@ -567,10 +567,10 @@ const GestionRolesPermisos = () => {
     // NOTE: handler moved to component scope: see `handlePageChange` above
 
     return (
-      <div>
-        <div className="page-header">
+      <div className="tab-content">
+        <div className="page-header mb-3">
           <div className="header-left">
-            <h1 className="page-title-sub">Lista de Permisos</h1>
+            <h2 className="page-title-sub">Gestionar Permisos</h2>
           </div>
           <div className="header-actions">
             <button
@@ -584,87 +584,93 @@ const GestionRolesPermisos = () => {
         </div>
 
         {/* Controles de búsqueda y filtros */}
-        <div className="search-filters">
-          <div className="search-bar">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Buscar por descripción o módulo..."
-              value={searchQuery}
-              onChange={handleSearch}
-            />
-          </div>
+        <div className="page-header mb-3">
+          <div className="header-left">
+            <div className="search-filters">
+              <div className="search-bar">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Buscar por descripción o módulo..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                />
+              </div>
 
-          <div className="filter-actions">
-            <select
-              className="filter-select"
-              value={filterModulo}
-              onChange={handleFilterModulo}
-            >
-              <option value="">Todos los módulos</option>
-              {modulosUnicos.map((modulo) => (
-                <option key={modulo} value={modulo}>
-                  {modulo}
-                </option>
-              ))}
-            </select>
+              <div className="filter-actions">
+                <select
+                  className="filter-select"
+                  value={filterModulo}
+                  onChange={handleFilterModulo}
+                >
+                  <option value="">Todos los módulos</option>
+                  {modulosUnicos.map((modulo) => (
+                    <option key={modulo} value={modulo}>
+                      {modulo}
+                    </option>
+                  ))}
+                </select>
 
-            <select
-              className="filter-select"
-              value={filterAccion}
-              onChange={handleFilterAccion}
-            >
-              <option value="">Todas las acciones</option>
-              {accionesUnicas.map((accion) => (
-                <option key={accion} value={accion}>
-                  {accion}
-                </option>
-              ))}
-            </select>
+                <select
+                  className="filter-select"
+                  value={filterAccion}
+                  onChange={handleFilterAccion}
+                >
+                  <option value="">Todas las acciones</option>
+                  {accionesUnicas.map((accion) => (
+                    <option key={accion} value={accion}>
+                      {accion}
+                    </option>
+                  ))}
+                </select>
 
-            <select
-              className="filter-select"
-              value={filterEstado}
-              onChange={handleFilterEstado}
-            >
-              <option value="">Todos los estados</option>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
+                <select
+                  className="filter-select"
+                  value={filterEstado}
+                  onChange={handleFilterEstado}
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
 
-            {(searchQuery ||
-              filterModulo ||
-              filterAccion ||
-              filterEstado ||
-              filterCuentaHabilitada) && (
-              <button
-                className="btn btn-outline-secondary btn-sm"
-                onClick={clearFilters}
-                title="Limpiar filtros"
-              >
-                <i className="fas fa-times"></i>
-              </button>
+                {(searchQuery ||
+                  filterModulo ||
+                  filterAccion ||
+                  filterEstado ||
+                  filterCuentaHabilitada) && (
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={clearFilters}
+                    title="Limpiar filtros"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Acciones en lote */}
+            {selectedPermisos.length > 0 && (
+              <div className="bulk-actions">
+                <div className="selected-info">
+                  <span>
+                    {selectedPermisos.length} permiso(s) seleccionado(s)
+                  </span>
+                </div>
+                <div className="bulk-buttons">
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={handleBulkDelete}
+                  >
+                    <i className="fas fa-trash me-1"></i>
+                    Eliminar Seleccionados
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
-
-        {/* Acciones en lote */}
-        {selectedPermisos.length > 0 && (
-          <div className="bulk-actions">
-            <div className="selected-info">
-              <span>{selectedPermisos.length} permiso(s) seleccionado(s)</span>
-            </div>
-            <div className="bulk-buttons">
-              <button
-                className="btn btn-danger btn-sm"
-                onClick={handleBulkDelete}
-              >
-                <i className="fas fa-trash me-1"></i>
-                Eliminar Seleccionados
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Tabla de permisos */}
         <div className="table-container">
@@ -906,10 +912,10 @@ const GestionRolesPermisos = () => {
     const currentRoles = filteredRoles.slice(startIndexRoles, endIndexRoles);
 
     return (
-      <div>
-        <div className="page-header">
+      <div className="tab-content">
+        <div className="page-header mb-3">
           <div className="header-left">
-            <h2 className="page-title-sub">Lista de Roles</h2>
+            <h2 className="page-title-sub">Gestionar Roles</h2>
           </div>
           <div className="header-actions">
             <button className="btn btn-primary-new" onClick={handleNuevoRol}>
@@ -919,47 +925,52 @@ const GestionRolesPermisos = () => {
         </div>
 
         {/* Controles de busqueda y filtros */}
-        <div className="search-filters">
-          <div className="search-bar">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Buscar por Nombre de Roles..."
-              value={searchQuery}
-              onChange={handleSearch}
-            />
-          </div>
 
-          <div className="filter-actions">
-            <select
-              className="filter-select"
-              value={filterCuentaHabilitada}
-              onChange={handleFilterCuentaHabilitada}
-            >
-              <option value="">Cuenta Habilitada</option>
-              <option value="Si">Si</option>
-              <option value="No">No</option>
-            </select>
+        <div className="page-header mb-3">
+          <div className="header-left">
+            <div className="search-filters">
+              <div className="search-bar">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Buscar por Nombre de Roles..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                />
+              </div>
 
-            <select
-              className="filter-select"
-              value={filterEstado}
-              onChange={handleFilterEstado}
-            >
-              <option value="">Todos los estados</option>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
+              <div className="filter-actions">
+                <select
+                  className="filter-select"
+                  value={filterCuentaHabilitada}
+                  onChange={handleFilterCuentaHabilitada}
+                >
+                  <option value="">Cuenta Habilitada</option>
+                  <option value="Si">Si</option>
+                  <option value="No">No</option>
+                </select>
 
-            {(searchQuery || filterCuentaHabilitada || filterEstado) && (
-              <button
-                className="btn btn-outline-secondary btn-sm"
-                onClick={clearFilters}
-                title="Limpiar filtros"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            )}
+                <select
+                  className="filter-select"
+                  value={filterEstado}
+                  onChange={handleFilterEstado}
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
+
+                {(searchQuery || filterCuentaHabilitada || filterEstado) && (
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={clearFilters}
+                    title="Limpiar filtros"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1061,8 +1072,8 @@ const GestionRolesPermisos = () => {
 
   // Renderizar vista de asignaciones
   const renderVistaAsignaciones = () => (
-    <div>
-      <div className="page-header">
+    <div className="tab-content">
+      <div className="page-header mb-3">
         <div className="header-left">
           <h2 className="page-title-sub">Asignación de Permisos a Roles</h2>
         </div>

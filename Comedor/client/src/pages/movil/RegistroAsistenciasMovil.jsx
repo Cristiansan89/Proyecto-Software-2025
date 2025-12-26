@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api.js";
 import "./RegistroAsistenciasMovil.css";
 
 const RegistroAsistenciasMovil = () => {
   const { token } = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -152,13 +153,11 @@ const RegistroAsistenciasMovil = () => {
       setError("");
       setSuccess("");
 
-      // Validar que hay asistencias para guardar
       if (Object.keys(asistencias).length === 0) {
         setError("No hay asistencias para guardar.");
         return;
       }
 
-      // Preparar datos para enviar
       const asistenciasArray = Object.entries(asistencias).map(
         ([idAlumnoGrado, tipoAsistencia]) => ({
           idAlumnoGrado: parseInt(idAlumnoGrado),
@@ -166,48 +165,25 @@ const RegistroAsistenciasMovil = () => {
         })
       );
 
-      console.log("💾 Guardando asistencias:", asistenciasArray);
-
       const response = await API.post(`/asistencias/registro/${token}`, {
         asistencias: asistenciasArray,
       });
 
-      console.log("✅ Respuesta del servidor:", response.data);
-
-      setSuccess(
-        `✅ Asistencias guardadas correctamente. ${response.data.registradas} registros actualizados.`
-      );
-
-      // Opcional: recargar datos para mostrar el estado actualizado
-      setTimeout(() => {
-        cargarDatosRegistro();
-      }, 1500);
+      // 1. Redirigir inmediatamente a la pantalla de éxito
+      navigate("/registro-exitoso", {
+        state: {
+          mensaje: "Asistencias guardadas correctamente.",
+          registradas: response.data.registradas,
+          servicio: datosRegistro.servicio?.nombre || "",
+        },
+      });
     } catch (error) {
       console.error("❌ Error al guardar asistencias:", error);
-      console.error("🔍 Error details:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
 
       if (error.response?.status === 401) {
-        setError(
-          "El enlace ha expirado. Contacte al administrador para obtener un nuevo enlace."
-        );
-      } else if (error.response?.status === 400) {
-        setError(
-          `Error en los datos: ${
-            error.response.data.message || "Datos inválidos"
-          }`
-        );
-      } else if (error.response?.status === 500) {
-        setError(
-          "Error interno del servidor. Intente nuevamente en unos momentos."
-        );
+        setError("El enlace ha expirado. Contacte al administrador.");
       } else {
-        setError(
-          `Error al guardar las asistencias: ${error.message}. Intente nuevamente.`
-        );
+        setError(`Error al guardar: ${error.message}`);
       }
     } finally {
       setGuardando(false);

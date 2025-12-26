@@ -215,9 +215,9 @@ const ListaPersonas = () => {
 
   return (
     <div className="content-page">
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
-          <h1 className="page-title-sub">Lista de Personas</h1>
+          <h2 className="page-title-sub">Lista de Personas</h2>
         </div>
         <div className="header-actions">
           <button
@@ -231,67 +231,61 @@ const ListaPersonas = () => {
       </div>
 
       {/* Filtros y búsqueda */}
-      <div className="search-filters">
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Buscar por nombre, apellido, documento o rol..."
-            value={searchQuery}
-            onChange={handleSearch}
-            className="search-input"
-          />
+      <div className="page-header mb-3">
+        <div className="header-left">
+          <div className="search-filters">
+            <div className="search-bar">
+              <input
+                type="text"
+                placeholder="Buscar por nombre, apellido, documento o rol..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="search-input"
+              />
+            </div>
+
+            <div className="filter-actions">
+              <select
+                className="filter-select"
+                value={filterTipo}
+                onChange={handleFilterTipo}
+                disabled={loadingRoles}
+              >
+                <option value="">Todos los roles</option>
+                {loadingRoles ? (
+                  <option disabled>Cargando roles...</option>
+                ) : (
+                  roles.map((rol) => (
+                    <option key={rol.idRol || rol.id} value={rol.nombreRol}>
+                      {rol.nombreRol}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              <select
+                className="filter-select"
+                value={filterEstado}
+                onChange={handleFilterEstado}
+              >
+                <option value="">Todos los estados</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
+
+              {(searchQuery || filterTipo || filterEstado) && (
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={clearFilters}
+                  title="Limpiar filtros"
+                >
+                  <i className="fas fa-times"></i>
+                  Limpiar
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-
-        <div className="filter-actions">
-          <select
-            className="filter-select"
-            value={filterTipo}
-            onChange={handleFilterTipo}
-            disabled={loadingRoles}
-          >
-            <option value="">Todos los roles</option>
-            {loadingRoles ? (
-              <option disabled>Cargando roles...</option>
-            ) : (
-              roles.map((rol) => (
-                <option key={rol.idRol || rol.id} value={rol.nombreRol}>
-                  {rol.nombreRol}
-                </option>
-              ))
-            )}
-          </select>
-
-          <select
-            className="filter-select"
-            value={filterEstado}
-            onChange={handleFilterEstado}
-          >
-            <option value="">Todos los estados</option>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-
-          {(searchQuery || filterTipo || filterEstado) && (
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={clearFilters}
-              title="Limpiar filtros"
-            >
-              <i className="fas fa-times"></i>
-              Limpiar
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Indicador de resultados */}
-      <div className="results-info">
-        <span className="results-count">
-          Mostrando {filteredPersonas.length} de {personas.length} persona(s)
-          {(searchQuery || filterTipo || filterEstado) && (
-            <span className="filter-indicator"> (filtrado)</span>
-          )}
-        </span>
       </div>
 
       {/* Tabla */}

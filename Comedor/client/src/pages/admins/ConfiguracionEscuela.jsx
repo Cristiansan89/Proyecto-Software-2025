@@ -79,7 +79,7 @@ const ConfiguracionEscuela = () => {
   }
 
   return (
-    <div className="container-fluid mt-4">
+    <div className="container-fluid mt-1">
       <div className="row">
         <div className="col-12">
           <div className="card shadow-sm">

@@ -386,7 +386,7 @@ const PedidoInsumo = () => {
   // Vista de creación de pedido
   if (vistaActual === "crear") {
     return (
-      <div className="page-content">
+      <div>
         <div className="page-header">
           <div className="header-left">
             <h1 className="page-title">Crear Nuevo Pedido</h1>

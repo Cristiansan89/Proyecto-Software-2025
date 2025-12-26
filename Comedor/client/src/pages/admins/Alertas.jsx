@@ -284,13 +284,11 @@ const Alertas = () => {
   }
 
   return (
-    <div className="container-fluid alertas-container">
-      <div className="page-header">
+    <div className="container-fluid alertas-container pt-1">
+      <div className="page-header mb-3">
         <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-bell"></i> Configuración de Alertas
-          </h1>
-          <p>
+          <h2 className="page-title-sub">Configuración de Alertas</h2>
+          <p className="pt-1">
             Controla el comportamiento de las alertas de inventario en el
             sistema
           </p>

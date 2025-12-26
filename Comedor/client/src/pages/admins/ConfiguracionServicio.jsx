@@ -213,14 +213,12 @@ const ConfiguracionServiciosAutomaticos = () => {
   }
 
   return (
-    <div className="configuracion-servicios-container">
-      <div className="page-header">
+    <div className="configuracion-servicios-container mt-1">
+      <div className="page-header mb-3">
         <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-clock me-2"></i>
+          <h2 className="page-title-sub">
             Configuración de Servicios Automáticos
-          </h1>
-          <p>Administra las configuraciones de servicios automáticos</p>
+          </h2>
         </div>
         <div className="header-actions">
           <button

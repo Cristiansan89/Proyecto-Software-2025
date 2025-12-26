@@ -2,7 +2,7 @@ import { useState } from "react";
 import Parametros from "./Parametros";
 import Alertas from "./Alertas";
 import GeneracionAutomatica from "./GeneracionAutomatica";
-import ConfiguracionEscuela from "../../components/admin/ConfiguracionEscuela";
+import ConfiguracionEscuela from "./ConfiguracionEscuela";
 import ConfiguracionServicio from "./ConfiguracionServicio";
 import ConfiguracionTelegram from "./ConfiguracionTelegram";
 

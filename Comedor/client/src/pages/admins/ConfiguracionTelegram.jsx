@@ -107,13 +107,12 @@ const ConfiguracionTelegram = () => {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-robot me-2"></i>
-            Configuración de Bots de Telegram
-          </h1>
-          <p>Configura los Chat IDs para recibir notificaciones automáticas</p>
+          <h2 className="page-title-sub">Configuración de Bots de Telegram</h2>
+          <p className="pt-1">
+            Configura los Chat IDs para recibir notificaciones automáticas
+          </p>
         </div>
       </div>
 

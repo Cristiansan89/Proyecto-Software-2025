@@ -290,9 +290,9 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
   );
 
   return (
-    <div className="container-fluid">
+    <div>
       <div className="card shadow-sm">
-        <div className="card-header bg-light text-dark">
+        <div className="card-header text-dark">
           <h5 className="mb-0">
             <i className="fas fa-plus-circle me-2"></i>
             Crear Pedido Manual
@@ -300,9 +300,9 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
           <small>Selecciona un proveedor y agrega los insumos necesarios</small>
         </div>
 
-        <div className="card-body">
+        <div className="card-body bg-white">
           {loading && (
-            <div className="d-flex justify-content-center mb-4">
+            <div className="d-flex justify-content-center mb-3">
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Cargando...</span>
               </div>
@@ -364,8 +364,8 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
 
             {/* Formulario para agregar insumos */}
             {formData.id_proveedor && (
-              <div className="card mb-4 border-primary">
-                <div className="card-header bg-light">
+              <div className="card mb-4 border-light">
+                <div className="card-header text-dark">
                   <h6 className="mb-0">
                     <i className="fas fa-plus me-1 text-primary"></i>
                     Agregar Insumo al Pedido
@@ -374,7 +374,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
                     Selecciona un insumo y especifica la cantidad
                   </small>
                 </div>
-                <div className="card-body">
+                <div className="card-body bg-white">
                   <div>
                     <div className="form-group">
                       <label className="form-label fw-bold">
@@ -408,7 +408,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
                       )}
                     </div>
                     <div className="form-group">
-                      <label className="mt-3">
+                      <label className="mt-1">
                         <i className="fas fa-calculator me-1 text-black"></i>
                         Cantidad *
                       </label>
@@ -429,7 +429,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
                             placeholder="0"
                           />
                         </div>
-                        <div className="mx-5">
+                        <div className="mx-1">
                           <span className="input-group-text bg-light">
                             {insumosProveedor.find(
                               (i) => i.id_insumo === nuevoInsumo.id_insumo
@@ -437,16 +437,6 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
                           </span>
                         </div>
                       </div>
-                      {nuevoInsumo.id_insumo && (
-                        <small className="text-muted mt-1 d-block">
-                          <i className="fas fa-info-circle me-1"></i>
-                          {
-                            insumosProveedor.find(
-                              (i) => i.id_insumo === nuevoInsumo.id_insumo
-                            )?.nombreInsumo
-                          }
-                        </small>
-                      )}
                     </div>
                     <div className="form-actions">
                       <div className="d-grid">

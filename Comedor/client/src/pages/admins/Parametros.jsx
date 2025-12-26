@@ -218,12 +218,12 @@ const Parametros = () => {
   }
 
   return (
-    <div className="container-fluid parametros-container">
+    <div className="container-fluid parametros-container pt-1">
       {/* Tabs para navegación */}
       {/* Pestaña de Parámetros */}
       {true && (
         <div role="tabpanel">
-          <div className="page-header">
+          <div className="page-header mb-3">
             <div className="header-left">
               <h2 className="page-title-sub">Gestión de Parámetros</h2>
             </div>

@@ -1238,7 +1238,6 @@ textarea.form-control {
 .search-filters {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1.5rem;
   align-items: flex-start;
   flex-wrap: wrap;
 }
@@ -1327,7 +1326,6 @@ textarea.form-control {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0;
-  margin-bottom: 1rem;
   color: #666;
   font-size: 0.85rem;
 }

@@ -151,11 +151,11 @@ const ListaServicios = () => {
   }
 
   return (
-    <div className="servicios-container">
+    <div className="servicios-container mt-1">
       <div>
-        <div className="page-header">
+        <div className="page-header mb-3">
           <div className="header-left">
-            <h2 className="page-title-sub">Gestión de Servicios</h2>
+            <h2 className="page-title-sub">Gestionar Servicios</h2>
           </div>
           <div className="header-actions">
             <button className="btn btn-primary-new" onClick={handleCreate}>
@@ -166,41 +166,30 @@ const ListaServicios = () => {
         </div>
 
         {/* Filtros */}
-        <div className="search-filters">
-          <div className="search-bar">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Buscar servicios..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="filter-actions">
-            <select
-              className="filter-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="todos">Todos los estados</option>
-              <option value="Activo">Activos</option>
-              <option value="Inactivo">Inactivos</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Información de resultados */}
-        <div className="results-info">
-          <div className="results-count">
-            <span>
-              Mostrando {filteredServicios.length} de {servicios.length}{" "}
-              servicios
-            </span>
-            {searchTerm && (
-              <span className="filter-indicator">
-                filtrado por "{searchTerm}"
-              </span>
-            )}
+        <div className="page-header mb-3">
+          <div className="header-left">
+            <div className="search-filters">
+              <div className="search-bar">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Buscar servicios..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="filter-actions">
+                <select
+                  className="filter-select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="todos">Todos los estados</option>
+                  <option value="Activo">Activos</option>
+                  <option value="Inactivo">Inactivos</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 

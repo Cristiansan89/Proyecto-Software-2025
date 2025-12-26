@@ -188,7 +188,7 @@ const ListaDocentesGrados = () => {
   return (
     <div className="docentes-grados-page">
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
           <h2 className="page-title-sub">Docentes por Grado</h2>
         </div>
@@ -201,94 +201,101 @@ const ListaDocentesGrados = () => {
       </div>
 
       {/* Filtros y búsqueda */}
-      <div className="filters-section">
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Buscar por nombre, apellido, DNI o grado..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
+      <div className="page-header mb-3">
+        <div className="header-left">
+          <div className="filters-section">
+            <div className="search-bar">
+              <input
+                type="text"
+                placeholder="Buscar por nombre, apellido, DNI o grado..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
 
-        <div className="filter-actions">
-          <select
-            className="filter-select"
-            value={gradoFilter}
-            onChange={(e) => setGradoFilter(e.target.value)}
-            disabled={loadingGrados}
-          >
-            <option value="">Todos los grados</option>
-            {loadingGrados ? (
-              <option disabled>Cargando grados...</option>
-            ) : (
-              grados.map((grado) => (
-                <option key={grado.idGrado || grado.id} value={grado.nombre}>
-                  {grado.nombre}
-                </option>
-              ))
-            )}
-          </select>
+            <div className="filter-actions">
+              <select
+                className="filter-select"
+                value={gradoFilter}
+                onChange={(e) => setGradoFilter(e.target.value)}
+                disabled={loadingGrados}
+              >
+                <option value="">Todos los grados</option>
+                {loadingGrados ? (
+                  <option disabled>Cargando grados...</option>
+                ) : (
+                  grados.map((grado) => (
+                    <option
+                      key={grado.idGrado || grado.id}
+                      value={grado.nombre}
+                    >
+                      {grado.nombre}
+                    </option>
+                  ))
+                )}
+              </select>
 
-          <select
-            className="filter-select"
-            value={cicloFilter}
-            onChange={(e) => setCicloFilter(e.target.value)}
-          >
-            <option value="">Todos los ciclos</option>
-            <option value="2024">2024</option>
-            <option value="2025">2025</option>
-            <option value="2026">2026</option>
-          </select>
+              <select
+                className="filter-select"
+                value={cicloFilter}
+                onChange={(e) => setCicloFilter(e.target.value)}
+              >
+                <option value="">Todos los ciclos</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+              </select>
 
-          {(searchTerm ||
-            gradoFilter ||
-            cicloFilter !== new Date().getFullYear().toString()) && (
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={() => {
-                setSearchTerm("");
-                setGradoFilter("");
-                setCicloFilter(new Date().getFullYear().toString());
-              }}
-              title="Limpiar filtros"
-            >
-              <i className="fas fa-times"></i>
-              Limpiar
-            </button>
-          )}
-        </div>
-      </div>
+              {(searchTerm ||
+                gradoFilter ||
+                cicloFilter !== new Date().getFullYear().toString()) && (
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setGradoFilter("");
+                    setCicloFilter(new Date().getFullYear().toString());
+                  }}
+                  title="Limpiar filtros"
+                >
+                  <i className="fas fa-times"></i>
+                  Limpiar
+                </button>
+              )}
+            </div>
+          </div>
 
-      {/* Información de resultados y paginación */}
-      <div className="results-info">
-        <div className="results-count">
-          Mostrando {paginatedDocentes.length} de {filteredDocentes.length}{" "}
-          docentes{" "}
-          {searchTerm && (
-            <span className="filter-indicator">
-              filtrado por "{searchTerm}"
-            </span>
-          )}
-        </div>
-        <div className="page-size-selector d-flex align-items-center gap-2">
-          <label className="mb-0">
-            <strong>Registros por página:</strong>
-          </label>
-          <select
-            className="form-select form-select-sm"
-            style={{ width: "70px" }}
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-          </select>
+          {/* Información de resultados y paginación */}
+          <div className="results-info">
+            <div className="results-count">
+              Mostrando {paginatedDocentes.length} de {filteredDocentes.length}{" "}
+              docentes{" "}
+              {searchTerm && (
+                <span className="filter-indicator">
+                  filtrado por "{searchTerm}"
+                </span>
+              )}
+            </div>
+            <div className="page-size-selector d-flex align-items-center gap-2">
+              <label className="mb-0">
+                <strong>Registros por página:</strong>
+              </label>
+              <select
+                className="form-select form-select-sm"
+                style={{ width: "70px" }}
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 

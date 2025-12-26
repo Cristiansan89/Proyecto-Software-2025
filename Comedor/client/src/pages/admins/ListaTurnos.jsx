@@ -126,9 +126,9 @@ const ListaTurnos = () => {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
-          <h2 className="page-title-sub">Gestión de Turnos</h2>
+          <h2 className="page-title-sub">Gestionar Turnos</h2>
         </div>
         <div className="header-actions">
           <button className="btn btn-primary-new" onClick={handleCreate}>
@@ -139,40 +139,30 @@ const ListaTurnos = () => {
       </div>
 
       {/* Filtros */}
-      <div className="search-filters">
-        <div className="search-bar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Buscar turnos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="filter-actions">
-          <select
-            className="filter-select"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="todos">Todos los estados</option>
-            <option value="Activo">Activos</option>
-            <option value="Inactivo">Inactivos</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Información de resultados */}
-      <div className="results-info">
-        <div className="results-count">
-          <span>
-            Mostrando {filteredTurnos.length} de {turnos.length} turnos
-          </span>
-          {searchTerm && (
-            <span className="filter-indicator">
-              filtrado por "{searchTerm}"
-            </span>
-          )}
+      <div className="page-header mb-3">
+        <div className="header-left">
+          <div className="search-filters">
+            <div className="search-bar">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Buscar turnos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="filter-actions">
+              <select
+                className="filter-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="todos">Todos los estados</option>
+                <option value="Activo">Activos</option>
+                <option value="Inactivo">Inactivos</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 

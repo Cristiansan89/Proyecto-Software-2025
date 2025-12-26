@@ -19,19 +19,32 @@ class AuditoriaLog {
       const query = `
         INSERT INTO Auditorias (
           id_usuario,
-          fechaHora,
           modulo,
           tipoAccion,
           descripcion,
           estado
-        ) VALUES (UUID_TO_BIN(?), NOW(), ?, ?, ?, 'Exito')
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)
       `;
 
+      const tipoAccionMapeado =
+        accion === "CREAR"
+          ? "Registrar"
+          : accion === "ACTUALIZAR"
+          ? "Modificar"
+          : accion === "ELIMINAR"
+          ? "Eliminar"
+          : accion === "CONSULTAR"
+          ? "Consultar"
+          : accion === "DESCARGAR"
+          ? "Exportar"
+          : "Registrar";
+
       const values = [
-        id_usuario || null,
+        id_usuario || "00000000-0000-0000-0000-000000000000",
         modulo,
-        accion || "Registrar",
+        tipoAccionMapeado,
         descripcion || "",
+        "Exito",
       ];
 
       const [result] = await connection.execute(query, values);
@@ -47,57 +60,54 @@ class AuditoriaLog {
     try {
       let query = `
         SELECT 
-          BIN_TO_UUID(id_registro) as id_auditoria,
-          BIN_TO_UUID(id_usuario) as id_usuario,
-          '' as nombre_usuario,
-          '' as email_usuario,
-          tipoAccion as accion,
-          modulo,
-          descripcion,
-          '' as detalles,
-          '' as ip_origen,
-          '' as user_agent,
-          fechaHora as fecha_creacion,
-          estado
-        FROM Auditorias
-        WHERE estado = 'Exito'
+          BIN_TO_UUID(a.id_registro) as id_auditoria,
+          BIN_TO_UUID(a.id_usuario) as id_usuario,
+          u.nombreUsuario as nombre_usuario,
+          u.mail as email_usuario,
+          a.tipoAccion as accion,
+          a.modulo,
+          a.descripcion,
+          a.fechaHora as fecha_creacion,
+          a.estado
+        FROM Auditorias a
+        LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
+        WHERE a.estado = 'Exito'
       `;
 
       const params = [];
 
       // Filtro por fecha inicio
       if (filtros.fechaInicio) {
-        query += ` AND DATE(fechaHora) >= ?`;
+        query += ` AND DATE(a.fechaHora) >= ?`;
         params.push(filtros.fechaInicio);
       }
 
       // Filtro por fecha fin
       if (filtros.fechaFin) {
-        query += ` AND DATE(fechaHora) <= ?`;
+        query += ` AND DATE(a.fechaHora) <= ?`;
         params.push(filtros.fechaFin);
       }
 
-      // Filtro por usuario - buscar en descripción ya que no tenemos nombre_usuario
+      // Filtro por usuario (por nombre)
       if (filtros.usuario) {
-        query += ` AND descripcion LIKE ?`;
-        const busqueda = `%${filtros.usuario}%`;
-        params.push(busqueda);
+        query += ` AND u.nombreUsuario LIKE ?`;
+        params.push(`%${filtros.usuario}%`);
       }
 
       // Filtro por acción
       if (filtros.accion) {
-        query += ` AND tipoAccion = ?`;
+        query += ` AND a.tipoAccion = ?`;
         params.push(filtros.accion);
       }
 
       // Filtro por módulo
       if (filtros.modulo) {
-        query += ` AND modulo = ?`;
+        query += ` AND a.modulo = ?`;
         params.push(filtros.modulo);
       }
 
       // Orden por fecha descendente
-      query += ` ORDER BY fechaHora DESC LIMIT 1000`;
+      query += ` ORDER BY a.fechaHora DESC LIMIT 1000`;
 
       const [rows] = await connection.execute(query, params);
 
@@ -114,31 +124,25 @@ class AuditoriaLog {
     try {
       const query = `
         SELECT 
-          id_auditoria,
-          id_usuario,
-          nombre_usuario,
-          email_usuario,
-          accion,
-          modulo,
-          descripcion,
-          detalles,
-          ip_origen,
-          user_agent,
-          fecha_creacion,
-          estado
-        FROM auditorias_logs
-        WHERE id_auditoria = ? AND estado = 'Activo'
+          BIN_TO_UUID(a.id_registro) as id_auditoria,
+          BIN_TO_UUID(a.id_usuario) as id_usuario,
+          u.nombreUsuario as nombre_usuario,
+          u.mail as email_usuario,
+          a.tipoAccion as accion,
+          a.modulo,
+          a.descripcion,
+          a.fechaHora as fecha_creacion,
+          a.estado
+        FROM Auditorias a
+        LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
+        WHERE a.id_registro = UUID_TO_BIN(?) AND a.estado = 'Exito'
       `;
 
       const [rows] = await connection.execute(query, [id]);
 
       if (rows.length === 0) return null;
 
-      const row = rows[0];
-      return {
-        ...row,
-        detalles: row.detalles ? JSON.parse(row.detalles) : null,
-      };
+      return rows[0];
     } catch (error) {
       console.error("Error al obtener log de auditoría:", error);
       throw error;
@@ -183,28 +187,24 @@ class AuditoriaLog {
     try {
       const query = `
         SELECT 
-          id_auditoria,
-          id_usuario,
-          nombre_usuario,
-          email_usuario,
-          accion,
-          modulo,
-          descripcion,
-          detalles,
-          ip_origen,
-          fecha_creacion
-        FROM auditorias_logs
-        WHERE modulo = ? AND estado = 'Activo'
-        ORDER BY fecha_creacion DESC
+          BIN_TO_UUID(a.id_registro) as id_auditoria,
+          BIN_TO_UUID(a.id_usuario) as id_usuario,
+          u.nombreUsuario as nombre_usuario,
+          u.mail as email_usuario,
+          a.tipoAccion as accion,
+          a.modulo,
+          a.descripcion,
+          a.fechaHora as fecha_creacion
+        FROM Auditorias a
+        LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
+        WHERE a.modulo = ? AND a.estado = 'Exito'
+        ORDER BY a.fechaHora DESC
         LIMIT 100
       `;
 
       const [rows] = await connection.execute(query, [modulo]);
 
-      return rows.map((row) => ({
-        ...row,
-        detalles: row.detalles ? JSON.parse(row.detalles) : null,
-      }));
+      return rows;
     } catch (error) {
       console.error("Error al obtener logs por módulo:", error);
       throw error;
@@ -216,28 +216,24 @@ class AuditoriaLog {
     try {
       const query = `
         SELECT 
-          id_auditoria,
-          id_usuario,
-          nombre_usuario,
-          email_usuario,
-          accion,
-          modulo,
-          descripcion,
-          detalles,
-          ip_origen,
-          fecha_creacion
-        FROM auditorias_logs
-        WHERE id_usuario = ? AND estado = 'Activo'
-        ORDER BY fecha_creacion DESC
+          BIN_TO_UUID(a.id_registro) as id_auditoria,
+          BIN_TO_UUID(a.id_usuario) as id_usuario,
+          u.nombreUsuario as nombre_usuario,
+          u.mail as email_usuario,
+          a.tipoAccion as accion,
+          a.modulo,
+          a.descripcion,
+          a.fechaHora as fecha_creacion
+        FROM Auditorias a
+        LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
+        WHERE a.id_usuario = UUID_TO_BIN(?) AND a.estado = 'Exito'
+        ORDER BY a.fechaHora DESC
         LIMIT 100
       `;
 
       const [rows] = await connection.execute(query, [idUsuario]);
 
-      return rows.map((row) => ({
-        ...row,
-        detalles: row.detalles ? JSON.parse(row.detalles) : null,
-      }));
+      return rows;
     } catch (error) {
       console.error("Error al obtener logs por usuario:", error);
       throw error;
@@ -248,9 +244,9 @@ class AuditoriaLog {
   static async limpiarLogsAntiguos(dias = 90) {
     try {
       const query = `
-        UPDATE auditorias_logs 
-        SET estado = 'Inactivo'
-        WHERE DATE(fecha_creacion) < DATE_SUB(NOW(), INTERVAL ? DAY)
+        UPDATE Auditorias
+        SET estado = 'Error'
+        WHERE DATE(fechaHora) < DATE_SUB(NOW(), INTERVAL ? DAY)
       `;
 
       const [result] = await connection.execute(query, [dias]);
@@ -266,27 +262,23 @@ class AuditoriaLog {
     try {
       const query = `
         SELECT 
-          id_auditoria,
-          id_usuario,
-          nombre_usuario,
-          email_usuario,
-          accion,
-          modulo,
-          descripcion,
-          detalles,
-          ip_origen,
-          fecha_creacion
-        FROM auditorias_logs
-        WHERE DATE(fecha_creacion) = CURDATE() AND estado = 'Activo'
-        ORDER BY fecha_creacion DESC
+          BIN_TO_UUID(a.id_registro) as id_auditoria,
+          BIN_TO_UUID(a.id_usuario) as id_usuario,
+          u.nombreUsuario as nombre_usuario,
+          u.mail as email_usuario,
+          a.tipoAccion as accion,
+          a.modulo,
+          a.descripcion,
+          a.fechaHora as fecha_creacion
+        FROM Auditorias a
+        LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
+        WHERE DATE(a.fechaHora) = CURDATE() AND a.estado = 'Exito'
+        ORDER BY a.fechaHora DESC
       `;
 
       const [rows] = await connection.execute(query);
 
-      return rows.map((row) => ({
-        ...row,
-        detalles: row.detalles ? JSON.parse(row.detalles) : null,
-      }));
+      return rows;
     } catch (error) {
       console.error("Error al obtener logs del día:", error);
       throw error;

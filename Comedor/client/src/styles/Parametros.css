@@ -15,7 +15,6 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 15px;
 }
 
 .page-size-selector .form-label {

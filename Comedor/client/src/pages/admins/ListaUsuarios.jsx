@@ -174,57 +174,49 @@ const ListaUsuarios = () => {
 
   return (
     <div>
-      <div className="page-header">
-        <div className="header-left mt-2 mx-2">
-          <h1 className="page-title-sub">Lista de Usuarios</h1>
+      <div className="page-header mb-3">
+        <div className="header-left">
+          <h2 className="page-title-sub">Lista de Usuarios</h2>
         </div>
       </div>
 
       {/* Filtros de búsqueda y estado */}
-      <div className="search-filters">
-        <div className="search-bar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Buscar por usuario, nombre, apellido o email..."
-            value={searchQuery}
-            onChange={handleSearch}
-          />
-        </div>
-        <div className="filter-actions">
-          <select
-            className="filter-select"
-            value={filterEstado}
-            onChange={handleFilterEstado}
-          >
-            <option value="">Todos los estados</option>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
+      <div className="page-header mb-3">
+        <div className="header-left">
+          <div className="search-filters">
+            <div className="search-bar">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Buscar por usuario, nombre, apellido o email..."
+                value={searchQuery}
+                onChange={handleSearch}
+              />
+            </div>
+            <div className="filter-actions">
+              <select
+                className="filter-select"
+                value={filterEstado}
+                onChange={handleFilterEstado}
+              >
+                <option value="">Todos los estados</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
 
-          {(searchQuery || filterEstado || filterRol) && (
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={clearFilters}
-              title="Limpiar filtros"
-            >
-              <i className="fas fa-times"></i>
-              Limpiar
-            </button>
-          )}
+              {(searchQuery || filterEstado || filterRol) && (
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={clearFilters}
+                  title="Limpiar filtros"
+                >
+                  <i className="fas fa-times"></i>
+                  Limpiar
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Indicador de resultados */}
-      <div className="results-info">
-        <span className="results-count">
-          Mostrando {filteredUsuarios.length} usuario
-          {filteredUsuarios.length !== 1 ? "s" : ""} encontrado
-          {filteredUsuarios.length !== 1 ? "s" : ""}
-          {(searchQuery || filterEstado || filterRol) && (
-            <span className="filter-indicator"> (filtrado)</span>
-          )}
-        </span>
       </div>
 
       {/* Lista de usuarios */}

@@ -116,16 +116,23 @@ export class RecetaModel {
   }
 
   static async hasActiveRelations({ id }) {
-    const [result] = await connection.query(
-      `SELECT COUNT(*) as count
-       FROM ItemsRecetas
-       WHERE id_receta = UUID_TO_BIN(?)\n       UNION ALL
-       SELECT COUNT(*) as count
-       FROM RecetaServicio
-       WHERE id_receta = UUID_TO_BIN(?)`,
-      [id, id]
-    );
-    return result.some((r) => r.count > 0);
+    try {
+      // Verificar si la receta está asociada a una PlanificacionMenu activa
+      // Relación: Receta <- PlanificacionServicioReceta <- JornadaPlanificada -> PlanificacionMenus
+      const [result] = await connection.query(
+        `SELECT COUNT(DISTINCT pm.id_planificacion) as count
+         FROM PlanificacionMenus pm
+         INNER JOIN JornadaPlanificada jp ON pm.id_planificacion = jp.id_planificacion
+         INNER JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
+         WHERE psr.id_receta = UUID_TO_BIN(?) AND pm.estado = 'Activo'`,
+        [id]
+      );
+
+      return result.length > 0 && result[0].count > 0;
+    } catch (error) {
+      console.error("Error al verificar relaciones activas:", error);
+      return false;
+    }
   }
 
   static async update({

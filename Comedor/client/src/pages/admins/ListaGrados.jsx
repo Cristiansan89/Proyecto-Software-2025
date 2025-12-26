@@ -124,7 +124,7 @@ const ListaGrados = () => {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header mb-3">
         <div className="header-left">
           <h1 className="page-title">
             <i className="fas fa-graduation-cap me-2"></i>
@@ -142,166 +142,160 @@ const ListaGrados = () => {
           </button>
         </div>
       </div>
-
-      {/* Controles de búsqueda y filtros */}
-      <div className="search-filters">
-        <div className="search-bar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Buscar por nombre del grado..."
-            value={searchQuery}
-            onChange={handleSearch}
-          />
-        </div>
-        <div className="filter-actions">
-          <select
-            className="filter-select"
-            value={filterEstado}
-            onChange={handleFilterEstado}
-          >
-            <option value="">Todos los estados</option>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-          {(searchQuery || filterEstado) && (
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={clearFilters}
-              title="Limpiar filtros"
-            >
-              <i className="fas fa-times"></i>
-              Limpiar
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Indicador de resultados */}
-      <div className="results-info">
-        <span className="results-count">
-          Mostrando {filteredGrados.length} de {grados.length} grado(s)
-          {(searchQuery || filterEstado) && (
-            <span className="filter-indicator"> (filtrado)</span>
-          )}
-        </span>
-      </div>
-
-      {/* Tabla */}
-      <div className="table-container">
-        {loading ? (
-          <div className="loading-spinner">
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Cargando grados...</p>
+      <div className="tab-content">
+        {/* Controles de búsqueda y filtros */}
+        <div className="page-header mb-3">
+          <div className="header-left">
+            <div className="search-filters">
+              <div className="search-bar">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Buscar por nombre del grado..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                />
+              </div>
+              <div className="filter-actions">
+                <select
+                  className="filter-select"
+                  value={filterEstado}
+                  onChange={handleFilterEstado}
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
+                {(searchQuery || filterEstado) && (
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={clearFilters}
+                    title="Limpiar filtros"
+                  >
+                    <i className="fas fa-times"></i>
+                    Limpiar
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="scrollable-table">
-            <div className="table-body-scroll">
-              <table
-                className="table table-striped data-table"
-                style={{ width: "100%" }}
-              >
-                <thead className="table-header-fixed">
-                  <tr>
-                    <th>#</th>
-                    <th>Grado</th>
-                    <th>Turno</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentGrados.length === 0 ? (
+        </div>
+
+        {/* Tabla */}
+        <div className="table-container">
+          {loading ? (
+            <div className="loading-spinner">
+              <i className="fas fa-spinner fa-spin"></i>
+              <p>Cargando grados...</p>
+            </div>
+          ) : (
+            <div className="scrollable-table">
+              <div className="table-body-scroll">
+                <table
+                  className="table table-striped data-table"
+                  style={{ width: "100%" }}
+                >
+                  <thead className="table-header-fixed">
                     <tr>
-                      <td colSpan="5" className="no-data">
-                        <p>No se encontraron grados</p>
-                      </td>
+                      <th>#</th>
+                      <th>Grado</th>
+                      <th>Turno</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
                     </tr>
-                  ) : (
-                    currentGrados.map((grado) => (
-                      <tr key={grado.idGrado}>
-                        <td>{grado.idGrado}</td>
-                        <td>
-                          <div className="grado-name">
-                            <strong>{grado.nombreGrado}</strong>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="turno-info">
-                            <span className="turno-name">{grado.turno}</span>
-                            <span className="turno-hours">
-                              ({grado.horaInicio} - {grado.horaFin})
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <span
-                            className={`status-badge ${grado.estado.toLowerCase()}`}
-                          >
-                            {grado.estado}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="table-actions">
-                            <button
-                              className="btn-action btn-view"
-                              onClick={() => openModal("view", grado)}
-                              title="Ver detalles"
-                            >
-                              <i className="fas fa-eye"></i>
-                            </button>
-                            <button
-                              className="btn-action btn-edit"
-                              onClick={() => openModal("edit", grado)}
-                              title="Editar"
-                            >
-                              <i className="fas fa-edit"></i>
-                            </button>
-                            <button
-                              className="btn-action btn-delete"
-                              onClick={() => handleDelete(grado)}
-                              title="Eliminar"
-                            >
-                              <i className="fas fa-trash"></i>
-                            </button>
-                          </div>
+                  </thead>
+                  <tbody>
+                    {currentGrados.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="no-data">
+                          <p>No se encontraron grados</p>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      currentGrados.map((grado) => (
+                        <tr key={grado.idGrado}>
+                          <td>{grado.idGrado}</td>
+                          <td>
+                            <div className="grado-name">
+                              <strong>{grado.nombreGrado}</strong>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="turno-info">
+                              <span className="turno-name">{grado.turno}</span>
+                              <span className="turno-hours">
+                                ({grado.horaInicio} - {grado.horaFin})
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              className={`status-badge ${grado.estado.toLowerCase()}`}
+                            >
+                              {grado.estado}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="table-actions">
+                              <button
+                                className="btn-action btn-view"
+                                onClick={() => openModal("view", grado)}
+                                title="Ver detalles"
+                              >
+                                <i className="fas fa-eye"></i>
+                              </button>
+                              <button
+                                className="btn-action btn-edit"
+                                onClick={() => openModal("edit", grado)}
+                                title="Editar"
+                              >
+                                <i className="fas fa-edit"></i>
+                              </button>
+                              <button
+                                className="btn-action btn-delete"
+                                onClick={() => handleDelete(grado)}
+                                title="Eliminar"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
+          )}
+        </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="pagination">
+            <button
+              className="pagination-btn"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+
+            <div className="pagination-info">
+              Página {currentPage} de {totalPages} ({filteredGrados.length}{" "}
+              grados)
+            </div>
+
+            <button
+              className="pagination-btn"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
           </div>
         )}
       </div>
-
-      {/* Paginación */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            className="pagination-btn"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <i className="fas fa-chevron-left"></i>
-          </button>
-
-          <div className="pagination-info">
-            Página {currentPage} de {totalPages} ({filteredGrados.length}{" "}
-            grados)
-          </div>
-
-          <button
-            className="pagination-btn"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            <i className="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      )}
-
       {/* Modal para Grado */}
       {showModal && (
         <div className="modal-overlay">

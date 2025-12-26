@@ -93,7 +93,7 @@ const ListaEstadoPedido = () => {
     <div>
       <div className="page-header">
         <div className="header-left">
-          <h2 className="page-title-sub">Estados de Pedidos</h2>
+          <h2 className="page-title-sub">Gestionar Estados de Pedidos</h2>
         </div>
         <div className="header-actions">
           <button className="btn btn-primary" onClick={handleNuevo}>

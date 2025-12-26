@@ -27,11 +27,6 @@ const CocineraRecetas = () => {
     try {
       setLoading(true);
       const response = await API.get("/recetas");
-      console.log("Recetas cargadas:", response.data);
-      console.log(
-        "Primera receta instrucciones:",
-        response.data[0]?.instrucciones
-      );
 
       // Cargar ingredientes para cada receta
       const recetasConIngredientes = await Promise.all(
@@ -39,10 +34,6 @@ const CocineraRecetas = () => {
           try {
             const ingredientesRes = await API.get(
               `/recetas/${receta.id_receta}/insumos`
-            );
-            console.log(
-              `Ingredientes para receta ${receta.id_receta}:`,
-              ingredientesRes.data
             );
 
             // La API devuelve una receta con propiedad 'insumos'
@@ -65,10 +56,6 @@ const CocineraRecetas = () => {
         })
       );
 
-      console.log(
-        "Recetas con ingredientes procesadas:",
-        recetasConIngredientes
-      );
       setRecetas(recetasConIngredientes);
     } catch (error) {
       console.error("Error al cargar recetas:", error);
@@ -97,10 +84,6 @@ const CocineraRecetas = () => {
       }
 
       const response = await API.get(`/recetas/${recetaId}/insumos`);
-      console.log(
-        `Cargando ingredientes para receta ${recetaId}:`,
-        response.data
-      );
 
       // La API devuelve una receta con propiedad 'insumos'
       const ingredientes = response.data?.insumos || [];
@@ -405,18 +388,6 @@ const CocineraRecetas = () => {
                           <div className="accordion-body">
                             <div className="small">
                               {(() => {
-                                console.log(
-                                  "Renderizando instrucciones para receta:",
-                                  receta.nombreReceta
-                                );
-                                console.log(
-                                  "Instrucciones:",
-                                  receta.instrucciones
-                                );
-                                console.log(
-                                  "Tipo de instrucciones:",
-                                  typeof receta.instrucciones
-                                );
                                 return null;
                               })()}
                               {receta.instrucciones

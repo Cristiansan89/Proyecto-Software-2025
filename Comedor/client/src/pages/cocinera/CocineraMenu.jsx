@@ -128,8 +128,10 @@ const PlanificacionMenus = () => {
               <div className="row align-items-center">
                 <div className="col-md-6">
                   <label className="form-label fw-bold mb-0">
-                    <i className="fas fa-folder-open me-2"></i>
-                    Seleccionar Planificación:
+                    <h2 className="page-title-sub">
+                      <i className="fas fa-folder-open me-2"></i> Seleccionar
+                      Planificación
+                    </h2>
                   </label>
                 </div>
                 <div className="col-md-6">
