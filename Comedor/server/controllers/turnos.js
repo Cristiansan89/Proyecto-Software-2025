@@ -62,8 +62,9 @@ export class TurnoController {
     } catch (error) {
       console.error("Error al crear turno:", error);
       if (
-        error.message.includes("ya existe") ||
-        error.message.includes("conflicto")
+        error.message &&
+        (error.message.toLowerCase().includes("ya existe") ||
+          error.message.toLowerCase().includes("conflicto"))
       ) {
         return res.status(409).json({ message: error.message });
       }
@@ -103,11 +104,9 @@ export class TurnoController {
         error.message.includes("referencia") ||
         error.message.includes("usado")
       ) {
-        return res
-          .status(409)
-          .json({
-            message: "No se puede eliminar el turno porque está en uso",
-          });
+        return res.status(409).json({
+          message: "No se puede eliminar el turno porque está en uso",
+        });
       }
       res.status(500).json({ message: "Error interno del servidor" });
     }

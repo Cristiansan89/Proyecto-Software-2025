@@ -7,6 +7,14 @@ import PermisoForm from "../../components/admin/PermisoForm";
 import AsignarPermisosForm from "../../components/admin/AsignarPermisosForm";
 import RolForm from "../../components/admin/RolForm";
 import ErrorBoundary from "../../components/ErrorBoundary";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const GestionRolesPermisos = () => {
   // Verificación de funcionamiento básico
@@ -26,7 +34,6 @@ const GestionRolesPermisos = () => {
   // Cargar datos básicos al inicializar
   useEffect(() => {
     const cargarDatosIniciales = async () => {
-      console.log("Iniciando carga de datos iniciales...");
       setLoading(true);
 
       try {
@@ -43,18 +50,15 @@ const GestionRolesPermisos = () => {
           .map((r) => r.reason);
 
         if (errores.length > 0) {
-          console.warn("Algunos datos no se pudieron cargar:", errores);
           setError(
             `Error al cargar algunos datos: ${errores
               .map((e) => e.message)
               .join(", ")}`
           );
         } else {
-          console.log("Carga inicial completada exitosamente");
           setError(null);
         }
       } catch (error) {
-        console.error("Error en carga inicial:", error);
         setError(`Error crítico: ${error.message}`);
       } finally {
         setLoading(false);
@@ -73,7 +77,6 @@ const GestionRolesPermisos = () => {
 
   const loadPermisos = async () => {
     try {
-      console.log("Cargando permisos...");
       setLoading(true);
 
       const data = await Promise.race([
@@ -87,11 +90,10 @@ const GestionRolesPermisos = () => {
       ]);
 
       setPermisos(data || []);
-      console.log("Permisos cargados:", data?.length || 0);
     } catch (error) {
-      console.error("Error al cargar permisos:", error);
       setPermisos([]);
-      alert(
+      showError(
+        "Error",
         "Error al cargar permisos. Por favor, verifique la conexión con el servidor."
       );
     } finally {
@@ -101,7 +103,6 @@ const GestionRolesPermisos = () => {
 
   const loadRoles = async () => {
     try {
-      console.log("Cargando roles...");
       setLoading(true);
 
       const data = await Promise.race([
@@ -112,11 +113,10 @@ const GestionRolesPermisos = () => {
       ]);
 
       setRoles(data || []);
-      console.log("Roles cargados:", data?.length || 0);
     } catch (error) {
-      console.error("Error al cargar roles:", error);
       setRoles([]);
-      alert(
+      showError(
+        "Error",
         "Error al cargar roles. Por favor, verifique la conexión con el servidor."
       );
     } finally {
@@ -128,17 +128,8 @@ const GestionRolesPermisos = () => {
   const [mostrarFormularioRol, setMostrarFormularioRol] = useState(false);
   const [editandoRol, setEditandoRol] = useState(null);
   const [showAsignarPermisosForm, setShowAsignarPermisosForm] = useState(false);
-
-  console.log("GestionRolesPermisos - Estado actual:", {
-    vistaActiva,
-    rolesCount: roles.length,
-    permisosCount: permisos.length,
-    rolesConPermisosCount: rolesConPermisos.length,
-    loading,
-    error,
-    showAsignarPermisosForm,
-    rolSeleccionadoParaEditar,
-  });
+  const [permisoServerError, setPermisoServerError] = useState(null);
+  const [rolServerError, setRolServerError] = useState(null);
 
   // Estados para formulario de rol
   const [formRol, setFormRol] = useState({
@@ -217,6 +208,7 @@ const GestionRolesPermisos = () => {
       estado: "Activo",
     });
     setEditandoRol(null);
+    setRolServerError(null);
     setMostrarFormularioRol(true);
   };
 
@@ -241,7 +233,9 @@ const GestionRolesPermisos = () => {
         estado: dataFromForm.estado || "Activo",
       };
 
-      if (editandoRol && editandoRol.idRol) {
+      const isEditing = editandoRol && editandoRol.idRol;
+
+      if (isEditing) {
         // Actualizar rol existente
         await rolService.update(editandoRol.idRol, {
           ...rolData,
@@ -256,37 +250,77 @@ const GestionRolesPermisos = () => {
       await loadRoles();
       setMostrarFormularioRol(false);
       setEditandoRol(null);
+
+      // Mostrar mensaje de éxito
+      showSuccess(
+        isEditing
+          ? `Rol "${rolData.nombreRol}" actualizado correctamente`
+          : `Rol "${rolData.nombreRol}" creado correctamente`
+      );
+      setRolServerError(null);
     } catch (error) {
-      console.error("Error al guardar rol:", error);
-      alert("Error al guardar el rol");
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Error al guardar el rol";
+
+      // Verificar si es error de duplicación
+      if (
+        error.response?.status === 409 ||
+        errorMessage.toLowerCase().includes("ya existe")
+      ) {
+        setRolServerError(errorMessage);
+      } else {
+        showError("Error", errorMessage);
+      }
     }
   };
 
-  const handleEliminarRol = async (idRol) => {
-    if (!idRol) {
-      alert("ID de rol inválido");
+  const handleEliminarRol = async (rol) => {
+    // 1. Validación inicial rápida
+    if (!rol || !rol.idRol) {
+      showError(
+        "Error",
+        `Rol inválido "${rol?.nombreRol}" no puede ser eliminado.`
+      );
       return;
     }
 
-    if (!window.confirm("¿Está seguro de eliminar este rol?")) return;
+    // 2. Confirmación asíncrona personalizada
+    const confirmed = await showConfirm(
+      "Eliminar Rol",
+      `¿Está seguro de eliminar el rol "${
+        rol.nombreRol || ""
+      }"? Esta acción podría afectar a los usuarios asignados.`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
 
-    try {
-      const numericId = Number(idRol);
-      if (Number.isNaN(numericId)) {
-        throw new Error("ID de rol no es numérico");
+    if (confirmed) {
+      try {
+        const numericId = Number(rol.idRol);
+        if (Number.isNaN(numericId)) {
+          throw new Error("ID de rol no es numérico");
+        }
+
+        // 3. Ejecución de la eliminación
+        await rolService.delete(numericId);
+
+        // 4. Actualización del estado local
+        await loadRoles();
+        // Eliminamos las asignaciones relacionadas en memoria para mantener la UI sincronizada
+        setAsignaciones((prev) => prev.filter((a) => a.idRol !== numericId));
+
+        // 5. Notificación de éxito
+        showSuccess(`Rol "${rol.nombreRol || ""}" eliminado correctamente`);
+      } catch (error) {
+        // Manejo de errores detallado sin logs innecesarios
+        const msg =
+          error.response?.data?.message ||
+          error.message ||
+          "Error al eliminar el rol";
+        showError("Error", msg);
       }
-      await rolService.delete(numericId);
-      // Recargar lista de roles
-      await loadRoles();
-      // También eliminar asignaciones relacionadas en memoria
-      setAsignaciones((prev) => prev.filter((a) => a.idRol !== numericId));
-    } catch (error) {
-      console.error("Error al eliminar rol:", error);
-      const msg =
-        error.response && error.response.data && error.response.data.message
-          ? error.response.data.message
-          : error.message || "Error al eliminar el rol";
-      alert(msg);
     }
   };
 
@@ -379,7 +413,6 @@ const GestionRolesPermisos = () => {
 
   // Funciones para gestión de asignaciones
   const handleEditarRolPermiso = (asignacion) => {
-    console.log("Editando asignación:", asignacion);
     // Establecer el rol para editar
     setRolSeleccionadoParaEditar(asignacion.id_rol);
     // Mostrar el formulario de asignación
@@ -388,29 +421,33 @@ const GestionRolesPermisos = () => {
 
   // Nueva función para eliminar una asignación individual
   const handleEliminarAsignacionIndividual = async (idRol, idPermiso) => {
-    console.log("handleEliminarAsignacionIndividual llamado con:", {
-      idRol,
-      idPermiso,
-    });
-
+    // 1. Validación de seguridad inicial
     if (!idRol || !idPermiso) {
-      console.error("Error: idRol o idPermiso son undefined:", {
-        idRol,
-        idPermiso,
-      });
-      alert("Error: Datos de asignación inválidos");
+      showError("Error", "Error: Datos de asignación inválidos");
       return;
     }
 
-    if (
-      window.confirm("¿Está seguro de eliminar esta asignación específica?")
-    ) {
+    // 2. Confirmación personalizada
+    const confirmed = await showConfirm(
+      "Eliminar Permiso",
+      "¿Está seguro de eliminar esta asignación específica de permiso para este rol?",
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    if (confirmed) {
       try {
+        // 3. Llamada al servicio
         await rolPermisoService.removerPermiso(idRol, idPermiso);
-        await loadAsignacionesIndividuales(); // Recargar datos
+
+        // 4. Feedback de éxito y recarga de datos
+        showSuccess("Permiso removido correctamente");
+        await loadAsignacionesIndividuales();
       } catch (error) {
-        console.error("Error al eliminar asignación:", error);
-        alert("Error al eliminar la asignación");
+        // Manejo de errores simplificado
+        const msg =
+          error.response?.data?.message || "Error al eliminar la asignación";
+        showError("Error", msg);
       }
     }
   };
@@ -467,6 +504,7 @@ const GestionRolesPermisos = () => {
     const openModal = (mode, permiso = null) => {
       setModalMode(mode);
       setSelectedPermiso(permiso);
+      setPermisoServerError(null);
       setShowModal(true);
     };
 
@@ -478,86 +516,149 @@ const GestionRolesPermisos = () => {
 
     const handleSavePermiso = async (permisoData) => {
       try {
-        if (modalMode === "create") {
-          await permisoService.create(permisoData);
-        } else if (modalMode === "edit") {
+        const isEditing = modalMode === "edit";
+
+        if (isEditing) {
           const permisoId =
             selectedPermiso.idPermiso || selectedPermiso.id_permiso;
           await permisoService.update(permisoId, permisoData);
+        } else {
+          await permisoService.create(permisoData);
         }
+
         await loadPermisos();
         closeModal();
+
+        // Mostrar mensaje de éxito
+        showSuccess(
+          isEditing
+            ? `Permiso "${permisoData.nombrePermiso}" actualizado correctamente`
+            : `Permiso "${permisoData.nombrePermiso}" creado correctamente`
+        );
+        setPermisoServerError(null);
       } catch (error) {
-        console.error("Error al guardar permiso:", error);
-        // Aquí podrías mostrar un toast de error
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Error al guardar el permiso";
+
+        // Verificar si es error de duplicación
+        if (
+          error.response?.status === 409 ||
+          errorMessage.toLowerCase().includes("ya existe")
+        ) {
+          setPermisoServerError(errorMessage);
+        } else {
+          showError("Error", errorMessage);
+        }
       }
     };
 
-    const handleDelete = async (permisoId) => {
+    const handleDelete = async (permiso) => {
       try {
-        // Verificar si el permiso está siendo usado
+        const permisoId = permiso.idPermiso || permiso.id_permiso;
+        const nombrePermiso = permiso.nombrePermiso || "Sin nombre";
+
+        // 1. Verificar si el permiso está siendo usado (Integridad referencial)
         const asignacionesResp = await API.get("/rol-permisos");
         const asignaciones = asignacionesResp.data;
         const usosPermiso = asignaciones.filter(
           (a) => a.id_permiso === permisoId
         ).length;
 
-        let confirmMessage = "¿Está seguro de que desea eliminar este permiso?";
+        // 2. Definir el mensaje dinámico según el uso
+        let confirmMessage = `¿Está seguro de que desea eliminar el permiso "${nombrePermiso}"?`;
+        let titulo = "Eliminar Permiso";
+
         if (usosPermiso > 0) {
-          confirmMessage = `Este permiso está asignado a ${usosPermiso} rol(es). Para eliminarlo, primero debe quitar las asignaciones. ¿Desea continuar con la eliminación?`;
+          titulo = "Permiso en Uso";
+          confirmMessage = `El permiso "${nombrePermiso}" está asignado a ${usosPermiso} rol(es). Es recomendable quitar las asignaciones antes de eliminarlo. ¿Desea continuar de todos modos?`;
         }
 
-        if (window.confirm(confirmMessage)) {
+        // 3. Confirmación personalizada asíncrona
+        const confirmed = await showConfirm(
+          titulo,
+          confirmMessage,
+          "Sí, eliminar",
+          "Cancelar"
+        );
+
+        if (confirmed) {
           await permisoService.delete(permisoId);
           await loadPermisos();
-          alert("Permiso eliminado correctamente");
+
+          // Feedback de éxito
+          showSuccess(`Permiso "${nombrePermiso}" eliminado correctamente`);
         }
       } catch (error) {
-        console.error("Error al eliminar permiso:", error);
-
-        // Mostrar mensaje enviado por el servidor si existe
+        // Manejo de errores limpio
         const serverMsg = error?.response?.data?.message || error?.message;
-        if (serverMsg) {
-          alert(serverMsg);
-        } else {
-          alert("Error al eliminar el permiso. Por favor, inténtelo de nuevo.");
-        }
+        showError(
+          "Error",
+          serverMsg ||
+            "Error al eliminar el permiso. Por favor, inténtelo de nuevo."
+        );
       }
     };
+
     const handleBulkDelete = async () => {
-      if (
-        window.confirm(
-          `¿Está seguro de que desea eliminar ${selectedPermisos.length} permiso(s)?`
-        )
-      ) {
+      // 1. Validación de seguridad inicial
+      if (selectedPermisos.length === 0) return;
+
+      // 2. Confirmación personalizada asíncrona
+      const confirmed = await showConfirm(
+        "Eliminación Masiva",
+        `¿Está seguro de que desea eliminar ${selectedPermisos.length} permiso(s) seleccionado(s)?`,
+        "Sí, eliminar todo",
+        "Cancelar"
+      );
+
+      if (confirmed) {
         try {
+          // 3. Ejecución de todas las eliminaciones en paralelo
           const results = await Promise.allSettled(
             selectedPermisos.map((id) => permisoService.delete(id))
           );
 
+          // 4. Filtrar resultados fallidos
           const rejected = results
             .map((r, i) => ({ r, id: selectedPermisos[i] }))
             .filter((x) => x.r.status === "rejected");
 
           if (rejected.length > 0) {
+            // Formateamos los mensajes de error para que sean legibles
             const messages = rejected
               .map((x) => {
                 const err = x.r.reason;
                 const msg =
-                  err?.response?.data?.message || err?.message || "Error";
-                return `ID ${x.id}: ${msg}`;
+                  err?.response?.data?.message ||
+                  err?.message ||
+                  "Error desconocido";
+                return `• ID ${x.id}: ${msg}`;
               })
               .join("\n");
-            alert(`Algunos permisos no se pudieron eliminar:\n${messages}`);
+
+            showInfo(
+              "Resultado Parcial",
+              `Se completó la operación, pero algunos permisos no pudieron eliminarse:\n${messages}`
+            );
+          } else {
+            // Si todos salieron bien
+            showSuccess("Todos los permisos se eliminaron correctamente", 3000);
           }
 
+          // 5. Limpieza y recarga de la interfaz
           await loadPermisos();
           setSelectedPermisos([]);
         } catch (error) {
-          console.error("Error al eliminar permisos:", error);
           const msg =
-            error?.response?.data?.message || error?.message || "Error";
-          alert(`Error al eliminar permisos: ${msg}`);
+            error?.response?.data?.message ||
+            error?.message ||
+            "Error inesperado";
+          showError(
+            "Error Crítico",
+            `No se pudo procesar la eliminación masiva: ${msg}`
+          );
         }
       }
     };
@@ -696,7 +797,9 @@ const GestionRolesPermisos = () => {
               <tbody>
                 {currentPermisos.map((permiso) => (
                   <tr key={permiso.idPermiso || permiso.id_permiso}>
-                    <td>{permiso.idPermiso || permiso.id_permiso}</td>
+                    <td>
+                      <strong>{permiso.idPermiso || permiso.id_permiso}</strong>
+                    </td>
                     <td>
                       <strong>{permiso.nombrePermiso}</strong>
                     </td>
@@ -772,11 +875,7 @@ const GestionRolesPermisos = () => {
                         </button>
                         <button
                           className="btn-action btn-delete"
-                          onClick={() =>
-                            handleDelete(
-                              permiso.idPermiso || permiso.id_permiso
-                            )
-                          }
+                          onClick={() => handleDelete(permiso)}
                           title="Eliminar"
                         >
                           <i className="fas fa-trash"></i>
@@ -870,6 +969,9 @@ const GestionRolesPermisos = () => {
                     onSave={handleSavePermiso}
                     onCancel={closeModal}
                     mode={modalMode}
+                    serverError={permisoServerError}
+                    onServerErrorClear={() => setPermisoServerError(null)}
+                    permisosExistentes={permisos}
                   />
                 </div>
               </div>
@@ -995,8 +1097,12 @@ const GestionRolesPermisos = () => {
               <tbody>
                 {currentRoles.map((rol) => (
                   <tr key={rol.idRol}>
-                    <td>{rol.idRol}</td>
-                    <td>{rol.nombreRol}</td>
+                    <td>
+                      <strong>{rol.idRol}</strong>
+                    </td>
+                    <td>
+                      <strong>{rol.nombreRol}</strong>
+                    </td>
                     <td>{rol.descripcionRol || rol.descripcion}</td>
                     <td>{rol.habilitaCuentaUsuario || "No especificado"}</td>
                     <td>{rol.estado || "No especificado"}</td>
@@ -1011,7 +1117,7 @@ const GestionRolesPermisos = () => {
                         </button>
                         <button
                           className="btn-action btn-delete"
-                          onClick={() => handleEliminarRol(rol.idRol)}
+                          onClick={() => handleEliminarRol(rol)}
                           title="Eliminar"
                         >
                           <i className="fas fa-trash"></i>
@@ -1189,13 +1295,11 @@ const GestionRolesPermisos = () => {
               >
                 <AsignarPermisosForm
                   rolSeleccionado={rolSeleccionadoParaEditar}
-                  onClose={() => {
+                  onClose={async () => {
                     setShowAsignarPermisosForm(false);
                     setRolSeleccionadoParaEditar(null);
                     // Recargar datos después de asignar permisos
-                    loadRoles();
-                    loadPermisos();
-                    loadAsignacionesIndividuales();
+                    await loadAsignacionesIndividuales();
                   }}
                 />
               </div>
@@ -1397,6 +1501,9 @@ const GestionRolesPermisos = () => {
                     setMostrarFormularioRol(false);
                     setEditandoRol(null);
                   }}
+                  serverError={rolServerError}
+                  onServerErrorClear={() => setRolServerError(null)}
+                  rolesExistentes={roles}
                 />
               </div>
             </div>

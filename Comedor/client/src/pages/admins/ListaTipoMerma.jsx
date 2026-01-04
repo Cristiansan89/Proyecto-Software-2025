@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import tipoMermaService from "../../services/tipoMermaService.js";
 import TipoMermaForm from "../../components/admin/TipoMermaForm.jsx";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaTipoMerma = () => {
   const [tiposMerma, setTiposMerma] = useState([]);
@@ -9,6 +17,10 @@ const ListaTipoMerma = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("crear");
   const [selectedTipo, setSelectedTipo] = useState(null);
+  const [sortConfig, setSortConfig] = useState({
+    key: "id_tipo_merma",
+    direction: "asc",
+  });
 
   // Cargar tipos de merma
   const cargarTiposMerma = async () => {
@@ -43,22 +55,60 @@ const ListaTipoMerma = () => {
     setShowModal(true);
   };
 
-  // Eliminar tipo
-  const handleEliminar = async (id) => {
-    if (!confirm("¿Está seguro de que desea eliminar este tipo de merma?")) {
-      return;
+  // Ordenar tabla
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Ordenar datos
+  const tiposMermaOrdenados = [...tiposMerma].sort((a, b) => {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+
+    if (typeof aValue === "number") {
+      return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
     }
 
-    try {
-      await tipoMermaService.delete(id);
-      await cargarTiposMerma(); // Recargar lista
-      alert("Tipo de merma eliminado exitosamente");
-    } catch (error) {
-      console.error("Error al eliminar tipo de merma:", error);
-      alert(
-        "Error al eliminar el tipo de merma: " +
-          (error.response?.data?.message || error.message)
-      );
+    const aStr = String(aValue).toLowerCase();
+    const bStr = String(bValue).toLowerCase();
+    return sortConfig.direction === "asc"
+      ? aStr.localeCompare(bStr)
+      : bStr.localeCompare(aStr);
+  });
+
+  // Eliminar tipo
+  const handleEliminar = async (id, nombre) => {
+    // 1. Confirmación asíncrona personalizada
+    const confirmed = await showConfirm(
+      "Eliminar Tipo de Merma",
+      `¿Está seguro de que desea eliminar el tipo de merma "${nombre}"?`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    // 2. Si el usuario confirma, ejecutamos la acción
+    if (confirmed) {
+      try {
+        await tipoMermaService.delete(id);
+
+        // Recargar lista y mostrar éxito
+        await cargarTiposMerma();
+        showSuccess(
+          "Éxito",
+          `Tipo de merma "${nombre}" eliminado exitosamente`
+        );
+      } catch (error) {
+        // Manejo de errores sin console.log innecesarios
+        showError(
+          "Error",
+          "Error al eliminar el tipo de merma: " +
+            (error.response?.data?.message || error.message)
+        );
+      }
     }
   };
 
@@ -73,7 +123,7 @@ const ListaTipoMerma = () => {
     setShowModal(false);
     setSelectedTipo(null);
     await cargarTiposMerma();
-    alert("Tipo de merma guardado exitosamente");
+    showSuccess("Éxito", "Tipo de merma guardado exitosamente");
   };
 
   if (loading) {
@@ -120,7 +170,22 @@ const ListaTipoMerma = () => {
               <table className="table table-striped data-table">
                 <thead>
                   <tr>
-                    <th>#</th>
+                    <th>
+                      <button
+                        className="btn btn-link p-0 text-dark"
+                        onClick={() => handleSort("id_tipo_merma")}
+                        style={{ textDecoration: "none" }}
+                      >
+                        #
+                        {sortConfig.key === "id_tipo_merma" && (
+                          <i
+                            className={`fas fa-sort-${
+                              sortConfig.direction === "asc" ? "up" : "down"
+                            } ms-2`}
+                          ></i>
+                        )}
+                      </button>
+                    </th>
                     <th>Nombre</th>
                     <th>Descripción</th>
                     <th>Estado</th>
@@ -128,7 +193,7 @@ const ListaTipoMerma = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {tiposMerma.map((tipo) => (
+                  {tiposMermaOrdenados.map((tipo) => (
                     <tr key={tipo.id_tipo_merma}>
                       <td>
                         <strong>{tipo.id_tipo_merma}</strong>
@@ -160,7 +225,9 @@ const ListaTipoMerma = () => {
                           </button>
                           <button
                             className="btn-action btn-delete"
-                            onClick={() => handleEliminar(tipo.id_tipo_merma)}
+                            onClick={() =>
+                              handleEliminar(tipo.id_tipo_merma, tipo.nombre)
+                            }
                             title="Eliminar"
                           >
                             <i className="fas fa-trash-alt"></i>
@@ -179,7 +246,7 @@ const ListaTipoMerma = () => {
       {/* Modal para agregar/editar tipo */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content configuracion-modal">
             <div className="modal-header">
               <h4 className="modal-title">
                 <i className="fas fa-tags me-2"></i>

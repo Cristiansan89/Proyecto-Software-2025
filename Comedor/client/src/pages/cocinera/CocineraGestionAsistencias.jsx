@@ -5,6 +5,14 @@ import servicioService from "../../services/servicioService";
 import { gradoService } from "../../services/gradoService";
 import asistenciasService from "../../services/asistenciasService";
 import "../../styles/CocineraGestionAsistencias.css";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const CocineraGestionAsistencias = () => {
   const { user } = useAuth();
@@ -221,7 +229,7 @@ const CocineraGestionAsistencias = () => {
       setDocentes(docentesConGrados);
     } catch (error) {
       console.error("Error al cargar datos:", error);
-      alert("Error al cargar datos iniciales");
+      showError("Error", "Error al cargar datos iniciales");
     } finally {
       setLoading(false);
     }
@@ -291,7 +299,11 @@ const CocineraGestionAsistencias = () => {
         !formulario.idServicio ||
         formulario.gradosSeleccionados.length === 0
       ) {
-        alert("Por favor complete todos los campos requeridos");
+        showToast(
+          "Por favor complete todos los campos requeridos",
+          "info",
+          2000
+        );
         return;
       }
 
@@ -303,7 +315,8 @@ const CocineraGestionAsistencias = () => {
         );
 
       if (verificacion.data.completas) {
-        const confirmar = confirm(
+        const confirmar = await showConfirm(
+          "Confirmar acción",
           "Ya existen registros de asistencia para esta fecha y servicio. ¿Desea generar enlaces de todas formas?"
         );
         if (!confirmar) {
@@ -394,7 +407,10 @@ const CocineraGestionAsistencias = () => {
       }, 100);
 
       // Mostrar mensaje de éxito
-      alert(`✅ Se generaron ${enlacesGenerados.length} enlaces exitosamente`);
+      showInfo(
+        "Información",
+        `✅ Se generaron ${enlacesGenerados.length} enlaces exitosamente`
+      );
 
       // Actualizar servicios disponibles después de generar enlaces
       await filtrarServiciosDisponibles();
@@ -408,7 +424,7 @@ const CocineraGestionAsistencias = () => {
       setGradosFiltrados(grados); // Resetear grados filtrados
     } catch (error) {
       console.error("Error al generar enlaces:", error);
-      alert("Error al generar enlaces");
+      showError("Error", "Error al generar enlaces");
     } finally {
       setLoading(false);
     }
@@ -416,7 +432,7 @@ const CocineraGestionAsistencias = () => {
 
   const copiarEnlace = (enlace) => {
     navigator.clipboard.writeText(enlace).then(() => {
-      alert("Enlace copiado al portapapeles");
+      showSuccess("Éxito", "Enlace copiado al portapapeles");
     });
   };
 
@@ -468,7 +484,11 @@ const CocineraGestionAsistencias = () => {
     servicio
   ) => {
     if (!telefono) {
-      alert("No hay información de teléfono para este docente");
+      showToast(
+        "No hay información de teléfono para este docente",
+        "info",
+        2000
+      );
       return;
     }
 
@@ -507,26 +527,31 @@ ${user.nombre} ${user.apellido}
 
         // Abrir Telegram con el mensaje
         window.open(telegramUrl, "_blank");
-        alert(
+        showInfo(
+          "Información",
           `✅ Se abrió Telegram para enviar mensaje a ${grado} (+${telefonoFormateado})`
         );
       } else {
         // Fallback: abrir bot general con mensaje
         const botUrl = `https://t.me/SistemaComedor_Bot?start=mensaje`;
         window.open(botUrl, "_blank");
-        alert(
+        showInfo(
+          "Información",
           `📱 Se abrió el bot de Telegram (número no válido para ${grado})`
         );
       }
     } catch (error) {
       console.error("Error al generar enlace de Telegram:", error);
-      alert(`❌ Error al generar enlace de Telegram: ${error.message}`);
+      showInfo(
+        "Información",
+        `❌ Error al generar enlace de Telegram: ${error.message}`
+      );
     }
   };
 
   const enviarTelegramTodos = async () => {
     if (enlaces.length === 0) {
-      alert("Primero debe generar los enlaces");
+      showToast("Primero debe generar los enlaces", "info", 2000);
       return;
     }
 
@@ -536,7 +561,7 @@ ${user.nombre} ${user.apellido}
     );
     if (!enlacesValidos) {
       console.error("Enlaces inválidos:", enlaces);
-      alert("Error: Los enlaces no tienen la estructura correcta");
+      showError("Error", "Error: Los enlaces no tienen la estructura correcta");
       return;
     }
 
@@ -559,7 +584,7 @@ ${user.nombre} ${user.apellido}
       });
 
       if (response.data.success) {
-        alert("✅ Enlaces enviados por Telegram correctamente");
+        showSuccess("Éxito", "Enlaces enviados por Telegram correctamente");
 
         // Inicializar asistencias en estado Pendiente para cada grado seleccionado
         for (const gradoId of formulario.gradosSeleccionados) {
@@ -602,8 +627,9 @@ ${user.nombre} ${user.apellido}
       }
     } catch (error) {
       console.error("Error enviando por Telegram:", error);
-      alert(
-        "❌ Error al enviar por Telegram. Verifique la configuración del bot."
+      showError(
+        "Error",
+        "Error al enviar por Telegram. Verifique la configuración del bot."
       );
     }
   };
@@ -632,7 +658,7 @@ ${user.nombre} ${user.apellido}
 
     const cantidad = parseInt(cantidadPresentes);
     if (isNaN(cantidad) || cantidad < 0) {
-      alert("Por favor ingrese un número válido");
+      showToast("Por favor ingrese un número válido", "info", 2000);
       return;
     }
 
@@ -644,7 +670,7 @@ ${user.nombre} ${user.apellido}
         (g) => (g.nombreGrado || g.nombre) === enlace.grado
       );
       if (!grado) {
-        alert("No se pudo encontrar el grado");
+        showError("Error", "No se pudo encontrar el grado");
         return;
       }
 
@@ -656,7 +682,7 @@ ${user.nombre} ${user.apellido}
       });
 
       if (resultado.success) {
-        alert("✅ Asistencia registrada correctamente");
+        showSuccess("Éxito", "Asistencia registrada correctamente");
         // Actualizar el estado visual del enlace
         setEnlaces((prev) =>
           prev.map((e) =>
@@ -666,11 +692,11 @@ ${user.nombre} ${user.apellido}
           )
         );
       } else {
-        alert(`❌ Error: ${resultado.message}`);
+        showInfo("Información", `❌ Error: ${resultado.message}`);
       }
     } catch (error) {
       console.error("Error al registrar asistencia:", error);
-      alert("❌ Error al registrar asistencia");
+      showError("Error", "Error al registrar asistencia");
     } finally {
       setLoading(false);
     }
@@ -1060,9 +1086,10 @@ ${user.nombre} ${user.apellido}
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => {
+                  onClick={async () => {
                     if (enlaces.length > 0) {
-                      const confirmar = confirm(
+                      const confirmar = await showConfirm(
+                        "Confirmar acción",
                         "¿Está seguro que desea limpiar el formulario? Se perderán los enlaces generados."
                       );
                       if (confirmar) {

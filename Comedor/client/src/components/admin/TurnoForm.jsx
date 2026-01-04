@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
 import turnoService from "../../services/turnoService.js";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -10,6 +18,7 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
@@ -67,6 +76,7 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
     }
 
     setLoading(true);
+    setServerError(null);
 
     try {
       // Preparar datos para enviar al backend
@@ -88,16 +98,37 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
 
       onSave(savedTurno);
     } catch (error) {
-      // Mostrar error al usuario
+      console.error("Error completo:", error);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
+      let errorMessage = "";
+
+      // Intentar extraer el mensaje de error de diferentes estructuras
       if (error.response?.data?.message) {
-        alert(`Error: ${error.response.data.message}`);
-      } else if (error.response?.data?.errors) {
-        const errorMessages = error.response.data.errors
-          .map((err) => `${err.field}: ${err.message}`)
-          .join("\\n");
-        alert(`Errores de validación:\\n${errorMessages}`);
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (typeof error.response?.data === "string") {
+        errorMessage = error.response.data;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      console.log("Mensaje de error extraído:", errorMessage);
+
+      // Verificar si es un error de duplicidad
+      if (
+        errorMessage.toLowerCase().includes("existe") &&
+        errorMessage.toLowerCase().includes("turno")
+      ) {
+        setServerError("Ya existe un turno con este nombre");
+      } else if (errorMessage) {
+        setServerError(errorMessage);
       } else {
-        alert("Error al guardar el turno. Por favor, inténtelo de nuevo.");
+        setServerError(
+          "Error al guardar el turno. Por favor, inténtelo de nuevo."
+        );
       }
     } finally {
       setLoading(false);
@@ -126,7 +157,6 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
           {/* Información del Turno */}
           <div>
             <h5 className="section-title">Información del Turno</h5>
-
             <div className="form-group">
               <label htmlFor="nombre" className="form-label required">
                 Nombre del Turno
@@ -148,7 +178,7 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
             </div>
 
             <div className="form-row">
-              <div className="form-group">
+              <div className="form-group mt-2">
                 <label htmlFor="horaInicio" className="form-label required">
                   Hora de Inicio
                 </label>
@@ -168,7 +198,7 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
                 )}
               </div>
 
-              <div className="form-group">
+              <div className="form-group mt-2">
                 <label htmlFor="horaFin" className="form-label required">
                   Hora de Fin
                 </label>
@@ -208,6 +238,23 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
             </div>
           </div>
         </div>
+
+        {/* Mostrar error del servidor */}
+        {serverError && (
+          <div
+            className="alert alert-danger alert-dismissible fade show mb-3"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error al guardar:</strong>
+            <div
+              className="me-1"
+              style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+            >
+              {serverError}
+            </div>
+          </div>
+        )}
 
         {/* Botones */}
         <div className="form-actions mt-3">

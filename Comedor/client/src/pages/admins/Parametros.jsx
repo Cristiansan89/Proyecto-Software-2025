@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import ParametrosForm from "../../components/admin/ParametrosForm";
+import Swal from "sweetalert2";
 // import ConfiguracionServiciosAutomaticos from "../../components/ConfigServiciosAuto";
 import "../../styles/Parametros.css";
 
@@ -22,6 +23,7 @@ const Parametros = () => {
     estado: "Activo",
   });
   const [mensaje, setMensaje] = useState(null);
+  const [serverError, setServerError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -56,16 +58,20 @@ const Parametros = () => {
 
   const validarFormulario = () => {
     if (!formData.nombreParametro.trim()) {
-      setMensaje({
-        tipo: "error",
-        texto: "El nombre del parámetro es obligatorio",
+      Swal.fire({
+        icon: "error",
+        title: "Validación",
+        text: "El nombre del parámetro es obligatorio",
+        confirmButtonColor: "#d33",
       });
       return false;
     }
     if (!formData.valor.trim()) {
-      setMensaje({
-        tipo: "error",
-        texto: "El valor del parámetro es obligatorio",
+      Swal.fire({
+        icon: "error",
+        title: "Validación",
+        text: "El valor del parámetro es obligatorio",
+        confirmButtonColor: "#d33",
       });
       return false;
     }
@@ -78,6 +84,7 @@ const Parametros = () => {
     if (!validarFormulario()) return;
 
     try {
+      setServerError(null);
       if (editandoId) {
         // Actualizar
         await API.patch(`/parametros-sistemas/${editandoId}`, {
@@ -86,10 +93,27 @@ const Parametros = () => {
           tipoParametro: formData.tipoParametro,
           estado: formData.estado,
         });
-        setMensaje({
-          tipo: "success",
-          texto: "Parámetro actualizado correctamente",
+
+        // Cerrar modal inmediatamente
+        setModalParametro(false);
+        setFormData({
+          nombreParametro: "",
+          valor: "",
+          tipoParametro: "Texto",
+          estado: "Activo",
         });
+        setEditandoId(null);
+        setMensaje(null);
+
+        // Mostrar sweetalert de éxito después de cerrar
+        Swal.fire({
+          icon: "success",
+          title: "¡Éxito!",
+          text: "Parámetro actualizado correctamente",
+          confirmButtonColor: "#3085d6",
+        });
+
+        cargarParametros();
       } else {
         // Crear
         await API.post("/parametros-sistemas", {
@@ -98,26 +122,45 @@ const Parametros = () => {
           tipoParametro: formData.tipoParametro,
           estado: formData.estado,
         });
-        setMensaje({
-          tipo: "success",
-          texto: "Parámetro creado correctamente",
+
+        // Cerrar modal inmediatamente
+        setModalParametro(false);
+        setFormData({
+          nombreParametro: "",
+          valor: "",
+          tipoParametro: "Texto",
+          estado: "Activo",
+        });
+        setEditandoId(null);
+        setMensaje(null);
+
+        // Mostrar sweetalert de éxito después de cerrar
+        Swal.fire({
+          icon: "success",
+          title: "¡Éxito!",
+          text: "Parámetro creado correctamente",
+          confirmButtonColor: "#3085d6",
+        });
+
+        cargarParametros();
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Error al guardar el parámetro";
+      // Detectar error de duplicación (409 Conflict)
+      if (
+        error.response?.status === 409 ||
+        errorMessage.toLowerCase().includes("ya existe")
+      ) {
+        setServerError(errorMessage);
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: errorMessage,
+          confirmButtonColor: "#d33",
         });
       }
-
-      setModalParametro(false);
-      setFormData({
-        nombreParametro: "",
-        valor: "",
-        tipoParametro: "Texto",
-        estado: "Activo",
-      });
-      setEditandoId(null);
-      cargarParametros();
-    } catch (error) {
-      setMensaje({
-        tipo: "error",
-        texto: error.response?.data?.message || "Error al guardar el parámetro",
-      });
     }
   };
 
@@ -129,22 +172,45 @@ const Parametros = () => {
       estado: parametro.estado,
     });
     setEditandoId(parametro.id_parametro);
+    setServerError(null);
+    setMensaje(null);
     setModalParametro(true);
   };
 
-  const handleEliminar = async (id) => {
-    if (window.confirm("¿Está seguro de que desea eliminar este parámetro?")) {
+  const handleEliminar = async (parametro) => {
+    // 1. Confirmación asíncrona con sweetalert
+    const result = await Swal.fire({
+      title: "Eliminar Parámetro",
+      text: `¿Está seguro de que desea eliminar el parámetro "${parametro.nombreParametro}"?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    // 2. Si el usuario confirma, procedemos
+    if (result.isConfirmed) {
       try {
-        await API.delete(`/parametros-sistemas/${id}`);
-        setMensaje({
-          tipo: "success",
-          texto: "Parámetro eliminado correctamente",
+        await API.delete(`/parametros-sistemas/${parametro.id_parametro}`);
+
+        // Feedback de éxito
+        Swal.fire({
+          icon: "success",
+          title: "¡Éxito!",
+          text: `Parámetro "${parametro.nombreParametro}" eliminado correctamente`,
+          confirmButtonColor: "#3085d6",
         });
+
         cargarParametros();
       } catch (error) {
-        setMensaje({
-          tipo: "error",
-          texto: "Error al eliminar el parámetro",
+        // Feedback de error
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: `Error al eliminar el parámetro "${parametro.nombreParametro}"`,
+          confirmButtonColor: "#d33",
         });
       }
     }
@@ -158,12 +224,15 @@ const Parametros = () => {
       estado: "Activo",
     });
     setEditandoId(null);
+    setServerError(null);
+    setMensaje(null);
     setModalParametro(true);
   };
 
   const handleCerrarModal = () => {
     setModalParametro(false);
     setEditandoId(null);
+    setServerError(null);
     setFormData({
       nombreParametro: "",
       valor: "",
@@ -234,20 +303,6 @@ const Parametros = () => {
               </button>
             </div>
           </div>
-
-          {mensaje && (
-            <div
-              className={`alert alert-${mensaje.tipo} alert-dismissible fade show`}
-              role="alert"
-            >
-              {mensaje.texto}
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setMensaje(null)}
-              ></button>
-            </div>
-          )}
 
           <div className="card">
             <div className="card-header bg-light">
@@ -361,7 +416,7 @@ const Parametros = () => {
                             </button>
                             <button
                               className="btn btn-sm btn-danger"
-                              onClick={() => handleEliminar(param.id_parametro)}
+                              onClick={() => handleEliminar(param)}
                               title="Eliminar"
                             >
                               <i className="fas fa-trash"></i>
@@ -455,6 +510,8 @@ const Parametros = () => {
         onGuardar={handleGuardar}
         onInputChange={handleInputChange}
         onInputChangeName={handleInputChangeName}
+        serverError={serverError}
+        onServerErrorClear={() => setServerError(null)}
       />
     </div>
   );

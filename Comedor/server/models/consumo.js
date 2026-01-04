@@ -172,7 +172,7 @@ export class ConsumoModel {
                     dc.cantidadUtilizada,
                     dc.unidadMedida,
                     dc.cantidadCalculada,
-                    dc.idItemReceta
+                    dc.id_itemReceta
                  FROM Consumos c
                  LEFT JOIN Servicios s ON c.id_servicio = s.id_servicio
                  LEFT JOIN Usuarios u ON c.id_usuario = u.id_usuario
@@ -314,7 +314,7 @@ export class ConsumoModel {
 
       for (const detalle of detalles) {
         // Buscar el ItemReceta correspondiente para obtener cantidadCalculada y unidad
-        let idItemReceta = null;
+        let id_itemReceta = null;
         let cantidadCalculada = null;
         let unidadMedida = normalizarUnidad(
           detalle.unidad_medida || "Unidades"
@@ -322,7 +322,7 @@ export class ConsumoModel {
 
         try {
           const [items] = await connection.query(
-            `SELECT ir.idItemReceta, ir.cantidadPorPorcion, ir.unidadPorPorcion
+            `SELECT ir.id_itemReceta, ir.cantidadPorPorcion, ir.unidadPorPorcion
              FROM ItemsRecetas ir
              JOIN PlanificacionServicioReceta psr ON ir.id_receta = psr.id_receta
              WHERE psr.id_jornada = UUID_TO_BIN(?) 
@@ -332,7 +332,7 @@ export class ConsumoModel {
           );
 
           if (items.length > 0) {
-            idItemReceta = items[0].idItemReceta;
+            id_itemReceta = items[0].id_itemReceta;
             cantidadCalculada = items[0].cantidadPorPorcion;
             // Normalizar la unidad de la receta
             unidadMedida = normalizarUnidad(items[0].unidadPorPorcion);
@@ -345,12 +345,12 @@ export class ConsumoModel {
 
         // Insertar el detalle de consumo
         await connection.query(
-          `INSERT INTO DetalleConsumo (id_consumo, id_insumo, idItemReceta, cantidadUtilizada, unidadMedida, cantidadCalculada)
+          `INSERT INTO DetalleConsumo (id_consumo, id_insumo, id_itemReceta, cantidadUtilizada, unidadMedida, cantidadCalculada)
                    VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?);`,
           [
             id_consumo,
             detalle.id_insumo,
-            idItemReceta,
+            id_itemReceta,
             detalle.cantidad_utilizada,
             unidadMedida,
             cantidadCalculada,

@@ -1,4 +1,5 @@
 import { connection } from "./db.js";
+import { SoftDeleteService } from "./softDeleteService.js";
 
 export class GradoModel {
   static async getAll() {
@@ -13,6 +14,7 @@ export class GradoModel {
                 t.horaFin
              FROM Grados g
              JOIN Turnos t ON g.id_turno = t.id_turno
+             WHERE g.estado = 'Activo'
              ORDER BY g.nombreGrado, t.nombre;`
     );
     return grados;
@@ -30,7 +32,7 @@ export class GradoModel {
                 t.horaFin
              FROM Grados g
              JOIN Turnos t ON g.id_turno = t.id_turno
-             WHERE g.id_grado = ?;`,
+             WHERE g.id_grado = ? AND g.estado = 'Activo';`,
       [id]
     );
     if (grados.length === 0) return null;
@@ -68,43 +70,70 @@ export class GradoModel {
 
   static async delete({ id }) {
     try {
-      console.log("GradoModel: Ejecutando DELETE para ID:", id);
-      const [result] = await connection.query(
-        `DELETE FROM Grados
-                 WHERE id_grado = ?;`,
-        [id]
-      );
-      console.log("GradoModel: Resultado de DELETE:", result);
-      console.log("GradoModel: Filas afectadas:", result.affectedRows);
-
-      // Verificar si se eliminó alguna fila
-      return result.affectedRows > 0;
+      // Usar soft delete en lugar de DELETE físico
+      return await SoftDeleteService.softDelete("Grados", "id_grado", id);
     } catch (error) {
-      console.error("GradoModel: Error en DELETE:", error);
-      throw error;
+      console.error("Error en softDelete:", error);
+      return false;
+    }
+  }
+
+  // Nuevo método: Restaurar grado eliminado
+  static async undelete({ id }) {
+    try {
+      return await SoftDeleteService.undelete("Grados", "id_grado", id);
+    } catch (error) {
+      console.error("Error en undelete:", error);
+      return false;
+    }
+  }
+
+  // Nuevo método: Obtener grados eliminados
+  static async getDeleted() {
+    try {
+      const [grados] = await connection.query(
+        `SELECT 
+          g.id_grado as idGrado,
+          g.id_turno as idTurno,
+          g.nombreGrado,
+          g.estado,
+          g.fechaEliminacion,
+          t.nombre as turno
+         FROM Grados g
+         JOIN Turnos t ON g.id_turno = t.id_turno
+         WHERE g.estado = 'Inactivo'
+         ORDER BY g.fechaEliminacion DESC;`
+      );
+      return grados;
+    } catch (error) {
+      console.error("Error en getDeleted:", error);
+      return [];
+    }
+  }
+
+  // Nuevo método: Estadísticas de grados
+  static async getStats() {
+    try {
+      return await SoftDeleteService.getStats("Grados");
+    } catch (error) {
+      console.error("Error en getStats:", error);
+      return { activos: 0, inactivos: 0, total: 0, porcentajeInactivos: 0 };
     }
   }
 
   static async hasActiveRelations({ id }) {
-    const [result] = await connection.query(
-      `SELECT COUNT(*) as count
-             FROM AlumnoGrado
-             WHERE id_grado = ? AND estado = 'Activo'
-             UNION ALL
-             SELECT COUNT(*) as count
-             FROM DocenteGrado
-             WHERE id_grado = ? AND estado = 'Activo'
-             UNION ALL
-             SELECT COUNT(*) as count
-             FROM RegistroAsistencia
-             WHERE id_grado = ? AND estado = 'Activo'
-             UNION ALL
-             SELECT COUNT(*) as count
-             FROM Pedidos
-             WHERE id_grado = ? AND estado != 'Entregado'`,
-      [id, id, id, id]
-    );
-    return result.some((r) => r.count > 0);
+    try {
+      const [result] = await connection.query(
+        `SELECT COUNT(*) as count
+               FROM RegistrosAsistencias
+               WHERE id_grado = ?`,
+        [id]
+      );
+      return result[0].count > 0;
+    } catch (error) {
+      console.error("Error al verificar relaciones activas:", error);
+      return false;
+    }
   }
 
   static async update({ id, input }) {

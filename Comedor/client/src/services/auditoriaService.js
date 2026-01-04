@@ -118,6 +118,108 @@ const auditoriaService = {
       throw error;
     }
   },
+
+  /**
+   * Registrar la generación de un reporte PDF
+   * Se llama desde el cliente cuando se genera un PDF
+   */
+  registrarReportePDF: async (datos) => {
+    try {
+      const {
+        nombreReporte,
+        tipoReporte = "PDF",
+        descripcion = "",
+        detallesReporte = "",
+      } = datos;
+
+      const response = await API.post("/auditoria/reportes", {
+        nombreReporte,
+        tipoReporte,
+        descripcion,
+        detallesReporte,
+      });
+
+      console.log("✅ Reporte PDF registrado en auditoría:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("⚠️ Error al registrar reporte PDF en auditoría:", error);
+      // No interrumpir el flujo si falla la auditoría
+      return null;
+    }
+  },
+
+  /**
+   * Obtener reportes PDF generados
+   */
+  obtenerReportesPDF: async (filtros = {}) => {
+    try {
+      const params = new URLSearchParams();
+      if (filtros.fechaInicio)
+        params.append("fechaInicio", filtros.fechaInicio);
+      if (filtros.fechaFin) params.append("fechaFin", filtros.fechaFin);
+      if (filtros.usuario) params.append("usuario", filtros.usuario);
+      if (filtros.tipoReporte)
+        params.append("tipoReporte", filtros.tipoReporte);
+
+      const queryString = params.toString();
+      const response = await API.get(
+        `/auditoria/reportes${queryString ? `?${queryString}` : ""}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener reportes PDF:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener logins de usuarios
+   */
+  obtenerLogins: async (filtros = {}) => {
+    try {
+      const params = new URLSearchParams();
+      if (filtros.fechaInicio)
+        params.append("fechaInicio", filtros.fechaInicio);
+      if (filtros.fechaFin) params.append("fechaFin", filtros.fechaFin);
+      if (filtros.usuario) params.append("usuario", filtros.usuario);
+      if (filtros.tipo) params.append("tipo", filtros.tipo);
+
+      const queryString = params.toString();
+      const response = await API.get(
+        `/auditoria/logins${queryString ? `?${queryString}` : ""}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener logins:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Registrar el logout (cierre de sesión) de un usuario
+   */
+  registrarLogout: async (datos) => {
+    try {
+      const {
+        usuario = "Usuario desconocido",
+        descripcion = "Cierre de sesión",
+        tipoAccion = "Logout",
+      } = datos;
+
+      const response = await API.post("/auditoria/logins", {
+        usuario,
+        descripcion,
+        tipoAccion,
+      });
+
+      console.log("✅ Logout registrado en auditoría:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("⚠️ Error al registrar logout en auditoría:", error);
+      // No interrumpir el flujo si falla la auditoría
+      return null;
+    }
+  },
 };
 
 export default auditoriaService;

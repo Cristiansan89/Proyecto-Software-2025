@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import insumoService from "../../services/insumoService";
 import proveedorService from "../../services/proveedorService";
 import "../../styles/index.css";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
   const [availableInsumos, setAvailableInsumos] = useState([]);
@@ -63,7 +71,7 @@ const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
       );
       setAvailableInsumos(insumosActivos);
     } catch (error) {
-      alert("Error al cargar los insumos disponibles");
+      showError("Error", "Error al cargar los insumos disponibles");
     }
   };
 
@@ -89,7 +97,7 @@ const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
     );
 
     if (yaAsignado) {
-      alert("Este insumo ya ha sido asignado al proveedor");
+      showToast("Este insumo ya ha sido asignado al proveedor", "info", 2000);
       return;
     }
 
@@ -121,7 +129,7 @@ const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
     e.preventDefault();
 
     if (assignedInsumos.length === 0) {
-      alert("Debe asignar al menos un insumo");
+      showToast("Debe asignar al menos un insumo", "info", 2000);
       return;
     }
 
@@ -135,7 +143,10 @@ const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
 
       onSave(insumosToSave);
     } catch (error) {
-      alert("Error al asignar los insumos. Por favor, inténtelo de nuevo.");
+      showError(
+        "Error",
+        "Error al asignar los insumos. Por favor, inténtelo de nuevo."
+      );
     } finally {
       setLoading(false);
     }

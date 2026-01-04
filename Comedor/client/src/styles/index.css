@@ -2245,6 +2245,16 @@ textarea.form-control {
   width: 95%;
 }
 
+.configuracion-modal {
+  max-width: 800px;
+  width: 95%;
+}
+
+.usuario-modal {
+  max-width: 700px;
+  width: 95%;
+}
+
 /* Asegurar que el modal-body de personas también tenga scroll interno */
 .persona-modal .modal-body {
   max-height: calc(90vh - 140px); /* Más espacio para header y acciones */
@@ -3004,7 +3014,7 @@ textarea.form-control {
 
 /* Campos de formulario mejorados */
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .form-label.required::after {
@@ -3092,11 +3102,7 @@ textarea.form-control {
 .form-row {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  flex: 1;
+  margin-bottom: 0.5rem;
 }
 
 .form-label {
@@ -4517,7 +4523,7 @@ textarea.form-control {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
   position: relative !important;
   width: 100% !important;
-  min-height: 400px !important;
+  min-height: 450px !important;
 }
 
 /* Específicos para modal de recetas */

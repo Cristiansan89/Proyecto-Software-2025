@@ -3,6 +3,14 @@ import AlumnoGradoForm from "../../components/admin/AlumnoGradoForm";
 import alumnoGradoService from "../../services/alumnoGradoService.js";
 import { gradoService } from "../../services/gradoService.js";
 import { formatCicloLectivo } from "../../utils/dateUtils.js";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaAlumnosGrados = () => {
   const [alumnos, setAlumnos] = useState([]);
@@ -53,7 +61,7 @@ const ListaAlumnosGrados = () => {
       setFilteredAlumnos(data);
     } catch (error) {
       console.error("Error al cargar los alumnos:", error);
-      alert("Error al cargar la lista de alumnos");
+      showError("Error", "Error al cargar la lista de alumnos");
     } finally {
       setLoading(false);
     }
@@ -135,13 +143,14 @@ const ListaAlumnosGrados = () => {
       try {
         await alumnoGradoService.delete(alumnoId);
         loadAlumnos();
-        alert("✅ Asignación eliminada correctamente");
+        showSuccess("Éxito", "Asignación eliminada correctamente");
       } catch (error) {
         console.error("Error al eliminar la asignación:", error);
         if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
-          alert(
+          showError(
+            "Error",
             "Error al eliminar la asignación. Por favor, inténtelo de nuevo."
           );
         }
@@ -151,7 +160,11 @@ const ListaAlumnosGrados = () => {
 
   const handleBulkDelete = async () => {
     if (selectedAlumnos.length === 0) {
-      alert("Seleccione al menos una asignación para eliminar");
+      showToast(
+        "Seleccione al menos una asignación para eliminar",
+        "info",
+        2000
+      );
       return;
     }
 
@@ -166,10 +179,10 @@ const ListaAlumnosGrados = () => {
         );
         setSelectedAlumnos([]);
         loadAlumnos();
-        alert("Asignaciones eliminadas correctamente");
+        showToast("Asignaciones eliminadas correctamente", "info", 2000);
       } catch (error) {
         console.error("Error al eliminar asignaciones:", error);
-        alert("Error al eliminar algunas asignaciones");
+        showError("Error", "Error al eliminar algunas asignaciones");
       }
     }
   };
@@ -180,11 +193,12 @@ const ListaAlumnosGrados = () => {
     loadAlumnos();
 
     if (modalMode === "create") {
-      alert(
+      showInfo(
+        "Información",
         `Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`
       );
     } else {
-      alert("Asignación actualizada correctamente!");
+      showToast("Asignación actualizada correctamente!", "info", 2000);
     }
   };
 

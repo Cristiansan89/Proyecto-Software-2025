@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Select from "react-select";
 import API from "../../services/api";
 import recetasServiciosService from "../../services/serviciosRecetasService";
+import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
 
 const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   // Función helper para formatear cantidades
@@ -158,7 +159,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         !nuevoIngrediente.cantidadPorPorcion ||
         !nuevoIngrediente.unidadPorPorcion
       ) {
-        alert("Complete todos los campos del ingrediente");
+        showToast("Complete todos los campos del ingrediente", "info", 2000);
         return;
       }
 
@@ -171,7 +172,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         (ing) => ing.id_insumo === nuevoIngrediente.id_insumo
       );
       if (yaExiste) {
-        alert("Este ingrediente ya está en la lista");
+        showToast("Este ingrediente ya está en la lista", "info", 2000);
         return;
       }
 
@@ -198,7 +199,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         }));
       }
     } catch (error) {
-      alert("Error al agregar ingrediente");
+      showError("Error", "Error al agregar ingrediente");
     }
   };
 
@@ -327,17 +328,15 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           apiErrors[err.field] = err.message;
         });
         setErrors(apiErrors);
-        alert("Error de validación. Revise los campos marcados en rojo.");
+        showError("Error", "Error de validación. Revise los campos marcados en rojo.");
       } else if (error.response?.data?.message) {
-        alert(`Error: ${error.response.data.message}`);
+        showInfo("Información", `Error: ${error.response.data.message}`);
       } else if (error.response) {
-        alert(
-          `Error del servidor (${error.response.status}): ${error.response.statusText}`
-        );
+        showInfo("Información", `Error del servidor (${error.response.status}): ${error.response.statusText}`);
       } else if (error.request) {
-        alert("Error de conexión. Verifique su conexión a internet.");
+        showError("Error", "Error de conexión. Verifique su conexión a internet.");
       } else {
-        alert(`Error inesperado: ${error.message}`);
+        showInfo("Información", `Error inesperado: ${error.message}`);
       }
     } finally {
       setLoading(false);

@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import TurnoForm from "../../components/admin/TurnoForm";
 import turnoService from "../../services/turnoService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaTurnos = () => {
   const [turnos, setTurnos] = useState([]);
@@ -25,7 +33,7 @@ const ListaTurnos = () => {
       setTurnos(data);
     } catch (error) {
       console.error("Error al cargar turnos:", error);
-      alert("Error al cargar los turnos");
+      showError("Error", "Error al cargar los turnos");
     } finally {
       setLoading(false);
     }
@@ -61,38 +69,61 @@ const ListaTurnos = () => {
   };
 
   const handleDelete = async (turno) => {
-    console.log("ListaTurnos: Intentando eliminar turno:", turno);
-    if (
-      window.confirm(`¿Está seguro de eliminar el turno "${turno.nombre}"?`)
-    ) {
+    // 1. Solicitamos confirmación personalizada
+    const confirmed = await showConfirm(
+      "Eliminar Turno",
+      `¿Está seguro de eliminar el turno "${turno.nombre}"?`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    // 2. Si el usuario confirma, ejecutamos la eliminación
+    if (confirmed) {
       try {
-        console.log("ListaTurnos: Usuario confirmó eliminación");
-        const result = await turnoService.delete(turno.idTurno);
-        console.log("ListaTurnos: Resultado de eliminación:", result);
-        alert("Turno eliminado correctamente");
+        await turnoService.delete(turno.idTurno);
+
+        // Feedback de éxito y recarga de datos
+        showSuccess(
+          "Éxito",
+          `El Turno "${turno.nombre}" ha sido eliminado correctamente`
+        );
         loadTurnos();
       } catch (error) {
-        console.error("ListaTurnos: Error al eliminar turno:", error);
-        console.error("ListaTurnos: Error response:", error.response?.data);
+        // Manejo de errores sin logs de consola
         if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
-          alert("Error al eliminar el turno");
+          showError("Error", "Error al eliminar el turno");
         }
       }
-    } else {
-      console.log("ListaTurnos: Usuario canceló eliminación");
     }
   };
 
   const handleChangeStatus = async (turno, nuevoEstado) => {
     try {
       await turnoService.cambiarEstado(turno.idTurno, nuevoEstado);
-      alert(`Turno ${nuevoEstado.toLowerCase()} correctamente`);
+
+      // Normalizamos el estado a minúsculas para comparar fácilmente
+      const estadoNormalizado = nuevoEstado.toLowerCase();
+
+      if (estadoNormalizado === "activo") {
+        // Icono de Success (verde/check) para activados
+        showSuccess(
+          "Turno Activado",
+          `El Turno "${turno.nombre}" activado correctamente`
+        );
+      } else {
+        // Icono de Info (azul/información) para desactivados
+        showInfo(
+          "Turno Desactivado",
+          `El Turno "${turno.nombre}" desactivado correctamente`
+        );
+      }
+
       loadTurnos();
     } catch (error) {
       console.error("Error al cambiar estado:", error);
-      alert("Error al cambiar el estado del turno");
+      showError("Error", "Error al cambiar el estado del turno");
     }
   };
 
@@ -100,7 +131,8 @@ const ListaTurnos = () => {
     setShowModal(false);
     setSelectedTurno(null);
     loadTurnos();
-    alert(
+    showSuccess(
+      "Éxito",
       `Turno ${modalMode === "create" ? "creado" : "actualizado"} correctamente`
     );
   };
@@ -271,7 +303,7 @@ const ListaTurnos = () => {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content configuracion-modal">
             <div className="modal-header">
               <h4>
                 <i className="fas fa-clock me-2"></i>

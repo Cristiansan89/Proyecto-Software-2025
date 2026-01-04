@@ -65,4 +65,25 @@ router.post(
   AuditoriaController.limpiarLogsAntiguos
 );
 
+/**
+ * POST /api/auditoria/reportes
+ * Registrar la generación de un reporte PDF
+ * Body: { nombreReporte, tipoReporte, descripcion, detallesReporte }
+ */
+router.post("/reportes", AuditoriaController.registrarReportePDF);
+
+/**
+ * GET /api/auditoria/reportes
+ * Obtener reportes PDF generados
+ * Query params: fechaInicio, fechaFin, usuario, tipoReporte
+ */
+router.get("/reportes", AuditoriaController.obtenerReportesPDF);
+
+/**
+ * GET /api/auditoria/logins
+ * Obtener logins de usuarios
+ * Query params: fechaInicio, fechaFin, usuario, tipo (Login|Logout)
+ */
+router.get("/logins", AuditoriaController.obtenerLogins);
+
 export default router;

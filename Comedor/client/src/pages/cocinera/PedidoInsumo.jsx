@@ -5,8 +5,17 @@ import PedidoAutomaticoForm from "../../components/cocinera/PedidoAutomaticoForm
 import pedidoService from "../../services/pedidoService";
 import estadoPedidoService from "../../services/estadoPedidoService";
 import insumoService from "../../services/insumoService";
+import auditoriaService from "../../services/auditoriaService";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const PedidoInsumo = () => {
   const { user } = useAuth();
@@ -146,7 +155,7 @@ const PedidoInsumo = () => {
       setUsuariosUnicos(usuarios);
     } catch (error) {
       console.error("Error al cargar datos:", error);
-      alert("Error al cargar datos: " + error.message);
+      showError("Error", "Error al cargar datos: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -190,7 +199,8 @@ const PedidoInsumo = () => {
 
     try {
       const response = await pedidoService.aprobar(id);
-      alert(
+      showInfo(
+        "Información",
         `✅ Pedido aprobado exitosamente.\n📧 Email enviado al proveedor: ${
           response.pedido?.nombreProveedor || "Proveedor"
         }`
@@ -198,8 +208,9 @@ const PedidoInsumo = () => {
       cargarPedidos();
     } catch (error) {
       console.error("Error al aprobar pedido:", error);
-      alert(
-        "❌ Error al aprobar pedido: " +
+      showError(
+        "Error",
+        "Error al aprobar pedido: " +
           (error.response?.data?.message || error.message)
       );
     }
@@ -211,11 +222,11 @@ const PedidoInsumo = () => {
 
     try {
       await pedidoService.cancelar(id, motivo);
-      alert("Pedido cancelado exitosamente");
+      showSuccess("Éxito", "Pedido cancelado exitosamente");
       cargarPedidos();
     } catch (error) {
       console.error("Error al cancelar pedido:", error);
-      alert("Error al cancelar pedido: " + error.message);
+      showError("Error", "Error al cancelar pedido: " + error.message);
     }
   };
 
@@ -232,7 +243,8 @@ const PedidoInsumo = () => {
     console.log("✅ Generación automática exitosa:", resultado);
 
     // Mostrar mensaje de éxito
-    alert(
+    showInfo(
+      "Información",
       `¡Éxito! ${resultado.message}\n\nTotal pedidos creados: ${resultado.totalPedidosCreados}`
     );
 
@@ -244,7 +256,7 @@ const PedidoInsumo = () => {
 
   const onGeneracionAutomaticaError = (error) => {
     console.error("❌ Error en generación automática:", error);
-    alert(`Error: ${error}`);
+    showInfo("Información", `Error: ${error}`);
   };
 
   const verDetallesPedido = async (pedido) => {
@@ -256,7 +268,7 @@ const PedidoInsumo = () => {
       setMostrarDetallesPedido(pedidoCompleto);
     } catch (error) {
       console.error("Error al cargar detalles del pedido:", error);
-      alert("Error al cargar detalles: " + error.message);
+      showError("Error", "Error al cargar detalles: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -267,11 +279,11 @@ const PedidoInsumo = () => {
 
     try {
       await pedidoService.delete(id);
-      alert("Pedido eliminado exitosamente");
+      showSuccess("Éxito", "Pedido eliminado exitosamente");
       cargarPedidos();
     } catch (error) {
       console.error("Error al eliminar pedido:", error);
-      alert("Error al eliminar pedido: " + error.message);
+      showError("Error", "Error al eliminar pedido: " + error.message);
     }
   };
 
@@ -298,7 +310,7 @@ const PedidoInsumo = () => {
     }
   };
 
-  const exportarPDFPedidos = () => {
+  const exportarPDFPedidos = async () => {
     console.log("Botón PDF clickeado, pedidos:", pedidos); // Debug
     // Filtrar solo pedidos aprobados
     const pedidosAprobados = pedidos.filter(
@@ -306,7 +318,7 @@ const PedidoInsumo = () => {
     );
 
     if (pedidosAprobados.length === 0) {
-      alert("No hay pedidos aprobados para exportar");
+      showToast("No hay pedidos aprobados para exportar", "info", 2000);
       return;
     }
 
@@ -376,10 +388,22 @@ const PedidoInsumo = () => {
       }
 
       doc.save(`pedidos_aprobados_${new Date().getTime()}.pdf`);
-      alert("✅ Reporte PDF de pedidos aprobados generado exitosamente");
+
+      // Registrar la generación del PDF en auditoría
+      await auditoriaService.registrarReportePDF({
+        nombreReporte: "Reporte de Pedidos Aprobados",
+        tipoReporte: "Pedidos",
+        descripcion: "Reporte de pedidos aprobados para proveedores",
+        detallesReporte: `Total de pedidos aprobados: ${pedidosAprobados.length}`,
+      });
+
+      showSuccess(
+        "Éxito",
+        "Reporte PDF de pedidos aprobados generado exitosamente"
+      );
     } catch (error) {
       console.error("Error al generar PDF:", error);
-      alert("❌ Error al generar el reporte PDF");
+      showError("Error", "Error al generar el reporte PDF");
     }
   };
 

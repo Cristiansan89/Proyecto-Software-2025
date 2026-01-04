@@ -4,6 +4,14 @@ import usuarioService from "../../services/usuarioService.js";
 import { rolService } from "../../services/rolService.js";
 import "../../styles/table-insumos.css";
 import { formatLastActivity } from "../../utils/dateUtils.js";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaUsuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -57,7 +65,7 @@ const ListaUsuarios = () => {
       );
     } catch (error) {
       console.error("Error al cargar usuarios:", error);
-      alert("Error al cargar usuarios: " + error.message);
+      showError("Error", "Error al cargar usuarios: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -159,7 +167,8 @@ const ListaUsuarios = () => {
       try {
         const updatedData = { estado: newState };
         await usuarioService.update(usuario.idUsuario, updatedData);
-        alert(
+        showInfo(
+          "Información",
           `Usuario ${
             action === "deshabilitar" ? "deshabilitado" : "activado"
           } correctamente.`
@@ -167,7 +176,7 @@ const ListaUsuarios = () => {
         loadUsuarios(); // Recargar la lista después de la actualización
       } catch (error) {
         console.error(`Error al ${action} usuario:`, error);
-        alert(`Error al ${action} usuario: ` + error.message);
+        showError("Error", `Error al ${action} usuario: ${error.message}`);
       }
     }
   };
@@ -409,7 +418,7 @@ const ListaUsuarios = () => {
       {/* Modal para Usuario */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content usuario-modal">
             <div className="modal-header">
               <h3>
                 {modalMode === "view" && (

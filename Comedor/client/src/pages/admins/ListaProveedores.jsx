@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import ProveedorForm from "../../components/admin/ProveedorForm";
 import AsignarInsumosForm from "../../components/admin/AsignarInsumosForm";
 import proveedorService from "../../services/proveedorService";
+import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
 
 const ListaProveedores = () => {
   const [proveedores, setProveedores] = useState([]);
@@ -33,7 +34,7 @@ const ListaProveedores = () => {
       setProveedores(data);
     } catch (error) {
       console.error("Error al cargar proveedores:", error);
-      alert("Error al cargar los proveedores");
+      showError("Error", "Error al cargar los proveedores");
     } finally {
       setLoading(false);
     }
@@ -122,13 +123,13 @@ const ListaProveedores = () => {
     if (window.confirm("¿Está seguro de que desea eliminar este proveedor?")) {
       try {
         await proveedorService.delete(proveedorId);
-        alert("Proveedor eliminado correctamente");
+        showToast("Proveedor eliminado correctamente", "info", 2000);
         loadProveedores();
       } catch (error) {
         console.error("Error al eliminar proveedor:", error);
         const errorMessage =
           error.response?.data?.message || "Error al eliminar el proveedor";
-        alert(`⚠️ ${errorMessage}`);
+        showInfo("Información", `⚠️ ${errorMessage}`);
       }
     }
   };
@@ -137,13 +138,13 @@ const ListaProveedores = () => {
     try {
       if (modalMode === "create") {
         await proveedorService.create(proveedorData);
-        alert("Proveedor creado correctamente");
+        showSuccess("Éxito", "Proveedor creado correctamente");
       } else if (modalMode === "edit") {
         await proveedorService.update(
           selectedProveedor.idProveedor,
           proveedorData
         );
-        alert("Proveedor actualizado correctamente");
+        showSuccess("Éxito", "Proveedor actualizado correctamente");
       }
 
       setShowModal(false);
@@ -160,16 +161,16 @@ const ListaProveedores = () => {
       await proveedorService.asignarInsumos(selectedProveedor.idProveedor, {
         insumos: insumosData,
       });
-      alert("Insumos asignados correctamente");
+      showToast("Insumos asignados correctamente", "info", 2000);
       setShowInsumosModal(false);
       setSelectedProveedor(null);
       loadProveedores();
     } catch (error) {
       console.error("Error al asignar insumos:", error);
       if (error.response?.data?.message) {
-        alert(`Error: ${error.response.data.message}`);
+        showInfo("Información", `Error: ${error.response.data.message}`);
       } else {
-        alert("Error al asignar insumos");
+        showError("Error", "Error al asignar insumos");
       }
     }
   };

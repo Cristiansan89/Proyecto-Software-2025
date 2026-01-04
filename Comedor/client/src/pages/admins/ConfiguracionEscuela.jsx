@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
 import escuelaService from "../../services/escuelaService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ConfiguracionEscuela = () => {
   const [datos, setDatos] = useState({
@@ -22,7 +30,10 @@ const ConfiguracionEscuela = () => {
       setDatos(datosEscuela);
     } catch (error) {
       console.error("Error al cargar datos de la escuela:", error);
-      alert("Error al cargar datos de la escuela: " + error.message);
+      showError(
+        "Error",
+        "Error al cargar datos de la escuela: " + error.message
+      );
     } finally {
       setLoading(false);
     }
@@ -57,10 +68,13 @@ const ConfiguracionEscuela = () => {
     try {
       setGuardando(true);
       await escuelaService.actualizarDatos(datos);
-      alert("Datos de la escuela actualizados exitosamente");
+      showSuccess("Éxito", "Datos de la escuela actualizados exitosamente");
     } catch (error) {
       console.error("Error al guardar datos de la escuela:", error);
-      alert("Error al guardar datos de la escuela: " + error.message);
+      showError(
+        "Error",
+        "Error al guardar datos de la escuela: " + error.message
+      );
     } finally {
       setGuardando(false);
     }

@@ -193,7 +193,7 @@ export class RecetaModel {
 
       const [insumosRows] = await connection.query(
         `SELECT 
-                    ir.idItemReceta as id_item,
+                    ir.id_itemReceta as id_item,
                     BIN_TO_UUID(ir.id_receta) as id_receta,
                     ir.id_insumo,
                     i.nombreInsumo,
@@ -280,7 +280,7 @@ export class RecetaModel {
                     r.unidadSalida,
                     r.estado,
                     r.fechaAlta,
-                    COUNT(ir.idItemReceta) as totalInsumos
+                    COUNT(ir.id_itemReceta) as totalInsumos
                  FROM Recetas r
                  LEFT JOIN ItemsRecetas ir ON r.id_receta = ir.id_receta
                  GROUP BY r.id_receta, r.nombreReceta, r.instrucciones, r.unidadSalida, r.estado, r.fechaAlta
@@ -327,7 +327,7 @@ export class RecetaModel {
       await connection.query(
         `UPDATE ItemsRecetas 
                  SET cantidadPorPorcion = ?, unidadPorPorcion = ?
-                 WHERE idItemReceta = ?;`,
+                 WHERE id_itemReceta = ?;`,
         [cantidadPorPorcion, unidadPorPorcion, id_item]
       );
 
@@ -342,7 +342,7 @@ export class RecetaModel {
   static async removeInsumo({ id_item }) {
     try {
       const [result] = await connection.query(
-        `DELETE FROM ItemsRecetas WHERE idItemReceta = ?;`,
+        `DELETE FROM ItemsRecetas WHERE id_itemReceta = ?;`,
         [id_item]
       );
 

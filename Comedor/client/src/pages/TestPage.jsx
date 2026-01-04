@@ -23,7 +23,7 @@ const TestPage = () => {
                 </ul>
             </div>
             <button 
-                onClick={() => alert('¡JavaScript funciona!')}
+                onClick={() => showToast("¡JavaScript funciona!", "info", 2000)}
                 style={{
                     padding: '10px 20px',
                     backgroundColor: '#007bff',

@@ -4,6 +4,14 @@ import PersonaEditForm from "../../components/admin/PersonaEditForm.jsx";
 import personaService from "../../services/personaService.js";
 import { rolService } from "../../services/rolService.js";
 import "../../styles/table-insumos.css";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaPersonas = () => {
   const [personas, setPersonas] = useState([]);
@@ -70,7 +78,7 @@ const ListaPersonas = () => {
       );
     } catch (error) {
       console.error("Error al cargar personas:", error);
-      alert("Error al cargar personas: " + error.message);
+      showError("Error", "Error al cargar personas: " + error.message);
       setPersonas([]);
       setFilteredPersonas([]);
     } finally {
@@ -178,36 +186,56 @@ const ListaPersonas = () => {
     // Mostrar mensaje de éxito
     if (modalMode === "create") {
       if (usuarioData) {
-        alert(
-          `Persona creada exitosamente!\n\n` +
-            `Persona: ${personaData.nombre} ${personaData.apellido}\n` +
-            `Usuario: ${usuarioData.nombreUsuario}`
+        showSuccess(
+          "Éxito",
+          `Persona creada exitosamente!\n\nPersona: ${personaData.nombre} ${personaData.apellido}\nUsuario: ${usuarioData.nombreUsuario}`
         );
       } else {
-        alert(
-          `Persona creada exitosamente!\n\n` +
-            `${personaData.nombre} ${personaData.apellido}`
+        showSuccess(
+          "Éxito",
+          `Persona creada exitosamente!\n\n${personaData.nombre} ${personaData.apellido}`
         );
       }
     } else if (modalMode === "edit") {
-      alert("Persona actualizada exitosamente!");
+      showSuccess("Éxito", "Persona actualizada exitosamente!");
     }
 
     closeModal();
   };
 
-  const handleDelete = async (personaId) => {
-    if (window.confirm("¿Está seguro de que desea eliminar esta persona?")) {
+  const handleDelete = async (persona) => {
+    const personaId = persona.id_persona ?? persona.idPersona ?? persona.id;
+
+    // 1. Confirmación personalizada asíncrona
+    const confirmed = await showConfirm(
+      "Eliminar Persona",
+      `¿Está seguro de que desea eliminar a ${persona.nombre} ${persona.apellido}?`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    // 2. Proceder solo si el usuario confirmó
+    if (confirmed) {
       try {
         await personaService.delete(personaId);
+
+        // 3. Actualización optimista de la UI (filtramos el estado local)
         setPersonas((prev) => prev.filter((p) => p.idPersona !== personaId));
-        alert("Persona eliminada exitosamente!");
+
+        // 4. Feedback de éxito
+        showSuccess(
+          "Éxito",
+          `${persona.nombre} ${persona.apellido} eliminado(a) exitosamente!`
+        );
       } catch (error) {
-        console.error("Error al eliminar persona:", error);
+        // Manejo de errores sin logs de consola innecesarios
         if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
-          alert("Error al eliminar la persona. Por favor, inténtelo de nuevo.");
+          showError(
+            "Error",
+            "Error al eliminar la persona. Por favor, inténtelo de nuevo."
+          );
         }
       }
     }
@@ -412,13 +440,7 @@ const ListaPersonas = () => {
                           </button>
                           <button
                             className="btn-action btn-delete"
-                            onClick={() =>
-                              handleDelete(
-                                persona.id_persona ??
-                                  persona.idPersona ??
-                                  persona.id
-                              )
-                            }
+                            onClick={() => handleDelete(persona)}
                             title="Eliminar"
                           >
                             <i className="fas fa-trash"></i>

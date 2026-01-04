@@ -8,6 +8,8 @@ const ParametrosForm = ({
   onGuardar,
   onInputChange,
   onInputChangeName,
+  serverError,
+  onServerErrorClear,
 }) => {
   const [errors, setErrors] = useState({});
 
@@ -22,19 +24,25 @@ const ParametrosForm = ({
 
     onInputChangeName({ target: { name, value: valorPermitido } });
 
-    // Limpiar error del campo
+    // Limpiar error del campo y error del servidor
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+    if (serverError) {
+      onServerErrorClear();
     }
   };
 
   const handleInputChange = (e) => {
     onInputChange(e);
 
-    // Limpiar error del campo
+    // Limpiar error del campo y error del servidor
     const { name } = e.target;
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+    if (serverError) {
+      onServerErrorClear();
     }
   };
 
@@ -130,6 +138,17 @@ const ParametrosForm = ({
                   </select>
                 </div>
               </div>
+
+              {serverError && (
+                <div
+                  className="alert alert-danger alert-dismissible fade show"
+                  role="alert"
+                >
+                  <i className="fas fa-exclamation-circle me-2"></i>
+                  <strong className="me-1">Error:</strong> {serverError}
+                </div>
+              )}
+
               <div className="form-actions">
                 <button
                   type="button"

@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import ServicioForm from "../../components/admin/ServicioForm";
 import servicioService from "../../services/servicioService";
 import servicioTurnoService from "../../services/servicioTurnoService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaServicios = () => {
   const [servicios, setServicios] = useState([]);
@@ -45,7 +53,7 @@ const ListaServicios = () => {
       setServicioTurnos(turnosData);
     } catch (error) {
       console.error("Error al cargar servicios:", error);
-      alert("Error al cargar los servicios");
+      showError("Error", "Error al cargar los servicios");
     } finally {
       setLoading(false);
     }
@@ -94,21 +102,31 @@ const ListaServicios = () => {
   };
 
   const handleDelete = async (servicio) => {
-    if (
-      window.confirm(
-        `¿Está seguro de eliminar el servicio "${servicio.nombre}"?`
-      )
-    ) {
+    // 1. Solicitamos confirmación con el componente personalizado
+    const confirmed = await showConfirm(
+      "Eliminar Servicio",
+      `¿Está seguro de eliminar el servicio "${servicio.nombre}"?`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    // 2. Si el usuario confirma, procedemos con la lógica de borrado
+    if (confirmed) {
       try {
         await servicioService.delete(servicio.idServicio);
-        alert("Servicio eliminado correctamente");
+
+        // Notificación de éxito y actualización de la lista
+        showSuccess(
+          "Servicio Eliminado",
+          `El servicio "${servicio.nombre}" ha sido eliminado correctamente.`
+        );
         loadServicios();
       } catch (error) {
-        console.error("Error al eliminar servicio:", error);
+        // Manejo de errores simplificado
         if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
-          alert("Error al eliminar el servicio");
+          showError("Error", "Error al eliminar el servicio");
         }
       }
     }
@@ -117,11 +135,28 @@ const ListaServicios = () => {
   const handleChangeStatus = async (servicio, nuevoEstado) => {
     try {
       await servicioService.cambiarEstado(servicio.idServicio, nuevoEstado);
-      alert(`Servicio ${nuevoEstado.toLowerCase()} correctamente`);
-      loadServicios();
+
+      // Comprobamos si el nuevo estado es "activo"
+      const esActivo = nuevoEstado.toLowerCase() === "activo";
+
+      if (esActivo) {
+        // Icono de Success (Verde) para activaciones
+        showSuccess(
+          "Servicio Activado",
+          `El servicio "${servicio.nombre}" ahora está activo.`
+        );
+      } else {
+        // Icono de Info (Azul) para desactivaciones
+        showInfo(
+          "Servicio Desactivado",
+          `El servicio "${servicio.nombre}" ha sido desactivado.`
+        );
+      }
+
+      loadServicios(); // Recargar la lista
     } catch (error) {
       console.error("Error al cambiar estado:", error);
-      alert("Error al cambiar el estado del servicio");
+      showError("Error", "No se pudo cambiar el estado del servicio");
     }
   };
 
@@ -129,7 +164,8 @@ const ListaServicios = () => {
     setShowModal(false);
     setSelectedServicio(null);
     loadServicios();
-    alert(
+    showSuccess(
+      "Éxito",
       `Servicio ${
         modalMode === "create" ? "creado" : "actualizado"
       } correctamente`
@@ -333,7 +369,7 @@ const ListaServicios = () => {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content configuracion-modal">
             <div className="modal-header">
               <h4>
                 <i className="fas fa-utensils me-2"></i>

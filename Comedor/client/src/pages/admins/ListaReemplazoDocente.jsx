@@ -3,6 +3,14 @@ import ReemplazoDocenteForm from "../../components/admin/ReemplazoDocenteForm";
 import reemplazoDocenteService from "../../services/reemplazoDocenteService.js";
 import { gradoService } from "../../services/gradoService.js";
 import { formatCicloLectivo } from "../../utils/dateUtils.js";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaReemplazosGrados = () => {
   const [reemplazos, setReemplazos] = useState([]);
@@ -51,7 +59,7 @@ const ListaReemplazosGrados = () => {
       setFilteredReemplazos(data);
     } catch (error) {
       console.error("Error al cargar los reemplazos:", error);
-      alert("Error al cargar la lista de reemplazos");
+      showError("Error", "Error al cargar la lista de reemplazos");
     } finally {
       setLoading(false);
     }
@@ -153,13 +161,14 @@ const ListaReemplazosGrados = () => {
       try {
         await reemplazoDocenteService.delete(reemplazoId);
         loadReemplazos();
-        alert("✅ Reemplazo eliminado correctamente");
+        showSuccess("Éxito", "Reemplazo eliminado correctamente");
       } catch (error) {
         console.error("Error al eliminar el reemplazo:", error);
         if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
-          alert(
+          showError(
+            "Error",
             "Error al eliminar el reemplazo. Por favor, inténtelo de nuevo."
           );
         }
@@ -172,13 +181,14 @@ const ListaReemplazosGrados = () => {
       try {
         await reemplazoDocenteService.finalizar(reemplazoId);
         loadReemplazos();
-        alert("✅ Reemplazo finalizado correctamente");
+        showSuccess("Éxito", "Reemplazo finalizado correctamente");
       } catch (error) {
         console.error("Error al finalizar el reemplazo:", error);
         if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
-          alert(
+          showError(
+            "Error",
             "Error al finalizar el reemplazo. Por favor, inténtelo de nuevo."
           );
         }
@@ -192,11 +202,12 @@ const ListaReemplazosGrados = () => {
     loadReemplazos();
 
     if (modalMode === "create") {
-      alert(
+      showInfo(
+        "Información",
         `✅ Reemplazo creado correctamente!\n\nSuplente: ${result.nombreSuplente} ${result.apellidoSuplente}\nTitular: ${result.nombreTitular} ${result.apellidoTitular}\nGrado: ${result.nombreGrado}\nMotivo: ${result.motivo}`
       );
     } else {
-      alert("✅ Reemplazo actualizado correctamente!");
+      showSuccess("Éxito", "Reemplazo actualizado correctamente!");
     }
   };
 

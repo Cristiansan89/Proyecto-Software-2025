@@ -3,6 +3,14 @@ import { useAuth } from "../../context/AuthContext";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import recetaService from "../../services/recetaService";
 import "../../styles/PlanificacionMenus.css";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const PlanificacionCalendario = () => {
   const { user } = useAuth();
@@ -260,7 +268,7 @@ const PlanificacionCalendario = () => {
 
   const finalizarPlanificacion = async () => {
     if (!planificacionActiva) {
-      alert("No hay planificación activa para finalizar");
+      showToast("No hay planificación activa para finalizar", "info", 2000);
       return;
     }
 
@@ -307,7 +315,7 @@ const PlanificacionCalendario = () => {
           planificacionActiva.id_planificacion,
           datosActualizacion
         );
-        alert("Planificación activada exitosamente");
+        showSuccess("Éxito", "Planificación activada exitosamente");
       } else if (planificacionActiva.estado === "Activo") {
         // Cambiar de Activo a Finalizado
         console.log(
@@ -318,7 +326,7 @@ const PlanificacionCalendario = () => {
         await planificacionMenuService.finalizar(
           planificacionActiva.id_planificacion
         );
-        alert("Planificación finalizada exitosamente");
+        showSuccess("Éxito", "Planificación finalizada exitosamente");
       }
 
       await verificarPlanificacionActiva();
@@ -341,7 +349,7 @@ const PlanificacionCalendario = () => {
         mensajeError += ": " + error.message;
       }
 
-      alert(mensajeError);
+      showError("Error", mensajeError);
     } finally {
       setFinalizandoPlanificacion(false);
     }
@@ -354,7 +362,7 @@ const PlanificacionCalendario = () => {
 
     // Verificar que hay usuario autenticado
     if (!user?.idUsuario && !user?.id_usuario) {
-      alert("Error: Usuario no autenticado");
+      showError("Error", "Error: Usuario no autenticado");
       return;
     }
 
@@ -367,7 +375,8 @@ const PlanificacionCalendario = () => {
     console.log("🔍 Formato UUID válido:", uuidRegex.test(usuarioId));
 
     if (!uuidRegex.test(usuarioId)) {
-      alert(
+      showInfo(
+        "Información",
         `Error: El ID del usuario no tiene formato UUID válido: ${usuarioId}`
       );
       return;
@@ -394,7 +403,10 @@ const PlanificacionCalendario = () => {
       );
 
       console.log("✅ Planificación creada:", resultado);
-      alert("Planificación creada exitosamente. Ahora puede asignar menús.");
+      showSuccess(
+        "Éxito",
+        "Planificación creada exitosamente. Ahora puede asignar menús."
+      );
 
       // Recargar planificaciones
       await verificarPlanificacionActiva();
@@ -420,7 +432,7 @@ const PlanificacionCalendario = () => {
         mensajeError += ": " + error.message;
       }
 
-      alert(mensajeError);
+      showError("Error", mensajeError);
 
       // Mostrar información adicional en consola para debug
       console.log("🔍 Detalles del error:", {
@@ -589,14 +601,16 @@ const PlanificacionCalendario = () => {
       !asignacionSeleccionada.fecha ||
       !asignacionSeleccionada.servicio
     ) {
-      alert("Por favor seleccione una receta");
+      showToast("Por favor seleccione una receta", "info", 2000);
       return;
     }
 
     // Validar que solo se pueda asignar en estado 'Pendiente'
     if (planificacionActiva?.estado !== "Pendiente") {
-      alert(
-        "Solo se pueden asignar menús en planificaciones con estado 'Pendiente'"
+      showToast(
+        "Solo se pueden asignar menús en planificaciones con estado Pendiente",
+        "info",
+        2000
       );
       return;
     }
@@ -607,7 +621,7 @@ const PlanificacionCalendario = () => {
 
     const usuarioId = user?.idUsuario || user?.id_usuario;
     if (!usuarioId) {
-      alert("Error: Usuario no autenticado");
+      showError("Error", "Error: Usuario no autenticado");
       return;
     }
 
@@ -616,7 +630,10 @@ const PlanificacionCalendario = () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(usuarioId)) {
       console.error("❌ ID de usuario inválido:", usuarioId);
-      alert(`Error: El ID del usuario no es válido: ${usuarioId}`);
+      showInfo(
+        "Información",
+        `Error: El ID del usuario no es válido: ${usuarioId}`
+      );
       return;
     }
 
@@ -648,7 +665,7 @@ const PlanificacionCalendario = () => {
       await verificarCalendarioCompleto();
 
       cerrarModalAsignacion();
-      alert("Menú asignado exitosamente");
+      showSuccess("Éxito", "Menú asignado exitosamente");
     } catch (error) {
       console.error("❌ Error al asignar menú:", error);
 
@@ -661,7 +678,7 @@ const PlanificacionCalendario = () => {
           "No se permite agregar esta receta en el servicio seleccionado para esta fecha.";
       }
 
-      alert("Error al asignar el menú: " + mensajeError);
+      showError("Error", "Error al asignar el menú: " + mensajeError);
     } finally {
       setLoading(false);
     }
@@ -670,9 +687,12 @@ const PlanificacionCalendario = () => {
   const eliminarReceta = async (fecha, servicio, dia) => {
     // Validar que solo se pueda eliminar en estado 'Pendiente'
     if (planificacionActiva?.estado !== "Pendiente") {
-      alert(
-        "Solo se pueden eliminar menús en planificaciones con estado 'Pendiente'"
+      showToast(
+        "Solo se pueden eliminar menús en planificaciones con estado Pendiente",
+        "info",
+        2000
       );
+      return;
       return;
     }
 
@@ -709,10 +729,11 @@ const PlanificacionCalendario = () => {
       // Verificar estado del calendario después de eliminar
       await verificarCalendarioCompleto();
 
-      alert("Receta eliminada exitosamente");
+      showSuccess("Éxito", "Receta eliminada exitosamente");
     } catch (error) {
       console.error("❌ Error al eliminar receta:", error);
-      alert(
+      showError(
+        "Error",
         "Error al eliminar la receta: " +
           (error.response?.data?.message || error.message)
       );

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import PlanificacionMenuForm from "../../components/cocinera/PlanificacionMenuForm";
 import "../../styles/PlanificacionMenus.css";
+import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
 
 const PlanificacionSemanal = () => {
   const [planificaciones, setPlanificaciones] = useState([]);
@@ -60,12 +61,12 @@ const PlanificacionSemanal = () => {
     ) {
       try {
         await planificacionMenuService.delete(planificacionId);
-        alert("Planificación eliminada correctamente");
+        showToast("Planificación eliminada correctamente", "info", 2000);
         await loadPlanificaciones();
       } catch (error) {
         console.error("❌ Error al eliminar planificación:", error);
         const errorMessage = error.response?.data?.message || error.message;
-        alert(`⚠️ ${errorMessage}`);
+        showInfo("Información", `⚠️ ${errorMessage}`);
       }
     }
   };

@@ -1,24 +1,34 @@
 import { useEffect, useState } from "react";
 import estadoPedidoService from "../../services/estadoPedidoService.js";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const EstadoPedidoForm = ({ estadoPedido, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
-    nombre: estadoPedido?.nombre || "",
+    nombre: estadoPedido?.nombreEstado || "",
     descripcion: estadoPedido?.descripcion || "",
     estado: estadoPedido?.estado || "Activo",
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Actualizar datos del formulario cuando cambie el estado recibido
   useEffect(() => {
     if (estadoPedido) {
       setFormData({
-        nombre: estadoPedido.nombre || "",
+        nombre: estadoPedido.nombreEstado || estadoPedido.nombre || "",
         descripcion: estadoPedido.descripcion || "",
         estado: estadoPedido.estado || "Activo",
       });
+      setServerError(null);
     }
   }, [estadoPedido]);
 
@@ -64,6 +74,7 @@ const EstadoPedidoForm = ({ estadoPedido, mode, onSave, onCancel }) => {
     }
 
     setLoading(true);
+    setServerError(null);
     try {
       if (mode === "create") {
         await estadoPedidoService.create(formData);
@@ -75,9 +86,35 @@ const EstadoPedidoForm = ({ estadoPedido, mode, onSave, onCancel }) => {
       }
       onSave();
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message || error.message || "Error desconocido";
-      alert(`Ocurrió un error al guardar el estado de pedido: ${errorMessage}`);
+      console.error("Error completo:", error);
+      console.error("Error response:", error.response);
+      console.error("Error response data:", error.response?.data);
+
+      let errorMessage = "";
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.data?.message) {
+        errorMessage = error.response.data.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (typeof error.response?.data === "string") {
+        errorMessage = error.response.data;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      console.log("Mensaje de error extraído:", errorMessage);
+
+      if (errorMessage.toLowerCase().includes("existe")) {
+        setServerError("Ya existe un estado de pedido con este nombre");
+      } else if (errorMessage) {
+        setServerError(errorMessage);
+      } else {
+        setServerError(
+          "Error al guardar el estado de pedido. Por favor, inténtelo de nuevo."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -150,6 +187,21 @@ const EstadoPedidoForm = ({ estadoPedido, mode, onSave, onCancel }) => {
               <option value="Inactivo">Inactivo</option>
             </select>
           </div>
+
+          {/* Mostrar error del servidor */}
+          {serverError && (
+            <div
+              className="alert alert-danger alert-dismissible fade show mb-3"
+              role="alert"
+            >
+              <i className="fas fa-exclamation-circle me-2"></i>
+              <strong className="me-1">Error al guardar:</strong>
+              <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                {serverError}
+              </div>
+            </div>
+          )}
+
           <div className="form-actions mt-4">
             <button
               type="button"

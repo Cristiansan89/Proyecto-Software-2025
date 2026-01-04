@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import estadoPedidoService from "../../services/estadoPedidoService.js";
 import EstadoPedidoForm from "../../components/admin/EstadoPedidoForm.jsx";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaEstadoPedido = () => {
   const [estadosPedido, setEstadosPedido] = useState([]);
@@ -44,21 +52,34 @@ const ListaEstadoPedido = () => {
   };
 
   // Eliminar estado
-  const handleEliminar = async (id) => {
-    if (!confirm("¿Está seguro de que desea eliminar este estado de pedido?")) {
-      return;
-    }
+  const handleEliminar = async (id, nombreEstado) => {
+    // 1. Confirmación personalizada
+    const confirmed = await showConfirm(
+      "Eliminar Estado de Pedido",
+      `¿Está seguro de que desea eliminar el estado de pedido "${nombreEstado}"?`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
 
-    try {
-      await estadoPedidoService.delete(id);
-      await cargarEstadosPedido(); // Recargar lista
-      alert("Estado de pedido eliminado exitosamente");
-    } catch (error) {
-      console.error("Error al eliminar estado de pedido:", error);
-      alert(
-        "Error al eliminar el estado de pedido: " +
-          (error.response?.data?.message || error.message)
-      );
+    // 2. Ejecutar solo si el usuario confirmó
+    if (confirmed) {
+      try {
+        await estadoPedidoService.delete(id);
+
+        // Actualizar la tabla y notificar
+        await cargarEstadosPedido();
+        showSuccess(
+          "Éxito",
+          `Estado de pedido "${nombreEstado}" eliminado exitosamente`
+        );
+      } catch (error) {
+        // Notificación de error sin logs innecesarios
+        showError(
+          "Error",
+          "Error al eliminar el estado de pedido: " +
+            (error.response?.data?.message || error.message)
+        );
+      }
     }
   };
 
@@ -73,7 +94,7 @@ const ListaEstadoPedido = () => {
     setShowModal(false);
     setSelectedEstado(null);
     await cargarEstadosPedido();
-    alert("Estado de pedido guardado exitosamente");
+    showSuccess("Éxito", "Estado de pedido guardado exitosamente");
   };
 
   if (loading) {
@@ -161,7 +182,10 @@ const ListaEstadoPedido = () => {
                           <button
                             className="btn-action btn-delete"
                             onClick={() =>
-                              handleEliminar(estado.id_estado_pedido)
+                              handleEliminar(
+                                estado.id_estadoPedido,
+                                estado.nombreEstado
+                              )
                             }
                             title="Eliminar"
                           >
@@ -181,7 +205,7 @@ const ListaEstadoPedido = () => {
       {/* Modal para agregar/editar estado */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content configuracion-modal">
             <div className="modal-header">
               <h4 className="modal-title">
                 <i className="fas fa-clipboard-list"></i>

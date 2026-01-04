@@ -3,8 +3,17 @@ import { useAuth } from "../../context/AuthContext";
 import asistenciasService from "../../services/asistenciasService";
 import servicioService from "../../services/servicioService";
 import { gradoService } from "../../services/gradoService";
+import auditoriaService from "../../services/auditoriaService";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaAsistenciasService = () => {
   const { user } = useAuth();
@@ -138,7 +147,9 @@ const ListaAsistenciasService = () => {
   };
 
   const verDetalle = (registro) => {
-    alert(`
+    showInfo(
+      "Información",
+      `
       Detalle del Registro de Asistencia:
       
       Fecha: ${registro.fecha || "Sin especificar"}
@@ -146,12 +157,13 @@ const ListaAsistenciasService = () => {
       Grado: ${registro.nombreGrado || "Sin especificar"}
       Cantidad de Presentes: ${registro.cantidadPresentes || 0}
       Fecha de Creación: ${registro.fechaCreacion || "N/A"}
-    `);
+    `
+    );
   };
 
   const exportarCSV = () => {
     if (asistencias.length === 0) {
-      alert("No hay datos para exportar");
+      showToast("No hay datos para exportar", "info", 2000);
       return;
     }
 
@@ -185,9 +197,9 @@ const ListaAsistenciasService = () => {
     URL.revokeObjectURL(url);
   };
 
-  const exportarPDF = () => {
+  const exportarPDF = async () => {
     if (asistencias.length === 0) {
-      alert("No hay datos para exportar");
+      showToast("No hay datos para exportar", "info", 2000);
       return;
     }
 
@@ -254,10 +266,21 @@ const ListaAsistenciasService = () => {
           ""
         )}_${Date.now()}.pdf`
       );
-      alert("✅ Reporte PDF de asistencias generado exitosamente");
+
+      // Registrar la generación del PDF en auditoría
+      await auditoriaService.registrarReportePDF({
+        nombreReporte: "Reporte de Asistencias por Servicio",
+        tipoReporte: "Asistencias",
+        descripcion: `Reporte generado para la fecha ${filtros.fecha}`,
+        detallesReporte: `Total registros: ${asistencias.length}, Servicio: ${
+          filtros.idServicio || "Todos"
+        }, Grado: ${filtros.idGrado || "Todos"}`,
+      });
+
+      showSuccess("Éxito", "Reporte PDF de asistencias generado exitosamente");
     } catch (error) {
       console.error("Error al generar PDF:", error);
-      alert("❌ Error al generar el reporte PDF");
+      showError("Error", "Error al generar el reporte PDF");
     }
   };
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import Select from "react-select";
+import { showSuccess, showError, showWarning } from "../../utils/alertService";
 import "../../styles/CocineraInventario.css";
 
 const CocineraInventario = () => {
@@ -170,7 +171,7 @@ const CocineraInventario = () => {
   const registrarMovimiento = async () => {
     try {
       if (!nuevoMovimiento.id_insumo || !nuevoMovimiento.cantidadMovimiento) {
-        alert("Complete los campos requeridos");
+        showWarning("Campos incompletos", "Complete los campos requeridos");
         return;
       }
 
@@ -199,9 +200,10 @@ const CocineraInventario = () => {
       });
 
       await cargarDatos();
-      alert("Movimiento registrado exitosamente");
+      showSuccess("Éxito", "Movimiento registrado exitosamente", 2000);
     } catch (error) {
-      alert(
+      showError(
+        "Error",
         "Error al registrar el movimiento: " +
           (error.response?.data?.message || error.message)
       );

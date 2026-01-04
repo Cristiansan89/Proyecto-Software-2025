@@ -72,9 +72,12 @@ CREATE TABLE Auditorias(
     id_usuario     BINARY(16)                 NOT NULL,
     fechaHora      DATETIME                   DEFAULT CURRENT_TIMESTAMP,
     modulo         VARCHAR(100)               NOT NULL,
-    tipoAccion     ENUM('---', 'Registrar', 'Modificar', 'Eliminar', 'Buscar', 'Consultar', 'Exportar')    NOT NULL DEFAULT '---',
+    tipoAccion     ENUM('---', 'Registrar', 'Modificar', 'Eliminar', 'Buscar', 'Consultar', 'Exportar', 'Login', 'Logout')    NOT NULL DEFAULT '---',
     descripcion    VARCHAR(100)               NOT NULL,
     estado         ENUM('---', 'Exito', 'Error', 'Advertencia')    NOT NULL DEFAULT '---',
+    nombreReporte  VARCHAR(255),
+    tipoReporte    VARCHAR(50),
+    detallesReporte VARCHAR(500),
     PRIMARY KEY (id_registro)
 )ENGINE=INNODB;
 
@@ -106,12 +109,12 @@ CREATE TABLE DetalleConsumo(
     id_detalleConsumo     INT               AUTO_INCREMENT,
     id_consumo            BINARY(16)        NOT NULL,
     id_insumo             INT               NOT NULL,
-    idItemReceta          INT,
+    id_itemReceta         INT,
     cantidadUtilizada     DECIMAL(10, 2)    NOT NULL,
     cantidadCalculada     DECIMAL(10, 2),
     PRIMARY KEY (id_detalleConsumo),
-    CONSTRAINT RefItemsRecetas FOREIGN KEY (idItemReceta) 
-        REFERENCES ItemsRecetas(idItemReceta)
+    CONSTRAINT RefItemsRecetas FOREIGN KEY (id_itemReceta) 
+        REFERENCES ItemsRecetas(id_itemReceta)
 )ENGINE=INNODB;
 
 
@@ -212,13 +215,13 @@ CREATE TABLE Inventarios(
 -- -----------------------------------------------------
 
 CREATE TABLE ItemsRecetas(
-    idItemReceta          INT               AUTO_INCREMENT,
+    id_itemReceta         INT               AUTO_INCREMENT,
     id_receta             BINARY(16)        NOT NULL,
     id_insumo             INT               NOT NULL,
     cantidadPorPorcion    DECIMAL(10, 3)    NOT NULL,
     unidadPorPorcion ENUM(
     'Gramo', 'Kilogramo', 'Mililitro', 'Litro', 'Unidad', 'Pizca', 'Cucharadita', 'Cucharada', 'Taza') NOT NULL DEFAULT 'Unidad';
-    PRIMARY KEY (idItemReceta)
+    PRIMARY KEY (id_itemReceta)
 )ENGINE=INNODB;
 
 
@@ -231,7 +234,7 @@ CREATE TABLE JornadaPlanificada(
     id_jornada          BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
     id_planificacion    BINARY(16)                 NOT NULL,
     id_servicio         INT                        NOT NULL,
-    diaSemana           ENUM('Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes')	NOT NULL DEFAULT 'Lunes',
+    diaSemana           ENUM('Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo')	NOT NULL DEFAULT 'Lunes',
     PRIMARY KEY (id_jornada)
 )ENGINE=INNODB;
 
@@ -1267,5 +1270,179 @@ ALTER TABLE Usuarios ADD CONSTRAINT RefPersonas694
     FOREIGN KEY (id_persona)
     REFERENCES Personas(id_persona)
 ;
+
+
+-- =====================================================
+-- TABLAS ADICIONALES PARA FUNCIONALIDADES AVANZADAS
+-- =====================================================
+
+-- 
+-- TABLE: AlertasInventario
+-- Tabla para rastrear alertas de inventario
+-- 
+CREATE TABLE IF NOT EXISTS AlertasInventario (
+    id_alerta INT AUTO_INCREMENT PRIMARY KEY,
+    id_insumo INT NOT NULL UNIQUE,
+    tipo_alerta ENUM('Critico', 'Agotado') NOT NULL DEFAULT 'Critico',
+    contador_envios INT NOT NULL DEFAULT 1,
+    estado ENUM('activa', 'resuelta', 'completada') NOT NULL DEFAULT 'activa',
+    fecha_primera_alerta DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_ultima_alerta DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    fecha_resolucion DATETIME NULL,
+    observaciones TEXT NULL,
+    visto BOOLEAN DEFAULT FALSE,
+    fecha_vista DATETIME NULL,
+    
+    INDEX idx_id_insumo (id_insumo),
+    INDEX idx_estado (estado),
+    INDEX idx_fecha_ultima_alerta (fecha_ultima_alerta),
+    INDEX idx_visto (visto),
+    
+    CONSTRAINT fk_alerta_insumo FOREIGN KEY (id_insumo) 
+        REFERENCES Insumos(id_insumo) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- 
+-- TABLE: AuditAlertas
+-- Tabla de auditoría para registrar envíos de alertas
+-- 
+CREATE TABLE IF NOT EXISTS AuditAlertas (
+    id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
+    id_alerta INT NOT NULL,
+    id_insumo INT NOT NULL,
+    numero_envio INT NOT NULL,
+    canal_envio VARCHAR(50) NOT NULL DEFAULT 'Telegram',
+    mensaje_enviado LONGTEXT NULL,
+    estado_envio VARCHAR(50) NOT NULL DEFAULT 'enviado',
+    fecha_envio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    respuesta_sistema VARCHAR(255) NULL,
+    
+    INDEX idx_id_alerta (id_alerta),
+    INDEX idx_id_insumo (id_insumo),
+    INDEX idx_fecha_envio (fecha_envio),
+    
+    CONSTRAINT fk_auditoria_alerta FOREIGN KEY (id_alerta) 
+        REFERENCES AlertasInventario(id_alerta) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+--
+-- TABLE: ConfiguracionServiciosAutomaticos
+-- Tabla para configurar servicios que se procesan automáticamente
+--
+CREATE TABLE IF NOT EXISTS ConfiguracionServiciosAutomaticos (
+    id_configuracion INT AUTO_INCREMENT PRIMARY KEY,
+    id_servicio INT NOT NULL,
+    horaInicio TIME NOT NULL,
+    horaFin TIME NOT NULL,
+    procesarAutomaticamente BOOLEAN DEFAULT TRUE,
+    descripcion VARCHAR(255),
+    fechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fechaActualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_servicio) REFERENCES Servicios(id_servicio) ON DELETE CASCADE,
+    UNIQUE KEY unique_servicio (id_servicio)
+);
+
+
+--
+-- TABLE: ServiciosCompletados
+-- Tabla para rastrear servicios completados
+--
+CREATE TABLE IF NOT EXISTS ServiciosCompletados (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    id_servicio INT NOT NULL,
+    completado BOOLEAN DEFAULT FALSE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_servicio_fecha (fecha, id_servicio),
+    FOREIGN KEY (id_servicio) REFERENCES Servicios(id_servicio) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_fecha ON ServiciosCompletados(fecha);
+
+
+--
+-- TABLE: auditorias_logs
+-- Tabla de auditoría detallada
+--
+CREATE TABLE IF NOT EXISTS auditorias_logs (
+    id_auditoria INT PRIMARY KEY AUTO_INCREMENT,
+    id_usuario INT,
+    nombre_usuario VARCHAR(255) NOT NULL,
+    email_usuario VARCHAR(255),
+    accion VARCHAR(50) NOT NULL COMMENT 'CREAR, ACTUALIZAR, ELIMINAR, CONSULTAR, LOGIN, LOGOUT, CONFIGURAR, DESCARGAR',
+    modulo VARCHAR(100) NOT NULL COMMENT 'Nombre del módulo afectado',
+    descripcion TEXT,
+    detalles JSON,
+    ip_origen VARCHAR(50),
+    user_agent TEXT,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    estado VARCHAR(20) DEFAULT 'Activo' COMMENT 'Activo, Inactivo',
+    
+    INDEX idx_fecha_creacion (fecha_creacion),
+    INDEX idx_id_usuario (id_usuario),
+    INDEX idx_accion (accion),
+    INDEX idx_modulo (modulo),
+    INDEX idx_estado (estado),
+    INDEX idx_email_usuario (email_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =====================================================
+-- VISTAS PARA ALERTAS DE INVENTARIO
+-- =====================================================
+
+--
+-- VIEW: v_alertas_activas
+-- Vista para alertas activas con información completa
+--
+CREATE OR REPLACE VIEW v_alertas_activas AS
+SELECT 
+    aa.id_alerta,
+    aa.id_insumo,
+    i.nombreInsumo,
+    i.categoria,
+    i.unidadMedida,
+    aa.tipo_alerta,
+    aa.contador_envios,
+    aa.estado,
+    inv.cantidadActual,
+    inv.nivelMinimoAlerta,
+    inv.estado as estado_stock,
+    aa.fecha_primera_alerta,
+    aa.fecha_ultima_alerta,
+    TIMESTAMPDIFF(MINUTE, aa.fecha_ultima_alerta, NOW()) as minutos_desde_ultima_alerta,
+    CASE 
+        WHEN aa.contador_envios >= 3 THEN 'completada'
+        WHEN aa.contador_envios = 2 THEN 'penultima'
+        WHEN aa.contador_envios = 1 THEN 'primera'
+    END as estado_envios
+FROM AlertasInventario aa
+JOIN Insumos i ON aa.id_insumo = i.id_insumo
+JOIN Inventarios inv ON aa.id_insumo = inv.id_insumo
+WHERE aa.estado = 'activa'
+ORDER BY aa.fecha_ultima_alerta DESC;
+
+
+--
+-- VIEW: v_resumen_alertas
+-- Vista para resumen de alertas
+--
+CREATE OR REPLACE VIEW v_resumen_alertas AS
+SELECT 
+    COUNT(DISTINCT aa.id_insumo) as insumos_con_alerta,
+    SUM(CASE WHEN aa.estado = 'activa' THEN 1 ELSE 0 END) as alertas_activas,
+    SUM(CASE WHEN aa.contador_envios >= 3 THEN 1 ELSE 0 END) as alertas_maximas,
+    SUM(CASE WHEN aa.contador_envios < 3 AND aa.estado = 'activa' THEN 1 ELSE 0 END) as pendientes_envio,
+    AVG(CASE WHEN aa.estado = 'activa' THEN aa.contador_envios ELSE NULL END) as promedio_envios,
+    COUNT(DISTINCT aa.id_insumo) as total_insumos_criticos
+FROM AlertasInventario aa
+WHERE aa.estado IN ('activa', 'completada');
 
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import gradoService from "../../services/gradoService";
 import turnoService from "../../services/turnoService";
+import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
 
 const GradoForm = ({ grado, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -91,9 +92,9 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
         });
         setErrors(apiErrors);
       } else if (error.response?.data?.message) {
-        alert(`Error: ${error.response.data.message}`);
+        showInfo("Información", `Error: ${error.response.data.message}`);
       } else {
-        alert("Error al guardar el grado. Por favor, intente nuevamente.");
+        showError("Error", "Error al guardar el grado. Por favor, intente nuevamente.");
       }
     } finally {
       setLoading(false);

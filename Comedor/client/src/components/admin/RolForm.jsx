@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 
-const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
+const RolForm = ({
+  rol,
+  onSave,
+  onCancel,
+  mode = "create",
+  serverError = null,
+  onServerErrorClear = null,
+  rolesExistentes = [],
+}) => {
   const [formData, setFormData] = useState({
     nombreRol: "",
     descripcionRol: "",
@@ -9,6 +17,7 @@ const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [localServerError, setLocalServerError] = useState(serverError);
 
   useEffect(() => {
     if (rol && mode !== "create") {
@@ -19,7 +28,8 @@ const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
         estado: rol.estado || "Activo",
       });
     }
-  }, [rol, mode]);
+    setLocalServerError(serverError);
+  }, [rol, mode, serverError]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,6 +52,14 @@ const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
         [name]: "",
       }));
     }
+
+    // Limpiar error de servidor al editar el nombre
+    if (name === "nombreRol" && localServerError) {
+      setLocalServerError(null);
+      if (onServerErrorClear) {
+        onServerErrorClear();
+      }
+    }
   };
 
   const validateForm = () => {
@@ -52,6 +70,16 @@ const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
     } else if (formData.nombreRol.length > 100) {
       newErrors.nombreRol =
         "El nombre del rol no puede tener más de 100 caracteres";
+    } else {
+      // Validar que no exista un rol con el mismo nombre (excepto si está editando el mismo)
+      const rolDuplicado = rolesExistentes.find(
+        (r) =>
+          r.nombreRol.toLowerCase() === formData.nombreRol.toLowerCase() &&
+          (mode === "create" || r.idRol !== rol?.idRol)
+      );
+      if (rolDuplicado) {
+        newErrors.nombreRol = `El rol "${formData.nombreRol}" ya existe en el sistema`;
+      }
     }
 
     if (!formData.descripcionRol.trim()) {
@@ -104,9 +132,6 @@ const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
             readOnly={isReadOnly}
             required
           />
-          {errors.nombreRol && (
-            <span className="error-message">{errors.nombreRol}</span>
-          )}
         </div>
 
         <div className="form-group">
@@ -153,6 +178,26 @@ const RolForm = ({ rol, onSave, onCancel, mode = "create" }) => {
             usuario en el sistema
           </small>
         </div>
+
+        {localServerError && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {localServerError}
+          </div>
+        )}
+
+        {errors.nombreRol && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {errors.nombreRol}
+          </div>
+        )}
 
         {mode !== "create" && (
           <div className="form-group">

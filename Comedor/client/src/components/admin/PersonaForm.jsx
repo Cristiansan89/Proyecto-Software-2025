@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import personaService from "../../services/personaService.js";
 import { rolService } from "../../services/rolService.js";
 import usuarioService from "../../services/usuarioService.js";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -30,6 +38,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   const [errors, setErrors] = useState({});
   const [userErrors, setUserErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState(null);
 
   const [roles, setRoles] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(true);
@@ -99,6 +108,9 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
       // Permitir solo números en el campo dni
       const soloNumeros = value.replace(/[^0-9]/g, "");
       valorPermitido = soloNumeros.slice(0, 8); // Máximo 8 caracteres
+      // Limpiar error de servidor cuando el usuario edita el DNI
+      setServerError(null);
+      setErrors((prev) => ({ ...prev, dni: "" }));
     }
 
     setFormData((prev) => {
@@ -336,15 +348,28 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
       onSave(savedPersona, usuarioCreado);
     } catch (error) {
       // Mostrar error al usuario
-      if (error.response?.data?.message) {
-        alert(`Error: ${error.response.data.message}`);
+      const errorMessage = error.response?.data?.message || error.message;
+
+      // Verificar si es error de DNI duplicado
+      if (
+        error.response?.status === 409 ||
+        errorMessage.toLowerCase().includes("dni") ||
+        errorMessage.toLowerCase().includes("duplicado")
+      ) {
+        setServerError(errorMessage);
+        setErrors((prev) => ({ ...prev, dni: errorMessage }));
+      } else if (error.response?.data?.message) {
+        showError("Error", `${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors
           .map((err) => `${err.field}: ${err.message}`)
           .join("\n");
-        alert(`Errores de validación:\n${errorMessages}`);
+        showError("Error", `Errores de validación:\n${errorMessages}`);
       } else {
-        alert("Error al guardar la persona. Por favor, inténtelo de nuevo.");
+        showError(
+          "Error",
+          "Error al guardar la persona. Por favor, inténtelo de nuevo."
+        );
       }
     } finally {
       setLoading(false);
@@ -357,6 +382,23 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   return (
     <div className="persona-form">
       <form onSubmit={handleSubmit}>
+        {/* Alerta de error del servidor */}
+        {serverError && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong>Error:</strong> {serverError}
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setServerError(null)}
+              aria-label="Close"
+            ></button>
+          </div>
+        )}
+
         <div className="form-sections">
           {/* Información Personal */}
           <div>

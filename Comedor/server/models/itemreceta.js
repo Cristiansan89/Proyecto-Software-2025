@@ -1,11 +1,11 @@
-import { connection } from './db.js'
+import { connection } from "./db.js";
 
 export class ItemRecetaModel {
-    static async getAll() {
-        try {
-            const [items] = await connection.query(
-                `SELECT 
-                    ir.idItemReceta,
+  static async getAll() {
+    try {
+      const [items] = await connection.query(
+        `SELECT 
+                    ir.id_itemReceta,
                     BIN_TO_UUID(ir.id_receta) as id_receta,
                     ir.id_insumo,
                     r.nombreReceta,
@@ -16,19 +16,19 @@ export class ItemRecetaModel {
                  JOIN Recetas r ON ir.id_receta = r.id_receta
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
                  ORDER BY r.nombreReceta, i.nombreInsumo;`
-            )
-            return items
-        } catch (error) {
-            console.error('Error al obtener items de recetas:', error)
-            throw new Error('Error al obtener items de recetas')
-        }
+      );
+      return items;
+    } catch (error) {
+      console.error("Error al obtener items de recetas:", error);
+      throw new Error("Error al obtener items de recetas");
     }
+  }
 
-    static async getById({ id }) {
-        try {
-            const [items] = await connection.query(
-                `SELECT 
-                    ir.idItemReceta,
+  static async getById({ id }) {
+    try {
+      const [items] = await connection.query(
+        `SELECT 
+                    ir.id_itemReceta,
                     BIN_TO_UUID(ir.id_receta) as id_receta,
                     ir.id_insumo,
                     r.nombreReceta,
@@ -38,87 +38,80 @@ export class ItemRecetaModel {
                  FROM ItemsRecetas ir
                  JOIN Recetas r ON ir.id_receta = r.id_receta
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
-                 WHERE ir.idItemReceta = ?;`,
-                [id]
-            )
-            if (items.length === 0) return null
-            return items[0]
-        } catch (error) {
-            console.error('Error al obtener item de receta:', error)
-            throw new Error('Error al obtener item de receta')
-        }
+                 WHERE ir.id_itemReceta = ?;`,
+        [id]
+      );
+      if (items.length === 0) return null;
+      return items[0];
+    } catch (error) {
+      console.error("Error al obtener item de receta:", error);
+      throw new Error("Error al obtener item de receta");
     }
+  }
 
-    static async create({ input }) {
-        const {
-            id_receta,
-            id_insumo,
-            cantidadPorPorcion,
-            unidadPorPorcion
-        } = input
+  static async create({ input }) {
+    const { id_receta, id_insumo, cantidadPorPorcion, unidadPorPorcion } =
+      input;
 
-        try {
-            const [result] = await connection.query(
-                `INSERT INTO ItemsRecetas (
+    try {
+      const [result] = await connection.query(
+        `INSERT INTO ItemsRecetas (
                     id_receta, 
                     id_insumo, 
                     cantidadPorPorcion,
                     unidadPorPorcion
                 ) VALUES (UUID_TO_BIN(?), ?, ?, ?);`,
-                [id_receta, id_insumo, cantidadPorPorcion, unidadPorPorcion]
-            )
+        [id_receta, id_insumo, cantidadPorPorcion, unidadPorPorcion]
+      );
 
-            const newId = result.insertId
+      const newId = result.insertId;
 
-            return this.getById({ id: newId })
-        } catch (error) {
-            console.error('Error al crear el item de receta:', error)
-            if (error.code === 'ER_DUP_ENTRY') {
-                throw new Error('Este insumo ya existe en la receta')
-            }
-            throw new Error('Error al crear el item de receta')
-        }
+      return this.getById({ id: newId });
+    } catch (error) {
+      console.error("Error al crear el item de receta:", error);
+      if (error.code === "ER_DUP_ENTRY") {
+        throw new Error("Este insumo ya existe en la receta");
+      }
+      throw new Error("Error al crear el item de receta");
     }
+  }
 
-    static async delete({ id }) {
-        try {
-            await connection.query(
-                `DELETE FROM ItemsRecetas WHERE idItemReceta = ?;`,
-                [id]
-            )
-            return true
-        } catch (error) {
-            console.error('Error al eliminar item de receta:', error)
-            return false
-        }
+  static async delete({ id }) {
+    try {
+      await connection.query(
+        `DELETE FROM ItemsRecetas WHERE id_itemReceta = ?;`,
+        [id]
+      );
+      return true;
+    } catch (error) {
+      console.error("Error al eliminar item de receta:", error);
+      return false;
     }
+  }
 
-    static async update({ id, input }) {
-        const {
-            cantidadPorPorcion,
-            unidadPorPorcion
-        } = input
+  static async update({ id, input }) {
+    const { cantidadPorPorcion, unidadPorPorcion } = input;
 
-        try {
-            await connection.query(
-                `UPDATE ItemsRecetas
+    try {
+      await connection.query(
+        `UPDATE ItemsRecetas
                  SET cantidadPorPorcion = ?, unidadPorPorcion = ?
-                 WHERE idItemReceta = ?;`,
-                [cantidadPorPorcion, unidadPorPorcion, id]
-            )
+                 WHERE id_itemReceta = ?;`,
+        [cantidadPorPorcion, unidadPorPorcion, id]
+      );
 
-            return this.getById({ id })
-        } catch (error) {
-            console.error('Error al actualizar el item de receta:', error)
-            throw new Error('Error al actualizar el item de receta')
-        }
+      return this.getById({ id });
+    } catch (error) {
+      console.error("Error al actualizar el item de receta:", error);
+      throw new Error("Error al actualizar el item de receta");
     }
+  }
 
-    static async getByReceta({ id_receta }) {
-        try {
-            const [items] = await connection.query(
-                `SELECT 
-                    ir.idItemReceta,
+  static async getByReceta({ id_receta }) {
+    try {
+      const [items] = await connection.query(
+        `SELECT 
+                    ir.id_itemReceta,
                     BIN_TO_UUID(ir.id_receta) as id_receta,
                     ir.id_insumo,
                     r.nombreReceta,
@@ -130,47 +123,47 @@ export class ItemRecetaModel {
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
                  WHERE ir.id_receta = UUID_TO_BIN(?)
                  ORDER BY i.nombreInsumo;`,
-                [id_receta]
-            )
-            return items
-        } catch (error) {
-            console.error('Error al obtener items por receta:', error)
-            throw new Error('Error al obtener items por receta')
-        }
+        [id_receta]
+      );
+      return items;
+    } catch (error) {
+      console.error("Error al obtener items por receta:", error);
+      throw new Error("Error al obtener items por receta");
     }
+  }
 
-    // Método para calcular el costo total de una receta
-    static async getCostoReceta({ id_receta }) {
-        try {
-            const [costo] = await connection.query(
-                `SELECT 
+  // Método para calcular el costo total de una receta
+  static async getCostoReceta({ id_receta }) {
+    try {
+      const [costo] = await connection.query(
+        `SELECT 
                     BIN_TO_UUID(ir.id_receta) as id_receta,
                     r.nombreReceta,
                     SUM(ir.cantidadPorPorcion * COALESCE(pi.precio, 0)) as costoTotal,
-                    COUNT(ir.idItemReceta) as totalInsumos
+                    COUNT(ir.id_itemReceta) as totalInsumos
                  FROM ItemsRecetas ir
                  JOIN Recetas r ON ir.id_receta = r.id_receta
                  JOIN Insumos i ON ir.id_insumo = i.id_insumo
                  LEFT JOIN ProveedorInsumo pi ON i.id_insumo = pi.id_insumo
                  WHERE ir.id_receta = UUID_TO_BIN(?)
                  GROUP BY ir.id_receta, r.nombreReceta;`,
-                [id_receta]
-            )
+        [id_receta]
+      );
 
-            if (costo.length === 0) return null
-            return costo[0]
-        } catch (error) {
-            console.error('Error al calcular costo de receta:', error)
-            throw new Error('Error al calcular costo de receta')
-        }
+      if (costo.length === 0) return null;
+      return costo[0];
+    } catch (error) {
+      console.error("Error al calcular costo de receta:", error);
+      throw new Error("Error al calcular costo de receta");
     }
+  }
 
-    // Método para verificar disponibilidad de insumos para una receta
-    static async verificarDisponibilidadInsumos({ id_receta, porciones = 1 }) {
-        try {
-            const [disponibilidad] = await connection.query(
-                `SELECT 
-                    ir.idItemReceta,
+  // Método para verificar disponibilidad de insumos para una receta
+  static async verificarDisponibilidadInsumos({ id_receta, porciones = 1 }) {
+    try {
+      const [disponibilidad] = await connection.query(
+        `SELECT 
+                    ir.id_itemReceta,
                     ir.id_insumo,
                     i.nombreInsumo as nombreInsumo,
                     ir.cantidadPorPorcion,
@@ -187,12 +180,12 @@ export class ItemRecetaModel {
                  LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
                  WHERE ir.id_receta = UUID_TO_BIN(?)
                  ORDER BY disponibilidad DESC, i.nombreInsumo;`,
-                [porciones, porciones, id_receta]
-            )
-            return disponibilidad
-        } catch (error) {
-            console.error('Error al verificar disponibilidad de insumos:', error)
-            throw new Error('Error al verificar disponibilidad de insumos')
-        }
+        [porciones, porciones, id_receta]
+      );
+      return disponibilidad;
+    } catch (error) {
+      console.error("Error al verificar disponibilidad de insumos:", error);
+      throw new Error("Error al verificar disponibilidad de insumos");
     }
+  }
 }

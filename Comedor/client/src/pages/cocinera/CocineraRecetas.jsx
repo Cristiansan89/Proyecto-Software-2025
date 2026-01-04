@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import RecetaForm from "../../components/cocinera/RecetaForm";
 import "../../styles/CocineraRecetas.css";
+import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
 
 const CocineraRecetas = () => {
   const { user } = useAuth();
@@ -189,10 +190,10 @@ const CocineraRecetas = () => {
       setLoading(true);
       await API.delete(`/recetas/${receta.id_receta}`);
       await loadRecetas();
-      alert("Receta eliminada exitosamente");
+      showSuccess("Éxito", "Receta eliminada exitosamente");
     } catch (error) {
       console.error("Error al eliminar receta:", error);
-      alert("Error al eliminar la receta");
+      showError("Error", "Error al eliminar la receta");
     } finally {
       setLoading(false);
     }

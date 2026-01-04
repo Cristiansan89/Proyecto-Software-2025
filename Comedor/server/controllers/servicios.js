@@ -7,6 +7,7 @@ import { ConsumoModel } from "../models/consumo.js";
 import { MovimientoInventarioModel } from "../models/movimientoinventario.js";
 import { PlanificacionMenuModel } from "../models/planificacionmenu.js";
 import { ItemRecetaModel } from "../models/itemreceta.js";
+import { connection } from "../models/db.js";
 
 // Controlador para manejar las operaciones relacionadas con los Servicios
 export class ServicioController {
@@ -62,7 +63,7 @@ export class ServicioController {
       res.status(201).json(newServicio);
     } catch (error) {
       console.error("Error al crear servicio:", error);
-      if (error.message.includes("ya existe")) {
+      if (error.message && error.message.toLowerCase().includes("ya existe")) {
         return res.status(409).json({ message: error.message });
       }
       res.status(500).json({ message: "Error interno del servidor" });
@@ -75,17 +76,30 @@ export class ServicioController {
       const { id } = req.params;
       console.log("ServicioController: Eliminando servicio con ID:", id);
 
-      // Verificar si el servicio tiene relaciones activas
-      const hasActiveRelations = await this.servicioModel.hasActiveRelations({
-        id,
-      });
-      if (hasActiveRelations) {
+      // Verificar si el servicio tiene relaciones activas (solo ConfiguracionServiciosAutomaticos)
+      const [result] = await connection.query(
+        `SELECT COUNT(*) as count
+         FROM ConfiguracionServiciosAutomaticos
+         WHERE id_servicio = ?`,
+        [id]
+      );
+
+      if (result[0].count > 0) {
         return res.status(409).json({
           message:
-            "No se puede eliminar el servicio porque está vinculado a registros activos",
+            "No se puede eliminar el servicio porque está vinculado a configuraciones de servicios automáticos",
         });
       }
 
+      // Eliminar todas las asociaciones de turnos primero
+      console.log("ServicioController: Eliminando asociaciones de turnos");
+      await connection.query(
+        `DELETE FROM ServicioTurno
+         WHERE id_servicio = ?`,
+        [id]
+      );
+
+      // Ahora eliminar el servicio
       const deleted = await this.servicioModel.delete({ id });
       console.log("ServicioController: Resultado de eliminación:", deleted);
 

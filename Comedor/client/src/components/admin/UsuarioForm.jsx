@@ -1,5 +1,13 @@
 import { useState } from "react";
 import usuarioService from "../../services/usuarioService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const UsuarioForm = ({ usuario, mode, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -108,12 +116,12 @@ const UsuarioForm = ({ usuario, mode, onCancel }) => {
 
       if (mode === "edit" && usuario) {
         await usuarioService.update(usuario.idUsuario, dataToSend);
-        alert("Usuario actualizado exitosamente");
+        showSuccess("Éxito", "Usuario actualizado exitosamente");
       }
 
       onCancel(); // Cerrar el modal y recargar
     } catch (error) {
-      alert("Error al guardar el usuario: " + error.message);
+      showError("Error", "Error al guardar el usuario: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -125,10 +133,7 @@ const UsuarioForm = ({ usuario, mode, onCancel }) => {
     <div className="persona-form">
       <form onSubmit={handleSubmit}>
         <div className="form-sections">
-          {/* Información de la Cuenta de usuario */}
-          <div className="section-title">
-            <h5>Información de la Cuenta de Usuario</h5>
-          </div>
+          <h5 className="section-title">Información del Usuario</h5>
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="nombreUsuario" className="form-label required ">
@@ -208,9 +213,6 @@ const UsuarioForm = ({ usuario, mode, onCancel }) => {
                 caracteristica de área sin 15.
               </small>
             </div>
-          </div>
-
-          <div className="form-row">
             <div className="form-group">
               <label htmlFor="estadoUsuario" className="form-label ">
                 Estado de Usuario

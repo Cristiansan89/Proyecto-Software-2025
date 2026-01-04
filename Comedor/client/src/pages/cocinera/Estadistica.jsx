@@ -17,8 +17,10 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import consumosService from "../../services/consumosService";
 import asistenciasService from "../../services/asistenciasService";
+import auditoriaService from "../../services/auditoriaService";
 import API from "../../services/api";
 import "../../styles/Estadistica.css";
+import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
 
 ChartJS.register(
   CategoryScale,
@@ -333,9 +335,18 @@ const Estadistica = () => {
       }
 
       pdf.save(`estadisticas_${filtros.fechaInicio}_${filtros.fechaFin}.pdf`);
+
+      // Registrar la generación del PDF en auditoría
+      await auditoriaService.registrarReportePDF({
+        nombreReporte: "Reporte de Estadísticas",
+        tipoReporte: "Estadísticas",
+        descripcion: `Reporte de estadísticas generado para el período ${filtros.fechaInicio} - ${filtros.fechaFin}`,
+        detallesReporte:
+          "Incluye gráficos de consumos, asistencias e inventario",
+      });
     } catch (error) {
       console.error("Error al exportar PDF:", error);
-      alert("Error al exportar el PDF");
+      showError("Error", "Error al exportar el PDF");
     }
   };
 
@@ -346,19 +357,17 @@ const Estadistica = () => {
       const response = await asistenciasService.generarDatosPrueba();
 
       if (response.success) {
-        alert(
-          `✅ ${response.message}\n\nRegistros creados: ${
+        showInfo("Información", `✅ ${response.message}\n\nRegistros creados: ${
             response.data?.registros || 0
-          }`
-        );
+          }`);
         // Recargar los datos
         await cargarDatos();
       } else {
-        alert(`❌ Error: ${response.message}`);
+        showInfo("Información", `❌ Error: ${response.message}`);
       }
     } catch (error) {
       console.error("Error al generar datos de prueba:", error);
-      alert("Error al generar datos de prueba");
+      showError("Error", "Error al generar datos de prueba");
     } finally {
       setLoading(false);
     }

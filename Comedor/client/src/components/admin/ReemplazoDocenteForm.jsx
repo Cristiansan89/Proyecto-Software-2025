@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
 import reemplazoDocenteService from "../../services/reemplazoDocenteService.js";
+import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
 
 const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -204,14 +205,14 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
       onSave(result);
     } catch (error) {
       if (error.response?.data?.message) {
-        alert(`Error: ${error.response.data.message}`);
+        showInfo("Información", `Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors
           .map((err) => `${err.field}: ${err.message}`)
           .join("\n");
-        alert(`Errores de validación:\n${errorMessages}`);
+        showInfo("Información", `Errores de validación:\n${errorMessages}`);
       } else {
-        alert("Error al guardar el reemplazo. Por favor, inténtelo de nuevo.");
+        showError("Error", "Error al guardar el reemplazo. Por favor, inténtelo de nuevo.");
       }
     } finally {
       setLoading(false);

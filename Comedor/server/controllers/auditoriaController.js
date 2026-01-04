@@ -172,6 +172,100 @@ class AuditoriaController {
       });
     }
   }
+
+  // Registrar reporte PDF
+  static async registrarReportePDF(req, res) {
+    try {
+      const { nombreReporte, tipoReporte, descripcion, detallesReporte } =
+        req.body;
+      const usuario = req.user || {};
+
+      if (!nombreReporte) {
+        return res.status(400).json({
+          success: false,
+          message: "El nombre del reporte es requerido",
+        });
+      }
+
+      const resultado = await AuditoriaLog.registrarReportePDF({
+        id_usuario: usuario.id,
+        nombreUsuario: usuario.nombreUsuario,
+        nombreReporte,
+        tipoReporte,
+        descripcion,
+        detallesReporte,
+      });
+
+      res.json({
+        success: true,
+        message: "Reporte PDF registrado en auditoría",
+        data: resultado,
+      });
+    } catch (error) {
+      console.error("Error al registrar reporte PDF:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al registrar reporte PDF en auditoría",
+        error: error.message,
+      });
+    }
+  }
+
+  // Obtener reportes PDF generados
+  static async obtenerReportesPDF(req, res) {
+    try {
+      const { fechaInicio, fechaFin, usuario, tipoReporte } = req.query;
+
+      const filtros = {};
+      if (fechaInicio) filtros.fechaInicio = fechaInicio;
+      if (fechaFin) filtros.fechaFin = fechaFin;
+      if (usuario) filtros.usuario = usuario;
+      if (tipoReporte) filtros.tipoReporte = tipoReporte;
+
+      const reportes = await AuditoriaLog.obtenerReportesPDF(filtros);
+
+      res.json({
+        success: true,
+        data: reportes,
+        total: reportes.length,
+      });
+    } catch (error) {
+      console.error("Error al obtener reportes PDF:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al obtener reportes PDF",
+        error: error.message,
+      });
+    }
+  }
+
+  // Obtener logins de usuarios
+  static async obtenerLogins(req, res) {
+    try {
+      const { fechaInicio, fechaFin, usuario, tipo } = req.query;
+
+      const filtros = {};
+      if (fechaInicio) filtros.fechaInicio = fechaInicio;
+      if (fechaFin) filtros.fechaFin = fechaFin;
+      if (usuario) filtros.usuario = usuario;
+      if (tipo) filtros.tipo = tipo;
+
+      const logins = await AuditoriaLog.obtenerLogins(filtros);
+
+      res.json({
+        success: true,
+        data: logins,
+        total: logins.length,
+      });
+    } catch (error) {
+      console.error("Error al obtener logins:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al obtener logins de usuarios",
+        error: error.message,
+      });
+    }
+  }
 }
 
 export default AuditoriaController;

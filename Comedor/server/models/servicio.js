@@ -74,8 +74,8 @@ export class ServicioModel {
   static async hasActiveRelations({ id }) {
     const [result] = await connection.query(
       `SELECT COUNT(*) as count
-       FROM ConfiguracionServicioAutomatico
-       WHERE id_servicio = ? AND estado = 'Activo'
+       FROM ConfiguracionServiciosAutomaticos
+       WHERE id_servicio = ?
        UNION ALL
        SELECT COUNT(*) as count
        FROM ServicioTurno

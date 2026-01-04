@@ -1,4 +1,5 @@
 import { connection } from "./db.js";
+import { SoftDeleteService } from "./softDeleteService.js";
 
 export class InsumoModel {
   static async getAll() {
@@ -19,6 +20,7 @@ export class InsumoModel {
                 inv.estado as estadoInventario
              FROM Insumos i
              LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
+             WHERE i.estado = 'Activo'
              ORDER BY i.nombreInsumo;`
     );
     return insumos;
@@ -42,7 +44,7 @@ export class InsumoModel {
                 inv.estado as estadoInventario
              FROM Insumos i
              LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
-             WHERE i.id_insumo = ?;`,
+             WHERE i.id_insumo = ? AND i.estado = 'Activo';`,
       [id]
     );
     if (insumos.length === 0) return null;
@@ -130,58 +132,54 @@ export class InsumoModel {
   }
 
   static async delete({ id }) {
-    const conn = await connection.getConnection();
     try {
-      await conn.beginTransaction();
-
-      // Verificar si el insumo existe
-      const [exists] = await conn.query(
-        `SELECT id_insumo FROM Insumos WHERE id_insumo = ?;`,
-        [id]
-      );
-
-      if (exists.length === 0) {
-        await conn.rollback();
-        return false;
-      }
-
-      // Verificar si el insumo está siendo usado en otras tablas
-      const [references] = await conn.query(
-        `SELECT 
-                    (SELECT COUNT(*) FROM ProveedorInsumo WHERE id_insumo = ?) as proveedorCount,
-                    (SELECT COUNT(*) FROM ItemsRecetas WHERE id_insumo = ?) as recetaCount,
-                    (SELECT COUNT(*) FROM MovimientosInventarios WHERE id_insumo = ?) as movimientoCount`,
-        [id, id, id]
-      );
-
-      const totalReferences =
-        references[0].proveedorCount +
-        references[0].recetaCount +
-        references[0].movimientoCount;
-
-      if (totalReferences > 0) {
-        await conn.rollback();
-        throw new Error(
-          "No se puede eliminar el insumo porque está siendo usado en otros registros"
-        );
-      }
-
-      // Eliminar primero del inventario (por la restricción de FK)
-      await conn.query(`DELETE FROM Inventarios WHERE id_insumo = ?;`, [id]);
-
-      // Luego eliminar el insumo
-      const [result] = await conn.query(
-        `DELETE FROM Insumos WHERE id_insumo = ?;`,
-        [id]
-      );
-
-      await conn.commit();
-      return result.affectedRows > 0;
+      // Usar soft delete en lugar de DELETE físico
+      return await SoftDeleteService.softDelete("Insumos", "id_insumo", id);
     } catch (error) {
-      await conn.rollback();
-      throw error;
-    } finally {
-      conn.release();
+      console.error("Error en softDelete:", error);
+      return false;
+    }
+  }
+
+  // Nuevo método: Restaurar insumo eliminado
+  static async undelete({ id }) {
+    try {
+      return await SoftDeleteService.undelete("Insumos", "id_insumo", id);
+    } catch (error) {
+      console.error("Error en undelete:", error);
+      return false;
+    }
+  }
+
+  // Nuevo método: Obtener insumos eliminados
+  static async getDeleted() {
+    try {
+      const [insumos] = await connection.query(
+        `SELECT 
+          i.id_insumo as idInsumo,
+          i.nombreInsumo,
+          i.descripcion,
+          i.categoria,
+          i.estado,
+          i.fechaEliminacion
+         FROM Insumos i
+         WHERE i.estado = 'Inactivo'
+         ORDER BY i.fechaEliminacion DESC;`
+      );
+      return insumos;
+    } catch (error) {
+      console.error("Error en getDeleted:", error);
+      return [];
+    }
+  }
+
+  // Nuevo método: Estadísticas de insumos
+  static async getStats() {
+    try {
+      return await SoftDeleteService.getStats("Insumos");
+    } catch (error) {
+      console.error("Error en getStats:", error);
+      return { activos: 0, inactivos: 0, total: 0, porcentajeInactivos: 0 };
     }
   }
 

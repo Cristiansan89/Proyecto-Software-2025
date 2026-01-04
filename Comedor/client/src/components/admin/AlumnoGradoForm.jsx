@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import Select from "react-select";
 import alumnoGradoService from "../../services/alumnoGradoService.js";
 import { gradoService } from "../../services/gradoService.js";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -192,14 +200,17 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
       onSave(result);
     } catch (error) {
       if (error.response?.data?.message) {
-        alert(`Error: ${error.response.data.message}`);
+        showInfo("Información", `Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors
           .map((err) => `${err.field}: ${err.message}`)
           .join("\n");
-        alert(`Errores de validación:\n${errorMessages}`);
+        showInfo("Información", `Errores de validación:\n${errorMessages}`);
       } else {
-        alert("Error al guardar la asignación. Por favor, inténtelo de nuevo.");
+        showError(
+          "Error",
+          "Error al guardar la asignación. Por favor, inténtelo de nuevo."
+        );
       }
     } finally {
       setLoading(false);

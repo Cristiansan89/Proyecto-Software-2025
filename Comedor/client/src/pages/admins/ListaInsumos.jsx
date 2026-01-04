@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import InsumoForm from "../../components/admin/InsumoForm";
 import insumoService from "../../services/insumoService";
+import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
 
 const ListaInsumos = () => {
   const [insumos, setInsumos] = useState([]);
@@ -26,7 +27,7 @@ const ListaInsumos = () => {
       setInsumos(data);
     } catch (error) {
       console.error("Error al cargar insumos:", error);
-      alert("Error al cargar los insumos");
+      showError("Error", "Error al cargar los insumos");
     } finally {
       setLoading(false);
     }
@@ -82,14 +83,14 @@ const ListaInsumos = () => {
     ) {
       try {
         await insumoService.delete(insumo.idInsumo);
-        alert("Insumo eliminado correctamente");
+        showToast("Insumo eliminado correctamente", "info", 2000);
         loadInsumos();
       } catch (error) {
         console.error("Error al eliminar insumo:", error);
         if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
-          alert("Error al eliminar el insumo");
+          showError("Error", "Error al eliminar el insumo");
         }
       }
     }
@@ -99,14 +100,14 @@ const ListaInsumos = () => {
     try {
       const updated = { ...insumo, estado: nuevoEstado };
       await insumoService.update(insumo.idInsumo, updated);
-      alert(`Estado actualizado a ${nuevoEstado}`);
+      showInfo("Información", `Estado actualizado a ${nuevoEstado}`);
       loadInsumos();
     } catch (error) {
       console.error("Error al cambiar estado:", error);
       if (error.response?.data?.message) {
-        alert(`Error: ${error.response.data.message}`);
+        showInfo("Información", `Error: ${error.response.data.message}`);
       } else {
-        alert("Error al cambiar el estado del insumo");
+        showError("Error", "Error al cambiar el estado del insumo");
       }
     }
   };
@@ -115,11 +116,9 @@ const ListaInsumos = () => {
     setShowModal(false);
     setSelectedInsumo(null);
     loadInsumos();
-    alert(
-      `Insumo ${
+    showInfo("Información", `Insumo ${
         modalMode === "create" ? "creado" : "actualizado"
-      } correctamente`
-    );
+      } correctamente`);
   };
 
   const handleCancel = () => {

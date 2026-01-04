@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import GradoForm from "../../components/admin/GradoForm";
 import gradoService from "../../services/gradoService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaGrados = () => {
   const [grados, setGrados] = useState([]);
@@ -26,7 +34,7 @@ const ListaGrados = () => {
       setFilteredGrados(gradosData);
     } catch (error) {
       console.error("Error al cargar grados:", error);
-      alert("Error al cargar los grados");
+      showError("Error", "Error al cargar los grados");
     } finally {
       setLoading(false);
     }
@@ -86,36 +94,46 @@ const ListaGrados = () => {
   const handleSaveGrado = async () => {
     try {
       closeModal();
-      alert(
+      showSuccess(
+        "Success",
         `Grado ${
           modalMode === "create" ? "creado" : "actualizado"
         } correctamente`
       );
       loadGrados(); // Recargar la lista
     } catch (error) {
-      console.error("Error al guardar grado:", error);
+      showError("Error", "No se pudo guardar el grado");
+      /*console.error("Error al guardar grado:", error);*/
     }
   };
 
   const handleDelete = async (grado) => {
-    if (
-      window.confirm(
-        `¿Está seguro de eliminar el grado "${grado.nombreGrado}"?`
-      )
-    ) {
+    // 1. Esperamos la confirmación del usuario
+    const confirmed = await showConfirm(
+      "Eliminar Grado",
+      `¿Está seguro de eliminar el grado "${grado.nombreGrado}"?`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    // 2. Si el usuario acepta (true), procedemos con la eliminación
+    if (confirmed) {
       try {
         await gradoService.delete(grado.idGrado);
-        alert("Grado eliminado correctamente");
-        loadGrados();
+        showToast("Grado eliminado correctamente", "success", 4000);
+        loadGrados(); // Recargar la lista
       } catch (error) {
-        console.error("Error al eliminar grado:", error);
+        /*console.error("Error al eliminar grado:", error);*/
+
+        // Manejo de errores dinámico
         if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
-          alert("Error al eliminar el grado");
+          showError("Error", "Error al eliminar el grado");
         }
       }
     }
+    // Si no es confirmado, no entra al bloque y no sucede nada.
   };
 
   const handlePageChange = (page) => {

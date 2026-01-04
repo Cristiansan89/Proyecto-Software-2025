@@ -2,6 +2,12 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import auditoriaService from "../../services/auditoriaService";
 import AuditoriaForm from "../../components/admin/AuditoriaForm";
+import {
+  showSuccess,
+  showError,
+  showInfo,
+  showToast,
+} from "../../utils/alertService";
 import "../../styles/Auditoria.css";
 
 const Auditoria = () => {
@@ -141,25 +147,38 @@ const Auditoria = () => {
     return colores[accion] || "muted";
   };
 
+  const formatUuidAsInt = (uuid) =>
+    BigInt("0x" + uuid.replace(/-/g, "")).toString();
+
   const verDetalles = (log) => {
-    const detallesTexto = log.detalles
-      ? JSON.stringify(log.detalles, null, 2)
+    const detallesHtml = log.detalles
+      ? `<pre style="text-align: left;">${JSON.stringify(
+          log.detalles,
+          null,
+          2
+        )}</pre>`
       : "Sin detalles adicionales";
 
-    alert(`📋 DETALLES DEL LOG
+    const contenidoHtml = `
+      <div style="text-align: left;">
+        <p><strong>🕒 Fecha:</strong> ${formatearFecha(log.fecha_creacion)}</p>
+        <p><strong>👤 Usuario:</strong> ${
+          log.nombre_usuario || "Sin usuario"
+        } (${log.email_usuario || "Sin email"})</p>
+        <p><strong>🔧 Acción:</strong> ${log.accion}</p>
+        <p><strong>📦 Módulo:</strong> ${log.modulo}</p>
+        <p><strong>📝 Descripción:</strong> ${log.descripcion}</p>
+        <p><strong>📋 Detalles:</strong></p>
+        ${detallesHtml}
+      </div>
+    `;
 
-🕒 Fecha: ${formatearFecha(log.fecha_creacion)}
-👤 Usuario: ${log.nombre_usuario || "Sin usuario"} (${
-      log.email_usuario || "Sin email"
-    })
-🔧 Acción: ${log.accion}
-📦 Módulo: ${log.modulo}
-📝 Descripción: ${log.descripcion}`);
+    showInfo("Detalles del Log", contenidoHtml);
   };
 
   const exportarLogs = () => {
     if (logs.length === 0) {
-      alert("No hay logs para exportar");
+      showToast("No hay logs para exportar", "warning", 2000);
       return;
     }
 
@@ -199,6 +218,12 @@ const Auditoria = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    showSuccess(
+      "Exportación exitosa",
+      `Se exportaron ${logs.length} registros`,
+      2000
+    );
   };
 
   return (
@@ -440,35 +465,21 @@ const Auditoria = () => {
               <table className="table table-striped data-table">
                 <thead className="table-light">
                   <tr>
-                    <th width="15%">
-                      <i className="fas fa-clock me-2"></i>
-                      Fecha/Hora
-                    </th>
-                    <th width="20%">
-                      <i className="fas fa-user me-2"></i>
-                      Usuario
-                    </th>
-                    <th width="12%">
-                      <i className="fas fa-bolt me-2"></i>
-                      Acción
-                    </th>
-                    <th width="12%">
-                      <i className="fas fa-cubes me-2"></i>
-                      Módulo
-                    </th>
-                    <th width="30%">
-                      <i className="fas fa-info-circle me-2"></i>
-                      Descripción
-                    </th>
-                    <th width="11%">
-                      <i className="fas fa-cogs me-2"></i>
-                      Acciones
-                    </th>
+                    <th width="5%">ID</th>
+                    <th width="15%">Fecha/Hora</th>
+                    <th width="20%">Usuario</th>
+                    <th width="10%">Acción</th>
+                    <th width="10%">Módulo</th>
+                    <th width="30%">Descripción</th>
+                    <th width="10%">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map((log) => (
+                  {logs.map((log, index) => (
                     <tr key={log.id_auditoria}>
+                      <td>
+                        <strong>{index + 1}</strong>
+                      </td>
                       <td>
                         <div className="auditoria__fecha-info">
                           <span className="auditoria__fecha-date">
@@ -496,16 +507,8 @@ const Auditoria = () => {
                       </td>
 
                       <td>
-                        <span
-                          className={`badge auditoria__accion-${log.accion.toLowerCase()}`}
-                        >
-                          <i
-                            className={
-                              obtenerIconoAccion(log.accion).split(" ")[0] +
-                              " " +
-                              obtenerIconoAccion(log.accion).split(" ")[1]
-                            }
-                          ></i>
+                        <span className="badge badge-info">
+                          <i className="fas fa-info-circle me-1"></i>
                           {log.accion}
                         </span>
                       </td>

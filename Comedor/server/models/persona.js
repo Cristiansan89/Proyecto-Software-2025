@@ -1,4 +1,5 @@
 import { connection } from "./db.js";
+import { SoftDeleteService } from "./softDeleteService.js";
 
 export class PersonaModel {
   static async getAll({ nombreRol } = {}) {
@@ -16,7 +17,7 @@ export class PersonaModel {
                     p.fechaModificacion,
                     p.estado
                 FROM Personas p
-                WHERE p.nombreRol = ?
+                WHERE p.nombreRol = ? AND p.estado = 'Activo'
                 ORDER BY p.apellido, p.nombre;`,
         [nombreRol]
       );
@@ -36,6 +37,7 @@ export class PersonaModel {
                 fechaModificacion,
                 estado
             FROM Personas
+            WHERE estado = 'Activo'
             ORDER BY apellido, nombre;`
     );
     return personas;
@@ -98,14 +100,41 @@ export class PersonaModel {
 
   static async delete({ id }) {
     try {
-      await connection.query(
-        `DELETE FROM Personas
-                 WHERE id_persona = ?;`,
-        [id]
-      );
-      return true;
+      // Usar soft delete en lugar de DELETE físico
+      return await SoftDeleteService.softDelete("Personas", "id_persona", id);
     } catch (error) {
+      console.error("Error en softDelete:", error);
       return false;
+    }
+  }
+
+  // Nuevo método: Restaurar persona eliminada
+  static async undelete({ id }) {
+    try {
+      return await SoftDeleteService.undelete("Personas", "id_persona", id);
+    } catch (error) {
+      console.error("Error en undelete:", error);
+      return false;
+    }
+  }
+
+  // Nuevo método: Obtener personas eliminadas
+  static async getDeleted() {
+    try {
+      return await SoftDeleteService.getDeleted("Personas", "id_persona", {});
+    } catch (error) {
+      console.error("Error en getDeleted:", error);
+      return [];
+    }
+  }
+
+  // Nuevo método: Estadísticas de eliminación
+  static async getStats() {
+    try {
+      return await SoftDeleteService.getStats("Personas");
+    } catch (error) {
+      console.error("Error en getStats:", error);
+      return { activos: 0, inactivos: 0, total: 0, porcentajeInactivos: 0 };
     }
   }
 

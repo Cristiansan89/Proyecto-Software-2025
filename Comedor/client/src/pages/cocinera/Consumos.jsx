@@ -2,8 +2,16 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import consumosService from "../../services/consumosService";
 import servicioService from "../../services/servicioService";
+import auditoriaService from "../../services/auditoriaService";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showToast,
+  showInfo,
+} from "../../utils/alertService";
 import "../../styles/Consumos.css";
 
 // Función para convertir unidades de medida
@@ -217,7 +225,7 @@ const Consumos = () => {
 
   const exportarCSV = () => {
     if (consumos.length === 0) {
-      alert("No hay datos para exportar");
+      showToast("No hay datos para exportar", "warning", 2000);
       return;
     }
 
@@ -266,9 +274,9 @@ const Consumos = () => {
     URL.revokeObjectURL(url);
   };
 
-  const exportarPDF = () => {
+  const exportarPDF = async () => {
     if (consumos.length === 0) {
-      alert("No hay datos para exportar");
+      showToast("No hay datos para exportar", "warning", 2000);
       return;
     }
 
@@ -361,10 +369,20 @@ const Consumos = () => {
       const fechaFin = filtros.fechaFin.replace(/-/g, "");
       doc.save(`reporte_consumos_${fechaInicio}_${fechaFin}.pdf`);
 
-      alert("✅ Reporte PDF generado exitosamente");
+      // Registrar la generación del PDF en auditoría
+      await auditoriaService.registrarReportePDF({
+        nombreReporte: "Reporte de Consumos",
+        tipoReporte: "Consumos",
+        descripcion: `Reporte generado para el período ${filtros.fechaInicio} - ${filtros.fechaFin}`,
+        detallesReporte: `Total registros: ${consumos.length}, Servicio: ${
+          filtros.idServicio || "Todos"
+        }`,
+      });
+
+      showSuccess("Éxito", "Reporte PDF generado exitosamente");
     } catch (error) {
       console.error("Error al generar PDF:", error);
-      alert("❌ Error al generar el reporte PDF");
+      showError("Error", "Error al generar el reporte PDF");
     }
   };
 
@@ -374,21 +392,15 @@ const Consumos = () => {
       consumo.unidadMedida || "Unidades"
     );
 
-    const varianza = consumo.cantidadCalculada
-      ? (
-          ((consumo.cantidadUtilizada - consumo.cantidadCalculada) /
-            consumo.cantidadCalculada) *
-          100
-        ).toFixed(2)
-      : "N/A";
-
-    alert(`📊 DETALLE DE CONSUMO
+    showInfo(
+      "Detalle de Consumo",
+      `📊 DETALLE DE CONSUMO
 
 📅 Fecha: ${formatearFecha(consumo.fecha)}
 🍽️ Servicio: ${obtenerNombreServicio(
-      consumo.id_servicio,
-      consumo.nombreServicio
-    )}
+        consumo.id_servicio,
+        consumo.nombreServicio
+      )}
 📦 Insumo: ${consumo.nombreInsumo || `Insumo #${consumo.id_insumo}` || "N/A"}
 ⚖️ Cantidad Utilizada: ${convertida.cantidad} ${convertida.unidad}
 📐 Cantidad Calculada: ${consumo.cantidadCalculada || "N/A"}
@@ -396,13 +408,14 @@ const Consumos = () => {
 🆔 ID de Consumo: ${consumo.id_consumo}
 🆔 ID de Jornada: ${consumo.id_jornada || "N/A"}
 🆔 ID de Insumo: ${consumo.id_insumo || "N/A"}
-📋 ID Item Receta: ${consumo.idItemReceta || "N/A"}
+📋 ID Item Receta: ${consumo.id_itemReceta || "N/A"}
 📋 Origen Cálculo: ${consumo.origenCalculo || "N/A"}
 📋 Fecha Hora Generación: ${
-      consumo.fechaHoraGeneracion
-        ? new Date(consumo.fechaHoraGeneracion).toLocaleString("es-ES")
-        : "N/A"
-    }`);
+        consumo.fechaHoraGeneracion
+          ? new Date(consumo.fechaHoraGeneracion).toLocaleString("es-ES")
+          : "N/A"
+      }`
+    );
   };
 
   if (loading && consumos.length === 0) {

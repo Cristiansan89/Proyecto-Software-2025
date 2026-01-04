@@ -3,6 +3,14 @@ import { useAuth } from "../../context/AuthContext";
 import asistenciasService from "../../services/asistenciasService";
 import servicioService from "../../services/servicioService";
 import { gradoService } from "../../services/gradoService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaAsistencia = () => {
   const { user } = useAuth();
@@ -183,32 +191,34 @@ const ListaAsistencia = () => {
         ? "No Confirmado"
         : "Ausente";
 
-    alert(`📋 DETALLE DE ASISTENCIA
-
-👤 Alumno: ${asistencia.nombreAlumno || "Sin especificar"}
-📅 Fecha: ${formatearFecha(asistencia.fecha)}
-🍽️ Servicio: ${obtenerNombreServicio(
-      asistencia.id_servicio,
-      asistencia.nombreServicio
-    )}
-🎓 Grado: ${obtenerNombreGrado(asistencia.id_grado, asistencia.nombreGrado)}
-✅ Tipo de Asistencia: ${tipoTexto}
-📊 Estado: ${asistencia.estado}
-🆔 ID de Registro: ${asistencia.id_asistencia}
-
-${
-  asistencia.estado === "Pendiente"
-    ? "⚠️ Este registro está pendiente de confirmación"
-    : ""
-}${
-      asistencia.estado === "Completado"
-        ? "✅ Este registro ha sido completado"
-        : ""
-    }${
-      asistencia.estado === "Cancelado"
-        ? "❌ Este registro ha sido cancelado"
-        : ""
-    }`);
+    showInfo(
+      "Detalle de Asistencia",
+      `📋 DETALLE DE ASISTENCIA\n\n👤 Alumno: ${
+        asistencia.nombreAlumno || "Sin especificar"
+      }\n📅 Fecha: ${formatearFecha(
+        asistencia.fecha
+      )}\n🍽️ Servicio: ${obtenerNombreServicio(
+        asistencia.id_servicio,
+        asistencia.nombreServicio
+      )}\n🎓 Grado: ${obtenerNombreGrado(
+        asistencia.id_grado,
+        asistencia.nombreGrado
+      )}\n✅ Tipo de Asistencia: ${tipoTexto}\n📊 Estado: ${
+        asistencia.estado
+      }\n🆔 ID de Registro: ${asistencia.id_asistencia}\n\n${
+        asistencia.estado === "Pendiente"
+          ? "⚠️ Este registro está pendiente de confirmación"
+          : ""
+      }${
+        asistencia.estado === "Completado"
+          ? "✅ Este registro ha sido completado"
+          : ""
+      }${
+        asistencia.estado === "Cancelado"
+          ? "❌ Este registro ha sido cancelado"
+          : ""
+      }`
+    );
   };
 
   const cambiarEstado = async (asistencia) => {
@@ -222,7 +232,11 @@ ${
       ["Pendiente", "Completado", "Cancelado"].includes(nuevoEstado)
     ) {
       if (nuevoEstado === asistencia.estado) {
-        alert("El estado seleccionado es el mismo que el actual.");
+        showToast(
+          "El estado seleccionado es el mismo que el actual.",
+          "warning",
+          2000
+        );
         return;
       }
 
@@ -245,14 +259,14 @@ ${
                 );
 
               if (procesarResponse.success) {
-                alert(
-                  `✅ Estado cambiado a "${nuevoEstado}" y registro de asistencia procesado automáticamente.\n\n` +
-                    `📊 Resultado: ${procesarResponse.message}`
+                showSuccess(
+                  "Éxito",
+                  `Estado cambiado a "${nuevoEstado}" y registro de asistencia procesado automáticamente.\n\n📊 Resultado: ${procesarResponse.message}`
                 );
               } else {
-                alert(
-                  `✅ Estado cambiado exitosamente a "${nuevoEstado}".\n\n` +
-                    `⚠️ Advertencia: No se pudo procesar el registro automático: ${procesarResponse.message}`
+                showWarning(
+                  "Advertencia",
+                  `Estado cambiado exitosamente a "${nuevoEstado}".\n\n⚠️ Advertencia: No se pudo procesar el registro automático: ${procesarResponse.message}`
                 );
               }
             } catch (processingError) {
@@ -260,30 +274,35 @@ ${
                 "Error al procesar registro automático:",
                 processingError
               );
-              alert(
-                `✅ Estado cambiado exitosamente a "${nuevoEstado}".\n\n` +
-                  `⚠️ Advertencia: Error al procesar el registro automático de asistencias.`
+              showWarning(
+                "Advertencia",
+                `Estado cambiado exitosamente a "${nuevoEstado}".\n\n⚠️ Advertencia: Error al procesar el registro automático de asistencias.`
               );
             }
           } else {
-            alert(
-              `✅ Estado cambiado exitosamente de "${asistencia.estado}" a "${nuevoEstado}"`
+            showSuccess(
+              "Éxito",
+              `Estado cambiado exitosamente de "${asistencia.estado}" a "${nuevoEstado}"`
             );
           }
 
           // Recargar los datos para reflejar el cambio
           await cargarAsistencias();
         } else {
-          alert(`❌ Error al actualizar estado: ${response.message}`);
+          showError("Error", `Error al actualizar estado: ${response.message}`);
         }
       } catch (error) {
         console.error("Error al cambiar estado:", error);
-        alert("❌ Error inesperado al cambiar el estado");
+        showError("Error", "Error inesperado al cambiar el estado");
       } finally {
         setLoading(false);
       }
     } else if (nuevoEstado !== null) {
-      alert("Estado inválido. Debe ser: Pendiente, Completado o Cancelado");
+      showToast(
+        "Estado inválido. Debe ser: Pendiente, Completado o Cancelado",
+        "error",
+        2000
+      );
     }
   };
 
@@ -304,7 +323,10 @@ ${
 
     if (nuevoTipo && ["Si", "No", "Ausente"].includes(nuevoTipo)) {
       if (nuevoTipo === asistencia.tipoAsistencia) {
-        alert("El tipo de asistencia seleccionado es el mismo que el actual.");
+        showWarning(
+          "Advertencia",
+          "El tipo de asistencia seleccionado es el mismo que el actual."
+        );
         return;
       }
 
@@ -323,30 +345,29 @@ ${
               : nuevoTipo === "No"
               ? "No Confirmado"
               : "Ausente";
-          alert(`✅ Tipo de asistencia cambiado a "${tipoTexto}"`);
+          showSuccess("Éxito", `Tipo de asistencia cambiado a "${tipoTexto}"`);
           // Recargar los datos
           await cargarAsistencias();
         } else {
-          alert(
-            `❌ Error al actualizar: ${
-              response?.message || "Error desconocido"
-            }`
+          showError(
+            "Error",
+            `Error al actualizar: ${response?.message || "Error desconocido"}`
           );
         }
       } catch (error) {
         console.error("Error al cambiar tipo de asistencia:", error);
-        alert("❌ Error inesperado al cambiar el tipo de asistencia");
+        showError("Error", "Error inesperado al cambiar el tipo de asistencia");
       } finally {
         setLoading(false);
       }
     } else if (nuevoTipo !== null) {
-      alert("Tipo inválido. Debe ser: Si, No o Ausente");
+      showToast("Tipo inválido. Debe ser: Si, No o Ausente", "error", 2000);
     }
   };
 
   const exportarCSV = () => {
     if (asistencias.length === 0) {
-      alert("No hay datos para exportar");
+      showToast("No hay datos para exportar", "warning", 2000);
       return;
     }
 
@@ -384,7 +405,11 @@ ${
 
   const procesarTodasAsistencias = async () => {
     if (!filtros.fecha) {
-      alert("Por favor seleccione una fecha para procesar");
+      showToast(
+        "Por favor seleccione una fecha para procesar",
+        "warning",
+        2000
+      );
       return;
     }
 
@@ -394,7 +419,11 @@ ${
     );
 
     if (asistenciasFecha.length === 0) {
-      alert("No hay asistencias registradas para esta fecha");
+      showToast(
+        "No hay asistencias registradas para esta fecha",
+        "warning",
+        2000
+      );
       return;
     }
 
@@ -433,23 +462,28 @@ ${
           .map((r) => `• ${r.servicio} - ${r.grado}: ${r.error}`)
           .join("\n");
 
-        alert(
-          `✅ Procesamiento completado!\n\n` +
-            `📊 Estadísticas:\n` +
-            `- Total procesados: ${estadisticas.exitosos}/${estadisticas.total}\n` +
-            `- Errores: ${estadisticas.errores}\n\n` +
-            `📋 Detalles:\n${detalles}` +
-            (erroresTexto ? `\n\n❌ Errores:\n${erroresTexto}` : "")
+        showSuccess(
+          "Éxito",
+          `Procesamiento completado!\n\n📊 Estadísticas:\n- Total procesados: ${
+            estadisticas.exitosos
+          }/${estadisticas.total}\n- Errores: ${
+            estadisticas.errores
+          }\n\n📋 Detalles:\n${detalles}${
+            erroresTexto ? `\n\n❌ Errores:\n${erroresTexto}` : ""
+          }`
         );
 
         // Recargar asistencias
         await cargarAsistencias();
       } else {
-        alert(`❌ Error al procesar asistencias: ${response.message}`);
+        showError(
+          "Error",
+          `Error al procesar asistencias: ${response.message}`
+        );
       }
     } catch (error) {
       console.error("Error al procesar todas las asistencias:", error);
-      alert("❌ Error inesperado al procesar las asistencias");
+      showError("Error", "Error inesperado al procesar las asistencias");
     } finally {
       setLoading(false);
     }

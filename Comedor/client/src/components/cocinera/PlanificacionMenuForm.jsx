@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import planificacionMenuService from "../../services/planificacionMenuService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
   const { user } = useAuth();
@@ -65,7 +73,11 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
 
   const calculateDinersAutomatically = async () => {
     if (!formData.fechaInicio) {
-      alert("Por favor seleccione primero la fecha de inicio");
+      showToast(
+        "Por favor seleccione primero la fecha de inicio",
+        "info",
+        2000
+      );
       return;
     }
 
@@ -88,11 +100,18 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
     } catch (error) {
       // Manejar error 401
       if (error.response?.status === 401) {
-        alert("Sesión expirada. Por favor, inicia sesión nuevamente.");
+        showToast(
+          "Sesión expirada. Por favor, inicia sesión nuevamente.",
+          "info",
+          2000
+        );
         navigate("/login");
         return;
       }
-      alert("Error al calcular comensales automáticamente: " + error.message);
+      showError(
+        "Error",
+        "Error al calcular comensales automáticamente: " + error.message
+      );
     } finally {
       setCalculatingDiners(false);
     }
@@ -104,7 +123,11 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
     // Validar que fecha de fin sea posterior a fecha de inicio
     if (formData.fechaInicio && formData.fechaFin) {
       if (new Date(formData.fechaFin) < new Date(formData.fechaInicio)) {
-        alert("La fecha de fin debe ser posterior a la fecha de inicio");
+        showToast(
+          "La fecha de fin debe ser posterior a la fecha de inicio",
+          "info",
+          2000
+        );
         return;
       }
     }
@@ -123,13 +146,13 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
 
       if (mode === "create") {
         await planificacionMenuService.create(dataToSend);
-        alert("Planificación creada correctamente");
+        showToast("Planificación creada correctamente", "info", 2000);
       } else {
         await planificacionMenuService.update(
           planificacion.id_planificacion,
           dataToSend
         );
-        alert("Planificación actualizada correctamente");
+        showToast("Planificación actualizada correctamente", "info", 2000);
       }
 
       onSave();
@@ -138,13 +161,17 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
 
       // Manejar error 401
       if (error.response?.status === 401) {
-        alert("Sesión expirada. Por favor, inicia sesión nuevamente.");
+        showToast(
+          "Sesión expirada. Por favor, inicia sesión nuevamente.",
+          "info",
+          2000
+        );
         navigate("/login");
         return;
       }
 
       const errorMessage = error.response?.data?.message || error.message;
-      alert(`Error al guardar: ${errorMessage}`);
+      showInfo("Información", `Error al guardar: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

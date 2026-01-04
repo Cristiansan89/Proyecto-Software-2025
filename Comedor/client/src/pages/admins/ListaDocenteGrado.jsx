@@ -3,6 +3,7 @@ import DocenteGradoForm from "../../components/admin/DocenteGradoForm";
 import docenteGradoService from "../../services/docenteGradoService.js";
 import { gradoService } from "../../services/gradoService.js";
 import { formatCicloLectivo } from "../../utils/dateUtils.js";
+import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
 
 const ListaDocentesGrados = () => {
   const [docentes, setDocentes] = useState([]);
@@ -52,7 +53,7 @@ const ListaDocentesGrados = () => {
       setFilteredDocentes(data);
     } catch (error) {
       console.error("Error al cargar los docentes:", error);
-      alert("Error al cargar la lista de docentes");
+      showError("Error", "Error al cargar la lista de docentes");
     } finally {
       setLoading(false);
     }
@@ -140,15 +141,13 @@ const ListaDocentesGrados = () => {
           docente.nombreGrado
         );
         loadDocentes();
-        alert("Asignación eliminada correctamente");
+        showToast("Asignación eliminada correctamente", "info", 2000);
       } catch (error) {
         console.error("Error al eliminar la asignación:", error);
         if (error.response?.data?.message) {
-          alert(`Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
-          alert(
-            "Error al eliminar la asignación. Por favor, inténtelo de nuevo."
-          );
+          showError("Error", "Error al eliminar la asignación. Por favor, inténtelo de nuevo.");
         }
       }
     }
@@ -160,11 +159,9 @@ const ListaDocentesGrados = () => {
     loadDocentes();
 
     if (modalMode === "create") {
-      alert(
-        `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`
-      );
+      showInfo("Información", `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`);
     } else {
-      alert("Asignación actualizada correctamente!");
+      showToast("Asignación actualizada correctamente!", "info", 2000);
     }
   };
 

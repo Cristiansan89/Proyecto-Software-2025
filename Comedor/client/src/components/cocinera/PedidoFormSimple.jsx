@@ -5,6 +5,14 @@ import pedidoService from "../../services/pedidoService";
 import insumoService from "../../services/insumoService";
 import proveedorService from "../../services/proveedorService";
 import { proveedorInsumoService } from "../../services/proveedorInsumoService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 // Estilos personalizados para react-select
 const customSelectStyles = {
@@ -89,7 +97,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
       setInsumos(insumosData);
     } catch (error) {
       console.error("Error al cargar insumos:", error);
-      alert("Error al cargar insumos: " + error.message);
+      showError("Error", "Error al cargar insumos: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -102,7 +110,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
       setProveedoresDisponibles(proveedoresData);
     } catch (error) {
       console.error("Error al cargar proveedores:", error);
-      alert("Error al cargar proveedores: " + error.message);
+      showError("Error", "Error al cargar proveedores: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -176,7 +184,11 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
       !nuevoInsumo.cantidad ||
       nuevoInsumo.cantidad <= 0
     ) {
-      alert("Debe seleccionar un insumo y una cantidad válida");
+      showToast(
+        "Debe seleccionar un insumo y una cantidad válida",
+        "info",
+        2000
+      );
       return;
     }
 
@@ -186,8 +198,10 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
     );
 
     if (insumoExistente) {
-      alert(
-        "Este insumo ya está en la lista. Puede editar la cantidad si es necesario."
+      showToast(
+        "Este insumo ya está en la lista. Puede editar la cantidad si es necesario.",
+        "info",
+        2000
       );
       return;
     }
@@ -235,12 +249,12 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
 
   const validarFormulario = () => {
     if (!formData.id_proveedor) {
-      alert("Debe seleccionar un proveedor");
+      showToast("Debe seleccionar un proveedor", "info", 2000);
       return false;
     }
 
     if (formData.insumos.length === 0) {
-      alert("Debe agregar al menos un insumo al pedido");
+      showToast("Debe agregar al menos un insumo al pedido", "info", 2000);
       return false;
     }
 
@@ -249,7 +263,11 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
       (item) => !item.cantidad || item.cantidad <= 0
     );
     if (insumoInvalido) {
-      alert("Todos los insumos deben tener una cantidad válida mayor a 0");
+      showToast(
+        "Todos los insumos deben tener una cantidad válida mayor a 0",
+        "info",
+        2000
+      );
       return false;
     }
 
@@ -274,12 +292,12 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
 
       const pedidosCreados = await pedidoService.crearPedidoManual(datosPedido);
 
-      alert("Pedido creado exitosamente");
+      showSuccess("Éxito", "Pedido creado exitosamente");
       if (onSuccess) onSuccess(pedidosCreados);
       if (onClose) onClose();
     } catch (error) {
       console.error("Error al crear pedido:", error);
-      alert("Error al crear el pedido: " + error.message);
+      showError("Error", "Error al crear el pedido: " + error.message);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 
-const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
+const PermisoForm = ({
+  permiso,
+  onSave,
+  onCancel,
+  mode = "create",
+  serverError = null,
+  onServerErrorClear = null,
+  permisosExistentes = [],
+}) => {
   const [formData, setFormData] = useState({
     nombrePermiso: "",
     descripcionPermiso: "",
@@ -10,6 +18,7 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [localServerError, setLocalServerError] = useState(serverError);
 
   // Opciones para los selectores - basadas en la base de datos
   const accionesDisponibles = [
@@ -53,7 +62,8 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
         estado: permiso.estado || "Activo",
       });
     }
-  }, [permiso, mode]);
+    setLocalServerError(serverError);
+  }, [permiso, mode, serverError]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,6 +86,14 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
         [name]: "",
       }));
     }
+
+    // Limpiar error de servidor al editar el nombre
+    if (name === "nombrePermiso" && localServerError) {
+      setLocalServerError(null);
+      if (onServerErrorClear) {
+        onServerErrorClear();
+      }
+    }
   };
 
   const validateForm = () => {
@@ -86,6 +104,17 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
     } else if (formData.nombrePermiso.length > 100) {
       newErrors.nombrePermiso =
         "El nombre del permiso no puede tener más de 100 caracteres";
+    } else {
+      // Validar que no exista un permiso con el mismo nombre (excepto si está editando el mismo)
+      const permisoDuplicado = permisosExistentes.find(
+        (p) =>
+          p.nombrePermiso.toLowerCase() ===
+            formData.nombrePermiso.toLowerCase() &&
+          (mode === "create" || p.idPermiso !== permiso?.idPermiso)
+      );
+      if (permisoDuplicado) {
+        newErrors.nombrePermiso = `El permiso "${formData.nombrePermiso}" ya existe en el sistema`;
+      }
     }
 
     if (!formData.descripcionPermiso.trim()) {
@@ -129,6 +158,26 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
 
   return (
     <form onSubmit={handleSubmit} className="permiso-form">
+      {localServerError && (
+        <div
+          className="alert alert-danger alert-dismissible fade show"
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong>Error:</strong> {localServerError}
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => {
+              setLocalServerError(null);
+              if (onServerErrorClear) {
+                onServerErrorClear();
+              }
+            }}
+            aria-label="Close"
+          ></button>
+        </div>
+      )}
       <div className="form-grid">
         <div className="form-group">
           <label htmlFor="nombrePermiso" className="form-label">
@@ -146,9 +195,6 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
             readOnly={isReadOnly}
             required
           />
-          {errors.nombrePermiso && (
-            <span className="error-message">{errors.nombrePermiso}</span>
-          )}
         </div>
 
         <div className="form-group">
@@ -241,6 +287,20 @@ const PermisoForm = ({ permiso, onSave, onCancel, mode = "create" }) => {
           </div>
         )}
       </div>
+
+      {errors.nombrePermiso && (
+        <div
+          className="alert alert-danger alert-dismissible fade show mb-3"
+          role="alert"
+        >
+          <div>
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error al guardar:</strong>
+
+            {errors.nombrePermiso}
+          </div>
+        </div>
+      )}
 
       {!isReadOnly && (
         <div className="form-actions">

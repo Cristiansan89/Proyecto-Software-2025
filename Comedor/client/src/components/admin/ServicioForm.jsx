@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import servicioService from "../../services/servicioService.js";
 import turnoService from "../../services/turnoService.js";
 import servicioTurnoService from "../../services/servicioTurnoService.js";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -12,6 +20,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [turnos, setTurnos] = useState([]);
   const [turnosAsignados, setTurnosAsignados] = useState([]);
@@ -48,7 +57,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
     if (
       turnosSeleccionados.some((t) => t.idTurno === turnoSeleccionado.idTurno)
     ) {
-      alert("Este turno ya está seleccionado");
+      showToast("Este turno ya está seleccionado", "info", 2000);
       return;
     }
 
@@ -77,9 +86,10 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
       // Limpiar selección
       setFormData((prev) => ({ ...prev, idTurno: "" }));
 
-      alert("Turno asignado correctamente");
+      showToast("Turno asignado correctamente", "info", 2000);
     } catch (error) {
-      alert(
+      showError(
+        "Error",
         "Error al asignar el turno: " +
           (error.response?.data?.message || error.message)
       );
@@ -90,16 +100,28 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
   const handleDesasignarTurno = async (idTurno) => {
     if (!servicio?.idServicio) return;
 
-    if (window.confirm("¿Está seguro de que desea desasignar este turno?")) {
+    // 1. Pedimos confirmación de forma asíncrona
+    const confirmed = await showConfirm(
+      "Desasignar Turno",
+      "¿Está seguro de que desea quitar este turno del servicio?",
+      "Sí, desasignar",
+      "Cancelar"
+    );
+
+    // 2. Si el usuario confirma, procedemos
+    if (confirmed) {
       try {
         await servicioTurnoService.delete(servicio.idServicio, idTurno);
 
         // Recargar turnos asignados
         await loadTurnosAsignados(servicio.idServicio);
 
-        alert("Turno desasignado correctamente");
+        // Usamos el toast de información para indicar que se quitó con éxito
+        showToast("Turno desasignado correctamente", "info", 2000);
       } catch (error) {
-        alert(
+        console.error("Error al desasignar turno:", error);
+        showError(
+          "Error",
           "Error al desasignar el turno: " +
             (error.response?.data?.message || error.message)
         );
@@ -158,6 +180,12 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
         "La descripción no puede tener más de 100 caracteres";
     }
 
+    // Validar que haya al menos un turno seleccionado en modo create
+    if (isCreateMode && turnosSeleccionados.length === 0) {
+      newErrors.turnos =
+        "Debe seleccionar al menos un turno para crear el servicio";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -170,6 +198,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
     }
 
     setLoading(true);
+    setServerError(null);
 
     try {
       // Preparar datos para enviar al backend
@@ -205,16 +234,37 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
 
       onSave(savedServicio);
     } catch (error) {
-      // Mostrar error al usuario
+      console.error("Error completo:", error);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
+      let errorMessage = "";
+
+      // Intentar extraer el mensaje de error de diferentes estructuras
       if (error.response?.data?.message) {
-        alert(`Error: ${error.response.data.message}`);
-      } else if (error.response?.data?.errors) {
-        const errorMessages = error.response.data.errors
-          .map((err) => `${err.field}: ${err.message}`)
-          .join("\\n");
-        alert(`Errores de validación:\\n${errorMessages}`);
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (typeof error.response?.data === "string") {
+        errorMessage = error.response.data;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      console.log("Mensaje de error extraído:", errorMessage);
+
+      // Verificar si es un error de duplicidad
+      if (
+        errorMessage.toLowerCase().includes("existe") &&
+        errorMessage.toLowerCase().includes("servicio")
+      ) {
+        setServerError("Ya existe un servicio con este nombre");
+      } else if (errorMessage) {
+        setServerError(errorMessage);
       } else {
-        alert("Error al guardar el servicio. Por favor, inténtelo de nuevo.");
+        setServerError(
+          "Error al guardar el servicio. Por favor, inténtelo de nuevo."
+        );
       }
     } finally {
       setLoading(false);
@@ -254,6 +304,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
       setTurnosSeleccionados([]);
     }
   }, [servicio, mode]);
+
   return (
     <div className="servicio-form">
       <form onSubmit={handleSubmit}>
@@ -313,7 +364,16 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
                 <label className="form-label mt-3">
                   <i className="fas fa-clock me-2"></i>
                   Gestión de Turnos
+                  {isCreateMode && <span className="text-danger ms-1">*</span>}
                 </label>
+
+                {/* Mostrar mensaje de error si no hay turnos en modo create */}
+                {errors.turnos && (
+                  <div className="alert alert-danger mt-2 mb-3">
+                    <i className="fas fa-exclamation-circle me-2"></i>
+                    {errors.turnos}
+                  </div>
+                )}
 
                 {/* Mostrar turnos ya asignados o seleccionados */}
                 {((mode !== "create" && turnosAsignados.length > 0) ||
@@ -465,6 +525,18 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
             </div>
           </div>
         </div>
+
+        {/* Mostrar error del servidor (solo para errores que no sean de nombre duplicado) */}
+        {serverError && (
+          <div
+            className="alert alert-danger alert-dismissible fade show mb-3"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error al guardar:</strong>
+            {serverError}
+          </div>
+        )}
 
         {/* Botones */}
         <div className="form-actions mt-4">

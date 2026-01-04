@@ -51,15 +51,17 @@ export class ParametroSistemaController {
           .json({ error: JSON.parse(result.error.message) });
       }
 
-      // Verificar si ya existe un parámetro con la misma clave
-      if (result.data.clave) {
-        const parametroExistente = await this.parametroSistemaModel.getByClave({
-          clave: result.data.clave,
-        });
+      // Verificar si ya existe un parámetro con el mismo nombre
+      if (result.data.nombreParametro) {
+        const parametroExistente = await this.parametroSistemaModel.getByNombre(
+          {
+            nombreParametro: result.data.nombreParametro,
+          }
+        );
         if (parametroExistente) {
           return res
             .status(409)
-            .json({ message: "Ya existe un parámetro con esta clave" });
+            .json({ message: "Ya existe un parámetro con ese nombre" });
         }
       }
 
@@ -70,6 +72,15 @@ export class ParametroSistemaController {
       res.status(201).json(newParametroSistema);
     } catch (error) {
       console.error("Error al crear parámetro del sistema:", error);
+      // Detectar error de duplicación (ER_DUP_ENTRY)
+      if (
+        error.code === "ER_DUP_ENTRY" ||
+        error.message?.includes("Ya existe")
+      ) {
+        return res
+          .status(409)
+          .json({ message: "Ya existe un parámetro con ese nombre" });
+      }
       res.status(500).json({ message: "Error interno del servidor" });
     }
   };
@@ -117,15 +128,20 @@ export class ParametroSistemaController {
           .json({ message: "Parámetro del sistema no encontrado" });
       }
 
-      // Verificar duplicado de clave si se está actualizando
-      if (result.data.clave && result.data.clave !== parametroExistente.clave) {
-        const parametroConClave = await this.parametroSistemaModel.getByClave({
-          clave: result.data.clave,
-        });
-        if (parametroConClave) {
+      // Verificar duplicado de nombre si se está actualizando
+      if (
+        result.data.nombreParametro &&
+        result.data.nombreParametro !== parametroExistente.nombreParametro
+      ) {
+        const parametroConNombre = await this.parametroSistemaModel.getByNombre(
+          {
+            nombreParametro: result.data.nombreParametro,
+          }
+        );
+        if (parametroConNombre) {
           return res
             .status(409)
-            .json({ message: "Ya existe un parámetro con esta clave" });
+            .json({ message: "Ya existe un parámetro con ese nombre" });
         }
       }
 
@@ -137,6 +153,15 @@ export class ParametroSistemaController {
       res.json(updatedParametroSistema);
     } catch (error) {
       console.error("Error al actualizar parámetro del sistema:", error);
+      // Detectar error de duplicación (ER_DUP_ENTRY)
+      if (
+        error.code === "ER_DUP_ENTRY" ||
+        error.message?.includes("Ya existe")
+      ) {
+        return res
+          .status(409)
+          .json({ message: "Ya existe un parámetro con ese nombre" });
+      }
       res.status(500).json({ message: "Error interno del servidor" });
     }
   };

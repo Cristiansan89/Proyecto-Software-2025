@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import Select from "react-select";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const MovimientosForm = ({
   isOpen,
@@ -88,7 +96,7 @@ const MovimientosForm = ({
   const registrarMovimiento = async () => {
     try {
       if (!nuevoMovimiento.id_insumo || !nuevoMovimiento.cantidadMovimiento) {
-        alert("Complete los campos requeridos");
+        showToast("Complete los campos requeridos", "info", 2000);
         return;
       }
 
@@ -96,7 +104,7 @@ const MovimientosForm = ({
         nuevoMovimiento.tipoMovimiento === "Merma" &&
         !nuevoMovimiento.id_tipoMerma
       ) {
-        alert("Seleccione un tipo de merma");
+        showToast("Seleccione un tipo de merma", "info", 2000);
         return;
       }
 
@@ -131,9 +139,10 @@ const MovimientosForm = ({
       });
 
       onClose();
-      alert("Movimiento registrado exitosamente");
+      showSuccess("Éxito", "Movimiento registrado exitosamente");
     } catch (error) {
-      alert(
+      showError(
+        "Error",
         "Error al registrar el movimiento: " +
           (error.response?.data?.message || error.message)
       );

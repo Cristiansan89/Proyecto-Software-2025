@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
 import API from "../../services/api";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 import "../../styles/ConfiguracionServiciosAutomaticos.css";
 
 // Funciones de configuración automática y servicios integradas
@@ -145,7 +153,7 @@ const ConfiguracionServiciosAutomaticos = () => {
 
     // Validar que el servicio esté seleccionado
     if (!formData.id_servicio || formData.id_servicio === "") {
-      setError("Debe seleccionar un servicio");
+      showError("Validación", "Debe seleccionar un servicio");
       return;
     }
 
@@ -155,7 +163,7 @@ const ConfiguracionServiciosAutomaticos = () => {
 
       // Validar que la conversión fue exitosa
       if (isNaN(idServicio)) {
-        setError("El servicio seleccionado no es válido");
+        showError("Error", "El servicio seleccionado no es válido");
         console.error("id_servicio inválido:", formData.id_servicio);
         return;
       }
@@ -169,34 +177,66 @@ const ConfiguracionServiciosAutomaticos = () => {
 
       if (editando) {
         await configuracionAutomaticaAPI.actualizar(editando, datosConvertidos);
-        setSuccess("Configuración actualizada exitosamente");
+
+        // Cerrar modal inmediatamente
+        setModalAbierto(false);
+
+        // Mostrar alert de éxito
+        showSuccess("¡Éxito!", "Configuración actualizada exitosamente");
       } else {
         await configuracionAutomaticaAPI.crear(datosConvertidos);
-        setSuccess("Configuración creada exitosamente");
+
+        // Cerrar modal inmediatamente
+        setModalAbierto(false);
+
+        // Mostrar alert de éxito
+        showSuccess("¡Éxito!", "Configuración creada exitosamente");
       }
 
-      setModalAbierto(false);
       cargarDatos();
     } catch (err) {
       console.error("Error detallado:", err.response?.data);
-      setError(
-        err.response?.data?.message || "Error al guardar la configuración"
-      );
-    }
-  };
+      const errorMessage =
+        err.response?.data?.message || "Error al guardar la configuración";
 
-  const handleEliminar = async (id) => {
-    if (window.confirm("¿Está seguro que desea eliminar esta configuración?")) {
-      try {
-        await configuracionAutomaticaAPI.eliminar(id);
-        setSuccess("Configuración eliminada exitosamente");
-        cargarDatos();
-      } catch (err) {
-        setError("Error al eliminar la configuración");
+      // Detectar error de duplicación
+      if (
+        err.response?.status === 409 ||
+        errorMessage.toLowerCase().includes("ya existe")
+      ) {
+        setError(errorMessage);
+      } else {
+        showError("Error", errorMessage);
       }
     }
   };
 
+  const handleEliminar = async (id, nombreServicio) => {
+    // 1. Confirmación asíncrona con alertService
+    const result = await showConfirm(
+      "Eliminar Configuración",
+      `¿Está seguro de que desea eliminar la configuración del servicio "${nombreServicio}"?`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    // 2. Proceder solo si el usuario confirmó
+    if (result.isConfirmed) {
+      try {
+        await configuracionAutomaticaAPI.eliminar(id);
+
+        // 3. Mostrar éxito
+        showSuccess("¡Éxito!", "Configuración eliminada exitosamente");
+
+        // 4. Recargar los datos de la tabla
+        cargarDatos();
+      } catch (err) {
+        // 5. Gestión de errores
+        console.error("Error al eliminar:", err);
+        showError("Error", "No se pudo eliminar la configuración");
+      }
+    }
+  };
   const getNombreServicio = (idServicio) => {
     const servicio = servicios.find((s) => s.idServicio === idServicio);
     return servicio ? servicio.nombre : "Sin especificar";
@@ -299,7 +339,10 @@ const ConfiguracionServiciosAutomaticos = () => {
                         <button
                           className="btn btn-sm btn-outline-danger"
                           onClick={() =>
-                            handleEliminar(config.id_configuracion)
+                            handleEliminar(
+                              config.id_configuracion,
+                              getNombreServicio(config.id_servicio)
+                            )
                           }
                           title="Eliminar"
                         >
@@ -424,6 +467,25 @@ const ConfiguracionServiciosAutomaticos = () => {
                       placeholder="Descripción opcional"
                     ></textarea>
                   </div>
+
+                  {error && (
+                    <div
+                      className="alert alert-danger alert-dismissible fade show"
+                      role="alert"
+                    >
+                      <div>
+                        <i className="fas fa-exclamation-circle me-2"></i>
+                        <strong className="me-1">Error:</strong> {error}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-close"
+                        onClick={() => setError("")}
+                        aria-label="Close"
+                      ></button>
+                    </div>
+                  )}
+
                   <div className="form-actions">
                     <button
                       type="button"
