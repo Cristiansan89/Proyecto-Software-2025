@@ -2255,6 +2255,16 @@ textarea.form-control {
   width: 95%;
 }
 
+.persona-grado-modal {
+  max-width: 700px;
+  width: 95%;
+}
+
+.reemplazo-grado-modal {
+  max-width: 800px;
+  width: 95%;
+}
+
 /* Asegurar que el modal-body de personas también tenga scroll interno */
 .persona-modal .modal-body {
   max-height: calc(90vh - 140px); /* Más espacio para header y acciones */

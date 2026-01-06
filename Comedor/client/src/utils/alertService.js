@@ -61,6 +61,15 @@ export const showInfo = (title = "Información", message = "") => {
   });
 };
 
+// Dentro de tu archivo de utilidades/alertas
+export const showInfoAuditoria = (titulo, contenido) => {
+  Swal.fire({
+    title: titulo,
+    html: contenido, // <--- ESTO ES LA CLAVE, no uses 'text'
+    confirmButtonText: "Cerrar",
+  });
+};
+
 /**
  * Muestra un diálogo de confirmación
  * @param {string} title - Título del alerta

@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import InsumoForm from "../../components/admin/InsumoForm";
 import insumoService from "../../services/insumoService";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaInsumos = () => {
   const [insumos, setInsumos] = useState([]);
@@ -76,21 +83,33 @@ const ListaInsumos = () => {
   };
 
   const handleDelete = async (insumo) => {
-    if (
-      window.confirm(
-        `¿Está seguro de eliminar el insumo "${insumo.nombreInsumo}"?`
-      )
-    ) {
+    // 1. Confirmación asíncrona personalizada
+    const confirmed = await showConfirm(
+      "Eliminar Insumo",
+      `¿Está seguro de eliminar el insumo "${insumo.nombreInsumo}"? Esta acción podría afectar los registros de inventario actuales.`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    if (confirmed) {
       try {
+        // 2. Llamada al servicio
         await insumoService.delete(insumo.idInsumo);
-        showToast("Insumo eliminado correctamente", "info", 2000);
-        loadInsumos();
+
+        // 3. Feedback visual de éxito
+        showSuccess("Éxito", "Insumo eliminado correctamente");
+
+        // 4. Recarga de la lista
+        await loadInsumos();
       } catch (error) {
-        console.error("Error al eliminar insumo:", error);
+        // 5. Manejo de errores detallado
+        const msg =
+          error.response?.data?.message || "Error al eliminar el insumo";
+
         if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${msg}`);
         } else {
-          showError("Error", "Error al eliminar el insumo");
+          showError("Error", msg);
         }
       }
     }
@@ -100,7 +119,10 @@ const ListaInsumos = () => {
     try {
       const updated = { ...insumo, estado: nuevoEstado };
       await insumoService.update(insumo.idInsumo, updated);
-      showInfo("Información", `Estado actualizado a ${nuevoEstado}`);
+      showInfo(
+        "Información",
+        `Estado del Insumo ${insumo.nombreInsumo} actualizado a ${nuevoEstado}`
+      );
       loadInsumos();
     } catch (error) {
       console.error("Error al cambiar estado:", error);
@@ -112,13 +134,23 @@ const ListaInsumos = () => {
     }
   };
 
-  const handleSave = () => {
-    setShowModal(false);
-    setSelectedInsumo(null);
-    loadInsumos();
-    showInfo("Información", `Insumo ${
-        modalMode === "create" ? "creado" : "actualizado"
-      } correctamente`);
+  const handleSave = async (savedInsumo) => {
+    try {
+      // Si llegamos aquí sin errores, significa que el guardado fue exitoso
+      showInfo(
+        "Información",
+        `Insumo ${
+          modalMode === "create" ? "creado" : "actualizado"
+        } correctamente`
+      );
+      setShowModal(false);
+      setSelectedInsumo(null);
+      loadInsumos();
+    } catch (error) {
+      // Los errores ya se manejan en el InsumoForm
+      // Solo relanzar si es necesario
+      throw error;
+    }
   };
 
   const handleCancel = () => {

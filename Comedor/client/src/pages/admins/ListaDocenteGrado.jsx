@@ -3,7 +3,14 @@ import DocenteGradoForm from "../../components/admin/DocenteGradoForm";
 import docenteGradoService from "../../services/docenteGradoService.js";
 import { gradoService } from "../../services/gradoService.js";
 import { formatCicloLectivo } from "../../utils/dateUtils.js";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaDocentesGrados = () => {
   const [docentes, setDocentes] = useState([]);
@@ -131,23 +138,42 @@ const ListaDocentesGrados = () => {
   };
 
   const handleDelete = async (docente) => {
-    if (
-      window.confirm("¿Está seguro de eliminar esta asignación de docente?")
-    ) {
+    // 1. Confirmación asíncrona personalizada
+    // Incluimos el nombre del grado para que el usuario esté seguro de qué está borrando
+    const confirmed = await showConfirm(
+      "Eliminar Asignación",
+      `¿Está seguro de eliminar la asignación del docente "${docente.nombre} ${docente.apellido}" para el grado "${docente.nombreGrado}"?`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    if (confirmed) {
       try {
+        // 2. Llamada al servicio con los 3 parámetros de identificación
         await docenteGradoService.delete(
           docente.idDocenteTitular,
           docente.idPersona,
           docente.nombreGrado
         );
-        loadDocentes();
-        showToast("Asignación eliminada correctamente", "info", 2000);
+
+        // 3. Recarga de datos y feedback
+        await loadDocentes();
+
+        // Cambiamos showInfo por showSuccess para dar un feedback positivo claro
+        showSuccess(
+          "Éxito",
+          `La asignación del docente "${docente.nombre} ${docente.apellido}" se eliminó correctamente`
+        );
       } catch (error) {
-        console.error("Error al eliminar la asignación:", error);
+        // 4. Manejo de errores sin logs de consola
+        const msg =
+          error.response?.data?.message ||
+          "Error al eliminar la asignación. Por favor, inténtelo de nuevo.";
+
         if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${error.response.data.message}`);
+          showInfo("Información", `Error: ${msg}`);
         } else {
-          showError("Error", "Error al eliminar la asignación. Por favor, inténtelo de nuevo.");
+          showError("Error", msg);
         }
       }
     }
@@ -159,9 +185,12 @@ const ListaDocentesGrados = () => {
     loadDocentes();
 
     if (modalMode === "create") {
-      showInfo("Información", `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`);
+      showInfo(
+        "Información",
+        `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`
+      );
     } else {
-      showToast("Asignación actualizada correctamente!", "info", 2000);
+      showInfo("Información", "Asignación actualizada correctamente!", 4000);
     }
   };
 
@@ -453,7 +482,7 @@ const ListaDocentesGrados = () => {
       {/* Modal para AsignarDocente */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content docente-modal">
+          <div className="modal-content persona-grado-modal">
             <div className="modal-header">
               <h3>
                 {modalMode === "create" && (

@@ -33,7 +33,6 @@ const ListaGrados = () => {
       setGrados(gradosData);
       setFilteredGrados(gradosData);
     } catch (error) {
-      console.error("Error al cargar grados:", error);
       showError("Error", "Error al cargar los grados");
     } finally {
       setLoading(false);
@@ -120,7 +119,7 @@ const ListaGrados = () => {
     if (confirmed) {
       try {
         await gradoService.delete(grado.idGrado);
-        showToast("Grado eliminado correctamente", "success", 4000);
+        showInfo("Grado eliminado correctamente", 4000);
         loadGrados(); // Recargar la lista
       } catch (error) {
         /*console.error("Error al eliminar grado:", error);*/
@@ -314,6 +313,7 @@ const ListaGrados = () => {
           </div>
         )}
       </div>
+
       {/* Modal para Grado */}
       {showModal && (
         <div className="modal-overlay">

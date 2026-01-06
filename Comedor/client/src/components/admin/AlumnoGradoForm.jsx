@@ -230,7 +230,7 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
   }
 
   return (
-    <div className="alumno-grado-form">
+    <div>
       <form onSubmit={handleSubmit}>
         <div className="form-sections">
           <div>

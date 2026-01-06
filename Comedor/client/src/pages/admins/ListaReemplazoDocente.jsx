@@ -156,41 +156,60 @@ const ListaReemplazosGrados = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (reemplazoId) => {
-    if (window.confirm("¿Está seguro de eliminar este reemplazo?")) {
+  const handleDelete = async (reemplazoId, reemplazo) => {
+    // 1. Confirmación para eliminar (Acción permanente)
+    const confirmed = await showConfirm(
+      "Eliminar Reemplazo",
+      `¿Está seguro de eliminar "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" del registro de reemplazo? Esta acción no se puede deshacer.`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    if (confirmed) {
       try {
         await reemplazoDocenteService.delete(reemplazoId);
-        loadReemplazos();
-        showSuccess("Éxito", "Reemplazo eliminado correctamente");
+
+        // 2. Refrescar y notificar
+        await loadReemplazos();
+        showSuccess(
+          "Éxito",
+          `El reemplazo de "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" se ha eliminado correctamente`
+        );
       } catch (error) {
-        console.error("Error al eliminar el reemplazo:", error);
-        if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${error.response.data.message}`);
-        } else {
-          showError(
-            "Error",
-            "Error al eliminar el reemplazo. Por favor, inténtelo de nuevo."
-          );
-        }
+        const msg =
+          error.response?.data?.message || "Error al eliminar el reemplazo.";
+        showError("Error", msg);
       }
     }
   };
 
-  const handleFinalizarReemplazo = async (reemplazoId) => {
-    if (window.confirm("¿Está seguro de finalizar este reemplazo?")) {
+  const handleFinalizarReemplazo = async (reemplazoId, reemplazo) => {
+    // 1. Confirmación para finalizar (Cierre de gestión)
+    const confirmed = await showConfirm(
+      "Finalizar Reemplazo",
+      `¿Está seguro de marcar como finalizado el reemplazo de "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" para el titular "${reemplazo.nombreTitular} ${reemplazo.apellidoTitular}"?`,
+      "Sí, finalizar",
+      "Cancelar"
+    );
+
+    if (confirmed) {
       try {
         await reemplazoDocenteService.finalizar(reemplazoId);
-        loadReemplazos();
-        showSuccess("Éxito", "Reemplazo finalizado correctamente");
+
+        // 2. Refrescar y notificar
+        await loadReemplazos();
+        showSuccess(
+          "Éxito",
+          `Reemplazo de "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" finalizado correctamente`
+        );
       } catch (error) {
-        console.error("Error al finalizar el reemplazo:", error);
+        const msg =
+          error.response?.data?.message || "Error al finalizar el reemplazo.";
+        // Usamos showInfo si el error es una validación de negocio (ej. ya estaba finalizado)
         if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${error.response.data.message}`);
+          showInfo("Información", msg);
         } else {
-          showError(
-            "Error",
-            "Error al finalizar el reemplazo. Por favor, inténtelo de nuevo."
-          );
+          showError("Error", msg);
         }
       }
     }
@@ -477,7 +496,8 @@ const ListaReemplazosGrados = () => {
                               className="btn-action btn-warning"
                               onClick={() =>
                                 handleFinalizarReemplazo(
-                                  reemplazo.idReemplazoDocente
+                                  reemplazo.idReemplazoDocente,
+                                  reemplazo
                                 )
                               }
                               title="Finalizar reemplazo"
@@ -488,7 +508,10 @@ const ListaReemplazosGrados = () => {
                           <button
                             className="btn-action btn-delete"
                             onClick={() =>
-                              handleDelete(reemplazo.idReemplazoDocente)
+                              handleDelete(
+                                reemplazo.idReemplazoDocente,
+                                reemplazo
+                              )
                             }
                             title="Eliminar reemplazo"
                           >
@@ -534,7 +557,7 @@ const ListaReemplazosGrados = () => {
       {/* Modal para Reemplazo */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content reemplazo-modal">
+          <div className="modal-content reemplazo-grado-modal">
             <div className="modal-header">
               <h3>
                 {modalMode === "create" && (

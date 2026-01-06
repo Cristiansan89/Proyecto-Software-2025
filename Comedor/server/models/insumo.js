@@ -20,7 +20,6 @@ export class InsumoModel {
                 inv.estado as estadoInventario
              FROM Insumos i
              LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
-             WHERE i.estado = 'Activo'
              ORDER BY i.nombreInsumo;`
     );
     return insumos;
@@ -44,7 +43,7 @@ export class InsumoModel {
                 inv.estado as estadoInventario
              FROM Insumos i
              LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
-             WHERE i.id_insumo = ? AND i.estado = 'Activo';`,
+             WHERE i.id_insumo = ?;`,
       [id]
     );
     if (insumos.length === 0) return null;
@@ -124,6 +123,10 @@ export class InsumoModel {
       await conn.rollback();
       if (error.code === "ER_DUP_ENTRY") {
         throw new Error("Ya existe un insumo con ese nombre");
+      }
+      // Si el error ya es sobre duplicado de nombre, relanzarlo tal cual
+      if (error.message.includes("Ya existe un insumo")) {
+        throw error;
       }
       throw new Error("Error al crear el insumo: " + error.message);
     } finally {

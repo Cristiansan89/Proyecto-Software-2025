@@ -74,10 +74,7 @@ export class ProveedorController {
       res.status(201).json(newProveedor);
     } catch (error) {
       console.error("Error al crear proveedor:", error);
-      if (
-        error.message.includes("ya existe") ||
-        error.message.includes("RUC")
-      ) {
+      if (error.message.toLowerCase().includes("ya existe")) {
         return res.status(409).json({ message: error.message });
       }
       res.status(500).json({ message: "Error interno del servidor" });
@@ -112,11 +109,9 @@ export class ProveedorController {
         error.message.includes("referencia") ||
         error.message.includes("usado")
       ) {
-        return res
-          .status(409)
-          .json({
-            message: "No se puede eliminar el proveedor porque está en uso",
-          });
+        return res.status(409).json({
+          message: "No se puede eliminar el proveedor porque está en uso",
+        });
       }
       res.status(500).json({ message: "Error interno del servidor" });
     }
@@ -151,6 +146,9 @@ export class ProveedorController {
       res.json(updatedProveedor);
     } catch (error) {
       console.error("Error al actualizar proveedor:", error);
+      if (error.message.toLowerCase().includes("ya existe")) {
+        return res.status(409).json({ message: error.message });
+      }
       res.status(500).json({ message: "Error interno del servidor" });
     }
   };

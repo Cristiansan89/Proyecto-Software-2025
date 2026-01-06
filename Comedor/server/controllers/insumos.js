@@ -52,7 +52,7 @@ export class InsumoController {
       res.status(201).json(newInsumo);
     } catch (error) {
       console.error("Error al crear insumo:", error);
-      if (error.message.includes("ya existe")) {
+      if (error.message.toLowerCase().includes("ya existe")) {
         return res.status(409).json({ message: error.message });
       }
       res.status(500).json({

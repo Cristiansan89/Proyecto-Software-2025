@@ -6,6 +6,7 @@ import {
   showSuccess,
   showError,
   showInfo,
+  showInfoAuditoria,
   showToast,
 } from "../../utils/alertService";
 import "../../styles/Auditoria.css";
@@ -151,29 +152,35 @@ const Auditoria = () => {
     BigInt("0x" + uuid.replace(/-/g, "")).toString();
 
   const verDetalles = (log) => {
+    // 1. Procesar los detalles técnicos (JSON)
+    // Usamos un estilo más moderno para el bloque de código
     const detallesHtml = log.detalles
-      ? `<pre style="text-align: left;">${JSON.stringify(
+      ? `<pre style="text-align: left; background: #f4f4f4; padding: 10px; border-radius: 5px; font-size: 0.85em; max-height: 300px; overflow: auto;">${JSON.stringify(
           log.detalles,
           null,
           2
         )}</pre>`
-      : "Sin detalles adicionales";
+      : `<p style="color: #666; font-style: italic;">Sin detalles adicionales</p>`;
 
+    // 2. Construir el cuerpo del modal con Template Literals
     const contenidoHtml = `
-      <div style="text-align: left;">
-        <p><strong>🕒 Fecha:</strong> ${formatearFecha(log.fecha_creacion)}</p>
-        <p><strong>👤 Usuario:</strong> ${
-          log.nombre_usuario || "Sin usuario"
-        } (${log.email_usuario || "Sin email"})</p>
-        <p><strong>🔧 Acción:</strong> ${log.accion}</p>
-        <p><strong>📦 Módulo:</strong> ${log.modulo}</p>
-        <p><strong>📝 Descripción:</strong> ${log.descripcion}</p>
-        <p><strong>📋 Detalles:</strong></p>
-        ${detallesHtml}
-      </div>
-    `;
+    <div style="text-align: left; line-height: 1.6;">
+      <p><strong>🕒 Fecha:</strong> ${formatearFecha(log.fecha_creacion)}</p>
+      <p><strong>👤 Usuario:</strong> ${log.nombre_usuario ?? "N/A"} 
+         <span style="color: #666; font-size: 0.9em;">(${
+           log.email_usuario ?? "Sin email"
+         })</span>
+      </p>
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+      <p><strong>🔧 Acción:</strong> ${log.accion}</p>
+      <p><strong>📦 Módulo:</strong> ${log.modulo}</p>
+      <p><strong>📝 Descripción:</strong> ${log.descripcion}</p>
+      
+    </div>
+  `;
 
-    showInfo("Detalles del Log", contenidoHtml);
+    // 3. Mostrar la información
+    showInfoAuditoria("Detalles del Registro de Auditoría", contenidoHtml);
   };
 
   const exportarLogs = () => {

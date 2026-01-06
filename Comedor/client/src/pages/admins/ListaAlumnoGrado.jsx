@@ -41,12 +41,9 @@ const ListaAlumnosGrados = () => {
   const loadGrados = async () => {
     try {
       setLoadingGrados(true);
-      console.log("ListaAlumnosGrados: Cargando grados...");
       const gradosData = await gradoService.getActivos();
-      console.log("ListaAlumnosGrados: Grados cargados:", gradosData);
       setGrados(Array.isArray(gradosData) ? gradosData : []);
     } catch (error) {
-      console.error("Error al cargar grados:", error);
       setGrados([]);
     } finally {
       setLoadingGrados(false);
@@ -60,7 +57,6 @@ const ListaAlumnosGrados = () => {
       setAlumnos(data);
       setFilteredAlumnos(data);
     } catch (error) {
-      console.error("Error al cargar los alumnos:", error);
       showError("Error", "Error al cargar la lista de alumnos");
     } finally {
       setLoading(false);
@@ -138,14 +134,28 @@ const ListaAlumnosGrados = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (alumnoId) => {
-    if (window.confirm("¿Está seguro de eliminar esta asignación de alumno?")) {
+  const handleDelete = async (alumnoId, persona) => {
+    // 1. Confirmación personalizada asíncrona
+    const confirmed = await showConfirm(
+      "Eliminar Asignación",
+      `¿Está seguro de eliminar esta asignación de alumno? El alumno "${persona.nombre} ${persona.apellido}" dejará de pertenecer a este grado.`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    // 2. Ejecutar solo si el usuario confirmó
+    if (confirmed) {
       try {
         await alumnoGradoService.delete(alumnoId);
-        loadAlumnos();
-        showSuccess("Éxito", "Asignación eliminada correctamente");
+
+        // 3. Recargar la lista y notificar éxito
+        await loadAlumnos();
+        showSuccess(
+          "Éxito",
+          `Asignación de ${persona.nombre} ${persona.apellido} eliminada correctamente`
+        );
       } catch (error) {
-        console.error("Error al eliminar la asignación:", error);
+        // Manejo de errores sin logs de consola innecesarios
         if (error.response?.data?.message) {
           showInfo("Información", `Error: ${error.response.data.message}`);
         } else {
@@ -179,7 +189,7 @@ const ListaAlumnosGrados = () => {
         );
         setSelectedAlumnos([]);
         loadAlumnos();
-        showToast("Asignaciones eliminadas correctamente", "info", 2000);
+        showInfo("Asignaciones eliminadas correctamente", 4000);
       } catch (error) {
         console.error("Error al eliminar asignaciones:", error);
         showError("Error", "Error al eliminar algunas asignaciones");
@@ -198,7 +208,7 @@ const ListaAlumnosGrados = () => {
         `Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`
       );
     } else {
-      showToast("Asignación actualizada correctamente!", "info", 2000);
+      showInfo("Asignación actualizada correctamente!", 4000);
     }
   };
 
@@ -449,7 +459,9 @@ const ListaAlumnosGrados = () => {
                             </button>
                             <button
                               className="btn-action btn-delete"
-                              onClick={() => handleDelete(alumno.idAlumnoGrado)}
+                              onClick={() =>
+                                handleDelete(alumno.idAlumnoGrado, alumno)
+                              }
                               title="Eliminar asignación"
                             >
                               <i className="fas fa-trash"></i>
@@ -495,7 +507,7 @@ const ListaAlumnosGrados = () => {
       {/* Modal para AsignarAlumno */}
       {showModal && (
         <div className="modal-overlay">
-          <div className="modal-content alumno-modal">
+          <div className="modal-content persona-grado-modal">
             <div className="modal-header">
               <h3>
                 {modalMode === "create" && (

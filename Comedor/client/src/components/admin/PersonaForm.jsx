@@ -185,11 +185,21 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
     if (name === "telefono") {
       // Permitir solo números y espacios en el campo teléfono
-      if (!value.startsWith("+54")) {
-        valorPermitido = "+54";
+      let processedValue = value;
+
+      // Asegurar que empiece con +54
+      if (!processedValue.startsWith("+54")) {
+        // Si no empieza con +54, asumir que el usuario está escribiendo solo números
+        const soloNumeros = processedValue.replace(/\D/g, ""); // \D quita todo lo que no sea número
+        processedValue = "+54" + soloNumeros;
+      } else {
+        // Si ya empieza con +54, extraer solo números después de +54
+        const soloNumeros = processedValue.substring(3).replace(/\D/g, "");
+        processedValue = "+54" + soloNumeros;
       }
-      const numeros = value.substring(3).replace(/\D/g, ""); // \D quita todo lo que no sea número
-      const numerosLimitados = numeros.slice(0, 10); // Limitar a 10 dígitos después del +54
+
+      // Limitar a 10 dígitos después del +54
+      const numerosLimitados = processedValue.substring(3).slice(0, 10);
       valorPermitido = "+54" + numerosLimitados;
     }
 
@@ -266,8 +276,12 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
 
     if (!userFormData.telefono.trim()) {
       newUserErrors.telefono = "El teléfono es requerido";
-    } else if (!/^\d{8,15}$/.test(userFormData.telefono.replace(/\s/g, ""))) {
-      newUserErrors.telefono = "El teléfono debe tener entre 8 y 15 dígitos";
+    } else {
+      // Extraer solo los dígitos del teléfono (sin +54)
+      const soloDigitos = userFormData.telefono.replace(/\D/g, "");
+      if (soloDigitos.length < 8 || soloDigitos.length > 15) {
+        newUserErrors.telefono = "El teléfono debe tener entre 8 y 15 dígitos";
+      }
     }
 
     if (!userFormData.password) {
@@ -382,23 +396,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   return (
     <div className="persona-form">
       <form onSubmit={handleSubmit}>
-        {/* Alerta de error del servidor */}
-        {serverError && (
-          <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong>Error:</strong> {serverError}
-            <button
-              type="button"
-              className="btn-close"
-              onClick={() => setServerError(null)}
-              aria-label="Close"
-            ></button>
-          </div>
-        )}
-
         <div className="form-sections">
           {/* Información Personal */}
           <div>
@@ -425,9 +422,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                   </option>
                 ))}
               </select>
-              {errors.idRol && (
-                <div className="invalid-feedback">{errors.idRol}</div>
-              )}
+
               {rolSeleccionado && (
                 <small className="form-text text-muted">
                   <i className="fas fa-info-circle me-1"></i>
@@ -459,9 +454,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                   disabled={isViewMode}
                   placeholder="Ingrese el nombre"
                 />
-                {errors.nombre && (
-                  <div className="invalid-feedback">{errors.nombre}</div>
-                )}
               </div>
 
               <div className="form-group">
@@ -480,9 +472,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                   disabled={isViewMode}
                   placeholder="Ingrese el apellido"
                 />
-                {errors.apellido && (
-                  <div className="invalid-feedback">{errors.apellido}</div>
-                )}
               </div>
             </div>
 
@@ -501,9 +490,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                   disabled={isViewMode}
                   placeholder="Ingrese el número de documento"
                 />
-                {errors.dni && (
-                  <div className="invalid-feedback">{errors.dni}</div>
-                )}
               </div>
 
               <div className="form-group">
@@ -525,11 +511,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                   disabled={isViewMode}
                   max={new Date().toISOString().split("T")[0]}
                 />
-                {errors.fechaNacimiento && (
-                  <div className="invalid-feedback">
-                    {errors.fechaNacimiento}
-                  </div>
-                )}
               </div>
             </div>
 
@@ -553,9 +534,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                   <option value="Femenina">Femenina</option>
                   <option value="Otros">Otros</option>
                 </select>
-                {errors.genero && (
-                  <div className="invalid-feedback">{errors.genero}</div>
-                )}
               </div>
               {/* Estado */}
 
@@ -608,11 +586,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                         : "Complete nombre y apellido primero"
                     }
                   />
-                  {userErrors.nombreUsuario && (
-                    <div className="invalid-feedback">
-                      {userErrors.nombreUsuario}
-                    </div>
-                  )}
+
                   {!userFormData.nombreUsuario &&
                     formData.nombre &&
                     formData.apellido && (
@@ -639,9 +613,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                     onChange={handleUserInputChange}
                     placeholder="Email para la cuenta de usuario"
                   />
-                  {userErrors.email && (
-                    <div className="invalid-feedback">{userErrors.email}</div>
-                  )}
                 </div>
               </div>
 
@@ -663,11 +634,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                     inputMode="tel"
                     placeholder="Teléfono para la cuenta de usuario"
                   />
-                  {userErrors.telefono && (
-                    <div className="invalid-feedback">
-                      {userErrors.telefono}
-                    </div>
-                  )}
+
                   <small className="form-text text-muted">
                     <i className="fas fa-info-circle me-1"></i>
                     Ingrese el número de teléfono luego del +54 con la
@@ -692,11 +659,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                     onChange={handleUserInputChange}
                     placeholder="Contraseña (mínimo 6 caracteres)"
                   />
-                  {userErrors.password && (
-                    <div className="invalid-feedback">
-                      {userErrors.password}
-                    </div>
-                  )}
                 </div>
 
                 <div className="form-group">
@@ -717,11 +679,6 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                     onChange={handleUserInputChange}
                     placeholder="Confirme la contraseña"
                   />
-                  {userErrors.confirmPassword && (
-                    <div className="invalid-feedback">
-                      {userErrors.confirmPassword}
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -764,6 +721,119 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
             </div>
           )}
         </div>
+
+        {/*Mensaje de errores*/}
+
+        {errors.idRol && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {errors.idRol}
+          </div>
+        )}
+
+        {errors.nombre && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {errors.nombre}
+          </div>
+        )}
+
+        {errors.apellido && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {errors.apellido}
+          </div>
+        )}
+
+        {errors.dni && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {errors.dni}
+          </div>
+        )}
+
+        {errors.fechaNacimiento && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {errors.fechaNacimiento}
+          </div>
+        )}
+
+        {errors.genero && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {errors.genero}
+          </div>
+        )}
+
+        {userErrors.nombreUsuario && (
+          <div
+            className="alert alert-info alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {userErrors.nombreUsuario}
+          </div>
+        )}
+
+        {userErrors.email && (
+          <div
+            className="alert alert-info alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {userErrors.email}
+          </div>
+        )}
+
+        {userErrors.telefono && (
+          <div
+            className="alert alert-info alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {userErrors.telefono}
+          </div>
+        )}
+
+        {userErrors.password && (
+          <div
+            className="alert alert-info alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {userErrors.password}
+          </div>
+        )}
+
+        {userErrors.confirmPassword && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong>{" "}
+            {userErrors.confirmPassword}
+          </div>
+        )}
 
         {/* Botones */}
         <div className="form-actions mt-4">

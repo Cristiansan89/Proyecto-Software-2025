@@ -38,12 +38,10 @@ const ListaUsuarios = () => {
   const loadRoles = async () => {
     try {
       setLoadingRoles(true);
-      console.log("ListaUsuarios: Cargando roles...");
       const rolesData = await rolService.getActivos();
-      console.log("ListaUsuarios: Roles cargados:", rolesData);
       setRoles(Array.isArray(rolesData) ? rolesData : []);
     } catch (error) {
-      console.error("Error al cargar roles:", error);
+      showError("Error", "No se pudieron cargar los roles.");
       setRoles([]);
     } finally {
       setLoadingRoles(false);
@@ -53,18 +51,10 @@ const ListaUsuarios = () => {
   const loadUsuarios = async () => {
     try {
       setLoading(true);
-      console.log("ListaUsuarios: Iniciando carga de usuarios...");
       const data = await usuarioService.getAll();
-      console.log("ListaUsuarios: Datos recibidos:", data);
       setUsuarios(data);
       setFilteredUsuarios(data);
-      console.log(
-        "ListaUsuarios: Estado actualizado con",
-        data.length,
-        "usuarios"
-      );
     } catch (error) {
-      console.error("Error al cargar usuarios:", error);
       showError("Error", "Error al cargar usuarios: " + error.message);
     } finally {
       setLoading(false);
@@ -90,7 +80,7 @@ const ListaUsuarios = () => {
               usuario.apellido.toLowerCase().includes(searchLower))
           );
         } catch (error) {
-          console.error("Error al filtrar usuario:", usuario, error);
+          showError("Error", "Error al filtrar usuarios.");
           return false;
         }
       });
@@ -118,16 +108,6 @@ const ListaUsuarios = () => {
     indexOfLastItem
   );
   const totalPages = Math.ceil(filteredUsuarios.length / itemsPerPage);
-
-  console.log("ListaUsuarios: Estado actual -", {
-    usuarios: usuarios.length,
-    filteredUsuarios: filteredUsuarios.length,
-    currentUsuarios: currentUsuarios.length,
-    searchQuery,
-    filterEstado,
-    filterRol,
-    loading,
-  });
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
@@ -163,19 +143,35 @@ const ListaUsuarios = () => {
     const action = isActive ? "deshabilitar" : "activar";
     const newState = isActive ? "Inactivo" : "Activo";
 
-    if (window.confirm(`¿Está seguro de que desea ${action} este usuario?`)) {
+    // 1. Confirmación asíncrona con textos dinámicos
+    const confirmed = await showConfirm(
+      isActive ? "Deshabilitar Usuario" : "Activar Usuario",
+      `¿Está seguro de que desea ${action} al usuario "${usuario.nombre}"?`,
+      isActive ? "Sí, deshabilitar" : "Sí, activar",
+      "Cancelar"
+    );
+
+    if (confirmed) {
       try {
         const updatedData = { estado: newState };
         await usuarioService.update(usuario.idUsuario, updatedData);
-        showInfo(
-          "Información",
-          `Usuario ${
-            action === "deshabilitar" ? "deshabilitado" : "activado"
-          } correctamente.`
-        );
-        loadUsuarios(); // Recargar la lista después de la actualización
+
+        // 2. Feedback visual diferenciado
+        if (newState === "Activo") {
+          showSuccess(
+            "Usuario Activado",
+            `El usuario "${usuario.nombre}" ahora tiene acceso al sistema.`
+          );
+        } else {
+          showInfo(
+            "Usuario Deshabilitado",
+            `El usuario "${usuario.nombre}" ha sido inactivado correctamente.`
+          );
+        }
+
+        // 3. Refrescar la tabla
+        loadUsuarios();
       } catch (error) {
-        console.error(`Error al ${action} usuario:`, error);
         showError("Error", `Error al ${action} usuario: ${error.message}`);
       }
     }

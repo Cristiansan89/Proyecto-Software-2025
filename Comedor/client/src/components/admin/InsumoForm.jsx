@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import insumoService from "../../services/insumoService.js";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -15,6 +22,7 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Categorías disponibles (según la base de datos)
@@ -58,6 +66,11 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
         ...prev,
         [name]: "",
       }));
+    }
+
+    // Limpiar error del servidor cuando el usuario empiece a editar
+    if (serverError) {
+      setServerError(null);
     }
   };
 
@@ -113,6 +126,7 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
     }
 
     setLoading(true);
+    setServerError(null);
 
     try {
       // Preparar datos para enviar al backend
@@ -140,7 +154,11 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
       onSave(savedInsumo);
     } catch (error) {
       // Mostrar error al usuario
-      if (error.response?.data?.message) {
+      if (error.response?.status === 409) {
+        setServerError(
+          error.response?.data?.message || "Ya existe un insumo con estos datos"
+        );
+      } else if (error.response?.data?.message) {
         showInfo("Información", `Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors
@@ -148,7 +166,10 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
           .join("\n");
         showInfo("Información", `Errores de validación:\n${errorMessages}`);
       } else {
-        showError("Error", "Error al guardar el insumo. Por favor, inténtelo de nuevo.");
+        showError(
+          "Error",
+          "Error al guardar el insumo. Por favor, inténtelo de nuevo."
+        );
       }
     } finally {
       setLoading(false);
@@ -432,6 +453,18 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
             </div>
           </div>
         </div>
+
+        {/* Alerta de error del servidor */}
+        {serverError && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            {serverError}
+          </div>
+        )}
+
         {/* Botones */}
         <div className="form-actions mt-4">
           <button

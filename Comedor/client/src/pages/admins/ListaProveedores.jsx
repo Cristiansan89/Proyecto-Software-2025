@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import ProveedorForm from "../../components/admin/ProveedorForm";
 import AsignarInsumosForm from "../../components/admin/AsignarInsumosForm";
 import proveedorService from "../../services/proveedorService";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ListaProveedores = () => {
   const [proveedores, setProveedores] = useState([]);
@@ -26,14 +33,11 @@ const ListaProveedores = () => {
   }, [proveedores, searchTerm, estadoFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProveedores = async () => {
-    console.log("ListaProveedores: Iniciando loadProveedores");
     try {
       setLoading(true);
       const data = await proveedorService.getAll();
-      console.log("ListaProveedores: Datos recibidos:", data);
       setProveedores(data);
     } catch (error) {
-      console.error("Error al cargar proveedores:", error);
       showError("Error", "Error al cargar los proveedores");
     } finally {
       setLoading(false);
@@ -119,17 +123,40 @@ const ListaProveedores = () => {
     setShowInsumosModal(true);
   };
 
-  const handleDelete = async (proveedorId) => {
-    if (window.confirm("¿Está seguro de que desea eliminar este proveedor?")) {
+  const handleDelete = async (proveedorId, proveedor) => {
+    // 1. Confirmación personalizada asíncrona
+    const confirmed = await showConfirm(
+      "Eliminar Proveedor",
+      `¿Está seguro de que desea eliminar el proveedor "${proveedor.razonSocial}"? Esta acción podría afectar el historial de compras vinculado.`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    // 2. Proceder solo si el usuario confirmó
+    if (confirmed) {
       try {
         await proveedorService.delete(proveedorId);
-        showToast("Proveedor eliminado correctamente", "info", 2000);
-        loadProveedores();
+
+        // 3. Notificación de éxito y recarga
+        // Cambiamos showInfo por showSuccess para una confirmación positiva estándar
+        showSuccess(
+          "Éxito",
+          `El proveedor "${proveedor.razonSocial}" eliminado correctamente`
+        );
+
+        await loadProveedores();
       } catch (error) {
-        console.error("Error al eliminar proveedor:", error);
+        // 4. Manejo de errores detallado
         const errorMessage =
           error.response?.data?.message || "Error al eliminar el proveedor";
-        showInfo("Información", `⚠️ ${errorMessage}`);
+
+        // Si el error es una restricción de integridad (ej. tiene facturas pendientes)
+        // usamos showInfo para informar la causa, si es un error técnico usamos showError
+        if (error.response?.status === 400 || error.response?.status === 409) {
+          showInfo("Información", `⚠️ ${errorMessage}`);
+        } else {
+          showError("Error", errorMessage);
+        }
       }
     }
   };
@@ -151,8 +178,9 @@ const ListaProveedores = () => {
       setSelectedProveedor(null);
       loadProveedores();
     } catch (error) {
-      console.error("Error al guardar proveedor:", error);
-      // Los errores ya se manejan en el ProveedorForm
+      // Los errores se manejan en el ProveedorForm, no mostrar error aquí
+      // Solo relanzar si es necesario
+      throw error;
     }
   };
 
@@ -161,12 +189,12 @@ const ListaProveedores = () => {
       await proveedorService.asignarInsumos(selectedProveedor.idProveedor, {
         insumos: insumosData,
       });
-      showToast("Insumos asignados correctamente", "info", 2000);
+      showInfo("Insumos asignados correctamente", 4000);
       setShowInsumosModal(false);
       setSelectedProveedor(null);
       loadProveedores();
     } catch (error) {
-      console.error("Error al asignar insumos:", error);
+      showError("Error", "Error al asignar insumos");
       if (error.response?.data?.message) {
         showInfo("Información", `Error: ${error.response.data.message}`);
       } else {
@@ -421,7 +449,7 @@ const ListaProveedores = () => {
                             <button
                               className="btn-action btn-delete"
                               onClick={() =>
-                                handleDelete(proveedor.idProveedor)
+                                handleDelete(proveedor.idProveedor, proveedor)
                               }
                               title="Eliminar"
                             >

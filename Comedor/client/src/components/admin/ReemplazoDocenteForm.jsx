@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
 import reemplazoDocenteService from "../../services/reemplazoDocenteService.js";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -212,7 +219,10 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
           .join("\n");
         showInfo("Información", `Errores de validación:\n${errorMessages}`);
       } else {
-        showError("Error", "Error al guardar el reemplazo. Por favor, inténtelo de nuevo.");
+        showError(
+          "Error",
+          "Error al guardar el reemplazo. Por favor, inténtelo de nuevo."
+        );
       }
     } finally {
       setLoading(false);
@@ -474,23 +484,23 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
                   <div className="invalid-feedback">{errors.motivo}</div>
                 )}
               </div>
-            </div>
 
-            <div className="form-group">
-              <label htmlFor="cicloLectivo" className="form-label ">
-                Ciclo Lectivo
-              </label>
-              <input
-                type="number"
-                id="cicloLectivo"
-                name="cicloLectivo"
-                className="form-control"
-                value={cicloInput}
-                onChange={handleInputChange}
-                disabled={isViewMode || isEditMode}
-                min="2020"
-                max="2030"
-              />
+              <div className="form-group">
+                <label htmlFor="cicloLectivo" className="form-label ">
+                  Ciclo Lectivo
+                </label>
+                <input
+                  type="number"
+                  id="cicloLectivo"
+                  name="cicloLectivo"
+                  className="form-control"
+                  value={cicloInput}
+                  onChange={handleInputChange}
+                  disabled={isViewMode || isEditMode}
+                  min="2020"
+                  max="2030"
+                />
+              </div>
             </div>
           </div>
         </div>

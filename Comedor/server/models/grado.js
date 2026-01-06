@@ -51,6 +51,17 @@ export class GradoModel {
         nombreGrado,
         estado,
       });
+
+      // Validar que no exista un grado con el mismo nombre
+      const [existing] = await connection.query(
+        `SELECT id_grado FROM Grados WHERE nombreGrado = ? AND estado = 'Activo';`,
+        [nombreGrado]
+      );
+
+      if (existing.length > 0) {
+        throw new Error("Ya existe un grado con ese nombre");
+      }
+
       const [result] = await connection.query(
         `INSERT INTO Grados (id_turno, nombreGrado, estado)
                  VALUES (?, ?, ?);`,
@@ -61,7 +72,10 @@ export class GradoModel {
       return this.getById({ id: result.insertId });
     } catch (error) {
       console.error("GradoModel: Error al crear grado:", error);
-      if (error.code === "ER_DUP_ENTRY") {
+      if (
+        error.code === "ER_DUP_ENTRY" ||
+        error.message.includes("Ya existe")
+      ) {
         throw new Error("Ya existe un grado con ese nombre");
       }
       throw new Error("Error al crear el grado: " + error.message);
@@ -143,6 +157,18 @@ export class GradoModel {
     const turnoId = id_turno || idTurno;
 
     try {
+      // Validar que no exista otro grado con el mismo nombre
+      if (nombreGrado) {
+        const [existing] = await connection.query(
+          `SELECT id_grado FROM Grados WHERE nombreGrado = ? AND id_grado != ? AND estado = 'Activo';`,
+          [nombreGrado, id]
+        );
+
+        if (existing.length > 0) {
+          throw new Error("Ya existe un grado con ese nombre");
+        }
+      }
+
       const updates = [];
       const values = [];
 
@@ -171,10 +197,13 @@ export class GradoModel {
 
       return this.getById({ id });
     } catch (error) {
-      if (error.code === "ER_DUP_ENTRY") {
+      if (
+        error.code === "ER_DUP_ENTRY" ||
+        error.message.includes("Ya existe")
+      ) {
         throw new Error("Ya existe un grado con ese nombre");
       }
-      throw new Error("Error al actualizar el grado");
+      throw new Error("Error al actualizar el grado: " + error.message);
     }
   }
 

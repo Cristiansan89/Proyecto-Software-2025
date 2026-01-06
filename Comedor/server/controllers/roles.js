@@ -103,12 +103,10 @@ export class RolController {
         msg.toLowerCase().includes("foreign key") ||
         msg.toLowerCase().includes("referenced")
       ) {
-        return res
-          .status(409)
-          .json({
-            message:
-              "No se puede eliminar el rol porque tiene permisos o relaciones vinculadas. Revocar las asignaciones de permisos antes de eliminar.",
-          });
+        return res.status(409).json({
+          message:
+            "No se puede eliminar el rol porque tiene permisos o relaciones vinculadas. Revocar las asignaciones de permisos antes de eliminar.",
+        });
       }
 
       res.status(500).json({ message: "Error interno del servidor" });

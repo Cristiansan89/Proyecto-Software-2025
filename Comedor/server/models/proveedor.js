@@ -50,6 +50,25 @@ export class ProveedorModel {
     } = input;
 
     try {
+      // Validación manual de duplicados
+      const [existingByCUIT] = await connection.query(
+        `SELECT id_proveedor FROM Proveedores WHERE CUIT = ? LIMIT 1;`,
+        [CUIT]
+      );
+
+      if (existingByCUIT.length > 0) {
+        throw new Error("Ya existe un proveedor con este CUIT");
+      }
+
+      const [existingByRazonSocial] = await connection.query(
+        `SELECT id_proveedor FROM Proveedores WHERE razonSocial = ? LIMIT 1;`,
+        [razonSocial]
+      );
+
+      if (existingByRazonSocial.length > 0) {
+        throw new Error("Ya existe un proveedor con esta razón social");
+      }
+
       await connection.query(
         `INSERT INTO Proveedores (
                     razonSocial,
@@ -75,7 +94,7 @@ export class ProveedorModel {
       if (error.code === "ER_DUP_ENTRY") {
         throw new Error("Ya existe un proveedor con esta razón social y CUIT");
       }
-      throw new Error("Error al crear el proveedor");
+      throw error;
     }
   }
 
@@ -107,6 +126,29 @@ export class ProveedorModel {
     const { razonSocial, CUIT, direccion, telefono, mail, estado } = input;
 
     try {
+      // Validación de duplicados si se cambió CUIT o razonSocial
+      if (CUIT) {
+        const [existingByCUIT] = await connection.query(
+          `SELECT BIN_TO_UUID(id_proveedor) as idProveedor FROM Proveedores WHERE CUIT = ? AND id_proveedor != UUID_TO_BIN(?) LIMIT 1;`,
+          [CUIT, id]
+        );
+
+        if (existingByCUIT.length > 0) {
+          throw new Error("Ya existe otro proveedor con este CUIT");
+        }
+      }
+
+      if (razonSocial) {
+        const [existingByRazonSocial] = await connection.query(
+          `SELECT BIN_TO_UUID(id_proveedor) as idProveedor FROM Proveedores WHERE razonSocial = ? AND id_proveedor != UUID_TO_BIN(?) LIMIT 1;`,
+          [razonSocial, id]
+        );
+
+        if (existingByRazonSocial.length > 0) {
+          throw new Error("Ya existe otro proveedor con esta razón social");
+        }
+      }
+
       const updates = [];
       const values = [];
 
@@ -152,7 +194,7 @@ export class ProveedorModel {
       if (error.code === "ER_DUP_ENTRY") {
         throw new Error("Ya existe un proveedor con esta razón social y CUIT");
       }
-      throw new Error("Error al actualizar el proveedor");
+      throw error;
     }
   }
 

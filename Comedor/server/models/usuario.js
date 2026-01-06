@@ -19,7 +19,6 @@ export class UsuarioModel {
                 u.estado
              FROM Usuarios u
              JOIN Personas p ON u.id_persona = p.id_persona
-             WHERE u.estado = 'Activo'
              ORDER BY u.nombreUsuario;`
     );
     return usuarios;
@@ -41,7 +40,7 @@ export class UsuarioModel {
                 u.estado
              FROM Usuarios u
              JOIN Personas p ON u.id_persona = p.id_persona
-             WHERE u.id_usuario = UUID_TO_BIN(?) AND u.estado = 'Activo';`,
+             WHERE u.id_usuario = UUID_TO_BIN(?);`,
       [id]
     );
     if (usuarios.length === 0) return null;

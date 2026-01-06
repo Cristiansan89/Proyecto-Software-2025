@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
   // Función para formatear el CUIT
@@ -36,6 +43,7 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
@@ -73,6 +81,11 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
         ...prev,
         [name]: "",
       }));
+    }
+
+    // Limpiar error del servidor cuando el usuario empiece a editar
+    if (serverError) {
+      setServerError(null);
     }
   };
 
@@ -125,6 +138,7 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
     }
 
     setLoading(true);
+    setServerError(null);
 
     try {
       // Preparar datos para enviar al backend
@@ -138,10 +152,15 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
         estado: formData.estado,
       };
 
-      onSave(proveedorData);
+      await onSave(proveedorData);
     } catch (error) {
       // Mostrar error al usuario
-      if (error.response?.data?.message) {
+      if (error.response?.status === 409) {
+        setServerError(
+          error.response?.data?.message ||
+            "Ya existe un proveedor con estos datos"
+        );
+      } else if (error.response?.data?.message) {
         showInfo("Información", `Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors
@@ -149,7 +168,10 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
           .join("\n");
         showInfo("Información", `Errores de validación:\n${errorMessages}`);
       } else {
-        showError("Error", "Error al guardar el proveedor. Por favor, inténtelo de nuevo.");
+        showError(
+          "Error",
+          "Error al guardar el proveedor. Por favor, inténtelo de nuevo."
+        );
       }
     } finally {
       setLoading(false);
@@ -335,6 +357,7 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                   </div>
                 )}
                 <div className="info-row">
+                  polluelo20@mail.com
                   <span className="info-label">Total de Insumos:</span>
                   <span className="info-value">
                     {proveedor.insumos?.length || 0} insumos asignados
@@ -376,6 +399,17 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
             </div>
           )}
         </div>
+
+        {/* Alerta de error del servidor */}
+        {serverError && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            {serverError}
+          </div>
+        )}
 
         {/* Botones */}
         <div className="form-actions">

@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import gradoService from "../../services/gradoService";
 import turnoService from "../../services/turnoService";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const GradoForm = ({ grado, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +21,7 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [loadingTurnos, setLoadingTurnos] = useState(true);
+  const [serverError, setServerError] = useState(null);
 
   // Cargar turnos al montar el componente
   useEffect(() => {
@@ -43,6 +51,11 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
         ...prev,
         [name]: "",
       }));
+    }
+
+    // Limpiar error del servidor cuando el usuario empiece a editar
+    if (serverError) {
+      setServerError(null);
     }
   };
 
@@ -85,16 +98,23 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
       onSave(savedGrado);
     } catch (error) {
       // Mostrar errores específicos
-      if (error.response?.data?.errors) {
+      if (error.response?.status === 409) {
+        // Error de duplicación - mostrar solo en el alert del formulario
+        setServerError(error.response?.data?.message || "El grado ya existe");
+      } else if (error.response?.data?.errors) {
         const apiErrors = {};
         error.response.data.errors.forEach((err) => {
           apiErrors[err.field] = err.message;
         });
         setErrors(apiErrors);
       } else if (error.response?.data?.message) {
-        showInfo("Información", `Error: ${error.response.data.message}`);
+        setServerError(error.response.data.message);
+        showError("Error", error.response.data.message);
       } else {
-        showError("Error", "Error al guardar el grado. Por favor, intente nuevamente.");
+        showError(
+          "Error",
+          "Error al guardar el grado. Por favor, intente nuevamente."
+        );
       }
     } finally {
       setLoading(false);
@@ -128,9 +148,6 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
                 disabled={isViewMode}
                 placeholder="Ej: 1° A, 1° B, 2° A, 3° A..."
               />
-              {errors.nombreGrado && (
-                <div className="invalid-feedback">{errors.nombreGrado}</div>
-              )}
             </div>
 
             <div className="form-group">
@@ -161,9 +178,6 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
                   ))}
                 </select>
               )}
-              {errors.idTurno && (
-                <div className="invalid-feedback">{errors.idTurno}</div>
-              )}
             </div>
 
             <div className="form-group">
@@ -188,6 +202,31 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
             </div>
           </div>
         </div>
+
+        {/* Mensaje de error */}
+        {serverError && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {serverError}
+          </div>
+        )}
+
+        {errors.nombreGrado && (
+          <div className="alert alert-danger" role="alert">
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {errors.nombreGrado}
+          </div>
+        )}
+
+        {errors.idTurno && (
+          <div className="alert alert-danger" role="alert">
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {errors.idTurno}
+          </div>
+        )}
 
         {/* Botones */}
         <div className="form-actions ">

@@ -17,7 +17,7 @@ export class PersonaModel {
                     p.fechaModificacion,
                     p.estado
                 FROM Personas p
-                WHERE p.nombreRol = ? AND p.estado = 'Activo'
+                WHERE p.nombreRol = ?
                 ORDER BY p.apellido, p.nombre;`,
         [nombreRol]
       );
@@ -37,7 +37,6 @@ export class PersonaModel {
                 fechaModificacion,
                 estado
             FROM Personas
-            WHERE estado = 'Activo'
             ORDER BY apellido, nombre;`
     );
     return personas;
