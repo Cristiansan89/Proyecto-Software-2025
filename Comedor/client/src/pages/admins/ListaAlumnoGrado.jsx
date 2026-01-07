@@ -8,6 +8,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -157,7 +158,7 @@ const ListaAlumnosGrados = () => {
       } catch (error) {
         // Manejo de errores sin logs de consola innecesarios
         if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${error.response.data.message}`);
+          showInfoError("Información", `Error: ${error.response.data.message}`);
         } else {
           showError(
             "Error",
@@ -191,7 +192,7 @@ const ListaAlumnosGrados = () => {
         loadAlumnos();
         showInfo("Asignaciones eliminadas correctamente", 4000);
       } catch (error) {
-        console.error("Error al eliminar asignaciones:", error);
+        //console.error("Error al eliminar asignaciones:", error);
         showError("Error", "Error al eliminar algunas asignaciones");
       }
     }

@@ -67,7 +67,8 @@ const Auditoria = () => {
         setLogs([]);
       }
     } catch (error) {
-      console.error("Error al cargar logs:", error);
+      //console.error("Error al cargar logs:", error);
+      showError("Error al cargar los registros de auditoría.");
       setLogs([]);
     } finally {
       setLoading(false);
@@ -85,7 +86,8 @@ const Auditoria = () => {
         setEstadisticas(response.data || {});
       }
     } catch (error) {
-      console.error("Error al cargar estadísticas:", error);
+      //console.error("Error al cargar estadísticas:", error);
+      showError("Error al cargar las estadísticas de auditoría.");
     }
   };
 

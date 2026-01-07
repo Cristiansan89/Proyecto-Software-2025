@@ -26,7 +26,12 @@ const ListaEstadoPedido = () => {
       const data = await estadoPedidoService.getAll();
       setEstadosPedido(data);
     } catch (error) {
-      console.error("Error al cargar estados de pedido:", error);
+      // console.error("Error al cargar estados de pedido:", error);
+      showError(
+        "Error",
+        "Error al cargar los estados de pedido: " +
+          (error.response?.data?.message || error.message)
+      );
       setError("Error al cargar los estados de pedido");
     } finally {
       setLoading(false);

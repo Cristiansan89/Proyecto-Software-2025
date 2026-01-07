@@ -7,6 +7,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -200,12 +201,15 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
       onSave(result);
     } catch (error) {
       if (error.response?.data?.message) {
-        showInfo("Información", `Error: ${error.response.data.message}`);
+        showInfoError("Información", `Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors
           .map((err) => `${err.field}: ${err.message}`)
           .join("\n");
-        showInfo("Información", `Errores de validación:\n${errorMessages}`);
+        showInfoError(
+          "Información",
+          `Errores de validación:\n${errorMessages}`
+        );
       } else {
         showError(
           "Error",

@@ -107,7 +107,11 @@ const Consumos = () => {
         );
       }
     } catch (error) {
-      console.error("Error al cargar datos iniciales:", error);
+      //console.error("Error al cargar datos iniciales:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde."
+      );
       setServicios([]);
     } finally {
       setLoading(false);
@@ -131,7 +135,8 @@ const Consumos = () => {
         setConsumos(response.data || []);
         calcularEstadisticas(response.data || []);
       } else {
-        console.error("Error:", response.message);
+        //console.error("Error:", response.message);
+        showError("Error", `❌ ${response.message}`);
         setConsumos([]);
         setEstadisticas({
           totalRegistros: 0,
@@ -141,7 +146,11 @@ const Consumos = () => {
         });
       }
     } catch (error) {
-      console.error("Error al cargar consumos:", error);
+      //console.error("Error al cargar consumos:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los consumos. Por favor, intente nuevamente más tarde."
+      );
       setConsumos([]);
       setEstadisticas({
         totalRegistros: 0,
@@ -225,7 +234,7 @@ const Consumos = () => {
 
   const exportarCSV = () => {
     if (consumos.length === 0) {
-      showToast("No hay datos para exportar", "warning", 2000);
+      showInfo("No hay datos para exportar");
       return;
     }
 
@@ -276,7 +285,7 @@ const Consumos = () => {
 
   const exportarPDF = async () => {
     if (consumos.length === 0) {
-      showToast("No hay datos para exportar", "warning", 2000);
+      showInfo("No hay datos para exportar");
       return;
     }
 
@@ -381,7 +390,7 @@ const Consumos = () => {
 
       showSuccess("Éxito", "Reporte PDF generado exitosamente");
     } catch (error) {
-      console.error("Error al generar PDF:", error);
+      //console.error("Error al generar PDF:", error);
       showError("Error", "Error al generar el reporte PDF");
     }
   };
@@ -396,21 +405,23 @@ const Consumos = () => {
       "Detalle de Consumo",
       `📊 DETALLE DE CONSUMO
 
-📅 Fecha: ${formatearFecha(consumo.fecha)}
-🍽️ Servicio: ${obtenerNombreServicio(
+      📅 Fecha: ${formatearFecha(consumo.fecha)}
+      🍽️ Servicio: ${obtenerNombreServicio(
         consumo.id_servicio,
         consumo.nombreServicio
       )}
-📦 Insumo: ${consumo.nombreInsumo || `Insumo #${consumo.id_insumo}` || "N/A"}
-⚖️ Cantidad Utilizada: ${convertida.cantidad} ${convertida.unidad}
-📐 Cantidad Calculada: ${consumo.cantidadCalculada || "N/A"}
-📊 Varianza: ${varianza}%
-🆔 ID de Consumo: ${consumo.id_consumo}
-🆔 ID de Jornada: ${consumo.id_jornada || "N/A"}
-🆔 ID de Insumo: ${consumo.id_insumo || "N/A"}
-📋 ID Item Receta: ${consumo.id_itemReceta || "N/A"}
-📋 Origen Cálculo: ${consumo.origenCalculo || "N/A"}
-📋 Fecha Hora Generación: ${
+      📦 Insumo: ${
+        consumo.nombreInsumo || `Insumo #${consumo.id_insumo}` || "N/A"
+      }
+      ⚖️ Cantidad Utilizada: ${convertida.cantidad} ${convertida.unidad}
+      📐 Cantidad Calculada: ${consumo.cantidadCalculada || "N/A"}
+      📊 Varianza: ${varianza}%
+      🆔 ID de Consumo: ${consumo.id_consumo}
+      🆔 ID de Jornada: ${consumo.id_jornada || "N/A"}
+      🆔 ID de Insumo: ${consumo.id_insumo || "N/A"}
+      📋 ID Item Receta: ${consumo.id_itemReceta || "N/A"}
+      📋 Origen Cálculo: ${consumo.origenCalculo || "N/A"}
+      📋 Fecha Hora Generación: ${
         consumo.fechaHoraGeneracion
           ? new Date(consumo.fechaHoraGeneracion).toLocaleString("es-ES")
           : "N/A"

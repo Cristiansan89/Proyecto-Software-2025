@@ -17,30 +17,30 @@ const PlanificacionCalendario = () => {
 
   // Debug: Verificar estructura del usuario
   useEffect(() => {
-    console.log("=== DEBUG USUARIO ===");
-    console.log("Usuario completo:", user);
-    console.log(
-      "Propiedades del usuario:",
-      user ? Object.keys(user) : "Usuario es null"
-    );
-    console.log("user?.id_usuario:", user?.id_usuario);
-    console.log("user?.idUsuario:", user?.idUsuario);
-    console.log("user?.id:", user?.id);
+    //console.log("=== DEBUG USUARIO ===");
+    //console.log("Usuario completo:", user);
+    //console.log(
+    //  "Propiedades del usuario:",
+    //  user ? Object.keys(user) : "Usuario es null"
+    //);
+    //console.log("user?.id_usuario:", user?.id_usuario);
+    //console.log("user?.idUsuario:", user?.idUsuario);
+    //console.log("user?.id:", user?.id);
 
     // Validar UUID si hay usuario
     if (user?.idUsuario || user?.id_usuario) {
       const usuarioId = user?.idUsuario || user?.id_usuario;
       const uuidRegex =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      console.log("✅ Validación UUID:", {
+      /* console.log("✅ Validación UUID:", {
         usuarioId,
         esUUIDValido: uuidRegex.test(usuarioId),
         longitud: usuarioId?.length,
         formato: typeof usuarioId,
-      });
+      });*/
     }
 
-    console.log("===================");
+    // console.log("===================");
   }, [user]);
   const [servicios, setServicios] = useState([
     { id_servicio: 1, nombre: "Desayuno", descripcion: "Comida matutina" },
@@ -77,24 +77,24 @@ const PlanificacionCalendario = () => {
     const dif = inicio.getDate() - dia + (dia === 0 ? -6 : 1);
     inicio.setDate(dif);
 
-    console.log(`🗓️ Calculando semana desde: ${semanaActual.toISOString()}`);
+    /*console.log(`🗓️ Calculando semana desde: ${semanaActual.toISOString()}`);
     console.log(`   - Día de la semana original: ${dia}`);
     console.log(
       `   - Fecha de inicio de semana calculada: ${
         inicio.toISOString().split("T")[0]
       }`
-    );
+    );*/
 
     const semana = [];
     for (let i = 0; i < 5; i++) {
       const fecha = new Date(inicio);
       fecha.setDate(inicio.getDate() + i);
       semana.push(fecha);
-      console.log(
+      /*console.log(
         `   - Día ${i}: ${
           fecha.toISOString().split("T")[0]
         } (${fecha.toLocaleDateString("es-ES", { weekday: "long" })})`
-      );
+      );*/
     }
     return semana;
   };
@@ -102,11 +102,11 @@ const PlanificacionCalendario = () => {
   // Verificar si una fecha específica está dentro del rango de planificación
   const estaFechaEnRangoPlanificacion = (fecha) => {
     if (!planificacionActiva) {
-      console.log(
+      /*console.log(
         `❌ No hay planificación activa para fecha: ${
           fecha.toISOString().split("T")[0]
         }`
-      );
+      );*/
       return false; // Sin planificación, no se puede asignar
     }
 
@@ -123,11 +123,11 @@ const PlanificacionCalendario = () => {
     const resultado = fechaStr >= inicioStr && fechaStr <= finStr;
 
     // Solo log si no está en rango para debug
-    if (!resultado) {
+    /*if (!resultado) {
       console.log(`❌ ${fechaStr} fuera de rango: ${inicioStr} a ${finStr}`);
     } else {
       console.log(`✅ ${fechaStr} en rango de planificación`);
-    }
+    }*/
 
     return resultado;
   };
@@ -181,7 +181,7 @@ const PlanificacionCalendario = () => {
         const fechaInicioPlanificacion = new Date(planificacion.fechaInicio);
         setSemanaActual(fechaInicioPlanificacion);
         setPlanificacionActiva(planificacion);
-        console.log(
+        /*console.log(
           `✅ Planificación ${planificacion.estado.toLowerCase()} encontrada:`
         );
         console.log(`   - ID: ${planificacion.id_planificacion}`);
@@ -200,14 +200,15 @@ const PlanificacionCalendario = () => {
           `   - Inicializando calendario desde ${
             new Date(planificacion.fechaInicio).toISOString().split("T")[0]
           }`
-        );
+        );*/
       } else {
         // Si no hay planificación activa o pendiente, usar la semana actual
         setPlanificacionActiva(null);
-        console.log(`❌ No se encontró planificación activa ni pendiente`);
+        // console.log(`❌ No se encontró planificación activa ni pendiente`);
       }
     } catch (error) {
-      console.error("Error al verificar planificación activa:", error);
+      //console.error("Error al verificar planificación activa:", error);
+      showError("Error al verificar planificación activa");
       setPlanificacionActiva(null);
     }
   };
@@ -240,9 +241,9 @@ const PlanificacionCalendario = () => {
     const totalEsperado = diasLaborales * servicios.length; // días laborales × 3 servicios
     const asignados = Object.keys(menusAsignados).length;
 
-    console.log(
+    /* console.log(
       `📊 Verificando calendario: ${asignados}/${totalEsperado} asignados (${diasLaborales} días laborales)`
-    );
+    );*/
 
     if (asignados >= totalEsperado) {
       try {
@@ -257,99 +258,95 @@ const PlanificacionCalendario = () => {
           planificacionActualizada
         );
 
-        console.log("✅ Planificación activada automáticamente");
+        //console.log("✅ Planificación activada automáticamente");
         // Actualizar el estado local sin recargar desde BD
         setPlanificacionActiva(planificacionActualizada);
       } catch (error) {
-        console.error("Error al activar planificación:", error);
+        //console.error("Error al activar planificación:", error);
+        showError("Error al activar planificación");
       }
     }
   };
 
   const finalizarPlanificacion = async () => {
     if (!planificacionActiva) {
-      showToast("No hay planificación activa para finalizar", "info", 2000);
+      showInfo("Información", "No hay planificación activa para finalizar.");
       return;
     }
 
-    // Verificar que todas las jornadas tienen recetas asignadas
-    const semana = obtenerSemanaActual();
-    const totalEsperado = diasSemana.length * servicios.length; // 5 días × 3 servicios = 15
+    // 1. Validación de integridad (Asignaciones completas)
+    const totalEsperado = diasSemana.length * servicios.length;
     const asignados = Object.keys(menusAsignados).length;
 
     if (asignados < totalEsperado) {
       const faltantes = totalEsperado - asignados;
-      if (
-        !confirm(
-          `Faltan ${faltantes} asignaciones de menú. ¿Desea activar la planificación de todas formas?`
-        )
-      ) {
-        return;
-      }
+      const confirmedIntegrity = await showConfirm(
+        "Planificación Incompleta",
+        `Faltan ${faltantes} asignaciones de menú. ¿Desea activar la planificación de todas formas?`,
+        "Sí, activar así",
+        "Cancelar"
+      );
+      if (!confirmedIntegrity) return;
     }
 
-    // Cambiar mensaje según el estado actual
-    const mensaje =
-      planificacionActiva.estado === "Pendiente"
-        ? "¿Está seguro de que desea activar esta planificación?"
-        : "¿Está seguro de que desea finalizar esta planificación? Esta acción no se puede deshacer.";
+    // 2. Definición dinámica de mensajes según estado
+    const esPendiente = planificacionActiva.estado === "Pendiente";
+    const tituloModal = esPendiente
+      ? "Activar Planificación"
+      : "Finalizar Planificación";
+    const mensajeModal = esPendiente
+      ? "¿Está seguro de que desea activar esta planificación para que sea visible en el calendario?"
+      : "¿Está seguro de que desea finalizar esta planificación? Esta acción es irreversible y cerrará el ciclo actual.";
 
-    if (!confirm(mensaje)) {
-      return;
-    }
+    // 3. Confirmación de cambio de estado
+    const confirmChange = await showConfirm(
+      tituloModal,
+      mensajeModal,
+      esPendiente ? "Sí, activar" : "Sí, finalizar",
+      "Volver"
+    );
+
+    if (!confirmChange) return;
 
     setFinalizandoPlanificacion(true);
     try {
-      if (planificacionActiva.estado === "Pendiente") {
-        // Cambiar de Pendiente a Activo - enviar solo los campos necesarios
-        const datosActualizacion = {
-          estado: "Activo",
-        };
-
-        console.log("📤 Actualizando planificación a Activo:", {
-          id: planificacionActiva.id_planificacion,
-          datos: datosActualizacion,
-        });
-
+      if (esPendiente) {
+        // Cambio a estado ACTIVO
         await planificacionMenuService.update(
           planificacionActiva.id_planificacion,
-          datosActualizacion
+          { estado: "Activo" }
         );
-        showSuccess("Éxito", "Planificación activada exitosamente");
-      } else if (planificacionActiva.estado === "Activo") {
-        // Cambiar de Activo a Finalizado
-        console.log(
-          "📤 Finalizando planificación:",
-          planificacionActiva.id_planificacion
+        showSuccess(
+          "Éxito",
+          "La planificación ha sido activada correctamente."
         );
-
+      } else {
+        // Cambio a estado FINALIZADO
         await planificacionMenuService.finalizar(
           planificacionActiva.id_planificacion
         );
-        showSuccess("Éxito", "Planificación finalizada exitosamente");
+        showSuccess(
+          "Éxito",
+          "La planificación ha sido finalizada correctamente."
+        );
       }
 
       await verificarPlanificacionActiva();
     } catch (error) {
-      console.error("Error al actualizar planificación:", error);
-
-      // Mostrar información más detallada del error
-      let mensajeError = "Error al actualizar la planificación";
+      // 4. Manejo de errores detallado y seguro
+      let mensajeError = "No se pudo actualizar la planificación.";
 
       if (error.response?.data?.errors) {
-        // Error de validación con detalles específicos
-        const errores = error.response.data.errors
-          .map((err) => `${err.field}: ${err.message}`)
-          .join("\n");
-        mensajeError = `Errores de validación:\n${errores}`;
-        console.log("🔍 Errores de validación:", error.response.data.errors);
-      } else if (error.response?.data?.message) {
-        mensajeError = error.response.data.message;
+        // Mapeo de errores de validación del backend
+        const detalles = error.response.data.errors
+          .map((err) => `• ${err.message}`)
+          .join("<br>");
+        mensajeError = `<strong>Errores de validación:</strong><br>${detalles}`;
       } else {
-        mensajeError += ": " + error.message;
+        mensajeError = error.response?.data?.message || error.message;
       }
 
-      showError("Error", mensajeError);
+      showError("Error de Proceso", mensajeError);
     } finally {
       setFinalizandoPlanificacion(false);
     }
@@ -371,8 +368,8 @@ const PlanificacionCalendario = () => {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-    console.log("🔍 Validando usuario ID:", usuarioId);
-    console.log("🔍 Formato UUID válido:", uuidRegex.test(usuarioId));
+    //console.log("🔍 Validando usuario ID:", usuarioId);
+    //console.log("🔍 Formato UUID válido:", uuidRegex.test(usuarioId));
 
     if (!uuidRegex.test(usuarioId)) {
       showInfo(
@@ -396,13 +393,13 @@ const PlanificacionCalendario = () => {
         estado: "Pendiente",
       };
 
-      console.log("📅 Creando planificación:", nuevaPlanificacion);
+      // console.log("📅 Creando planificación:", nuevaPlanificacion);
 
       const resultado = await planificacionMenuService.create(
         nuevaPlanificacion
       );
 
-      console.log("✅ Planificación creada:", resultado);
+      // console.log("✅ Planificación creada:", resultado);
       showSuccess(
         "Éxito",
         "Planificación creada exitosamente. Ahora puede asignar menús."
@@ -411,8 +408,8 @@ const PlanificacionCalendario = () => {
       // Recargar planificaciones
       await verificarPlanificacionActiva();
     } catch (error) {
-      console.error("❌ Error al crear planificación:", error);
-
+      //console.error("❌ Error al crear planificación:", error);
+      showError("Error al crear planificación");
       // Mostrar mensaje más específico según el tipo de error
       let mensajeError = "Error al crear planificación";
 
@@ -435,13 +432,13 @@ const PlanificacionCalendario = () => {
       showError("Error", mensajeError);
 
       // Mostrar información adicional en consola para debug
-      console.log("🔍 Detalles del error:", {
+      /*console.log("🔍 Detalles del error:", {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
         usuario: user,
         planificacion: nuevaPlanificacion,
-      });
+      });*/
     } finally {
       setLoading(false);
     }
@@ -451,20 +448,21 @@ const PlanificacionCalendario = () => {
     try {
       const response = await recetaService.getActivas();
       setRecetasDisponibles(response || []);
-      console.log("📚 Recetas cargadas:", response);
+      //console.log("📚 Recetas cargadas:", response);
     } catch (error) {
-      console.error("Error al cargar recetas disponibles:", error);
+      //console.error("Error al cargar recetas disponibles:", error);
+      showError("Error al cargar recetas disponibles");
       setRecetasDisponibles([]);
     }
   };
 
   // Función para obtener recetas filtradas por servicio
   const obtenerRecetasPorServicio = (id_servicio) => {
-    console.log(`🔍 Filtrando recetas para servicio ID: ${id_servicio}`);
-    console.log(`📚 Total recetas disponibles: ${recetasDisponibles.length}`);
+    //console.log(`🔍 Filtrando recetas para servicio ID: ${id_servicio}`);
+    //console.log(`📚 Total recetas disponibles: ${recetasDisponibles.length}`);
 
     if (!id_servicio) {
-      console.log("⚠️ No hay ID de servicio, devolviendo todas las recetas");
+      //console.log("⚠️ No hay ID de servicio, devolviendo todas las recetas");
       return recetasDisponibles;
     }
 
@@ -472,21 +470,21 @@ const PlanificacionCalendario = () => {
       // Las recetas ahora vienen con un array de servicios desde el backend
       if (receta.servicios && Array.isArray(receta.servicios)) {
         const pertenece = receta.servicios.includes(id_servicio);
-        console.log(
+        /* console.log(
           `   ${pertenece ? "✅" : "❌"} ${receta.nombreReceta} - servicios: [${
             receta.servicios
           }] - ${pertenece ? "SÍ" : "NO"} incluye ${id_servicio}`
-        );
+        );*/
         return pertenece;
       } else {
-        console.log(`   ❌ ${receta.nombreReceta} - Sin servicios asociados`);
+        //console.log(`   ❌ ${receta.nombreReceta} - Sin servicios asociados`);
         return false;
       }
     });
 
-    console.log(
+    /*console.log(
       `✅ Recetas filtradas para servicio ${id_servicio}: ${recetasFiltradas.length}`
-    );
+    );*/
     recetasFiltradas.forEach((r) => console.log(`   - ${r.nombreReceta}`));
 
     return recetasFiltradas;
@@ -500,19 +498,19 @@ const PlanificacionCalendario = () => {
       if (planificacionActiva) {
         fechaInicio = planificacionActiva.fechaInicio;
         fechaFin = planificacionActiva.fechaFin;
-        console.log(
+        /*console.log(
           `📅 Cargando menús para la planificación completa: ${
             new Date(fechaInicio).toISOString().split("T")[0]
           } a ${new Date(fechaFin).toISOString().split("T")[0]}`
-        );
+        );*/
       } else {
         // Si no, cargar solo la semana visible
         const semana = obtenerSemanaActual();
         fechaInicio = semana[0].toISOString().split("T")[0];
         fechaFin = semana[4].toISOString().split("T")[0];
-        console.log(
+        /*console.log(
           `📅 Cargando menús para la semana ${fechaInicio} a ${fechaFin}`
-        );
+        );*/
       }
 
       const response = await planificacionMenuService.getMenusSemana(
@@ -526,20 +524,22 @@ const PlanificacionCalendario = () => {
         response.forEach((menu) => {
           if (menu && menu.fecha && menu.id_servicio && menu.id_receta) {
             const clave = `${menu.fecha}_${menu.id_servicio}`;
-            console.log(`✅ Menú agregado: ${clave} - ${menu.nombreReceta}`);
+            //console.log(`✅ Menú agregado: ${clave} - ${menu.nombreReceta}`);
             menusMap[clave] = menu;
           } else {
-            console.warn("⚠️ Menú incompleto descartado:", menu);
+            //console.warn("⚠️ Menú incompleto descartado:", menu);
+            showWarning("Menú incompleto descartado al cargar menús asignados");
           }
         });
       }
 
-      console.log(
+      /* console.log(
         `📊 Total de menús cargados: ${Object.keys(menusMap).length}`
-      );
+      );*/
       setMenusAsignados(menusMap);
     } catch (error) {
-      console.error("❌ Error al cargar menús asignados:", error);
+      //console.error("❌ Error al cargar menús asignados:", error);
+      showError("Error al cargar menús asignados");
       setMenusAsignados({});
     }
   };
@@ -558,10 +558,11 @@ const PlanificacionCalendario = () => {
             await planificacionMenuService.calcularComensalesPorFecha(fechaStr);
           comensalesMap[fechaStr] = datosComensales;
         } catch (err) {
-          console.warn(
+          /*console.warn(
             `Error al cargar comensales para ${fechaStr}:`,
             err?.message || err
-          );
+          );*/
+          showWarning(`Error al cargar comensales para ${fechaStr}`);
           comensalesMap[fechaStr] = {
             fecha: fechaStr,
             servicios: [],
@@ -572,7 +573,8 @@ const PlanificacionCalendario = () => {
 
       setComensalesPorFecha(comensalesMap);
     } catch (error) {
-      console.error("Error al cargar comensales de la semana:", error);
+      //console.error("Error al cargar comensales de la semana:", error);
+      showError("Error al cargar comensales de la semana");
     } finally {
       setCargandoComensales(false);
     }
@@ -601,23 +603,22 @@ const PlanificacionCalendario = () => {
       !asignacionSeleccionada.fecha ||
       !asignacionSeleccionada.servicio
     ) {
-      showToast("Por favor seleccione una receta", "info", 2000);
+      showInfo("Por favor seleccione una receta");
       return;
     }
 
     // Validar que solo se pueda asignar en estado 'Pendiente'
     if (planificacionActiva?.estado !== "Pendiente") {
-      showToast(
+      showInfo(
         "Solo se pueden asignar menús en planificaciones con estado Pendiente",
-        "info",
-        2000
+        4000
       );
       return;
     }
 
-    console.log("=== ASIGNANDO MENÚ ===");
-    console.log("Usuario actual:", user);
-    console.log("ID del usuario:", user?.idUsuario || user?.id_usuario);
+    //console.log("=== ASIGNANDO MENÚ ===");
+    //console.log("Usuario actual:", user);
+    //console.log("ID del usuario:", user?.idUsuario || user?.id_usuario);
 
     const usuarioId = user?.idUsuario || user?.id_usuario;
     if (!usuarioId) {
@@ -629,7 +630,7 @@ const PlanificacionCalendario = () => {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(usuarioId)) {
-      console.error("❌ ID de usuario inválido:", usuarioId);
+      //console.error("❌ ID de usuario inválido:", usuarioId);
       showInfo(
         "Información",
         `Error: El ID del usuario no es válido: ${usuarioId}`
@@ -646,19 +647,19 @@ const PlanificacionCalendario = () => {
         id_usuario: usuarioId,
       };
 
-      console.log("📤 Datos de asignación:", datosAsignacion);
+      //console.log("📤 Datos de asignación:", datosAsignacion);
 
       const resultado = await planificacionMenuService.asignarReceta(
         datosAsignacion
       );
 
-      console.log("✅ Respuesta del servidor:", resultado);
+      //console.log("✅ Respuesta del servidor:", resultado);
 
       // Pequeño delay para asegurar que la BD esté actualizada
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Recargar menús asignados
-      console.log("🔄 Recargando menús asignados...");
+      //console.log("🔄 Recargando menús asignados...");
       await cargarMenusAsignados();
 
       // Verificar si el calendario está completo para activar la planificación
@@ -667,7 +668,8 @@ const PlanificacionCalendario = () => {
       cerrarModalAsignacion();
       showSuccess("Éxito", "Menú asignado exitosamente");
     } catch (error) {
-      console.error("❌ Error al asignar menú:", error);
+      //console.error("❌ Error al asignar menú:", error);
+      showError("Error al asignar menú");
 
       // 🔧 MEJORADO: Mostrar mensaje más descriptivo
       let mensajeError = error.message;
@@ -685,58 +687,51 @@ const PlanificacionCalendario = () => {
   };
 
   const eliminarReceta = async (fecha, servicio, dia) => {
-    // Validar que solo se pueda eliminar en estado 'Pendiente'
+    // 1. Validación de reglas de negocio
     if (planificacionActiva?.estado !== "Pendiente") {
-      showToast(
-        "Solo se pueden eliminar menús en planificaciones con estado Pendiente",
-        "info",
-        2000
+      showInfo(
+        "Información",
+        "Solo se pueden eliminar menús en planificaciones con estado 'Pendiente'."
       );
-      return;
       return;
     }
 
-    if (
-      !confirm(
-        `¿Está seguro de que desea eliminar la receta asignada para ${dia} - ${servicio.nombre}?`
-      )
-    ) {
-      return;
-    }
+    // 2. Confirmación personalizada asíncrona
+    const confirmed = await showConfirm(
+      "Quitar Receta",
+      `¿Está seguro de que desea eliminar la receta asignada para el ${dia} en el servicio de ${servicio.nombre}?`,
+      "Sí, quitar",
+      "Cancelar"
+    );
+
+    if (!confirmed) return;
 
     setLoading(true);
     try {
+      // 3. Preparación de datos (formato YYYY-MM-DD seguro)
+      const fechaLocal = fecha.toLocaleDateString("en-CA"); // Obtiene YYYY-MM-DD sin desfase de zona horaria
       const datosEliminacion = {
-        fecha: fecha.toISOString().split("T")[0],
+        fecha: fechaLocal,
         id_servicio: servicio.id_servicio,
       };
 
-      console.log("🗑️ Eliminando receta:", datosEliminacion);
+      // 4. Ejecución del servicio
+      await planificacionMenuService.eliminarReceta(datosEliminacion);
 
-      const resultado = await planificacionMenuService.eliminarReceta(
-        datosEliminacion
-      );
-
-      console.log("✅ Receta eliminada exitosamente");
-
-      // Pequeño delay para asegurar que la BD esté actualizada
+      // 5. Sincronización de la interfaz
+      // Pequeño delay para estabilidad de la base de datos
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Recargar menús asignados
-      console.log("🔄 Recargando menús asignados después de eliminar...");
       await cargarMenusAsignados();
-
-      // Verificar estado del calendario después de eliminar
       await verificarCalendarioCompleto();
 
-      showSuccess("Éxito", "Receta eliminada exitosamente");
+      showSuccess("Éxito", "Receta eliminada correctamente del calendario.");
     } catch (error) {
-      console.error("❌ Error al eliminar receta:", error);
-      showError(
-        "Error",
-        "Error al eliminar la receta: " +
-          (error.response?.data?.message || error.message)
-      );
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Error al eliminar la receta";
+      showError("Error", msg);
     } finally {
       setLoading(false);
     }

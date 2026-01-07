@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import "../../styles/Alertas.css";
+import { showError } from "../../utils/alertService";
 
 const Alertas = () => {
   const { user } = useAuth();
@@ -254,7 +255,8 @@ const Alertas = () => {
       // Recargar configuración después de guardar
       await cargarConfiguracionAlertas();
     } catch (error) {
-      console.error("Error al guardar:", error);
+      //console.error("Error al guardar:", error);
+      showError("Error al guardar la configuración de alertas.");
       setMensaje({
         tipo: "error",
         texto:

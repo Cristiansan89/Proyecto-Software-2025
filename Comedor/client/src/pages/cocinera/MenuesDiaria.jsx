@@ -6,6 +6,7 @@ import asistenciaService from "../../services/asistenciaService";
 import asistenciasService from "../../services/asistenciasService";
 import API from "../../services/api.js";
 import "../../styles/MenuesDiaria.css";
+import { showError } from "../../utils/alertService.js";
 
 const MenuesDiaria = () => {
   const { user } = useAuth();
@@ -57,7 +58,7 @@ const MenuesDiaria = () => {
     setLoading(true);
     try {
       const fechaStr = obtenerFechaFormato(hoy);
-      console.log(`📅 Cargando datos para el día ${fechaStr}`);
+      //console.log(`📅 Cargando datos para el día ${fechaStr}`);
 
       // 1. Verificar asistencias registradas
       await verificarAsistenciasRegistradas(fechaStr);
@@ -67,7 +68,7 @@ const MenuesDiaria = () => {
       let menusResponse = [];
       try {
         // Intentar primero con Activo, si no hay resultados, usar Pendiente
-        console.log("🔍 Buscando planificaciones con estado Activo...");
+        //console.log("🔍 Buscando planificaciones con estado Activo...");
         let planificacionesResponse = await API.get(
           "/planificacion-menus/estado/Activo"
         );
@@ -76,22 +77,22 @@ const MenuesDiaria = () => {
           planificacionesResponse.data ||
           [];
 
-        console.log(
+        /*console.log(
           `📊 Planificaciones Activas encontradas: ${
             Array.isArray(planificacionesActivas)
               ? planificacionesActivas.length
               : 0
           }`
-        );
+        );*/
 
         // Si no hay planificaciones activas, buscar pendientes
         if (
           !Array.isArray(planificacionesActivas) ||
           planificacionesActivas.length === 0
         ) {
-          console.log(
+          /*console.log(
             "⚠️ No hay planificaciones Activas, buscando Pendientes..."
-          );
+          );*/
           planificacionesResponse = await API.get(
             "/planificacion-menus/estado/Pendiente"
           );
@@ -99,16 +100,16 @@ const MenuesDiaria = () => {
             planificacionesResponse.data?.data ||
             planificacionesResponse.data ||
             [];
-          console.log(
+          /*console.log(
             `📊 Planificaciones Pendientes encontradas: ${
               Array.isArray(planificacionesActivas)
                 ? planificacionesActivas.length
                 : 0
             }`
-          );
+          );*/
         }
 
-        console.log(
+        /*console.log(
           `📊 Total Planificaciones encontradas: ${
             Array.isArray(planificacionesActivas)
               ? planificacionesActivas.length
@@ -117,7 +118,7 @@ const MenuesDiaria = () => {
         );
         console.log("📋 Estructura de respuesta:", {
           data: planificacionesActivas,
-        });
+        });*/
 
         if (
           Array.isArray(planificacionesActivas) &&
@@ -125,13 +126,13 @@ const MenuesDiaria = () => {
         ) {
           // Usar la primera planificación (más reciente)
           const planificacion = planificacionesActivas[0];
-          console.log(`✅ Planificación encontrada:`, {
+          /* console.log(`✅ Planificación encontrada:`, {
             id: planificacion.id,
             fechaInicio: planificacion.fechaInicio,
             fechaFin: planificacion.fechaFin,
             estado: planificacion.estado,
             comensalesEstimados: planificacion.comensalesEstimados,
-          });
+          });*/
 
           // Buscar menús dentro del rango de la planificación
           menusResponse = await planificacionMenuService.getMenusSemana(
@@ -139,44 +140,51 @@ const MenuesDiaria = () => {
             planificacion.fechaFin
           );
         } else {
-          console.warn(
+          /*console.warn(
             "⚠️ No hay planificaciones disponibles (ni Activas ni Pendientes)"
+          );*/
+          showWarning(
+            "No hay planificaciones disponibles. Por favor, cree una planificación para continuar."
           );
           setHayPlanificacion(false);
         }
 
-        console.log(
+        /*console.log(
           "📋 Menús encontrados:",
           menusResponse.length,
           menusResponse
-        );
+        );*/
       } catch (error) {
-        console.error(
+        /*console.error(
           "❌ Error al obtener menús:",
           error.response?.data || error.message
+        );*/
+        showError(
+          "Error",
+          "❌ Ocurrió un error al obtener los menús. Por favor, intente nuevamente más tarde."
         );
         menusResponse = [];
       }
 
       const menusMap = {};
       if (menusResponse && Array.isArray(menusResponse)) {
-        console.log(`🔍 Buscando menús para fecha: "${fechaStr}"`);
-        console.log(`📊 Total de menús en respuesta: ${menusResponse.length}`);
+        //console.log(`🔍 Buscando menús para fecha: "${fechaStr}"`);
+        //console.log(`📊 Total de menús en respuesta: ${menusResponse.length}`);
 
         // Log de todas las fechas disponibles
         const fechasDisponibles = [
           ...new Set(menusResponse.map((m) => m.fecha)),
         ];
-        console.log(
+        /*console.log(
           `📅 Fechas disponibles en la respuesta:`,
           fechasDisponibles
-        );
+        );*/
 
         for (const menu of menusResponse) {
           const fechaMenuNormalizada = menu.fecha ? menu.fecha.trim() : null;
           const coincideFecha = fechaMenuNormalizada === fechaStr;
 
-          console.log(`   Menú encontrado:`, {
+          /*  console.log(`   Menú encontrado:`, {
             fecha: menu.fecha,
             fechaNormalizada: fechaMenuNormalizada,
             buscando: fechaStr,
@@ -186,27 +194,27 @@ const MenuesDiaria = () => {
             nombreReceta: menu.nombreReceta,
             coincideFecha: coincideFecha,
             tieneReceta: !!menu.id_receta,
-          });
+          });*/
 
           // Filtrar solo los menús del día actual
           if (coincideFecha && menu.id_receta) {
-            console.log(
+            /*console.log(
               `   ✅ Agregando menú a menusMap para servicio ${menu.id_servicio}`
-            );
+            );*/
             menusMap[menu.id_servicio] = menu;
             // Cargar detalles de la receta
             await cargarDetallesReceta(menu.id_receta, menu.id_servicio);
           }
         }
       }
-      console.log(`📋 Menús activados para hoy:`, menusMap);
-      setMenuDia(menusMap);
+      /* console.log(`📋 Menús activados para hoy:`, menusMap);
+      setMenuDia(menusMap);*/
 
       // 3. Obtener asistencia real del día
       try {
         const asistenciaResponse =
           await asistenciaService.getTotalAsistenciasPorServicio(fechaStr);
-        console.log(
+        /*console.log(
           "👥 Asistencia real del día (respuesta completa):",
           asistenciaResponse
         );
@@ -214,7 +222,7 @@ const MenuesDiaria = () => {
         console.log(
           "👥 Keys encontradas:",
           Object.keys(asistenciaResponse || {})
-        );
+        );*/
 
         // Asegurarse de que es un objeto
         const asistenciaReal =
@@ -222,16 +230,20 @@ const MenuesDiaria = () => {
             ? asistenciaResponse
             : {};
 
-        console.log("👥 Asistencia Real a guardar:", asistenciaReal);
+        /*console.log("👥 Asistencia Real a guardar:", asistenciaReal);
         console.log("👥 Verificación individual:", {
           servicio1: asistenciaReal[1],
           servicio2: asistenciaReal[2],
           servicio3: asistenciaReal[3],
-        });
+        });*/
 
         setAsistenciaReal(asistenciaReal);
       } catch (error) {
-        console.error("❌ Error al cargar asistencia real:", error);
+        //console.error("❌ Error al cargar asistencia real:", error);
+        showError(
+          "Error",
+          "❌ Ocurrió un error al cargar la asistencia real. Por favor, intente nuevamente más tarde."
+        );
         // Continuar con los comensales estimados si la asistencia no está disponible
         setAsistenciaReal({});
       }
@@ -239,7 +251,7 @@ const MenuesDiaria = () => {
       // 3. Obtener comensales estimados (respaldo)
       const comensalesResponse =
         await planificacionMenuService.calcularComensalesPorFecha(fechaStr);
-      console.log("👥 Comensales estimados del día:", comensalesResponse);
+      //console.log("👥 Comensales estimados del día:", comensalesResponse);
       setComensalesHoy(comensalesResponse);
 
       // 4. Cargar servicios disponibles
@@ -252,7 +264,11 @@ const MenuesDiaria = () => {
       // 6. Cargar comensales registrados por servicio
       await cargarComensalesPorServicio(fechaStr);
     } catch (error) {
-      console.error("Error al cargar datos del día:", error);
+      //console.error("Error al cargar datos del día:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los datos del día. Por favor, intente nuevamente más tarde."
+      );
       mostrarNotificacion("Error al cargar los datos del día", "error");
     } finally {
       setLoading(false);
@@ -267,16 +283,20 @@ const MenuesDiaria = () => {
       );
       if (response.success && response.data) {
         setAsistenciasCompletas(response.data.completas || false);
-        console.log(
+        /*console.log(
           "✅ Estado asistencias completas:",
           response.data.completas
-        );
+        );*/
       } else {
         setAsistenciasCompletas(false);
-        console.log("⚠️ No se pudieron verificar las asistencias");
+        //console.log("⚠️ No se pudieron verificar las asistencias");
       }
     } catch (error) {
-      console.error("Error al verificar asistencias:", error);
+      //console.error("Error al verificar asistencias:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al verificar las asistencias. Por favor, intente nuevamente más tarde."
+      );
       setAsistenciasCompletas(false);
     }
   };
@@ -290,7 +310,11 @@ const MenuesDiaria = () => {
         [idServicio]: response,
       }));
     } catch (error) {
-      console.error(`Error al cargar receta ${idReceta}:`, error);
+      //console.error(`Error al cargar receta ${idReceta}:`, error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar la receta. Por favor, intente nuevamente más tarde."
+      );
     }
   };
 
@@ -303,7 +327,11 @@ const MenuesDiaria = () => {
         setServiciosCompletados(response.data);
       }
     } catch (error) {
-      console.warn("No se pudo cargar el estado de servicios:", error);
+      //console.warn("No se pudo cargar el estado de servicios:", error);
+      showWarning(
+        "Advertencia",
+        "⚠️ No se pudo cargar el estado de servicios. Por favor, intente nuevamente más tarde."
+      );
     }
   };
 
@@ -313,11 +341,15 @@ const MenuesDiaria = () => {
         `/servicios/comensales/por-servicio?fecha=${fechaStr}`
       );
       if (response.data) {
-        console.log("📊 Comensales por servicio cargados:", response.data);
+        //console.log("📊 Comensales por servicio cargados:", response.data);
         setComensalesPorServicio(response.data);
       }
     } catch (error) {
-      console.warn("No se pudo cargar comensales por servicio:", error);
+      //console.warn("No se pudo cargar comensales por servicio:", error);
+      showWarning(
+        "Advertencia",
+        "⚠️ No se pudo cargar comensales por servicio. Por favor, intente nuevamente más tarde."
+      );
     }
   };
 
@@ -361,15 +393,19 @@ const MenuesDiaria = () => {
     const comensalesServicio = asistenciaReal[idServicio] || 0;
 
     if (comensalesServicio === 0) {
-      console.warn(
+      /*console.warn(
         `⚠️ No hay asistencia real registrada para servicio ${idServicio}`
+      );*/
+      showWarning(
+        "Advertencia",
+        `⚠️ No hay asistencia real registrada para servicio ${idServicio}. Por favor, verifique la información.`
       );
       return []; // No mostrar ingredientes si no hay asistencia
     }
 
-    console.log(
+    /* console.log(
       `✅ Usando asistencia real para servicio ${idServicio}: ${comensalesServicio} asistentes`
-    );
+    );*/
 
     // Calcular cantidad total de cada ingrediente basándose en asistencia real
     return receta.insumos.map((ingrediente) => {
@@ -384,12 +420,12 @@ const MenuesDiaria = () => {
         cantidadTotal,
         ingrediente.unidadPorPorcion
       );
-      console.log(
+      /*console.log(
         cantidadPorPorcion,
         comensalesServicio,
         cantidadTotal,
         mejorUnidad
-      );
+      );*/
 
       // Formateo: si es entero mostrar sin decimales, si tiene fracción mostrar 1 decimal
       const valor = Number(mejorUnidad.cantidad);
@@ -424,20 +460,20 @@ const MenuesDiaria = () => {
         requestData.id_usuario = user?.id_usuario || user?.idUsuario;
         requestData.comensales = comensales;
 
-        console.log(`🍽️ Marcando servicio completado:`, {
+        /*console.log(`🍽️ Marcando servicio completado:`, {
           servicio: HORARIOS_SERVICIOS.find((s) => s.id === idServicio)?.nombre,
           fecha: fechaStr,
           comensales,
           usuario: user?.id_usuario || user?.idUsuario,
-        });
+        });*/
 
         // Registrar consumos en el sistema
         const ingredientes = calcularIngredientesParaServicio(idServicio);
 
         // Log para verificar la estructura de los ingredientes
-        if (ingredientes.length > 0) {
-          console.log("🔍 Estructura del primer ingrediente:", ingredientes[0]);
-        }
+        /*if (ingredientes.length > 0) {
+          //console.log("🔍 Estructura del primer ingrediente:", ingredientes[0]);
+        }*/
 
         // Crear un consumo principal con los detalles de los insumos
         try {
@@ -452,18 +488,22 @@ const MenuesDiaria = () => {
             })),
           };
 
-          console.log("📤 Datos a enviar a /consumos:", requestData);
+          //console.log("📤 Datos a enviar a /consumos:", requestData);
 
           await API.post("/consumos", requestData);
-          console.log(
+          /*console.log(
             `✅ Consumos registrados exitosamente para ${
               HORARIOS_SERVICIOS.find((s) => s.id === idServicio)?.nombre
             }`
-          );
+          );*/
         } catch (error) {
-          console.error(
+          /*console.error(
             `❌ Error al registrar consumos para servicio ${idServicio}:`,
             error.response?.data || error.message
+          );*/
+          showError(
+            "Error",
+            `❌ Ocurrió un error al registrar los consumos para el servicio. Por favor, intente nuevamente más tarde.`
           );
         }
       }
@@ -490,7 +530,11 @@ const MenuesDiaria = () => {
         mostrarNotificacion(mensaje, "success");
       }
     } catch (error) {
-      console.error("Error al marcar servicio como completado:", error);
+      //console.error("Error al marcar servicio como completado:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al actualizar el estado del servicio. Por favor, intente nuevamente más tarde."
+      );
       mostrarNotificacion(
         "Error al actualizar el estado del servicio",
         "error"
@@ -500,7 +544,7 @@ const MenuesDiaria = () => {
 
   const mostrarNotificacion = (texto, tipo = "info") => {
     setMensajeNotificacion({ texto, tipo });
-    setTimeout(() => setMensajeNotificacion(null), 4000);
+    setTimeout(() => setMensajeNotificacion(null));
   };
 
   const imprimirRecetaTicket = (horario, ingredientes, menu) => {

@@ -143,16 +143,14 @@ export const createApp = ({
   app.use("/api/auditoria", auditoriaRouter);
 
   // Inicializar servicio de alertas
-  alertasService
-    .inicializar()
-    .catch((err) =>
+  alertasService.inicializar();
+  /*.catch((err) =>
       console.error("Error al inicializar servicio de alertas:", err)
-    );
+    );*/
 
   // Inicializar scheduler de generación automática
-  schedulerService
-    .inicializar()
-    .catch((err) => console.error("Error al inicializar scheduler:", err));
+  schedulerService.inicializar();
+  /*.catch((err) => console.error("Error al inicializar scheduler:", err));*/
 
   // Endpoint específico para obtener alumnos de un grado
   app.get("/api/alumnos-grado", async (req, res) => {
@@ -169,7 +167,7 @@ export const createApp = ({
       const alumnos = await AlumnoGradoModel.getByGrado({ nombreGrado });
       res.json(alumnos);
     } catch (error) {
-      console.error("Error al obtener alumnos por grado:", error);
+      //console.error("Error al obtener alumnos por grado:", error);
       res.status(500).json({
         message: "Error interno del servidor",
         error: error.message,

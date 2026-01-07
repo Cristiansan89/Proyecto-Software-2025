@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
 import docenteGradoService from "../../services/docenteGradoService.js";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showInfoError,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const DocenteGradoForm = ({ docenteGrado, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -170,14 +178,20 @@ const DocenteGradoForm = ({ docenteGrado, mode, onSave, onCancel }) => {
       onSave(result);
     } catch (error) {
       if (error.response?.data?.message) {
-        showInfo("Información", `Error: ${error.response.data.message}`);
+        showInfoError("Información", `Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors
           .map((err) => `${err.field}: ${err.message}`)
           .join("\n");
-        showInfo("Información", `Errores de validación:\n${errorMessages}`);
+        showInfoError(
+          "Información",
+          `Errores de validación:\n${errorMessages}`
+        );
       } else {
-        showError("Error", "Error al guardar la asignación. Por favor, inténtelo de nuevo.");
+        showError(
+          "Error",
+          "Error al guardar la asignación. Por favor, inténtelo de nuevo."
+        );
       }
     } finally {
       setLoading(false);

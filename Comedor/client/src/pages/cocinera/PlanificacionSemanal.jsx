@@ -3,7 +3,14 @@ import { createPortal } from "react-dom";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import PlanificacionMenuForm from "../../components/cocinera/PlanificacionMenuForm";
 import "../../styles/PlanificacionMenus.css";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const PlanificacionSemanal = () => {
   const [planificaciones, setPlanificaciones] = useState([]);
@@ -17,7 +24,7 @@ const PlanificacionSemanal = () => {
   }, []);
 
   useEffect(() => {
-    console.log("🔍 showModal actualizado:", showModal);
+    //console.log("🔍 showModal actualizado:", showModal);
   }, [showModal]);
 
   const loadPlanificaciones = async () => {
@@ -27,11 +34,19 @@ const PlanificacionSemanal = () => {
       if (Array.isArray(response)) {
         setPlanificaciones(response);
       } else {
-        console.warn("Respuesta inesperada al cargar planificaciones");
+        //console.warn("Respuesta inesperada al cargar planificaciones");
+        showWarning(
+          "Advertencia",
+          "⚠️ La respuesta del servidor al cargar las planificaciones fue inesperada."
+        );
         setPlanificaciones([]);
       }
     } catch (error) {
-      console.error("❌ Error al cargar planificaciones:", error);
+      //console.error("❌ Error al cargar planificaciones:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar las planificaciones. Por favor, intente nuevamente más tarde."
+      );
       setPlanificaciones([]);
     } finally {
       setLoading(false);
@@ -56,17 +71,46 @@ const PlanificacionSemanal = () => {
   };
 
   const handleDelete = async (planificacionId) => {
-    if (
-      window.confirm("¿Está seguro de que desea eliminar esta planificación?")
-    ) {
+    // Buscar la planificación en el array para obtener las fechas
+    const planificacion = planificaciones.find(
+      (p) => p.id_planificacion === planificacionId
+    );
+
+    if (!planificacion) {
+      showError("Error", "Planificación no encontrada");
+      return;
+    }
+
+    // 1. Confirmación asíncrona personalizada
+    const confirmed = await showConfirm(
+      "Eliminar Planificación",
+      `¿Está seguro de que desea eliminar la planificación de menú del período ${new Date(
+        planificacion.fechaInicio
+      ).toLocaleDateString("es-ES")} - ${new Date(
+        planificacion.fechaFin
+      ).toLocaleDateString(
+        "es-ES"
+      )}? Esta acción podría afectar los reportes de consumo de insumos.`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    if (confirmed) {
       try {
+        // 2. Ejecución del servicio
         await planificacionMenuService.delete(planificacionId);
-        showToast("Planificación eliminada correctamente", "info", 2000);
+
+        // 3. Notificación de éxito y recarga
+        showSuccess("Éxito", "Planificación eliminada correctamente");
         await loadPlanificaciones();
       } catch (error) {
-        console.error("❌ Error al eliminar planificación:", error);
-        const errorMessage = error.response?.data?.message || error.message;
-        showInfo("Información", `⚠️ ${errorMessage}`);
+        // 4. Manejo de errores unificado
+        // Extraemos el mensaje del servidor o usamos uno genérico si falla la conexión
+        const errorMessage =
+          error.response?.data?.message ||
+          "Ocurrió un error inesperado al eliminar la planificación.";
+
+        showError("Error al eliminar", errorMessage);
       }
     }
   };

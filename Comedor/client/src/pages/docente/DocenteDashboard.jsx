@@ -45,7 +45,11 @@ const DocenteDashboard = () => {
           );
           totalAlumnos = alumnosRes.data?.length || 0;
         } catch (error) {
-          console.error("Error al cargar alumnos:", error);
+          //console.error("Error al cargar alumnos:", error);
+          showError(
+            "Error",
+            "❌ Ocurrió un error al cargar los alumnos de tu grado. Por favor, intenta nuevamente más tarde."
+          );
         }
       }
 
@@ -58,7 +62,11 @@ const DocenteDashboard = () => {
         estadisticasAsistencia: {},
       });
     } catch (error) {
-      console.error("Error al cargar datos del docente:", error);
+      //console.error("Error al cargar datos del docente:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los datos del docente. Por favor, intente nuevamente más tarde."
+      );
     } finally {
       setLoading(false);
     }
@@ -86,7 +94,7 @@ const DocenteDashboard = () => {
       // Abrir el enlace generado
       window.open(response.data.link, "_blank");
     } catch (error) {
-      console.error("Error al generar enlace:", error);
+      //console.error("Error al generar enlace:", error);
       showError("Error", "Error al generar el enlace de asistencia");
     }
   };

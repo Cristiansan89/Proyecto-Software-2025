@@ -1,6 +1,14 @@
 import { useState } from "react";
 import personaService from "../../services/personaService.js";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showInfoError,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -114,14 +122,20 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
     } catch (error) {
       // Mostrar error al usuario
       if (error.response?.data?.message) {
-        showInfo("Información", `Error: ${error.response.data.message}`);
+        showInfoError("Información", `Error: ${error.response.data.message}`);
       } else if (error.response?.data?.errors) {
         const errorMessages = error.response.data.errors
           .map((err) => `${err.field}: ${err.message}`)
           .join("\n");
-        showInfo("Información", `Errores de validación:\n${errorMessages}`);
+        showInfoError(
+          "Información",
+          `Errores de validación:\n${errorMessages}`
+        );
       } else {
-        showError("Error", "Error al guardar la persona. Por favor, inténtelo de nuevo.");
+        showError(
+          "Error",
+          "Error al guardar la persona. Por favor, inténtelo de nuevo."
+        );
       }
     } finally {
       setLoading(false);

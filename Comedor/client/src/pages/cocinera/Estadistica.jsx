@@ -20,7 +20,14 @@ import asistenciasService from "../../services/asistenciasService";
 import auditoriaService from "../../services/auditoriaService";
 import API from "../../services/api";
 import "../../styles/Estadistica.css";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 ChartJS.register(
   CategoryScale,
@@ -67,7 +74,11 @@ const Estadistica = () => {
         cargarServicios(),
       ]);
     } catch (error) {
-      console.error("Error cargando datos:", error);
+      //console.error("Error cargando datos:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar las estadísticas. Por favor, intente nuevamente más tarde."
+      );
     } finally {
       setLoading(false);
     }
@@ -118,7 +129,11 @@ const Estadistica = () => {
         });
       }
     } catch (error) {
-      console.error("Error al cargar consumos:", error);
+      //console.error("Error al cargar consumos:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los consumos. Por favor, intente nuevamente más tarde."
+      );
     }
   };
 
@@ -128,7 +143,7 @@ const Estadistica = () => {
         `fechaInicio=${filtros.fechaInicio}&fechaFin=${filtros.fechaFin}`
       );
 
-      console.log("📊 Respuesta de asistencias:", response);
+      //console.log("📊 Respuesta de asistencias:", response);
 
       if (response.success && response.data && Array.isArray(response.data)) {
         // Calcular totales
@@ -142,11 +157,11 @@ const Estadistica = () => {
         );
         const totalRegistros = response.data.length;
 
-        console.log("✅ Totales calculados:", {
+        /*console.log("✅ Totales calculados:", {
           totalPresentes,
           totalAusentes,
           totalRegistros,
-        });
+        });*/
 
         // Por servicio
         const asistenciasPorServicio = {};
@@ -168,10 +183,18 @@ const Estadistica = () => {
           porServicio: asistenciasPorServicio,
         });
       } else {
-        console.warn("⚠️ Sin datos de asistencia disponibles");
+        //console.warn("⚠️ Sin datos de asistencia disponibles");
+        showWarning(
+          "Advertencia",
+          "⚠️ No se encontraron datos de asistencia para el período seleccionado."
+        );
       }
     } catch (error) {
-      console.error("❌ Error al cargar asistencias:", error);
+      //console.error("❌ Error al cargar asistencias:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+      );
       setDatosAsistencias(null);
     }
   };
@@ -210,7 +233,11 @@ const Estadistica = () => {
         });
       }
     } catch (error) {
-      console.error("Error al cargar inventario:", error);
+      //console.error("Error al cargar inventario:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar el inventario. Por favor, intente nuevamente más tarde."
+      );
     }
   };
 
@@ -234,7 +261,11 @@ const Estadistica = () => {
         });
       }
     } catch (error) {
-      console.error("Error al cargar servicios:", error);
+      //console.error("Error al cargar servicios:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los servicios. Por favor, intente nuevamente más tarde."
+      );
     }
   };
 
@@ -345,7 +376,7 @@ const Estadistica = () => {
           "Incluye gráficos de consumos, asistencias e inventario",
       });
     } catch (error) {
-      console.error("Error al exportar PDF:", error);
+      //console.error("Error al exportar PDF:", error);
       showError("Error", "Error al exportar el PDF");
     }
   };
@@ -357,16 +388,19 @@ const Estadistica = () => {
       const response = await asistenciasService.generarDatosPrueba();
 
       if (response.success) {
-        showInfo("Información", `✅ ${response.message}\n\nRegistros creados: ${
+        showInfo(
+          "Información",
+          `✅ ${response.message}\n\nRegistros creados: ${
             response.data?.registros || 0
-          }`);
+          }`
+        );
         // Recargar los datos
         await cargarDatos();
       } else {
         showInfo("Información", `❌ Error: ${response.message}`);
       }
     } catch (error) {
-      console.error("Error al generar datos de prueba:", error);
+      //.error("Error al generar datos de prueba:", error);
       showError("Error", "Error al generar datos de prueba");
     } finally {
       setLoading(false);

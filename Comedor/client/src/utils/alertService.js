@@ -61,6 +61,15 @@ export const showInfo = (title = "Información", message = "") => {
   });
 };
 
+export const showInfoError = (title = "Información", message = "") => {
+  return Swal.fire({
+    icon: "error",
+    title,
+    text: message,
+    confirmButtonColor: "#b8172aff",
+  });
+};
+
 // Dentro de tu archivo de utilidades/alertas
 export const showInfoAuditoria = (titulo, contenido) => {
   Swal.fire({
@@ -150,5 +159,38 @@ export const showToast = (message = "", icon = "warning", timer = 4000) => {
   return Toast.fire({
     icon,
     title: message,
+  });
+};
+
+/**
+ * Muestra un diálogo para cancelar con motivo
+ * @param {string} title - Título del alerta
+ * @param {string} placeholder - Placeholder del textarea
+ * @returns {Promise} - Resuelve con el motivo ingresado o null si se cancela
+ */
+export const showCancelar = (
+  title = "Cancelar",
+  placeholder = "Escriba el motivo aquí..."
+) => {
+  return Swal.fire({
+    title,
+    text: "Por favor, ingrese el motivo de la cancelación:",
+    input: "textarea",
+    inputPlaceholder: placeholder,
+    showCancelButton: true,
+    confirmButtonText: "Confirmar Cancelación",
+    cancelButtonText: "Volver",
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#6c757d",
+    inputValidator: (value) => {
+      if (!value) {
+        return "¡Es obligatorio ingresar un motivo!";
+      }
+    },
+  }).then((result) => {
+    if (result.isConfirmed) {
+      return result.value; // Retorna el motivo ingresado
+    }
+    return null; // Retorna null si se cancela
   });
 };

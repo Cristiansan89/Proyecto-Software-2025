@@ -9,6 +9,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -38,12 +39,13 @@ const ListaPersonas = () => {
   const loadRoles = async () => {
     try {
       setLoadingRoles(true);
-      console.log("ListaPersonas: Cargando roles...");
+      //console.log("ListaPersonas: Cargando roles...");
       const rolesData = await rolService.getActivos();
-      console.log("ListaPersonas: Roles cargados:", rolesData);
+      //console.log("ListaPersonas: Roles cargados:", rolesData);
       setRoles(Array.isArray(rolesData) ? rolesData : []);
     } catch (error) {
-      console.error("Error al cargar roles:", error);
+      // console.error("Error al cargar roles:", error);
+      showError("Error", "Error al cargar roles: " + error.message);
       setRoles([]);
     } finally {
       setLoadingRoles(false);
@@ -53,9 +55,9 @@ const ListaPersonas = () => {
   const loadPersonas = async () => {
     try {
       setLoading(true);
-      console.log("ListaPersonas: Iniciando carga de personas...");
+      //console.log("ListaPersonas: Iniciando carga de personas...");
       const data = await personaService.getAll();
-      console.log("ListaPersonas: Datos recibidos:", data);
+      //console.log("ListaPersonas: Datos recibidos:", data);
 
       // Asegurar que data es un array
       let personas = Array.isArray(data) ? data : [];
@@ -71,13 +73,13 @@ const ListaPersonas = () => {
 
       setPersonas(personas);
       setFilteredPersonas(personas);
-      console.log(
+      /* console.log(
         "ListaPersonas: Estado actualizado con",
         personas.length,
         "personas"
-      );
+      );*/
     } catch (error) {
-      console.error("Error al cargar personas:", error);
+      // console.error("Error al cargar personas:", error);
       showError("Error", "Error al cargar personas: " + error.message);
       setPersonas([]);
       setFilteredPersonas([]);
@@ -110,7 +112,8 @@ const ListaPersonas = () => {
               persona.genero.toLowerCase().includes(searchLower))
           );
         } catch (error) {
-          console.error("Error al filtrar persona:", persona, error);
+          //console.error("Error al filtrar persona:", persona, error);
+          showError("Error", "Error al filtrar personas: " + error.message);
           return false;
         }
       });
@@ -230,7 +233,7 @@ const ListaPersonas = () => {
       } catch (error) {
         // Manejo de errores sin logs de consola innecesarios
         if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${error.response.data.message}`);
+          showInfoError("Información", `Error: ${error.response.data.message}`);
         } else {
           showError(
             "Error",

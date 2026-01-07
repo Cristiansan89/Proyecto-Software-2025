@@ -8,6 +8,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -39,12 +40,13 @@ const ListaReemplazosGrados = () => {
   const loadGrados = async () => {
     try {
       setLoadingGrados(true);
-      console.log("ListaReemplazosGrados: Cargando grados...");
+      // console.log("ListaReemplazosGrados: Cargando grados...");
       const gradosData = await gradoService.getActivos();
-      console.log("ListaReemplazosGrados: Grados cargados:", gradosData);
+      // console.log("ListaReemplazosGrados: Grados cargados:", gradosData);
       setGrados(Array.isArray(gradosData) ? gradosData : []);
     } catch (error) {
-      console.error("Error al cargar grados:", error);
+      //console.error("Error al cargar grados:", error);
+      showError("Error", "Error al cargar la lista de grados");
       setGrados([]);
     } finally {
       setLoadingGrados(false);
@@ -58,7 +60,7 @@ const ListaReemplazosGrados = () => {
       setReemplazos(data);
       setFilteredReemplazos(data);
     } catch (error) {
-      console.error("Error al cargar los reemplazos:", error);
+      // console.error("Error al cargar los reemplazos:", error);
       showError("Error", "Error al cargar la lista de reemplazos");
     } finally {
       setLoading(false);
@@ -207,7 +209,7 @@ const ListaReemplazosGrados = () => {
           error.response?.data?.message || "Error al finalizar el reemplazo.";
         // Usamos showInfo si el error es una validación de negocio (ej. ya estaba finalizado)
         if (error.response?.data?.message) {
-          showInfo("Información", msg);
+          showInfoError("Información", msg);
         } else {
           showError("Error", msg);
         }

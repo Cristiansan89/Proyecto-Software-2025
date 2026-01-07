@@ -77,7 +77,8 @@ const CocineraDashboard = () => {
           setDetallesConsumosHoy(consumosRes.data.slice(0, 5)); // Últimos 5 consumos
         }
       } catch (error) {
-        console.error("Error al obtener consumos:", error);
+        // console.error("Error al obtener consumos:", error);
+        showError("Error al obtener consumos del día.");
       }
 
       try {
@@ -91,7 +92,8 @@ const CocineraDashboard = () => {
           );
         }
       } catch (error) {
-        console.error("Error al obtener asistencias:", error);
+        // console.error("Error al obtener asistencias:", error);
+        showError("Error al obtener asistencias del día.");
       }
 
       try {
@@ -103,7 +105,8 @@ const CocineraDashboard = () => {
           ).length;
         }
       } catch (error) {
-        console.error("Error al obtener pedidos:", error);
+        // console.error("Error al obtener pedidos:", error);
+        showError("Error al obtener pedidos.");
       }
 
       // Generar servicios de hoy y próximos con datos reales de planificación
@@ -126,7 +129,8 @@ const CocineraDashboard = () => {
       setServiciosHoy(serviciosDeHoy);
       setProximosServicios(proximosServiciosData);
     } catch (error) {
-      console.error("Error al cargar dashboard:", error);
+      //console.error("Error al cargar dashboard:", error);
+      showError("Error al cargar el dashboard.");
     } finally {
       setLoading(false);
     }

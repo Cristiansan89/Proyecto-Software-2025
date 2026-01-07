@@ -7,6 +7,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -153,7 +154,7 @@ const ListaProveedores = () => {
         // Si el error es una restricción de integridad (ej. tiene facturas pendientes)
         // usamos showInfo para informar la causa, si es un error técnico usamos showError
         if (error.response?.status === 400 || error.response?.status === 409) {
-          showInfo("Información", `⚠️ ${errorMessage}`);
+          showInfoError("Información", `⚠️ ${errorMessage}`);
         } else {
           showError("Error", errorMessage);
         }
@@ -189,14 +190,14 @@ const ListaProveedores = () => {
       await proveedorService.asignarInsumos(selectedProveedor.idProveedor, {
         insumos: insumosData,
       });
-      showInfo("Insumos asignados correctamente", 4000);
+      showInfo("Insumos asignados correctamente");
       setShowInsumosModal(false);
       setSelectedProveedor(null);
       loadProveedores();
     } catch (error) {
       showError("Error", "Error al asignar insumos");
       if (error.response?.data?.message) {
-        showInfo("Información", `Error: ${error.response.data.message}`);
+        showInfoError("Información", `Error: ${error.response.data.message}`);
       } else {
         showError("Error", "Error al asignar insumos");
       }

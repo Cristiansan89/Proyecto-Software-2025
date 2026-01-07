@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api.js";
 import "../../styles/RegistroAsistenciasDocente.css";
+import { showError, showWarning } from "../../utils/alertService";
 
 const RegistroAsistenciasDocente = () => {
   const { user } = useAuth();
@@ -41,17 +42,17 @@ const RegistroAsistenciasDocente = () => {
       setLoading(true);
       setError("");
 
-      console.log("👨‍🏫 Usuario docente:", user);
+      //console.log("👨‍🏫 Usuario docente:", user);
 
       // Cargar servicios disponibles y perfil del docente
       const serviciosResponse = await API.get("/servicios");
-      console.log("📋 Servicios cargados:", serviciosResponse.data);
+      //console.log("📋 Servicios cargados:", serviciosResponse.data);
       setServicios(serviciosResponse.data);
 
       // Intentar obtener perfil del docente
       try {
         const docenteResponse = await API.get("/personas/perfil");
-        console.log("👤 Perfil docente:", docenteResponse.data);
+        //console.log("👤 Perfil docente:", docenteResponse.data);
 
         // Obtener grado asignado al docente
         if (docenteResponse.data.gradosAsignados?.length > 0) {
@@ -62,9 +63,13 @@ const RegistroAsistenciasDocente = () => {
           setError("No se encontró ningún grado asignado a este docente.");
         }
       } catch (perfilError) {
-        console.warn(
+        /*console.warn(
           "Error obteniendo perfil, usando datos del contexto:",
           perfilError
+        );*/
+        showWarning(
+          "Advertencia",
+          "No se pudo obtener el perfil del docente. Usando datos alternativos."
         );
 
         // Fallback: usar datos del contexto de autenticación o datos hardcodeados para prueba
@@ -74,7 +79,11 @@ const RegistroAsistenciasDocente = () => {
           await cargarAlumnosDelGrado(grado.nombreGrado || grado.idGrado);
         } else {
           // Para pruebas, usar un grado por defecto
-          console.warn("Usando datos de prueba para grado del docente");
+          //console.warn("Usando datos de prueba para grado del docente");
+          showWarning(
+            "Advertencia",
+            "Usando datos de prueba para el grado del docente."
+          );
           const gradoPrueba = {
             nombreGrado: "1° B",
             idGrado: "1° B",
@@ -85,7 +94,11 @@ const RegistroAsistenciasDocente = () => {
         }
       }
     } catch (error) {
-      console.error("❌ Error cargando datos iniciales:", error);
+      //console.error("❌ Error cargando datos iniciales:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde."
+      );
       setError("Error al cargar los datos iniciales. Verifique su conexión.");
     } finally {
       setLoading(false);
@@ -98,10 +111,14 @@ const RegistroAsistenciasDocente = () => {
       const response = await API.get(
         `/alumnogrado/grado/${encodeURIComponent(nombreGrado)}`
       );
-      console.log("👥 Alumnos del grado:", response.data);
+      //console.log("👥 Alumnos del grado:", response.data);
       setAlumnos(response.data);
     } catch (error) {
-      console.error("❌ Error cargando alumnos:", error);
+      //console.error("❌ Error cargando alumnos:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar la lista de alumnos. Por favor, intente nuevamente más tarde."
+      );
       setError("Error al cargar la lista de alumnos.");
     }
   };
@@ -117,17 +134,17 @@ const RegistroAsistenciasDocente = () => {
         },
       });
 
-      console.log("📊 Asistencias existentes:", response.data);
+      //console.log("📊 Asistencias existentes:", response.data);
 
       // Verificar si ya existen asistencias registradas (estados: Si, No, Ausente - NO Pendiente ni Cancelado)
       const asistenciasRegistradas = response.data.filter(
         (a) => a.estado && !["Pendiente", "Cancelado"].includes(a.estado)
       );
 
-      console.log(
+      /*console.log(
         "✅ Asistencias registradas encontradas:",
         asistenciasRegistradas.length
-      );
+      );*/
 
       if (asistenciasRegistradas.length > 0) {
         // Si ya hay asistencias registradas, mostrar mensaje y bloquear edición
@@ -164,7 +181,12 @@ const RegistroAsistenciasDocente = () => {
       setAsistencias(asistenciasExistentes);
       setYaCompletado(false); // Permitir edición si no está registrada
     } catch (error) {
-      console.error("⚠️ Error cargando asistencias existentes:", error);
+      //console.error("⚠️ Error cargando asistencias existentes:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar las asistencias existentes. Por favor, intente nuevamente más tarde."
+      );
+      setError("Error al cargar las asistencias existentes.");
       // No es un error crítico, simplemente inicializar con valores por defecto
       const asistenciasIniciales = {};
       alumnos.forEach((alumno) => {
@@ -220,7 +242,7 @@ const RegistroAsistenciasDocente = () => {
         })
       );
 
-      console.log("💾 Guardando asistencias:", asistenciasArray);
+      //console.log("💾 Guardando asistencias:", asistenciasArray);
 
       const response = await API.post("/asistencias/registro-docente", {
         asistencias: asistenciasArray,
@@ -229,7 +251,7 @@ const RegistroAsistenciasDocente = () => {
         nombreGrado: gradoDocente?.nombreGrado || gradoDocente?.idGrado,
       });
 
-      console.log("✅ Respuesta del servidor:", response.data);
+      //console.log("✅ Respuesta del servidor:", response.data);
 
       setSuccess(
         `✅ Asistencias guardadas correctamente. ${response.data.registradas} registros actualizados.`
@@ -267,13 +289,21 @@ const RegistroAsistenciasDocente = () => {
             try {
               window.close();
             } catch (err) {
-              console.warn("No se pudo cerrar la ventana:", err);
+              //console.warn("No se pudo cerrar la ventana:", err);
+              showWarning(
+                "Advertencia",
+                "No se pudo cerrar la ventana automáticamente. Por favor, ciérrela manualmente."
+              );
             }
           }
         }, 5000);
       }, 1500); // Esperar 1.5 segundos para que el usuario vea el mensaje
     } catch (error) {
-      console.error("❌ Error al guardar asistencias:", error);
+      //console.error("❌ Error al guardar asistencias:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al guardar las asistencias. Por favor, intente nuevamente más tarde."
+      );
       if (error.response?.status === 400) {
         setError(
           `Error en los datos: ${

@@ -29,7 +29,7 @@ const ConfiguracionEscuela = () => {
       const datosEscuela = await escuelaService.getDatos();
       setDatos(datosEscuela);
     } catch (error) {
-      console.error("Error al cargar datos de la escuela:", error);
+      //console.error("Error al cargar datos de la escuela:", error);
       showError(
         "Error",
         "Error al cargar datos de la escuela: " + error.message
@@ -70,7 +70,7 @@ const ConfiguracionEscuela = () => {
       await escuelaService.actualizarDatos(datos);
       showSuccess("Éxito", "Datos de la escuela actualizados exitosamente");
     } catch (error) {
-      console.error("Error al guardar datos de la escuela:", error);
+      //console.error("Error al guardar datos de la escuela:", error);
       showError(
         "Error",
         "Error al guardar datos de la escuela: " + error.message

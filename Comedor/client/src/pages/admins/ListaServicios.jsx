@@ -7,6 +7,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -27,11 +28,11 @@ const ListaServicios = () => {
   }, []);
 
   const loadServicios = async () => {
-    console.log("ListaServicios: Iniciando loadServicios");
+    //console.log("ListaServicios: Iniciando loadServicios");
     try {
       setLoading(true);
       const data = await servicioService.getAll();
-      console.log("ListaServicios: Datos recibidos:", data);
+      //console.log("ListaServicios: Datos recibidos:", data);
       setServicios(data);
 
       // Cargar turnos para cada servicio
@@ -43,16 +44,20 @@ const ListaServicios = () => {
           );
           turnosData[servicio.idServicio] = turnos;
         } catch (error) {
-          console.error(
+          /*console.error(
             `Error al cargar turnos para servicio ${servicio.idServicio}:`,
             error
+          );*/
+          showError(
+            "Error",
+            `Error al cargar los turnos para el servicio ${servicio.nombre}`
           );
           turnosData[servicio.idServicio] = [];
         }
       }
       setServicioTurnos(turnosData);
     } catch (error) {
-      console.error("Error al cargar servicios:", error);
+      //console.error("Error al cargar servicios:", error);
       showError("Error", "Error al cargar los servicios");
     } finally {
       setLoading(false);
@@ -124,7 +129,7 @@ const ListaServicios = () => {
       } catch (error) {
         // Manejo de errores simplificado
         if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${error.response.data.message}`);
+          showInfoError("Información", `Error: ${error.response.data.message}`);
         } else {
           showError("Error", "Error al eliminar el servicio");
         }
@@ -155,7 +160,7 @@ const ListaServicios = () => {
 
       loadServicios(); // Recargar la lista
     } catch (error) {
-      console.error("Error al cambiar estado:", error);
+      //console.error("Error al cambiar estado:", error);
       showError("Error", "No se pudo cambiar el estado del servicio");
     }
   };

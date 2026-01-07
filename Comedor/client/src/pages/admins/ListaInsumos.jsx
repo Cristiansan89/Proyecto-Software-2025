@@ -6,6 +6,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -26,14 +27,14 @@ const ListaInsumos = () => {
   }, []);
 
   const loadInsumos = async () => {
-    console.log("ListaInsumos: Iniciando loadInsumos");
+    //console.log("ListaInsumos: Iniciando loadInsumos");
     try {
       setLoading(true);
       const data = await insumoService.getAll();
-      console.log("ListaInsumos: Datos recibidos:", data);
+      //console.log("ListaInsumos: Datos recibidos:", data);
       setInsumos(data);
     } catch (error) {
-      console.error("Error al cargar insumos:", error);
+      // console.error("Error al cargar insumos:", error);
       showError("Error", "Error al cargar los insumos");
     } finally {
       setLoading(false);
@@ -125,9 +126,10 @@ const ListaInsumos = () => {
       );
       loadInsumos();
     } catch (error) {
-      console.error("Error al cambiar estado:", error);
+      //console.error("Error al cambiar estado:", error);
+      showError("Error", "Error al cambiar el estado del insumo");
       if (error.response?.data?.message) {
-        showInfo("Información", `Error: ${error.response.data.message}`);
+        showInfoError("Información", `Error: ${error.response.data.message}`);
       } else {
         showError("Error", "Error al cambiar el estado del insumo");
       }

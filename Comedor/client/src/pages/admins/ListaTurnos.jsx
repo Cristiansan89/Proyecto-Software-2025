@@ -6,6 +6,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -25,14 +26,14 @@ const ListaTurnos = () => {
   }, []);
 
   const loadTurnos = async () => {
-    console.log("ListaTurnos: Iniciando loadTurnos");
+    // console.log("ListaTurnos: Iniciando loadTurnos");
     try {
       setLoading(true);
       const data = await turnoService.getAll();
-      console.log("ListaTurnos: Datos recibidos:", data);
+      //console.log("ListaTurnos: Datos recibidos:", data);
       setTurnos(data);
     } catch (error) {
-      console.error("Error al cargar turnos:", error);
+      //console.error("Error al cargar turnos:", error);
       showError("Error", "Error al cargar los turnos");
     } finally {
       setLoading(false);
@@ -91,7 +92,7 @@ const ListaTurnos = () => {
       } catch (error) {
         // Manejo de errores sin logs de consola
         if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${error.response.data.message}`);
+          showInfoError("Información", `Error: ${error.response.data.message}`);
         } else {
           showError("Error", "Error al eliminar el turno");
         }
@@ -122,7 +123,7 @@ const ListaTurnos = () => {
 
       loadTurnos();
     } catch (error) {
-      console.error("Error al cambiar estado:", error);
+      // console.error("Error al cambiar estado:", error);
       showError("Error", "Error al cambiar el estado del turno");
     }
   };

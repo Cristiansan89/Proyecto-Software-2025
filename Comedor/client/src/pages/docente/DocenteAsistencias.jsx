@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api.js";
-import { showError, showToast } from "../../utils/alertService";
+import { showError } from "../../utils/alertService";
 
 const DocenteAsistencias = () => {
   const { user } = useAuth();
@@ -37,7 +37,11 @@ const DocenteAsistencias = () => {
         serviciosRes.data.filter((s) => s.estado === "Activo") || []
       );
     } catch (error) {
-      console.error("Error al cargar datos:", error);
+      //console.error("Error al cargar datos:", error);
+      showError(
+        "Error",
+        "Error al cargar los datos. Intenta recargar la página."
+      );
     } finally {
       setLoading(false);
     }
@@ -67,7 +71,7 @@ const DocenteAsistencias = () => {
         );
       }
     } catch (error) {
-      console.error("Error al generar enlace:", error);
+      //console.error("Error al generar enlace:", error);
       showError(
         "Error",
         "Error al generar el enlace de asistencia. Intenta nuevamente."

@@ -3,7 +3,14 @@ import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import RecetaForm from "../../components/cocinera/RecetaForm";
 import "../../styles/CocineraRecetas.css";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const CocineraRecetas = () => {
   const { user } = useAuth();
@@ -45,9 +52,9 @@ const CocineraRecetas = () => {
               ingredientes: ingredientes,
             };
           } catch (error) {
-            console.error(
-              `Error al cargar ingredientes para receta ${receta.id_receta}:`,
-              error
+            showError(
+              "Error",
+              `No se pudieron cargar los ingredientes para la receta "${receta.nombreReceta}"`
             );
             return {
               ...receta,
@@ -59,7 +66,7 @@ const CocineraRecetas = () => {
 
       setRecetas(recetasConIngredientes);
     } catch (error) {
-      console.error("Error al cargar recetas:", error);
+      showError("Error", "No se pudieron cargar las recetas");
       setRecetas([]);
     } finally {
       setLoading(false);
@@ -71,7 +78,7 @@ const CocineraRecetas = () => {
       const response = await API.get("/insumos");
       setInsumos(response.data || []);
     } catch (error) {
-      console.error("Error al cargar insumos:", error);
+      showError("Error", "No se pudieron cargar los insumos");
       setInsumos([]);
     }
   };
@@ -103,7 +110,7 @@ const CocineraRecetas = () => {
         )
       );
     } catch (error) {
-      console.error("Error al cargar ingredientes de la receta:", error);
+      showError("Error", "No se pudieron cargar los ingredientes de la receta");
       // Agregar ingredientes vacíos para evitar que se quede cargando indefinidamente
       setRecetas((prev) =>
         prev.map((receta) =>
@@ -178,24 +185,32 @@ const CocineraRecetas = () => {
   };
 
   const handleDelete = async (receta) => {
-    if (
-      !confirm(
-        `¿Está seguro de que desea eliminar la receta "${receta.nombreReceta}"?`
-      )
-    ) {
-      return;
-    }
+    // 1. Confirmación asíncrona personalizada
+    const confirmed = await showConfirm(
+      "Eliminar Receta",
+      `¿Está seguro de que desea eliminar la receta "${receta.nombreReceta}"? Esta acción no se puede deshacer.`,
+      "Sí, eliminar",
+      "Cancelar"
+    );
 
-    try {
-      setLoading(true);
-      await API.delete(`/recetas/${receta.id_receta}`);
-      await loadRecetas();
-      showSuccess("Éxito", "Receta eliminada exitosamente");
-    } catch (error) {
-      console.error("Error al eliminar receta:", error);
-      showError("Error", "Error al eliminar la receta");
-    } finally {
-      setLoading(false);
+    if (confirmed) {
+      try {
+        setLoading(true);
+
+        // 2. Ejecución de la eliminación
+        await API.delete(`/recetas/${receta.id_receta}`);
+
+        // 3. Recarga y feedback
+        await loadRecetas();
+        showSuccess("Éxito", "Receta eliminada exitosamente");
+      } catch (error) {
+        // 4. Manejo de errores estandarizado
+        const msg =
+          error.response?.data?.message || "Error al eliminar la receta";
+        showError("Error", msg);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

@@ -52,7 +52,11 @@ const ControlInventario = () => {
       setInventarios(inventariosRes.data || []);
       setTiposMerma(mermaRes.data || []);
     } catch (error) {
-      console.error("Error al cargar datos:", error);
+      //console.error("Error al cargar datos:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los datos de inventario. Por favor, intente nuevamente más tarde."
+      );
     }
   };
 
@@ -62,7 +66,11 @@ const ControlInventario = () => {
       // Ya vienen solo alertas no vistas del servidor
       setAlertas(response.data || []);
     } catch (error) {
-      console.error("Error al cargar alertas:", error);
+      //console.error("Error al cargar alertas:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar las alertas de inventario. Por favor, intente nuevamente más tarde."
+      );
     }
   };
 
@@ -71,7 +79,11 @@ const ControlInventario = () => {
       await API.put(`/alertas-inventario/${id_alerta}/visto`);
       setAlertas(alertas.filter((alerta) => alerta.id_alerta !== id_alerta));
     } catch (error) {
-      console.error("Error al marcar alerta como vista:", error);
+      //console.error("Error al marcar alerta como vista:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al marcar la alerta como vista. Por favor, intente nuevamente más tarde."
+      );
     }
   };
 

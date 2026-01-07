@@ -15,6 +15,7 @@ import {
   showInfo,
   showToast,
   showConfirm,
+  showCancelar,
 } from "../../utils/alertService";
 
 const PedidoInsumo = () => {
@@ -154,7 +155,7 @@ const PedidoInsumo = () => {
       setProveedoresUnicos(proveedores);
       setUsuariosUnicos(usuarios);
     } catch (error) {
-      console.error("Error al cargar datos:", error);
+      //console.error("Error al cargar datos:", error);
       showError("Error", "Error al cargar datos: " + error.message);
     } finally {
       setLoading(false);
@@ -176,7 +177,8 @@ const PedidoInsumo = () => {
       setProveedoresUnicos(proveedores);
       setUsuariosUnicos(usuarios);
     } catch (error) {
-      console.error("Error al cargar pedidos:", error);
+      //console.error("Error al cargar pedidos:", error);
+      showError("Error", "Error al cargar pedidos: " + error.message);
     }
   };
 
@@ -185,7 +187,11 @@ const PedidoInsumo = () => {
       const data = await insumoService.getBajoStock();
       setInsumosBajoStock(data);
     } catch (error) {
-      console.error("Error al cargar insumos bajo stock:", error);
+      //console.error("Error al cargar insumos bajo stock:", error);
+      showError(
+        "Error",
+        "Error al cargar insumos bajo stock: " + error.message
+      );
     }
   };
 
@@ -207,7 +213,7 @@ const PedidoInsumo = () => {
       );
       cargarPedidos();
     } catch (error) {
-      console.error("Error al aprobar pedido:", error);
+      //console.error("Error al aprobar pedido:", error);
       showError(
         "Error",
         "Error al aprobar pedido: " +
@@ -217,16 +223,29 @@ const PedidoInsumo = () => {
   };
 
   const cancelarPedido = async (id) => {
-    const motivo = prompt("Ingrese el motivo de cancelación:");
-    if (!motivo) return;
+    // 1. Solicitar el motivo de cancelación
+    const motivo = await showCancelar(
+      "Cancelar Pedido",
+      "Escriba el motivo aquí..."
+    );
 
-    try {
-      await pedidoService.cancelar(id, motivo);
-      showSuccess("Éxito", "Pedido cancelado exitosamente");
-      cargarPedidos();
-    } catch (error) {
-      console.error("Error al cancelar pedido:", error);
-      showError("Error", "Error al cancelar pedido: " + error.message);
+    // 2. Si el usuario proporcionó un motivo
+    if (motivo) {
+      try {
+        // 3. Llamada al servicio con el motivo
+        await pedidoService.cancelar(id, motivo);
+
+        showSuccess("Éxito", "El pedido ha sido cancelado correctamente.");
+
+        // 4. Recarga de la lista
+        await cargarPedidos();
+      } catch (error) {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "No se pudo cancelar el pedido.";
+        showError("Error", errorMessage);
+      }
     }
   };
 
@@ -240,7 +259,7 @@ const PedidoInsumo = () => {
   };
 
   const onGeneracionAutomaticaExitosa = (resultado) => {
-    console.log("✅ Generación automática exitosa:", resultado);
+    // console.log("✅ Generación automática exitosa:", resultado);
 
     // Mostrar mensaje de éxito
     showInfo(
@@ -255,8 +274,8 @@ const PedidoInsumo = () => {
   };
 
   const onGeneracionAutomaticaError = (error) => {
-    console.error("❌ Error en generación automática:", error);
-    showInfo("Información", `Error: ${error}`);
+    //console.error("❌ Error en generación automática:", error);
+    showInfoError("Información", `Error: ${error}`);
   };
 
   const verDetallesPedido = async (pedido) => {
@@ -267,7 +286,7 @@ const PedidoInsumo = () => {
       );
       setMostrarDetallesPedido(pedidoCompleto);
     } catch (error) {
-      console.error("Error al cargar detalles del pedido:", error);
+      //console.error("Error al cargar detalles del pedido:", error);
       showError("Error", "Error al cargar detalles: " + error.message);
     } finally {
       setLoading(false);
@@ -275,15 +294,34 @@ const PedidoInsumo = () => {
   };
 
   const eliminarPedido = async (id) => {
-    if (!confirm("¿Está seguro de que desea eliminar este pedido?")) return;
+    // 1. Confirmación asíncrona personalizada
+    const confirmed = await showConfirm(
+      "Eliminar Pedido",
+      "¿Está seguro de que desea eliminar este pedido? Esta acción podría revertir movimientos de inventario pendientes.",
+      "Sí, eliminar",
+      "Cancelar"
+    );
+
+    if (!confirmed) return;
 
     try {
+      // 2. Ejecución del servicio
       await pedidoService.delete(id);
-      showSuccess("Éxito", "Pedido eliminado exitosamente");
-      cargarPedidos();
+
+      // 3. Notificación de éxito y actualización de la lista
+      showSuccess("Éxito", "Pedido eliminado correctamente.");
+
+      // Es recomendable usar await si cargarPedidos es asíncrono para asegurar orden
+      await cargarPedidos();
     } catch (error) {
-      console.error("Error al eliminar pedido:", error);
-      showError("Error", "Error al eliminar pedido: " + error.message);
+      // 4. Manejo de errores profesional
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Error desconocido al eliminar el pedido.";
+
+      // Usamos showError para fallos técnicos o showInfo si es una regla de negocio
+      showError("Error al eliminar", errorMessage);
     }
   };
 
@@ -311,14 +349,14 @@ const PedidoInsumo = () => {
   };
 
   const exportarPDFPedidos = async () => {
-    console.log("Botón PDF clickeado, pedidos:", pedidos); // Debug
+    //console.log("Botón PDF clickeado, pedidos:", pedidos); // Debug
     // Filtrar solo pedidos aprobados
     const pedidosAprobados = pedidos.filter(
       (p) => p.estadoPedido === "Aprobado"
     );
 
     if (pedidosAprobados.length === 0) {
-      showToast("No hay pedidos aprobados para exportar", "info", 2000);
+      showInfo("No hay pedidos aprobados para exportar");
       return;
     }
 
@@ -407,19 +445,28 @@ const PedidoInsumo = () => {
     }
   };
 
-  // Vista de creación de pedido
+  // Vista de creación/edición de pedido
   if (vistaActual === "crear") {
     return (
       <div>
         <div className="page-header">
           <div className="header-left">
-            <h1 className="page-title">Crear Nuevo Pedido</h1>
-            <p>Complete el formulario para crear un pedido manual</p>
+            <h1 className="page-title">
+              {pedidoEditando ? "Editar Pedido" : "Crear Nuevo Pedido"}
+            </h1>
+            <p>
+              {pedidoEditando
+                ? "Actualiza el pedido con los nuevos datos"
+                : "Complete el formulario para crear un pedido manual"}
+            </p>
           </div>
           <div className="header-actions">
             <button
               className="btn btn-outline-secondary"
-              onClick={() => setVistaActual("lista")}
+              onClick={() => {
+                setVistaActual("lista");
+                setPedidoEditando(null);
+              }}
             >
               <i className="fas fa-arrow-left me-1"></i>
               Volver a la Lista
@@ -428,8 +475,12 @@ const PedidoInsumo = () => {
         </div>
 
         <PedidoFormSimple
-          onClose={() => setVistaActual("lista")}
+          onClose={() => {
+            setVistaActual("lista");
+            setPedidoEditando(null);
+          }}
           onSuccess={onSuccessForm}
+          pedidoEditando={pedidoEditando}
         />
       </div>
     );
@@ -774,9 +825,24 @@ const PedidoInsumo = () => {
                               </button>
                               <button
                                 className="btn btn-outline-warning btn-sm me-1"
-                                onClick={() => {
-                                  setPedidoEditando(pedido);
-                                  setVistaActual("crear");
+                                onClick={async () => {
+                                  try {
+                                    setLoading(true);
+                                    const pedidoCompleto =
+                                      await pedidoService.getPedidoCompleto(
+                                        pedido.id_pedido
+                                      );
+                                    setPedidoEditando(pedidoCompleto);
+                                    setVistaActual("crear");
+                                  } catch (error) {
+                                    showError(
+                                      "Error",
+                                      "Error al cargar el pedido: " +
+                                        error.message
+                                    );
+                                  } finally {
+                                    setLoading(false);
+                                  }
                                 }}
                                 title="Editar pedido"
                               >

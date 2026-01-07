@@ -96,7 +96,7 @@ const MovimientosForm = ({
   const registrarMovimiento = async () => {
     try {
       if (!nuevoMovimiento.id_insumo || !nuevoMovimiento.cantidadMovimiento) {
-        showToast("Complete los campos requeridos", "info", 2000);
+        showInfo("Complete los campos requeridos");
         return;
       }
 
@@ -104,7 +104,7 @@ const MovimientosForm = ({
         nuevoMovimiento.tipoMovimiento === "Merma" &&
         !nuevoMovimiento.id_tipoMerma
       ) {
-        showToast("Seleccione un tipo de merma", "info", 2000);
+        showInfo("Seleccione un tipo de merma");
         return;
       }
 

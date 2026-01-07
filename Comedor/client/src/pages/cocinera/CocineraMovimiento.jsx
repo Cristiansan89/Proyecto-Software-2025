@@ -56,7 +56,7 @@ const CocineraMovimiento = () => {
       // 1. Cargar movimientos
       const movimientosData =
         await movimientoInventarioService.obtenerMovimientos();
-      console.log("📊 Datos de movimientos recibidos:", movimientosData);
+      //console.log("📊 Datos de movimientos recibidos:", movimientosData);
       setMovimientos(movimientosData || []);
 
       // 2. Cargar lista de insumos
@@ -79,7 +79,8 @@ const CocineraMovimiento = () => {
         texto: `✅ Cargados ${movimientosData?.length || 0} movimientos`,
       });
     } catch (error) {
-      console.error("Error al cargar movimientos:", error);
+      //console.error("Error al cargar movimientos:", error);
+      showError("Error", "❌ Error al cargar movimientos");
       setMensaje({
         tipo: "error",
         texto: "Error al cargar movimientos",
@@ -258,7 +259,8 @@ const CocineraMovimiento = () => {
 
       doc.save(`Movimientos_${Date.now()}.pdf`);
     } catch (err) {
-      console.error("Error generando PDF:", err);
+      //console.error("Error generando PDF:", err);
+      showError("Error", "❌ Error al generar PDF");
       setMensaje({ tipo: "error", texto: "Error al generar PDF" });
     }
   };

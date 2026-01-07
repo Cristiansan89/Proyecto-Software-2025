@@ -6,6 +6,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -119,14 +120,14 @@ const ListaGrados = () => {
     if (confirmed) {
       try {
         await gradoService.delete(grado.idGrado);
-        showInfo("Grado eliminado correctamente", 4000);
+        showSuccess("Grado eliminado correctamente");
         loadGrados(); // Recargar la lista
       } catch (error) {
         /*console.error("Error al eliminar grado:", error);*/
 
         // Manejo de errores dinámico
         if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${error.response.data.message}`);
+          showInfoError("Información", `Error: ${error.response.data.message}`);
         } else {
           showError("Error", "Error al eliminar el grado");
         }

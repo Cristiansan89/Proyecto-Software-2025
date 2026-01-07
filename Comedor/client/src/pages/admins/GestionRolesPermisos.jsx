@@ -18,7 +18,7 @@ import {
 
 const GestionRolesPermisos = () => {
   // Verificación de funcionamiento básico
-  console.log("GestionRolesPermisos componente se está renderizando...");
+  // console.log("GestionRolesPermisos componente se está renderizando...");
 
   const [vistaActiva, setVistaActiva] = useState("permisos"); // 'roles', 'permisos', 'permisos-avanzado', 'asignaciones'
   const [roles, setRoles] = useState([]);
@@ -329,16 +329,17 @@ const GestionRolesPermisos = () => {
   // Cargar todas las asignaciones individuales rol-permiso
   const loadAsignacionesIndividuales = async () => {
     try {
-      console.log("Cargando asignaciones individuales...");
+      //console.log("Cargando asignaciones individuales...");
       setLoading(true);
 
       // Usar el endpoint que devuelve todas las relaciones rol-permiso
       const response = await API.get("/rol-permisos");
       const asignaciones = response.data;
-      console.log("Asignaciones cargadas:", asignaciones.length);
+      //console.log("Asignaciones cargadas:", asignaciones.length);
       setAsignacionesIndividuales(asignaciones);
     } catch (error) {
-      console.error("Error al cargar asignaciones:", error);
+      // console.error("Error al cargar asignaciones:", error);
+      showError("Error", `Error al cargar asignaciones: ${error.message}`);
       setError(`Error al cargar asignaciones: ${error.message}`);
       setAsignacionesIndividuales([]);
     } finally {
@@ -1187,7 +1188,7 @@ const GestionRolesPermisos = () => {
           <button
             className="btn btn-primary-new"
             onClick={() => {
-              console.log("Abriendo formulario para nueva asignación");
+              // console.log("Abriendo formulario para nueva asignación");
               setRolSeleccionadoParaEditar(null);
               setShowAsignarPermisosForm(true);
             }}

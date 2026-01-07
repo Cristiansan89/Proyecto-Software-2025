@@ -29,7 +29,11 @@ const PlanificacionMenus = () => {
         }
       }
     } catch (error) {
-      console.error("Error al cargar planificaciones:", error);
+      //console.error("Error al cargar planificaciones:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar las planificaciones. Por favor, intente nuevamente más tarde."
+      );
     } finally {
       setCargandoPlanificaciones(false);
     }
@@ -52,10 +56,10 @@ const PlanificacionMenus = () => {
           planificacionSeleccionada.id_planificacion !==
             planificacionASeleccionar.id_planificacion)
       ) {
-        console.log(
+        /* console.log(
           "📋 Entrando a calendario, auto-seleccionando planificación:",
           planificacionASeleccionar
-        );
+        );*/
         setPlanificacionSeleccionada(planificacionASeleccionar);
       }
     }

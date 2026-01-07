@@ -23,7 +23,7 @@ const InsumosSemanal = () => {
   // Verificación de autenticación
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log("❌ Usuario no autenticado, redirigiendo al login");
+      //console.log("❌ Usuario no autenticado, redirigiendo al login");
       navigate("/login");
     }
   }, [isAuthenticated, navigate]);
@@ -101,9 +101,9 @@ const InsumosSemanal = () => {
       const fechaInicio = semana[0].toISOString().split("T")[0];
       const fechaFin = semana[4].toISOString().split("T")[0];
 
-      console.log(
+      /*console.log(
         `📋 Cargando datos para la semana ${fechaInicio} a ${fechaFin}`
-      );
+      );*/
 
       // 1. Obtener menús asignados
       const response = await planificacionMenuService.getMenusSemana(
@@ -120,7 +120,11 @@ const InsumosSemanal = () => {
             await planificacionMenuService.calcularComensalesPorFecha(fechaStr);
           comensalesMap[fechaStr] = datosComensales;
         } catch (err) {
-          console.warn(`Error al cargar comensales para ${fechaStr}:`, err);
+          //console.warn(`Error al cargar comensales para ${fechaStr}:`, err);
+          showWarning(
+            "Advertencia",
+            `⚠️ No se pudieron cargar los comensales para la fecha ${fechaStr}.`
+          );
           comensalesMap[fechaStr] = {
             servicios: [],
             resumen: { totalDia: 0 },
@@ -130,13 +134,17 @@ const InsumosSemanal = () => {
       setComensalesData(comensalesMap);
 
       // 3. Procesar menús y calcular insumos
-      console.log("📊 Menús obtenidos:", response);
+      // console.log("📊 Menús obtenidos:", response);
       setMenusSemanales(response || []);
 
       // 4. Calcular insumos desde menús de la semana actual
       await calcularInsumosSemanales(response || [], comensalesMap);
     } catch (error) {
-      console.error("❌ Error al cargar datos semanales:", error);
+      //console.error("❌ Error al cargar datos semanales:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los datos semanales. Por favor, intente nuevamente más tarde."
+      );
       setMenusSemanales([]);
       setInsumosRequeridos({});
     } finally {
@@ -147,12 +155,16 @@ const InsumosSemanal = () => {
   const calcularInsumosSemanales = async (menus, comensalesMap) => {
     try {
       // Llamar al endpoint backend que calcula insumos correctamente
-      console.log("📡 Obteniendo insumos desde backend...");
+      // console.log("📡 Obteniendo insumos desde backend...");
       const response =
         await generacionAutomaticaService.obtenerInsumosSemanales();
 
       if (!response || !response.insumos) {
-        console.warn("⚠️ No se obtuvieron insumos del backend");
+        //console.warn("⚠️ No se obtuvieron insumos del backend");
+        showError(
+          "Error",
+          "❌ No se pudieron obtener los insumos desde el backend."
+        );
         setInsumosRequeridos({});
         return;
       }
@@ -160,6 +172,7 @@ const InsumosSemanal = () => {
       // Convertir array a map con nombre como clave
       const insumosMap = {};
       for (const insumo of response.insumos) {
+        /*
         console.log(`📦 Insumo recibido:`, {
           nombre: insumo.nombre,
           cantidad: insumo.cantidad,
@@ -167,7 +180,7 @@ const InsumosSemanal = () => {
           cantidad_disponible: insumo.cantidad_disponible,
           unidad_inventario: insumo.unidad_inventario,
         });
-
+*/
         insumosMap[insumo.nombre] = {
           id_insumo: insumo.id_insumo,
           cantidad: insumo.cantidad,
@@ -177,14 +190,18 @@ const InsumosSemanal = () => {
         };
       }
 
-      console.log("📦 Insumos calculados desde backend:", insumosMap);
+      //   console.log("📦 Insumos calculados desde backend:", insumosMap);
       setInsumosRequeridos(insumosMap);
     } catch (error) {
-      console.error("❌ Error al calcular insumos:", error);
+      //console.error("❌ Error al calcular insumos:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al calcular los insumos. Por favor, intente nuevamente más tarde."
+      );
 
       // Manejar error de autenticación
       if (error.response?.status === 401) {
-        console.log("🔐 Token expirado, redirigiendo al login");
+        // console.log("🔐 Token expirado, redirigiendo al login");
         setMensaje({
           tipo: "error",
           texto: "Sesión expirada. Por favor, inicia sesión nuevamente.",
@@ -398,11 +415,11 @@ const InsumosSemanal = () => {
           tipo: "success",
           texto: `✅ SISTEMA: Se generaron ${response.totalPedidos} pedido(s) automático(s) por insumos faltantes`,
         });
-        console.log(
+        /*console.log(
           "Pedidos generados automáticamente por el SISTEMA:",
           response.pedidosCreados
         );
-        console.log("Origen:", response.origen);
+        console.log("Origen:", response.origen);*/
       } else {
         setMensaje({
           tipo: "warning",
@@ -410,7 +427,11 @@ const InsumosSemanal = () => {
         });
       }
     } catch (error) {
-      console.error("Error generando pedidos:", error);
+      //console.error("Error generando pedidos:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al generar pedidos automáticos. Por favor, intente nuevamente más tarde."
+      );
       setMensaje({
         tipo: "error",
         texto:

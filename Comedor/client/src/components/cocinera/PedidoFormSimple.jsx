@@ -55,16 +55,25 @@ const customSelectStyles = {
   }),
 };
 
-const PedidoFormSimple = ({ onClose, onSuccess }) => {
+const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [insumos, setInsumos] = useState([]);
   const [proveedoresDisponibles, setProveedoresDisponibles] = useState([]);
+  const [isEditMode, setIsEditMode] = useState(!!pedidoEditando);
+
+  // Obtener el ID del proveedor desde el pedido en edición (puede tener distintos nombres de campo)
+  const getProveedorIdFromPedido = (pedido) => {
+    if (!pedido) return "";
+    return pedido.id_proveedor || pedido.idProveedor || "";
+  };
 
   // Estado del formulario simplificado
   const [formData, setFormData] = useState({
-    fecha: new Date().toISOString().split("T")[0], // Fecha actual fija
-    id_proveedor: "",
+    fecha: pedidoEditando
+      ? new Date(pedidoEditando.fechaEmision).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
+    id_proveedor: getProveedorIdFromPedido(pedidoEditando),
     insumos: [], // Lista de insumos seleccionados con sus cantidades
   });
 
@@ -80,15 +89,36 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
     cargarProveedores();
   }, []);
 
+  // Cargar datos del pedido si estamos en modo edición
+  useEffect(() => {
+    if (pedidoEditando && pedidoEditando.detalles) {
+      // Mapear los detalles del pedido a insumos
+      const insumosDelPedido = pedidoEditando.detalles.map((detalle) => ({
+        id_insumo: detalle.id_insumo,
+        nombreInsumo: detalle.nombreInsumo,
+        unidadMedida: detalle.unidadMedida,
+        cantidad: Number(detalle.cantidad || detalle.cantidadSolicitada),
+      }));
+
+      setFormData((prev) => ({
+        ...prev,
+        insumos: insumosDelPedido,
+      }));
+    }
+  }, [pedidoEditando]);
+
+  // Cargar insumos cuando se selecciona proveedor
   useEffect(() => {
     if (formData.id_proveedor) {
       cargarInsumosDelProveedor(formData.id_proveedor);
     } else {
       setInsumosProveedor([]);
-      setFormData((prev) => ({ ...prev, insumos: [] }));
+      if (!isEditMode) {
+        setFormData((prev) => ({ ...prev, insumos: [] }));
+      }
       setNuevoInsumo({ id_insumo: "", cantidad: 1 });
     }
-  }, [formData.id_proveedor]);
+  }, [formData.id_proveedor, isEditMode]);
 
   const cargarInsumos = async () => {
     try {
@@ -109,7 +139,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
       const proveedoresData = await proveedorService.getActivos();
       setProveedoresDisponibles(proveedoresData);
     } catch (error) {
-      console.error("Error al cargar proveedores:", error);
+      //console.error("Error al cargar proveedores:", error);
       showError("Error", "Error al cargar proveedores: " + error.message);
     } finally {
       setLoading(false);
@@ -118,18 +148,26 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
 
   const cargarInsumosDelProveedor = async (idProveedor) => {
     try {
-      console.log("Cargando insumos para proveedor ID:", idProveedor);
+      //console.log("Cargando insumos para proveedor ID:", idProveedor);
       const insumos = await proveedorInsumoService.getInsumosByProveedor(
         idProveedor
       );
-      console.log("Insumos encontrados:", insumos);
+      //console.log("Insumos encontrados:", insumos);
       setInsumosProveedor(insumos);
     } catch (error) {
-      console.error("Error al cargar insumos del proveedor:", error);
-      setInsumosProveedor([]);
-      console.warn(
-        `No se encontraron insumos para el proveedor ${idProveedor}`
+      //console.error("Error al cargar insumos del proveedor:", error);
+      showError(
+        "Error",
+        "Error al cargar insumos del proveedor: " + error.message
       );
+      setInsumosProveedor([]);
+      showWarning(
+        "Atención",
+        `No se pudieron cargar los insumos para el proveedor seleccionado.`
+      );
+      /*console.warn(
+        `No se encontraron insumos para el proveedor ${idProveedor}`
+      );*/
     }
   };
 
@@ -161,7 +199,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
   // Manejar selección de proveedor
   const handleProveedorChange = (selectedOption) => {
     const idProveedor = selectedOption ? selectedOption.value : "";
-    console.log("Proveedor seleccionado:", selectedOption);
+    //console.log("Proveedor seleccionado:", selectedOption);
     setFormData((prev) => ({
       ...prev,
       id_proveedor: idProveedor,
@@ -173,7 +211,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
   // Manejar selección de insumo para agregar
   const handleInsumoChange = (selectedOption) => {
     const idInsumo = selectedOption ? selectedOption.value : "";
-    console.log("Insumo seleccionado:", selectedOption);
+    //console.log("Insumo seleccionado:", selectedOption);
     setNuevoInsumo((prev) => ({ ...prev, id_insumo: idInsumo }));
   };
 
@@ -184,11 +222,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
       !nuevoInsumo.cantidad ||
       nuevoInsumo.cantidad <= 0
     ) {
-      showToast(
-        "Debe seleccionar un insumo y una cantidad válida",
-        "info",
-        2000
-      );
+      showInfo("Debe seleccionar un insumo y una cantidad válida");
       return;
     }
 
@@ -198,10 +232,9 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
     );
 
     if (insumoExistente) {
-      showToast(
+      showInfo(
         "Este insumo ya está en la lista. Puede editar la cantidad si es necesario.",
-        "info",
-        2000
+        4000
       );
       return;
     }
@@ -249,12 +282,12 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
 
   const validarFormulario = () => {
     if (!formData.id_proveedor) {
-      showToast("Debe seleccionar un proveedor", "info", 2000);
+      showInfo("Debe seleccionar un proveedor");
       return false;
     }
 
     if (formData.insumos.length === 0) {
-      showToast("Debe agregar al menos un insumo al pedido", "info", 2000);
+      showInfo("Debe agregar al menos un insumo al pedido");
       return false;
     }
 
@@ -263,10 +296,9 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
       (item) => !item.cantidad || item.cantidad <= 0
     );
     if (insumoInvalido) {
-      showToast(
+      showInfo(
         "Todos los insumos deben tener una cantidad válida mayor a 0",
-        "info",
-        2000
+        4000
       );
       return false;
     }
@@ -279,25 +311,45 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
 
     setLoading(true);
     try {
-      const datosPedido = {
-        insumos: formData.insumos.map((item) => ({
-          id_insumo: item.id_insumo,
-          id_proveedor: formData.id_proveedor,
-          cantidad: Number(item.cantidad),
-        })),
-        fechaEntregaEsperada: formData.fecha,
-        observaciones: null,
-        id_usuario: user?.idUsuario || user?.id_usuario,
-      };
+      if (isEditMode && pedidoEditando) {
+        // Modo edición: actualizar pedido existente
+        const datosPedido = {
+          insumos: formData.insumos.map((item) => ({
+            id_insumo: item.id_insumo,
+            id_proveedor: formData.id_proveedor,
+            cantidad: Number(item.cantidad),
+          })),
+          fechaEntregaEsperada: formData.fecha,
+          observaciones: null,
+          id_usuario: user?.idUsuario || user?.id_usuario,
+        };
 
-      const pedidosCreados = await pedidoService.crearPedidoManual(datosPedido);
+        await pedidoService.update(pedidoEditando.id_pedido, datosPedido);
+        showSuccess("Éxito", "Pedido actualizado exitosamente");
+      } else {
+        // Modo creación: crear nuevo pedido
+        const datosPedido = {
+          insumos: formData.insumos.map((item) => ({
+            id_insumo: item.id_insumo,
+            id_proveedor: formData.id_proveedor,
+            cantidad: Number(item.cantidad),
+          })),
+          fechaEntregaEsperada: formData.fecha,
+          observaciones: null,
+          id_usuario: user?.idUsuario || user?.id_usuario,
+        };
 
-      showSuccess("Éxito", "Pedido creado exitosamente");
-      if (onSuccess) onSuccess(pedidosCreados);
+        const pedidosCreados = await pedidoService.crearPedidoManual(
+          datosPedido
+        );
+        showSuccess("Éxito", "Pedido creado exitosamente");
+      }
+
+      if (onSuccess) onSuccess();
       if (onClose) onClose();
     } catch (error) {
-      console.error("Error al crear pedido:", error);
-      showError("Error", "Error al crear el pedido: " + error.message);
+      // console.error("Error al guardar pedido:", error);
+      showError("Error", "Error al guardar el pedido: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -312,10 +364,16 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
       <div className="card shadow-sm">
         <div className="card-header text-dark">
           <h5 className="mb-0">
-            <i className="fas fa-plus-circle me-2"></i>
-            Crear Pedido Manual
+            <i
+              className={`fas fa-${isEditMode ? "edit" : "plus-circle"} me-2`}
+            ></i>
+            {isEditMode ? "Editar Pedido Manual" : "Crear Pedido Manual"}
           </h5>
-          <small>Selecciona un proveedor y agrega los insumos necesarios</small>
+          <small>
+            {isEditMode
+              ? "Actualiza los datos del pedido"
+              : "Selecciona un proveedor y agrega los insumos necesarios"}
+          </small>
         </div>
 
         <div className="card-body bg-white">
@@ -333,7 +391,7 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
               crearPedido();
             }}
           >
-            {/* Fecha fija */}
+            {/* Fecha */}
             <div className="row mb-3">
               <div className="col-md-6">
                 <label className="form-label">
@@ -344,11 +402,20 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
                   type="date"
                   className="form-control"
                   value={formData.fecha}
-                  disabled
-                  style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fecha: e.target.value })
+                  }
+                  disabled={!isEditMode}
+                  style={
+                    !isEditMode
+                      ? { backgroundColor: "#f8f9fa", cursor: "not-allowed" }
+                      : {}
+                  }
                 />
                 <small className="form-text text-muted">
-                  La fecha está fija al día actual
+                  {isEditMode
+                    ? "Puedes cambiar la fecha del pedido"
+                    : "La fecha está fija al día actual"}
                 </small>
               </div>
             </div>
@@ -649,8 +716,13 @@ const PedidoFormSimple = ({ onClose, onSuccess }) => {
                 ) : (
                   <>
                     <i className="fas fa-save"></i>
-                    Crear Pedido ({formData.insumos.length} insumo
-                    {formData.insumos.length !== 1 ? "s" : ""})
+                    {isEditMode
+                      ? `Actualizar Pedido (${formData.insumos.length} insumo${
+                          formData.insumos.length !== 1 ? "s" : ""
+                        })`
+                      : `Crear Pedido (${formData.insumos.length} insumo${
+                          formData.insumos.length !== 1 ? "s" : ""
+                        })`}
                   </>
                 )}
               </button>

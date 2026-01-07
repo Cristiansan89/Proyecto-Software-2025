@@ -7,6 +7,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -73,11 +74,7 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
 
   const calculateDinersAutomatically = async () => {
     if (!formData.fechaInicio) {
-      showToast(
-        "Por favor seleccione primero la fecha de inicio",
-        "info",
-        2000
-      );
+      showWarning("Por favor seleccione primero la fecha de inicio");
       return;
     }
 
@@ -100,11 +97,7 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
     } catch (error) {
       // Manejar error 401
       if (error.response?.status === 401) {
-        showToast(
-          "Sesión expirada. Por favor, inicia sesión nuevamente.",
-          "info",
-          2000
-        );
+        showInfoError("Sesión expirada. Por favor, inicia sesión nuevamente.");
         navigate("/login");
         return;
       }
@@ -123,11 +116,7 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
     // Validar que fecha de fin sea posterior a fecha de inicio
     if (formData.fechaInicio && formData.fechaFin) {
       if (new Date(formData.fechaFin) < new Date(formData.fechaInicio)) {
-        showToast(
-          "La fecha de fin debe ser posterior a la fecha de inicio",
-          "info",
-          2000
-        );
+        showInfo("La fecha de fin debe ser posterior a la fecha de inicio");
         return;
       }
     }
@@ -146,13 +135,13 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
 
       if (mode === "create") {
         await planificacionMenuService.create(dataToSend);
-        showToast("Planificación creada correctamente", "info", 2000);
+        showSuccess("Planificación creada correctamente");
       } else {
         await planificacionMenuService.update(
           planificacion.id_planificacion,
           dataToSend
         );
-        showToast("Planificación actualizada correctamente", "info", 2000);
+        showSuccess("Planificación actualizada correctamente");
       }
 
       onSave();
@@ -161,17 +150,13 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
 
       // Manejar error 401
       if (error.response?.status === 401) {
-        showToast(
-          "Sesión expirada. Por favor, inicia sesión nuevamente.",
-          "info",
-          2000
-        );
+        showInfo("Sesión expirada. Por favor, inicia sesión nuevamente.");
         navigate("/login");
         return;
       }
 
       const errorMessage = error.response?.data?.message || error.message;
-      showInfo("Información", `Error al guardar: ${errorMessage}`);
+      showInfoError("Información", `Error al guardar: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -242,35 +227,29 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
             <label htmlFor="comensalesEstimados" className="form-label">
               Comensales Estimados
             </label>
-            <div className="input-group">
-              <input
-                type="number"
-                className="form-control"
-                id="comensalesEstimados"
-                name="comensalesEstimados"
-                value={formData.comensalesEstimados}
-                onChange={handleInputChange}
-                min="0"
-                required
-                readOnly={isViewMode}
-                placeholder="Ingrese número de comensales"
-              />
+            <div className="d-flex align-items-center gap-2">
               {!isViewMode && (
                 <button
                   type="button"
-                  className="btn btn-outline-primary"
+                  className="btn btn-success d-flex align-items-center gap-2" // 'btn-primary' para que resalte más
                   onClick={calculateDinersAutomatically}
                   disabled={calculatingDiners || !formData.fechaInicio}
                   title="Calcular automáticamente según matrícula actual"
                 >
                   {calculatingDiners ? (
-                    <span
-                      className="spinner-border spinner-border-sm"
-                      role="status"
-                      aria-hidden="true"
-                    ></span>
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      <span>Calculando...</span>
+                    </>
                   ) : (
-                    <i className="fas fa-calculator"></i>
+                    <>
+                      <i className="fas fa-calculator"></i>
+                      <span>Calcular Comensales</span>
+                    </>
                   )}
                 </button>
               )}

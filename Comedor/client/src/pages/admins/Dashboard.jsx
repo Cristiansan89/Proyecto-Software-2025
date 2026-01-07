@@ -4,6 +4,7 @@ import personaService from "../../services/personaService";
 import insumoService from "../../services/insumoService";
 import proveedorService from "../../services/proveedorService";
 import "../../styles/Dashboard.css";
+import { showError } from "../../utils/alertService";
 
 const AdminDashboard = () => {
   const [dashboardStats, setDashboardStats] = useState({
@@ -62,7 +63,11 @@ const AdminDashboard = () => {
         proveedoresActivos,
       });
     } catch (error) {
-      console.error("Error al cargar datos del dashboard:", error);
+      //console.error("Error al cargar datos del dashboard:", error);
+      showError(
+        "Error",
+        "No se pudieron cargar las estadísticas del dashboard."
+      );
     } finally {
       setLoading(false);
     }

@@ -2,7 +2,15 @@ import { useState, useEffect } from "react";
 import Select from "react-select";
 import API from "../../services/api";
 import recetasServiciosService from "../../services/serviciosRecetasService";
-import { showSuccess, showError, showWarning, showInfo, showToast, showConfirm } from "../../utils/alertService";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showInfoError,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 
 const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   // Función helper para formatear cantidades
@@ -88,7 +96,10 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         }));
       }
     } catch (error) {
-      console.error("❌ Error cargando servicios:", error);
+      showError(
+        "Error",
+        "No se pudieron cargar los servicios asociados a la receta."
+      );
       // No es crítico si falla, continuar sin servicios
     }
   };
@@ -159,7 +170,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         !nuevoIngrediente.cantidadPorPorcion ||
         !nuevoIngrediente.unidadPorPorcion
       ) {
-        showToast("Complete todos los campos del ingrediente", "info", 2000);
+        showInfo("Complete todos los campos del ingrediente");
         return;
       }
 
@@ -172,7 +183,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         (ing) => ing.id_insumo === nuevoIngrediente.id_insumo
       );
       if (yaExiste) {
-        showToast("Este ingrediente ya está en la lista", "info", 2000);
+        showInfo("Este ingrediente ya está en la lista");
         return;
       }
 
@@ -240,7 +251,10 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
               formData.servicios
             );
           } catch (servicioError) {
-            console.error("❌ Error guardando servicios:", servicioError);
+            showError(
+              "Error",
+              "No se pudieron guardar los servicios asociados a la receta."
+            );
             throw servicioError;
           }
         }
@@ -259,11 +273,17 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
               payload
             );
           } catch (addError) {
-            console.error("❌ Error completo:", addError);
-            console.error("Response:", addError.response?.data);
+            //  console.error("❌ Error completo:", addError);
+            //  console.error("Response:", addError.response?.data);
+            showError(
+              "Error",
+              "No se pudieron guardar todos los ingredientes de la receta."
+            );
             throw addError;
           }
         }
+
+        showSuccess("Éxito", "Receta registrada exitosamente");
       } else {
         // Actualizar receta
         await API.patch(`/recetas/${receta.id_receta}`, recetaData);
@@ -275,9 +295,15 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
             formData.servicios
           );
         } catch (servicioError) {
-          console.error("❌ Error actualizando servicios:", servicioError);
+          //console.error("❌ Error actualizando servicios:", servicioError);
+          showError(
+            "Error",
+            "No se pudieron actualizar los servicios asociados a la receta."
+          );
           throw servicioError;
         }
+
+        showSuccess("Éxito", "Receta actualizada exitosamente");
 
         // Primero obtenemos los ingredientes existentes para eliminarlos uno por uno
         try {
@@ -310,8 +336,12 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
             await API.post(`/recetas/${receta.id_receta}/insumos`, payload);
           } catch (addError) {
-            console.error("❌ Error completo:", addError);
-            console.error("Response completa:", addError.response?.data);
+            //console.error("❌ Error completo:", addError);
+            //console.error("Response completa:", addError.response?.data);
+            showError(
+              "Error",
+              "No se pudieron guardar todos los ingredientes de la receta."
+            );
             throw addError; // Re-lanzar para abortar el proceso
           }
         }
@@ -328,15 +358,24 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           apiErrors[err.field] = err.message;
         });
         setErrors(apiErrors);
-        showError("Error", "Error de validación. Revise los campos marcados en rojo.");
+        showError(
+          "Error",
+          "Error de validación. Revise los campos marcados en rojo."
+        );
       } else if (error.response?.data?.message) {
-        showInfo("Información", `Error: ${error.response.data.message}`);
+        showInfoError("Información", `Error: ${error.response.data.message}`);
       } else if (error.response) {
-        showInfo("Información", `Error del servidor (${error.response.status}): ${error.response.statusText}`);
+        showInfoError(
+          "Información",
+          `Error del servidor (${error.response.status}): ${error.response.statusText}`
+        );
       } else if (error.request) {
-        showError("Error", "Error de conexión. Verifique su conexión a internet.");
+        showError(
+          "Error",
+          "Error de conexión. Verifique su conexión a internet."
+        );
       } else {
-        showInfo("Información", `Error inesperado: ${error.message}`);
+        showInfoError("Información", `Error inesperado: ${error.message}`);
       }
     } finally {
       setLoading(false);

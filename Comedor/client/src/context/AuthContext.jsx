@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import authService from "../services/authService";
 import auditoriaService from "../services/auditoriaService";
+import { showInfoError } from "../utils/alertService";
 
 const AuthContext = createContext();
 
@@ -66,12 +67,18 @@ export const AuthProvider = ({ children }) => {
             tipoAccion: "Logout",
           })
           .catch((err) => {
-            console.warn("Error al registrar logout en auditoría:", err);
+            //console.warn("Error al registrar logout en auditoría:", err);
+            showInfoError(
+              "Error al registrar el cierre de sesión en auditoría."
+            );
+            return;
+            show;
             // No interrumpir el logout si falla la auditoría
           });
       }
     } catch (error) {
-      console.warn("Error al registrar logout:", error);
+      //console.warn("Error al registrar logout:", error);
+      showInfoError("Error al registrar el cierre de sesión en auditoría.");
     }
 
     // Limpiar sesión y cache

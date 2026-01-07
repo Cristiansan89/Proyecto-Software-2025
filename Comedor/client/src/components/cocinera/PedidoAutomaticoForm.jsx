@@ -57,7 +57,7 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
     setResultado(null);
 
     try {
-      console.log("🚀 Generando pedidos automáticos...");
+      //console.log("🚀 Generando pedidos automáticos...");
 
       const response = await pedidoService.generarAutomatico(
         formData.fechaInicio,
@@ -72,7 +72,7 @@ const PedidoAutomaticoForm = ({ onSuccess, onError, isVisible, onClose }) => {
         onError?.(response.message || "No fue necesario crear pedidos");
       }
     } catch (error) {
-      console.error("❌ Error generando pedidos automáticos:", error);
+      //console.error("❌ Error generando pedidos automáticos:", error);
       onError?.(
         error.response?.data?.message || "Error al generar pedidos automáticos"
       );

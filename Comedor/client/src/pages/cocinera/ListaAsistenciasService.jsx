@@ -53,7 +53,11 @@ const ListaAsistenciasService = () => {
       setServicios(serviciosData || []);
       setGrados(gradosData || []);
     } catch (error) {
-      console.error("Error al cargar datos iniciales:", error);
+      // console.error("Error al cargar datos iniciales:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde."
+      );
     } finally {
       setLoading(false);
     }
@@ -78,7 +82,11 @@ const ListaAsistenciasService = () => {
         setAsistencias(response.data || []);
         calcularEstadisticas(response.data || []);
       } else {
-        console.error("Error:", response.message);
+        //console.error("Error:", response.message);
+        showError(
+          "Error",
+          "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+        );
         setAsistencias([]);
         setEstadisticas({
           totalRegistros: 0,
@@ -87,7 +95,11 @@ const ListaAsistenciasService = () => {
         });
       }
     } catch (error) {
-      console.error("Error al cargar asistencias:", error);
+      //console.error("Error al cargar asistencias:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+      );
       setAsistencias([]);
       setEstadisticas({
         totalAlumnos: 0,
@@ -163,7 +175,7 @@ const ListaAsistenciasService = () => {
 
   const exportarCSV = () => {
     if (asistencias.length === 0) {
-      showToast("No hay datos para exportar", "info", 2000);
+      showInfo("No hay datos para exportar", 4000);
       return;
     }
 
@@ -199,7 +211,7 @@ const ListaAsistenciasService = () => {
 
   const exportarPDF = async () => {
     if (asistencias.length === 0) {
-      showToast("No hay datos para exportar", "info", 2000);
+      showInfo("No hay datos para exportar", 4000);
       return;
     }
 
@@ -279,7 +291,7 @@ const ListaAsistenciasService = () => {
 
       showSuccess("Éxito", "Reporte PDF de asistencias generado exitosamente");
     } catch (error) {
-      console.error("Error al generar PDF:", error);
+      //console.error("Error al generar PDF:", error);
       showError("Error", "Error al generar el reporte PDF");
     }
   };

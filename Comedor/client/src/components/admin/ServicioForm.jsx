@@ -57,7 +57,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
     if (
       turnosSeleccionados.some((t) => t.idTurno === turnoSeleccionado.idTurno)
     ) {
-      showToast("Este turno ya está seleccionado", "info", 2000);
+      showInfo("Este turno ya está seleccionado");
       return;
     }
 
@@ -86,7 +86,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
       // Limpiar selección
       setFormData((prev) => ({ ...prev, idTurno: "" }));
 
-      showToast("Turno asignado correctamente", "info", 2000);
+      showInfo("Turno asignado correctamente");
     } catch (error) {
       showError(
         "Error",
@@ -116,8 +116,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
         // Recargar turnos asignados
         await loadTurnosAsignados(servicio.idServicio);
 
-        // Usamos el toast de información para indicar que se quitó con éxito
-        showToast("Turno desasignado correctamente", "info", 2000);
+        showInfo("Turno desasignado correctamente");
       } catch (error) {
         console.error("Error al desasignar turno:", error);
         showError(

@@ -97,7 +97,7 @@ const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
     );
 
     if (yaAsignado) {
-      showToast("Este insumo ya ha sido asignado al proveedor", "info", 2000);
+      showInfo("Este insumo ya ha sido asignado al proveedor");
       return;
     }
 
@@ -129,7 +129,7 @@ const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
     e.preventDefault();
 
     if (assignedInsumos.length === 0) {
-      showToast("Debe asignar al menos un insumo", "info", 2000);
+      showInfo("Debe asignar al menos un insumo");
       return;
     }
 

@@ -8,6 +8,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -52,7 +53,11 @@ const ListaAsistencia = () => {
       setServicios(serviciosData || []);
       setGrados(gradosData || []);
     } catch (error) {
-      console.error("Error al cargar datos iniciales:", error);
+      //console.error("Error al cargar datos iniciales:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde."
+      );
     } finally {
       setLoading(false);
     }
@@ -72,14 +77,18 @@ const ListaAsistencia = () => {
         queryString
       );
 
-      console.log("🔍 Respuesta del servicio:", response);
+      //console.log("🔍 Respuesta del servicio:", response);
 
       if (response.success) {
-        console.log("✅ Datos recibidos:", response.data);
+        //console.log("✅ Datos recibidos:", response.data);
         setAsistencias(response.data || []);
         calcularEstadisticas(response.data || []);
       } else {
-        console.error("❌ Error en respuesta:", response.message);
+        //console.error("❌ Error en respuesta:", response.message);
+        showError(
+          "Error",
+          "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+        );
         setAsistencias([]);
         setEstadisticas({
           totalRegistros: 0,
@@ -89,7 +98,11 @@ const ListaAsistencia = () => {
         });
       }
     } catch (error) {
-      console.error("Error al cargar asistencias:", error);
+      //console.error("Error al cargar asistencias:", error);
+      showError(
+        "Error",
+        "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+      );
       setAsistencias([]);
       setEstadisticas({
         totalRegistros: 0,
@@ -232,11 +245,7 @@ const ListaAsistencia = () => {
       ["Pendiente", "Completado", "Cancelado"].includes(nuevoEstado)
     ) {
       if (nuevoEstado === asistencia.estado) {
-        showToast(
-          "El estado seleccionado es el mismo que el actual.",
-          "warning",
-          2000
-        );
+        showWarning("El estado seleccionado es el mismo que el actual.");
         return;
       }
 
@@ -270,10 +279,11 @@ const ListaAsistencia = () => {
                 );
               }
             } catch (processingError) {
-              console.error(
+              /*console.error(
                 "Error al procesar registro automático:",
                 processingError
-              );
+              );*/
+
               showWarning(
                 "Advertencia",
                 `Estado cambiado exitosamente a "${nuevoEstado}".\n\n⚠️ Advertencia: Error al procesar el registro automático de asistencias.`
@@ -292,16 +302,15 @@ const ListaAsistencia = () => {
           showError("Error", `Error al actualizar estado: ${response.message}`);
         }
       } catch (error) {
-        console.error("Error al cambiar estado:", error);
+        //console.error("Error al cambiar estado:", error);
         showError("Error", "Error inesperado al cambiar el estado");
       } finally {
         setLoading(false);
       }
     } else if (nuevoEstado !== null) {
-      showToast(
+      showInfoError(
         "Estado inválido. Debe ser: Pendiente, Completado o Cancelado",
-        "error",
-        2000
+        4000
       );
     }
   };
@@ -355,19 +364,19 @@ const ListaAsistencia = () => {
           );
         }
       } catch (error) {
-        console.error("Error al cambiar tipo de asistencia:", error);
+        //console.error("Error al cambiar tipo de asistencia:", error);
         showError("Error", "Error inesperado al cambiar el tipo de asistencia");
       } finally {
         setLoading(false);
       }
     } else if (nuevoTipo !== null) {
-      showToast("Tipo inválido. Debe ser: Si, No o Ausente", "error", 2000);
+      showInfoError("Tipo inválido. Debe ser: Si, No o Ausente");
     }
   };
 
   const exportarCSV = () => {
     if (asistencias.length === 0) {
-      showToast("No hay datos para exportar", "warning", 2000);
+      showWarning("No hay datos para exportar");
       return;
     }
 
@@ -405,11 +414,7 @@ const ListaAsistencia = () => {
 
   const procesarTodasAsistencias = async () => {
     if (!filtros.fecha) {
-      showToast(
-        "Por favor seleccione una fecha para procesar",
-        "warning",
-        2000
-      );
+      showWarning("Por favor seleccione una fecha para procesar");
       return;
     }
 
@@ -419,11 +424,7 @@ const ListaAsistencia = () => {
     );
 
     if (asistenciasFecha.length === 0) {
-      showToast(
-        "No hay asistencias registradas para esta fecha",
-        "warning",
-        2000
-      );
+      showWarning("No hay asistencias registradas para esta fecha");
       return;
     }
 
@@ -482,7 +483,7 @@ const ListaAsistencia = () => {
         );
       }
     } catch (error) {
-      console.error("Error al procesar todas las asistencias:", error);
+      //console.error("Error al procesar todas las asistencias:", error);
       showError("Error", "Error inesperado al procesar las asistencias");
     } finally {
       setLoading(false);
@@ -493,12 +494,12 @@ const ListaAsistencia = () => {
     ? asistencias.filter((a) => a.estado === filtros.estado)
     : asistencias; // Mostrar todas las asistencias
 
-  console.log("📊 Debug - Estado filtro:", filtros.estado);
+  /*console.log("📊 Debug - Estado filtro:", filtros.estado);
   console.log("📊 Debug - Total asistencias:", asistencias.length);
   console.log(
     "📊 Debug - Filtradas por estado:",
     asistenciasFiltradasPorEstado.length
-  );
+  );*/
 
   if (loading && asistencias.length === 0) {
     return (

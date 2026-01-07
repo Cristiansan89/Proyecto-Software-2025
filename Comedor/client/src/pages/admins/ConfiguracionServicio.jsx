@@ -28,7 +28,8 @@ const configuracionAutomaticaAPI = {
       const response = await API.get("/configuracion-servicios-automaticos");
       return response.data;
     } catch (error) {
-      console.error("Error al obtener configuraciones:", error);
+      //console.error("Error al obtener configuraciones:", error);
+      showError("Error al obtener las configuraciones automáticas.");
       throw error;
     }
   },
@@ -41,7 +42,8 @@ const configuracionAutomaticaAPI = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al crear configuración:", error);
+      //console.error("Error al crear configuración:", error);
+      showError("Error al crear la configuración automática.");
       throw error;
     }
   },
@@ -54,7 +56,8 @@ const configuracionAutomaticaAPI = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al actualizar configuración:", error);
+      //console.error("Error al actualizar configuración:", error);
+      showError("Error al actualizar la configuración automática.");
       throw error;
     }
   },
@@ -66,7 +69,8 @@ const configuracionAutomaticaAPI = {
       );
       return response.data;
     } catch (error) {
-      console.error("Error al eliminar configuración:", error);
+      //console.error("Error al eliminar configuración:", error);
+      showError("Error al eliminar la configuración automática.");
       throw error;
     }
   },
@@ -100,7 +104,7 @@ const ConfiguracionServiciosAutomaticos = () => {
         serviciosAPI.getAll(),
       ]);
 
-      console.log("Servicios cargados:", serviciosResponse);
+      //console.log("Servicios cargados:", serviciosResponse);
       setConfiguraciones(configResponse.data || []);
       setServicios(
         Array.isArray(serviciosResponse)
@@ -109,7 +113,8 @@ const ConfiguracionServiciosAutomaticos = () => {
       );
     } catch (err) {
       setError("Error al cargar los datos");
-      console.error(err);
+      //console.error(err);
+      showError("Error al cargar los datos de configuración automática.");
     } finally {
       setLoading(false);
     }
@@ -164,7 +169,7 @@ const ConfiguracionServiciosAutomaticos = () => {
       // Validar que la conversión fue exitosa
       if (isNaN(idServicio)) {
         showError("Error", "El servicio seleccionado no es válido");
-        console.error("id_servicio inválido:", formData.id_servicio);
+        //console.error("id_servicio inválido:", formData.id_servicio);
         return;
       }
 
@@ -173,7 +178,7 @@ const ConfiguracionServiciosAutomaticos = () => {
         id_servicio: idServicio,
       };
 
-      console.log("Datos a enviar:", datosConvertidos);
+      //console.log("Datos a enviar:", datosConvertidos);
 
       if (editando) {
         await configuracionAutomaticaAPI.actualizar(editando, datosConvertidos);
@@ -195,7 +200,8 @@ const ConfiguracionServiciosAutomaticos = () => {
 
       cargarDatos();
     } catch (err) {
-      console.error("Error detallado:", err.response?.data);
+      // console.error("Error detallado:", err.response?.data);
+      showError("Error", "No se pudo guardar la configuración");
       const errorMessage =
         err.response?.data?.message || "Error al guardar la configuración";
 
@@ -232,7 +238,7 @@ const ConfiguracionServiciosAutomaticos = () => {
         cargarDatos();
       } catch (err) {
         // 5. Gestión de errores
-        console.error("Error al eliminar:", err);
+        // console.error("Error al eliminar:", err);
         showError("Error", "No se pudo eliminar la configuración");
       }
     }

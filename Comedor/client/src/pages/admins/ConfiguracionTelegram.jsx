@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
+import {
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  showToast,
+  showConfirm,
+} from "../../utils/alertService";
 import "../../styles/ConfiguracionTelegram.css";
 
 const ConfiguracionTelegram = () => {
@@ -29,7 +37,8 @@ const ConfiguracionTelegram = () => {
         setChatIdCocinera(responseCocinera.data.chatId);
       }
     } catch (error) {
-      console.error("Error obteniendo Chat IDs:", error);
+      //console.error("Error obteniendo Chat IDs:", error);
+      showError("Error al cargar los Chat IDs de Telegram.");
     } finally {
       setLoading(false);
     }

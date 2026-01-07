@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import "../../styles/Parametros.css";
+import { showWarning } from "../../utils/alertService";
 
 const GeneracionAutomatica = () => {
   const { user } = useAuth();
@@ -196,9 +197,10 @@ const GeneracionAutomatica = () => {
       // Recargar el scheduler del backend
       try {
         await API.post("/generacion-automatica/recargar-scheduler", {});
-        console.log("Scheduler recargado exitosamente");
+        //console.log("Scheduler recargado exitosamente");
       } catch (error) {
-        console.warn("Aviso: No se pudo recargar el scheduler", error);
+        //console.warn("Aviso: No se pudo recargar el scheduler", error);
+        showWarning("Aviso", "No se pudo recargar el scheduler del backend.");
       }
     } catch (error) {
       setMensaje({

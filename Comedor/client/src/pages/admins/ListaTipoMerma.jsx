@@ -30,7 +30,12 @@ const ListaTipoMerma = () => {
       const data = await tipoMermaService.getAll();
       setTiposMerma(data);
     } catch (error) {
-      console.error("Error al cargar tipos de merma:", error);
+      //console.error("Error al cargar tipos de merma:", error);
+      showError(
+        "Error",
+        "Error al cargar los tipos de merma: " +
+          (error.response?.data?.message || error.message)
+      );
       setError("Error al cargar los tipos de merma");
     } finally {
       setLoading(false);

@@ -8,6 +8,7 @@ import {
   showError,
   showWarning,
   showInfo,
+  showInfoError,
   showToast,
   showConfirm,
 } from "../../utils/alertService";
@@ -40,12 +41,13 @@ const ListaDocentesGrados = () => {
   const loadGrados = async () => {
     try {
       setLoadingGrados(true);
-      console.log("ListaDocentesGrados: Cargando grados...");
+      // console.log("ListaDocentesGrados: Cargando grados...");
       const gradosData = await gradoService.getActivos();
-      console.log("ListaDocentesGrados: Grados cargados:", gradosData);
+      // console.log("ListaDocentesGrados: Grados cargados:", gradosData);
       setGrados(Array.isArray(gradosData) ? gradosData : []);
     } catch (error) {
-      console.error("Error al cargar grados:", error);
+      //console.error("Error al cargar grados:", error);
+      showError("Error", "Error al cargar la lista de grados");
       setGrados([]);
     } finally {
       setLoadingGrados(false);
@@ -59,7 +61,7 @@ const ListaDocentesGrados = () => {
       setDocentes(data);
       setFilteredDocentes(data);
     } catch (error) {
-      console.error("Error al cargar los docentes:", error);
+      //console.error("Error al cargar los docentes:", error);
       showError("Error", "Error al cargar la lista de docentes");
     } finally {
       setLoading(false);
@@ -171,7 +173,7 @@ const ListaDocentesGrados = () => {
           "Error al eliminar la asignación. Por favor, inténtelo de nuevo.";
 
         if (error.response?.data?.message) {
-          showInfo("Información", `Error: ${msg}`);
+          showInfoError("Información", `Error: ${msg}`);
         } else {
           showError("Error", msg);
         }
@@ -190,7 +192,7 @@ const ListaDocentesGrados = () => {
         `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`
       );
     } else {
-      showInfo("Información", "Asignación actualizada correctamente!", 4000);
+      showInfo("Información", "Asignación actualizada correctamente!");
     }
   };
 
