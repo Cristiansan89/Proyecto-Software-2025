@@ -1,9 +1,17 @@
 import { Router } from "express";
 import { ProveedorController } from "../controllers/proveedores.js";
 
-export const createProveedorRouter = ({ proveedorModel }) => {
+export const createProveedorRouter = ({
+  proveedorModel,
+  usuarioModel,
+  personaModel,
+}) => {
   const proveedoresRouter = Router();
-  const proveedorController = new ProveedorController({ proveedorModel });
+  const proveedorController = new ProveedorController({
+    proveedorModel,
+    usuarioModel,
+    personaModel,
+  });
 
   // Endpoints generales
   proveedoresRouter.get("/", proveedorController.getAll);

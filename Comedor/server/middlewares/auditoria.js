@@ -45,10 +45,6 @@ const auditoriaMiddleware = (modulo, accion) => {
           usuario.nombreUsuario ||
           "Sistema";
 
-        console.log(
-          `📝 Auditoría: ${accionAuditoria} en ${modulo} por ${nombreUsuario}`
-        );
-
         // Preparar descripción basada en la acción
         let descripcion = `${accionAuditoria} en ${modulo}`;
         let detalles = null;

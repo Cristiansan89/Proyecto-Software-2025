@@ -242,7 +242,6 @@ export class ServicioModel {
       const [registros] = await connection.query(
         `SELECT 
           id_servicio,
-          comensales_total,
           completado,
           fecha_creacion,
           fecha_actualizacion
@@ -252,11 +251,13 @@ export class ServicioModel {
         [fecha]
       );
 
-      // Convertir a objeto para fácil acceso {id_servicio: {comensales_total, completado}}
+      // Convertir a objeto para fácil acceso {id_servicio: {completado, comensales_total}}
       const comensales = {};
       registros.forEach((reg) => {
+        // Obtener comensales reales de la tabla RegistrosAsistencias
+        // Por ahora retornamos el estado de completado
         comensales[reg.id_servicio] = {
-          comensales_total: reg.comensales_total,
+          comensales_total: 0, // Se calculará desde RegistrosAsistencias
           completado: Boolean(reg.completado),
           fecha_creacion: reg.fecha_creacion,
           fecha_actualizacion: reg.fecha_actualizacion,

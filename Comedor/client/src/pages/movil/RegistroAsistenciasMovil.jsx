@@ -20,8 +20,34 @@ const RegistroAsistenciasMovil = () => {
   const [asistencias, setAsistencias] = useState({});
 
   useEffect(() => {
-    cargarDatosRegistro();
-  }, [token]);
+    verificarSesionYCargarDatos();
+  }, [token, navigate]);
+
+  const verificarSesionYCargarDatos = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      // Verificar si hay sesión activa
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
+      const asistenciaToken = localStorage.getItem("asistenciaToken");
+
+      // Si no hay sesión o el token almacenado no coincide, redirigir a login
+      if (!userData.idPersonaDocente || asistenciaToken !== token) {
+        console.log(
+          "⚠️ Sin sesión activa o token mismatch. Redirigiendo a login..."
+        );
+        navigate(`/asistencias/login/${token}`, { replace: true });
+        return;
+      }
+
+      console.log("✅ Sesión válida. Cargando datos...");
+      await cargarDatosRegistro();
+    } catch (error) {
+      console.error("Error en verificación de sesión:", error);
+      setError("Error al verificar sesión");
+    }
+  };
 
   const cargarDatosRegistro = async () => {
     try {
@@ -40,24 +66,6 @@ const RegistroAsistenciasMovil = () => {
         alumnosCount: alumnos?.length || 0,
         alumnos: alumnos,
       });
-
-      // Validar que el docente logueado coincida con el del token
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      if (userData.idPersonaDocente && tokenData.idPersonaDocente) {
-        if (userData.idPersonaDocente !== tokenData.idPersonaDocente) {
-          console.warn("⚠️ ADVERTENCIA: Mismatch de docente", {
-            usuarioLogueado: userData.idPersonaDocente,
-            tokenDocente: tokenData.idPersonaDocente,
-          });
-          setError(
-            `❌ Acceso denegado: Este enlace es exclusivamente para ${
-              tokenData.nombreDocente || "otro docente"
-            }. ` +
-              `Tú estás logueado como ${userData.nombre || "otro usuario"}.`
-          );
-          return;
-        }
-      }
 
       setDatosRegistro({ tokenData, servicio, alumnos });
 

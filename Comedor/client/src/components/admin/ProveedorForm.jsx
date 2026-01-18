@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import personaService from "../../services/personaService.js";
+import usuarioService from "../../services/usuarioService.js";
 import {
   showSuccess,
   showError,
@@ -43,9 +45,29 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
     estado: proveedor?.estado || "Activo",
   });
 
+  // Datos para el formulario de usuario
+  const [userFormData, setUserFormData] = useState({
+    nombreUsuario: proveedor?.usuario?.nombreUsuario || "",
+    password: "",
+    confirmPassword: "",
+    mail: proveedor?.mail || "",
+    telefono: proveedor?.telefono || "",
+    estado: proveedor?.usuario?.estado || "Activo",
+  });
+
   const [errors, setErrors] = useState({});
+  const [userErrors, setUserErrors] = useState({});
   const [serverError, setServerError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Sincronizar email y teléfono del usuario con el proveedor
+  useEffect(() => {
+    setUserFormData((prev) => ({
+      ...prev,
+      mail: formData.mail,
+      telefono: formData.telefono,
+    }));
+  }, [formData.mail, formData.telefono]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -90,6 +112,23 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
     }
   };
 
+  // Manejar cambios en los campos del formulario de usuario
+  const handleUserInputChange = (e) => {
+    const { name, value } = e.target;
+
+    setUserFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (userErrors[name]) {
+      setUserErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -131,10 +170,41 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateUserForm = () => {
+    const newUserErrors = {};
+
+    if (!userFormData.nombreUsuario.trim()) {
+      newUserErrors.nombreUsuario = "El nombre de usuario es requerido";
+    } else if (userFormData.nombreUsuario.length < 3) {
+      newUserErrors.nombreUsuario =
+        "El nombre de usuario debe tener al menos 3 caracteres";
+    }
+
+    if (!userFormData.password) {
+      newUserErrors.password = "La contraseña es requerida";
+    } else if (userFormData.password.length < 6) {
+      newUserErrors.password = "La contraseña debe tener al menos 6 caracteres";
+    }
+
+    if (!userFormData.confirmPassword) {
+      newUserErrors.confirmPassword = "Confirme la contraseña";
+    } else if (userFormData.password !== userFormData.confirmPassword) {
+      newUserErrors.confirmPassword = "Las contraseñas no coinciden";
+    }
+
+    setUserErrors(newUserErrors);
+    return Object.keys(newUserErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
+      return;
+    }
+
+    // En modo create: siempre validar usuario
+    if (mode === "create" && !validateUserForm()) {
       return;
     }
 
@@ -145,7 +215,6 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
       // Preparar datos para enviar al backend
       const proveedorData = {
         razonSocial: formData.razonSocial.trim(),
-        //CUIT: formData.CUIT.trim(),
         CUIT: formData.CUIT.replace(/\D/g, ""), // Enviar solo números al backend
         direccion: formData.direccion.trim() || null,
         telefono: formData.telefono.trim() || null,
@@ -153,9 +222,26 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
         estado: formData.estado,
       };
 
-      await onSave(proveedorData);
+      // En modo create, agregar datos de usuario al objeto proveedor
+      if (mode === "create") {
+        proveedorData.usuario = {
+          nombreUsuario: userFormData.nombreUsuario,
+          contrasena: userFormData.password,
+        };
+      }
+
+      // Guardar proveedor
+      const savedProveedor = await onSave(proveedorData);
+
+      // Mensaje de éxito
+      if (mode === "create") {
+        showSuccess("Éxito", "Proveedor y usuario creados correctamente");
+      } else {
+        showSuccess("Éxito", "Proveedor actualizado correctamente");
+      }
     } catch (error) {
-      // Mostrar error al usuario
+      console.error("Error en handleSubmit:", error);
+
       if (error.response?.status === 409) {
         setServerError(
           error.response?.data?.message ||
@@ -171,6 +257,8 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
           "Información",
           `Errores de validación:\n${errorMessages}`
         );
+      } else if (error.message) {
+        showError("Error", `Error: ${error.message}`);
       } else {
         showError(
           "Error",
@@ -326,6 +414,165 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                 <div className="invalid-feedback">{errors.estado}</div>
               )}
             </div>
+
+            {/* Sección para crear usuario - Solo visible en modo create */}
+            {mode === "create" && (
+              <div>
+                {/* Datos de Usuario */}
+                <h5 className="section-title mt-5">
+                  Cuenta de Usuario del Proveedor
+                </h5>
+                <div className="alert alert-warning" role="alert">
+                  <i className="fas fa-info-circle me-2"></i>
+                  <strong className="me-1">Nota:</strong> El email y teléfono se
+                  tomarán de la información del proveedor
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label
+                      htmlFor="nombreUsuario"
+                      className="form-label required"
+                    >
+                      Nombre de Usuario
+                    </label>
+                    <input
+                      type="text"
+                      id="nombreUsuario"
+                      name="nombreUsuario"
+                      className={`form-control ${
+                        userErrors.nombreUsuario ? "is-invalid" : ""
+                      }`}
+                      value={userFormData.nombreUsuario}
+                      onChange={handleUserInputChange}
+                      disabled={mode === "view"}
+                      placeholder="Nombre de usuario único"
+                    />
+                    {userErrors.nombreUsuario && (
+                      <div className="invalid-feedback">
+                        {userErrors.nombreUsuario}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="password" className="form-label required">
+                      Contraseña
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      className={`form-control ${
+                        userErrors.password ? "is-invalid" : ""
+                      }`}
+                      value={userFormData.password}
+                      onChange={handleUserInputChange}
+                      disabled={mode === "view"}
+                      placeholder="Mínimo 6 caracteres"
+                    />
+                    {userErrors.password && (
+                      <div className="invalid-feedback">
+                        {userErrors.password}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label
+                      htmlFor="confirmPassword"
+                      className="form-label required"
+                    >
+                      Confirmar Contraseña
+                    </label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      className={`form-control ${
+                        userErrors.confirmPassword ? "is-invalid" : ""
+                      }`}
+                      value={userFormData.confirmPassword}
+                      onChange={handleUserInputChange}
+                      disabled={mode === "view"}
+                      placeholder="Confirme la contraseña"
+                    />
+                    {userErrors.confirmPassword && (
+                      <div className="invalid-feedback">
+                        {userErrors.confirmPassword}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label
+                      htmlFor="mailUsuario"
+                      className="form-label required"
+                    >
+                      Email del Usuario
+                    </label>
+                    <input
+                      type="email"
+                      id="mailUsuario"
+                      name="mail"
+                      className="form-control"
+                      value={userFormData.mail}
+                      onChange={() => {}}
+                      disabled={true}
+                      placeholder="Se toma del email del proveedor"
+                    />
+                    <small className="form-text text-muted">
+                      Se actualiza automáticamente con el email del proveedor
+                    </small>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="telefonoUsuario" className="form-label">
+                      Teléfono del Usuario
+                    </label>
+                    <input
+                      type="tel"
+                      id="telefonoUsuario"
+                      name="telefono"
+                      className="form-control"
+                      value={userFormData.telefono}
+                      onChange={() => {}}
+                      disabled={true}
+                      placeholder="Se toma del teléfono del proveedor"
+                    />
+                    <small className="form-text text-muted">
+                      Se actualiza automáticamente con el teléfono del proveedor
+                    </small>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label
+                      htmlFor="estadoUsuario"
+                      className="form-label required"
+                    >
+                      Estado del Usuario
+                    </label>
+                    <select
+                      id="estadoUsuario"
+                      name="estado"
+                      className="form-control"
+                      value={userFormData.estado}
+                      onChange={handleUserInputChange}
+                      disabled={mode === "view"}
+                    >
+                      <option value="Activo">Activo</option>
+                      <option value="Inactivo">Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Información adicional en modo vista */}
@@ -361,7 +608,6 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                   </div>
                 )}
                 <div className="info-row">
-                  polluelo20@mail.com
                   <span className="info-label">Total de Insumos:</span>
                   <span className="info-value">
                     {proveedor.insumos?.length || 0} insumos asignados
@@ -441,7 +687,9 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
               ) : (
                 <>
                   <i className="fas fa-save"></i>
-                  {isCreateMode ? "Crear Proveedor" : "Actualizar Proveedor"}
+                  {isCreateMode
+                    ? "Crear Proveedor y Usuario"
+                    : "Actualizar Proveedor"}
                 </>
               )}
             </button>

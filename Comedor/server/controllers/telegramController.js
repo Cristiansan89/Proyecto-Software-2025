@@ -130,8 +130,9 @@ export class TelegramController {
       const enlacesConURLCorrecta = gradosData.map((grado) => ({
         ...grado,
         // Si el enlace es un token base64, reconstruirlo con FRONTEND_URL
+        // Cambiar a /asistencias/login para requerir autenticación primero
         enlace: grado.token
-          ? `${process.env.FRONTEND_URL}/asistencias/registro/${grado.token}`
+          ? `${process.env.FRONTEND_URL}/asistencias/login/${grado.token}`
           : grado.enlace,
       }));
 
@@ -379,6 +380,200 @@ export class TelegramController {
       }
     } catch (error) {
       console.error("❌ Error al obtener Chat ID de cocinera:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Error interno del servidor",
+      });
+    }
+  }
+
+  // Guardar Chat ID para un proveedor específico en la BD
+  static async saveProveedorChatId(req, res) {
+    try {
+      let { proveedorId, chatId, telegramUsuario } = req.body;
+
+      console.log("📥 Datos recibidos:", {
+        proveedorId,
+        chatId,
+        telegramUsuario,
+      });
+      console.log(
+        "📥 Tipo de proveedorId:",
+        typeof proveedorId,
+        "Es Buffer:",
+        Buffer.isBuffer(proveedorId)
+      );
+
+      if (!proveedorId || !chatId) {
+        return res.status(400).json({
+          success: false,
+          message: "Se requieren proveedorId y chatId",
+        });
+      }
+
+      const { connection } = await import("../models/db.js");
+
+      // Convertir a string si viene en otro formato
+      if (typeof proveedorId === "object" && proveedorId !== null) {
+        // Si es un objeto Buffer o similar, extraer la propiedad necesaria o convertir
+        if (proveedorId.type === "Buffer" && Array.isArray(proveedorId.data)) {
+          // Reconstruir UUID desde el array de bytes
+          proveedorId = Buffer.from(proveedorId.data).toString("hex");
+          // Formatear como UUID (8-4-4-4-12)
+          proveedorId = [
+            proveedorId.slice(0, 8),
+            proveedorId.slice(8, 12),
+            proveedorId.slice(12, 16),
+            proveedorId.slice(16, 20),
+            proveedorId.slice(20, 32),
+          ].join("-");
+        } else if (Buffer.isBuffer(proveedorId)) {
+          proveedorId = proveedorId.toString("hex");
+          proveedorId = [
+            proveedorId.slice(0, 8),
+            proveedorId.slice(8, 12),
+            proveedorId.slice(12, 16),
+            proveedorId.slice(16, 20),
+            proveedorId.slice(20, 32),
+          ].join("-");
+        }
+      }
+
+      console.log("✅ proveedorId después de conversión:", proveedorId);
+
+      // Insertar o actualizar la configuración de Telegram del proveedor
+      const [result] = await connection.query(
+        `INSERT INTO ProveedorConfiguracionTelegram (id_proveedor, telegramChatId, telegramUsuario, notificacionesTelegram)
+         VALUES (UUID_TO_BIN(?), ?, ?, 'Activo')
+         ON DUPLICATE KEY UPDATE
+         telegramChatId = VALUES(telegramChatId),
+         telegramUsuario = VALUES(telegramUsuario),
+         notificacionesTelegram = VALUES(notificacionesTelegram)`,
+        [proveedorId, String(chatId), telegramUsuario || ""]
+      );
+
+      console.log(
+        `✅ Chat ID de proveedor ${proveedorId} actualizado:`,
+        chatId
+      );
+      res.json({
+        success: true,
+        message: "Chat ID del proveedor guardado correctamente",
+        proveedorId,
+        chatId,
+      });
+    } catch (error) {
+      console.error("❌ Error al guardar Chat ID del proveedor:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Error interno del servidor",
+      });
+    }
+  }
+
+  // Obtener Chat ID de un proveedor específico
+  static async getProveedorChatId(req, res) {
+    try {
+      const { proveedorId } = req.query;
+
+      if (!proveedorId) {
+        return res.status(400).json({
+          success: false,
+          message: "Se requiere proveedorId",
+        });
+      }
+
+      const { connection } = await import("../models/db.js");
+
+      const [resultado] = await connection.query(
+        `SELECT p.id_proveedor, p.razonSocial, p.email, p.telefono,
+                ct.telegramChatId, ct.telegramUsuario, ct.notificacionesTelegram
+         FROM Proveedores p
+         LEFT JOIN ProveedorConfiguracionTelegram ct ON p.id_proveedor = ct.id_proveedor
+         WHERE p.id_proveedor = ? LIMIT 1`,
+        [proveedorId]
+      );
+
+      if (resultado && resultado.length > 0) {
+        const p = resultado[0];
+        res.json({
+          success: true,
+          proveedorId: p.id_proveedor,
+          razonSocial: p.razonSocial,
+          email: p.email,
+          telefono: p.telefono,
+          chatId: p.telegramChatId,
+          telegramUsuario: p.telegramUsuario,
+          notificacionesActivas: p.notificacionesTelegram === "Activo",
+          message: "Chat ID del proveedor obtenido",
+        });
+      } else {
+        res.json({
+          success: false,
+          chatId: null,
+          message: "Proveedor no encontrado",
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener Chat ID del proveedor:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Error interno del servidor",
+      });
+    }
+  }
+
+  // Listar todos los proveedores con sus Chat IDs de Telegram
+  static async listProveedoresWithChatId(req, res) {
+    try {
+      const { connection } = await import("../models/db.js");
+
+      const [proveedores] = await connection.query(
+        `SELECT 
+          p.id_proveedor,
+          p.razonSocial,
+          p.mail,
+          p.telefono,
+          ct.telegramChatId,
+          ct.telegramUsuario,
+          ct.notificacionesTelegram
+        FROM Proveedores p
+        LEFT JOIN ProveedorConfiguracionTelegram ct ON p.id_proveedor = ct.id_proveedor
+        WHERE p.estado = 'Activo'
+        ORDER BY p.razonSocial ASC`
+      );
+
+      if (proveedores && proveedores.length > 0) {
+        const proveedoresConTelegram = proveedores.map((p) => ({
+          id: p.id_proveedor,
+          nombre: p.razonSocial,
+          email: p.mail,
+          telefono: p.telefono,
+          chatId: p.telegramChatId,
+          telegramUsuario: p.telegramUsuario,
+          notificacionesActivas: p.notificacionesTelegram === "Activo",
+          configurado: p.telegramChatId !== null,
+        }));
+
+        res.json({
+          success: true,
+          total: proveedoresConTelegram.length,
+          configurados: proveedoresConTelegram.filter((p) => p.configurado)
+            .length,
+          proveedores: proveedoresConTelegram,
+          message: "Listado de proveedores obtenido",
+        });
+      } else {
+        res.json({
+          success: true,
+          total: 0,
+          configurados: 0,
+          proveedores: [],
+          message: "No hay proveedores disponibles",
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error al listar proveedores con Chat ID:", error);
       res.status(500).json({
         success: false,
         message: error.message || "Error interno del servidor",

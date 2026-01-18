@@ -35,6 +35,12 @@ const Sidebar = ({ collapsed }) => {
       path: "/admin/personas",
     },
     {
+      id: "usuarios",
+      label: "Usuarios",
+      icon: "fas fa-users-cog",
+      path: "/admin/usuarios",
+    },
+    {
       id: "grados",
       label: "Grados",
       icon: "fas fa-layer-group",

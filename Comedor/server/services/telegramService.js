@@ -5,24 +5,29 @@ class TelegramService {
     this.bots = {
       sistema: null, // SistemaComedor_Bot - Notificaciones a cocinera
       docente: null, // DocenteComedor_Bot - Mensajes al docente
+      proveedor: null, // Sistema_Proveedorbot - Confirmación de pedidos
     };
     this.isReady = {
       sistema: false,
       docente: false,
+      proveedor: false,
     };
     this.botTokens = {
       sistema: process.env.TELEGRAM_BOT_TOKEN_SISTEMA,
       docente: process.env.TELEGRAM_BOT_TOKEN_DOCENTE,
+      proveedor: process.env.TELEGRAM_BOT_TOKEN_PROVEEDOR,
     };
     this.isInitialized = {
       sistema: false,
       docente: false,
+      proveedor: false,
     };
 
-    // Inicializar automáticamente el bot de docentes después de un pequeño delay
+    // Inicializar automáticamente los bots después de un pequeño delay
     // para permitir que dotenv termine de cargar
     setImmediate(() => {
       this.autoInitializeDocente();
+      this.autoInitializeProveedor();
     });
   }
 
@@ -34,6 +39,19 @@ class TelegramService {
     } catch (error) {
       console.warn(
         "⚠️ Error en inicialización automática del bot docente:",
+        error.message
+      );
+    }
+  }
+
+  async autoInitializeProveedor() {
+    try {
+      if (this.botTokens.proveedor) {
+        await this.initialize("proveedor");
+      }
+    } catch (error) {
+      console.warn(
+        "⚠️ Error en inicialización automática del bot proveedor:",
         error.message
       );
     }
@@ -101,10 +119,18 @@ class TelegramService {
     // Comando /start
     bot.onText(/\/start/, (msg) => {
       const chatId = msg.chat.id;
-      const mensaje =
-        botType === "docente"
-          ? "🏫 ¡Hola Docente! Soy el bot para registro de asistencias del Comedor Escolar."
-          : "🏫 ¡Hola! Soy el bot del Comedor Escolar. Recibirás notificaciones sobre el estado de las asistencias.";
+      let mensaje;
+
+      if (botType === "docente") {
+        mensaje =
+          "🏫 ¡Hola Docente! Soy el bot para registro de asistencias del Comedor Escolar.";
+      } else if (botType === "proveedor") {
+        mensaje =
+          "🏪 ¡Hola Proveedor! Soy el bot para confirmación de pedidos del Comedor Escolar.\n\nUsa el comando /chatid para registrar tu ID de chat.";
+      } else {
+        mensaje =
+          "🏫 ¡Hola! Soy el bot del Comedor Escolar. Recibirás notificaciones sobre el estado de las asistencias.";
+      }
 
       bot.sendMessage(chatId, mensaje);
     });
@@ -112,12 +138,27 @@ class TelegramService {
     // Comando /chatid para obtener el ID del chat
     bot.onText(/\/chatid/, (msg) => {
       const chatId = msg.chat.id;
-      bot.sendMessage(
-        chatId,
-        `📱 Tu Chat ID es: \`${chatId}\`\n\n` +
-          "Proporciona este ID al administrador para recibir notificaciones.",
-        { parse_mode: "Markdown" }
-      );
+      const username = msg.from.username
+        ? `@${msg.from.username}`
+        : "No configurado";
+      let mensaje;
+
+      if (botType === "proveedor") {
+        mensaje = `📱 Tu Chat ID es: \`${chatId}\`\n`;
+        mensaje += `👤 Tu usuario: ${username}\n\n`;
+        mensaje += "📋 Instrucciones:\n";
+        mensaje += "1. Proporciona este Chat ID al administrador\n";
+        mensaje += "2. El administrador lo registrará en el sistema\n";
+        mensaje += "3. Recibirás notificaciones de pedidos automáticamente\n\n";
+        mensaje +=
+          "✅ Una vez registrado, podrás recibir confirmaciones de pedidos.";
+      } else {
+        mensaje =
+          `📱 Tu Chat ID es: \`${chatId}\`\n\n` +
+          "Proporciona este ID al administrador para recibir notificaciones.";
+      }
+
+      bot.sendMessage(chatId, mensaje, { parse_mode: "Markdown" });
     });
 
     console.log(`🤖 Comandos de Telegram ${botType} configurados`);

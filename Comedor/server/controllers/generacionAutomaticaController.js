@@ -64,6 +64,14 @@ export const generarInsumosSemanales = async (req, res) => {
         );
 
         for (const item of items) {
+          // Validar que el item tenga un id_insumo asignado
+          if (!item.id_insumo) {
+            console.warn(
+              `⚠️ Item de receta sin insumo asignado en la receta ${jornada.id_receta}`
+            );
+            continue; // Saltar este item
+          }
+
           const key = `${item.id_insumo}`;
 
           if (!insumosMap[key]) {
@@ -498,6 +506,14 @@ export const obtenerInsumosSemanales = async (req, res) => {
         );
 
         for (const item of items) {
+          // Validar que el item tenga un id_insumo asignado
+          if (!item.id_insumo) {
+            console.warn(
+              `⚠️ Item de receta sin insumo asignado en la receta ${jornada.id_receta}`
+            );
+            continue; // Saltar este item
+          }
+
           const key = `${item.id_insumo}`;
 
           // Obtener insumo básico SIEMPRE (primera vez o actualización)
@@ -778,6 +794,14 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
       );
 
       for (const item of items) {
+        // Validar que el item tenga un id_insumo asignado
+        if (!item.id_insumo) {
+          console.warn(
+            `⚠️ Item de receta sin insumo asignado en la receta ${jornada.id_receta}`
+          );
+          continue; // Saltar este item
+        }
+
         const key = `${item.id_insumo}`;
 
         if (!insumosMap[key]) {

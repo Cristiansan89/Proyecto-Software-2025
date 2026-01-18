@@ -264,19 +264,38 @@ export class AsistenciaModel {
     fecha,
     idServicio,
   }) {
-    // Generar token único para el docente
-    const tokenData = {
-      idPersonaDocente,
-      nombreGrado,
-      fecha,
-      idServicio,
-      timestamp: Date.now(),
-      expires: Date.now() + 24 * 60 * 60 * 1000, // 24 horas
-    };
+    // Obtener información del docente y grado
+    try {
+      const [docenteInfo] = await connection.query(
+        `SELECT p.id_persona, p.nombre, p.apellido, p.email
+         FROM Personas p
+         WHERE p.id_persona = ?`,
+        [idPersonaDocente]
+      );
 
-    // En un entorno real, esto se encriptaría
-    const token = Buffer.from(JSON.stringify(tokenData)).toString("base64");
-    return token;
+      const docente = docenteInfo?.[0] || {};
+
+      // Generar token único para el docente con información adicional
+      const tokenData = {
+        idPersonaDocente,
+        nombreDocente: `${docente.nombre || ""} ${
+          docente.apellido || ""
+        }`.trim(),
+        emailDocente: docente.email || "",
+        nombreGrado,
+        fecha,
+        idServicio,
+        timestamp: Date.now(),
+        expires: Date.now() + 24 * 60 * 60 * 1000, // 24 horas
+      };
+
+      // En un entorno real, esto se encriptaría con una clave secreta
+      const token = Buffer.from(JSON.stringify(tokenData)).toString("base64");
+      return token;
+    } catch (error) {
+      console.error("Error generando token:", error);
+      throw new Error("Error al generar token de asistencia");
+    }
   }
 
   static async validateToken(token) {
@@ -290,6 +309,9 @@ export class AsistenciaModel {
 
       return tokenData;
     } catch (error) {
+      if (error.message === "Token expirado") {
+        throw error;
+      }
       throw new Error("Token inválido");
     }
   }

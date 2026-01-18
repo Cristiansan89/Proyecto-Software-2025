@@ -198,24 +198,9 @@ export class RecetaController {
       const { id } = req.params;
       const inputData = { ...req.body, id_receta: id };
 
-      console.log("📥 addInsumo - inputData recibida:", {
-        body: req.body,
-        id_receta: id,
-        inputData: inputData,
-        tipos: {
-          id_insumo: typeof inputData.id_insumo,
-          cantidadPorPorcion: typeof inputData.cantidadPorPorcion,
-          unidadPorPorcion: typeof inputData.unidadPorPorcion,
-        },
-      });
-
       // Validar los datos de entrada
       const result = validateItemsReceta(inputData);
       if (!result.success) {
-        console.log(
-          "❌ Validación fallida:",
-          result.error.errors || result.error.issues
-        );
         const errors = result.error.errors || result.error.issues || [];
         return res.status(400).json({
           message: "Datos de entrada inválidos",

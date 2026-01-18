@@ -62,6 +62,27 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   const [proveedoresDisponibles, setProveedoresDisponibles] = useState([]);
   const [isEditMode, setIsEditMode] = useState(!!pedidoEditando);
 
+  // Función para formatear fechas evitando problemas de zona horaria
+  const formatearFecha = (fechaString) => {
+    if (!fechaString) return "";
+    // Agregar 'T12:00:00' para evitar problemas de zona horaria
+    const fecha = new Date(fechaString + "T12:00:00");
+    return fecha.toLocaleDateString("es-ES");
+  };
+
+  // Función para convertir fecha a formato de input date
+  const formatearFechaInput = (fechaString) => {
+    if (!fechaString) return new Date().toISOString().split("T")[0];
+    // Para el input date, necesitamos formato YYYY-MM-DD
+    const fecha = new Date(fechaString + "T12:00:00");
+    return fecha.toISOString().split("T")[0];
+  };
+
+  // Función para obtener la fecha actual en formato YYYY-MM-DD
+  const obtenerFechaActual = () => {
+    return new Date().toISOString().split("T")[0];
+  };
+
   // Obtener el ID del proveedor desde el pedido en edición (puede tener distintos nombres de campo)
   const getProveedorIdFromPedido = (pedido) => {
     if (!pedido) return "";
@@ -71,8 +92,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   // Estado del formulario simplificado
   const [formData, setFormData] = useState({
     fecha: pedidoEditando
-      ? new Date(pedidoEditando.fechaEmision).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
+      ? formatearFechaInput(pedidoEditando.fechaEmision)
+      : obtenerFechaActual(),
     id_proveedor: getProveedorIdFromPedido(pedidoEditando),
     insumos: [], // Lista de insumos seleccionados con sus cantidades
   });
@@ -88,6 +109,17 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   useEffect(() => {
     cargarProveedores();
   }, []);
+
+  // Mantener la fecha actual cuando no está en modo edición
+  useEffect(() => {
+    if (!isEditMode) {
+      const fechaActual = obtenerFechaActual();
+      setFormData((prev) => ({
+        ...prev,
+        fecha: fechaActual,
+      }));
+    }
+  }, [isEditMode]);
 
   // Cargar datos del pedido si estamos en modo edición
   useEffect(() => {
@@ -415,7 +447,9 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                 <small className="form-text text-muted">
                   {isEditMode
                     ? "Puedes cambiar la fecha del pedido"
-                    : "La fecha está fija al día actual"}
+                    : `La fecha está fija al día actual: ${formatearFecha(
+                        formData.fecha
+                      )}`}
                 </small>
               </div>
             </div>
@@ -652,9 +686,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                         <small className="text-muted d-block">
                           Fecha de entrega
                         </small>
-                        <strong>
-                          {new Date(formData.fecha).toLocaleDateString()}
-                        </strong>
+                        <strong>{formatearFecha(formData.fecha)}</strong>
                       </div>
                     </div>
                   </div>

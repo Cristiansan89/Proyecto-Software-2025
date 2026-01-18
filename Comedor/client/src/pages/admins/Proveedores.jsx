@@ -12,7 +12,7 @@ import {
   showConfirm,
 } from "../../utils/alertService";
 
-const ListaProveedores = () => {
+const Proveedores = () => {
   const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -273,8 +273,9 @@ const ListaProveedores = () => {
           </button>
         </div>
       </div>
+
+      {/* Filtros y Búsqueda */}
       <div className="tab-content">
-        {/* Filtros y Búsqueda */}
         <div className="page-header mb-3">
           <div className="header-left">
             <div className="filters-section">
@@ -372,6 +373,10 @@ const ListaProveedores = () => {
                             <div>
                               <div className="item-name">
                                 <h5>{proveedor.razonSocial}</h5>
+                              </div>
+                              <div>
+                                <i className="fas fa-envelope me-1"></i>
+                                {proveedor.mail}
                               </div>
                               <div>
                                 <i className="fas fa-phone me-1"></i>
@@ -556,4 +561,4 @@ const ListaProveedores = () => {
   );
 };
 
-export default ListaProveedores;
+export default Proveedores;

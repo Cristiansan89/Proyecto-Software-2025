@@ -108,7 +108,7 @@ const InsumosSemanal = () => {
       // 1. Obtener menús asignados
       const response = await planificacionMenuService.getMenusSemana(
         fechaInicio,
-        fechaFin
+        fechaFin,
       );
 
       // 2. Obtener datos de comensales por fecha
@@ -123,7 +123,7 @@ const InsumosSemanal = () => {
           //console.warn(`Error al cargar comensales para ${fechaStr}:`, err);
           showWarning(
             "Advertencia",
-            `⚠️ No se pudieron cargar los comensales para la fecha ${fechaStr}.`
+            `⚠️ No se pudieron cargar los comensales para la fecha ${fechaStr}.`,
           );
           comensalesMap[fechaStr] = {
             servicios: [],
@@ -143,7 +143,7 @@ const InsumosSemanal = () => {
       //console.error("❌ Error al cargar datos semanales:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los datos semanales. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los datos semanales. Por favor, intente nuevamente más tarde.",
       );
       setMenusSemanales([]);
       setInsumosRequeridos({});
@@ -163,7 +163,7 @@ const InsumosSemanal = () => {
         //console.warn("⚠️ No se obtuvieron insumos del backend");
         showError(
           "Error",
-          "❌ No se pudieron obtener los insumos desde el backend."
+          "❌ No se pudieron obtener los insumos desde el backend.",
         );
         setInsumosRequeridos({});
         return;
@@ -171,16 +171,18 @@ const InsumosSemanal = () => {
 
       // Convertir array a map con nombre como clave
       const insumosMap = {};
+      let insumosDesconocidosEncontrados = false;
+
       for (const insumo of response.insumos) {
-        /*
-        console.log(`📦 Insumo recibido:`, {
-          nombre: insumo.nombre,
-          cantidad: insumo.cantidad,
-          unidad: insumo.unidad,
-          cantidad_disponible: insumo.cantidad_disponible,
-          unidad_inventario: insumo.unidad_inventario,
-        });
-*/
+        // Filtrar insumos desconocidos (sin nombre válido)
+        if (insumo.nombre === "Insumo desconocido" || !insumo.nombre) {
+          console.warn(
+            "⚠️ Se detectó un insumo sin nombre válido (id_insumo: null)",
+          );
+          insumosDesconocidosEncontrados = true;
+          continue; // Saltar este insumo
+        }
+
         insumosMap[insumo.nombre] = {
           id_insumo: insumo.id_insumo,
           cantidad: insumo.cantidad,
@@ -190,13 +192,12 @@ const InsumosSemanal = () => {
         };
       }
 
-      //   console.log("📦 Insumos calculados desde backend:", insumosMap);
       setInsumosRequeridos(insumosMap);
     } catch (error) {
       //console.error("❌ Error al calcular insumos:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al calcular los insumos. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al calcular los insumos. Por favor, intente nuevamente más tarde.",
       );
 
       // Manejar error de autenticación
@@ -330,7 +331,7 @@ const InsumosSemanal = () => {
     doc.text(
       `Fecha de generación: ${new Date().toLocaleDateString("es-ES")}`,
       14,
-      32
+      32,
     );
 
     // Preparar datos para la tabla
@@ -339,7 +340,7 @@ const InsumosSemanal = () => {
         const mejorUnidad = obtenerMejorUnidad(datos.cantidad, datos.unidad);
         const stockDisponible = datos.cantidad_disponible || 0;
         const diferencia = parseFloat(
-          (stockDisponible - mejorUnidad.cantidad).toFixed(2)
+          (stockDisponible - mejorUnidad.cantidad).toFixed(2),
         );
 
         return [
@@ -349,7 +350,7 @@ const InsumosSemanal = () => {
           `${stockDisponible} ${datos.unidad_inventario}`,
           `${diferencia.toFixed(2)} ${mejorUnidad.unidad}`,
         ];
-      }
+      },
     );
 
     // Crear tabla
@@ -394,7 +395,7 @@ const InsumosSemanal = () => {
           `Página ${doc.internal.getNumberOfPages()}`,
           pageWidth / 2,
           pageHeight - 10,
-          { align: "center" }
+          { align: "center" },
         );
       },
     });
@@ -430,7 +431,7 @@ const InsumosSemanal = () => {
       //console.error("Error generando pedidos:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al generar pedidos automáticos. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al generar pedidos automáticos. Por favor, intente nuevamente más tarde.",
       );
       setMensaje({
         tipo: "error",
@@ -547,7 +548,7 @@ const InsumosSemanal = () => {
                           ([nombreInsumo, datos]) => {
                             const mejorUnidad = obtenerMejorUnidad(
                               datos.cantidad,
-                              datos.unidad
+                              datos.unidad,
                             );
 
                             // Convertir stock disponible a la mejorUnidad para comparación correcta
@@ -555,14 +556,14 @@ const InsumosSemanal = () => {
                               convertirCantidadEntre(
                                 datos.cantidad_disponible || 0,
                                 datos.unidad_inventario,
-                                mejorUnidad.unidad
+                                mejorUnidad.unidad,
                               );
 
                             const cantidadNecesaria = mejorUnidad.cantidad;
                             const diferencia = parseFloat(
                               (
                                 stockDisponibleEnMejorUnidad - cantidadNecesaria
-                              ).toFixed(2)
+                              ).toFixed(2),
                             );
 
                             const esFaltante = diferencia < 0;
@@ -610,7 +611,7 @@ const InsumosSemanal = () => {
                                 </td>
                               </tr>
                             );
-                          }
+                          },
                         )}
                       </tbody>
                     </table>
@@ -651,20 +652,6 @@ const InsumosSemanal = () => {
               </>
             )}
         </div>
-
-        {mensaje && (
-          <div
-            className={`alert alert-${mensaje.tipo} alert-dismissible fade show`}
-            role="alert"
-          >
-            {mensaje.texto}
-            <button
-              type="button"
-              className="btn-close"
-              onClick={() => setMensaje(null)}
-            ></button>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -672,7 +659,7 @@ const InsumosSemanal = () => {
   function generarCSV() {
     let csv = "LISTA DE INSUMOS SEMANAL\n\n";
     csv += `Semana: ${semana[0].toLocaleDateString(
-      "es-ES"
+      "es-ES",
     )} a ${semana[4].toLocaleDateString("es-ES")}\n\n`;
 
     csv += "Insumo,Cantidad,Unidad,Cantidad Convertida,Unidad Convertida\n";
@@ -689,11 +676,11 @@ const InsumosSemanal = () => {
     const elemento = document.createElement("a");
     elemento.setAttribute(
       "href",
-      "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
+      "data:text/csv;charset=utf-8," + encodeURIComponent(csv),
     );
     elemento.setAttribute(
       "download",
-      `Insumos_Semanal_${semana[0].toISOString().split("T")[0]}.csv`
+      `Insumos_Semanal_${semana[0].toISOString().split("T")[0]}.csv`,
     );
     elemento.style.display = "none";
     document.body.appendChild(elemento);

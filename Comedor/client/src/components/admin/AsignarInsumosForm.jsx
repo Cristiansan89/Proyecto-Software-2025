@@ -128,11 +128,6 @@ const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (assignedInsumos.length === 0) {
-      showInfo("Debe asignar al menos un insumo");
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -315,11 +310,7 @@ const AsignarInsumosForm = ({ proveedor, onSave, onCancel }) => {
             <i className="fas fa-times"></i>
             Cancelar
           </button>
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={loading || assignedInsumos.length === 0}
-          >
+          <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2"></span>

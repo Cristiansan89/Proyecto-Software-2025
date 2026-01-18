@@ -27,4 +27,13 @@ router.post("/cocinera-chat-id", TelegramController.saveCocineraparaChatId);
 // Obtener Chat ID de cocinera
 router.get("/cocinera-chat-id", TelegramController.getCocineraparaChatId);
 
+// Guardar Chat ID de proveedores
+router.post("/proveedor-chat-id", TelegramController.saveProveedorChatId);
+
+// Obtener Chat ID de proveedores
+router.get("/proveedor-chat-id", TelegramController.getProveedorChatId);
+
+// Listar todos los proveedores con sus Chat IDs
+router.get("/proveedores-list", TelegramController.listProveedoresWithChatId);
+
 export default router;

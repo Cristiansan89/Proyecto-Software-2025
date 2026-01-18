@@ -4,6 +4,11 @@ import {
   validatePartialParametroSistema,
 } from "../schemas/parametrossistemas.js";
 import { validatePedido, validatePartialPedido } from "../schemas/pedidos.js";
+import {
+  generarPDFConfirmacionProveedor,
+  enviarPDFConfirmacionMail,
+} from "../services/pdfService.js";
+import { connection } from "../models/db.js";
 
 // Controlador para manejar las operaciones relacionadas con los ParametrosSistemas
 export class ParametroSistemaController {
@@ -459,7 +464,7 @@ export class PedidoController {
       }
 
       console.log(
-        `🚀 Iniciando generación automática de pedidos: ${fechaInicio} - ${fechaFin}`
+        `🚀 Iniciando generación automática de pedidos: ${fechaInicio} - ${fechaFin}`,
       );
 
       const resultado = await this.pedidoModel.generarPedidoAutomatico({
@@ -499,11 +504,22 @@ export class PedidoController {
         });
       }
 
-      // 2. Verificar que esté en estado "Pendiente" (ID: 15)
-      if (pedido.id_estadoPedido !== 15) {
+      console.log(`🔍 Verificando estado del pedido ${id}:`, {
+        id_estadoPedido: pedido.id_estadoPedido,
+        estadoPedido: pedido.estadoPedido,
+        tipo: typeof pedido.id_estadoPedido,
+      });
+
+      // 2. Verificar que esté en estado "Pendiente" (ID: 1)
+      if (pedido.id_estadoPedido !== 1 && pedido.estadoPedido !== "Pendiente") {
+        console.error(
+          `❌ Pedido no en estado Pendiente. Estado actual: ${pedido.estadoPedido} (ID: ${pedido.id_estadoPedido})`,
+        );
         return res.status(400).json({
           success: false,
-          message: "Solo se pueden aprobar pedidos en estado Pendiente",
+          message: `Solo se pueden aprobar pedidos en estado Pendiente. Estado actual: ${pedido.estadoPedido}`,
+          estadoActual: pedido.estadoPedido,
+          id_estadoPedido: pedido.id_estadoPedido,
         });
       }
 
@@ -511,49 +527,459 @@ export class PedidoController {
       const fechaAprobacion = new Date();
 
       console.log(
-        `📅 Fecha de aprobación: ${fechaAprobacion.toISOString().split("T")[0]}`
+        `📅 Fecha de aprobación: ${fechaAprobacion.toISOString().split("T")[0]}`,
       );
 
-      // 4. Cambiar estado a "Aprobado" (ID: 16) y establecer fecha de aprobación
-      await this.pedidoModel.aprobar({
+      // 4. Cambiar estado a "Aprobado" (ID: 2)
+      console.log("🔄 Actualizando estado del pedido a Aprobado...");
+      console.log("Parámetros:", {
         id,
-        estado: 16,
+        id_estadoPedido: 2,
         fechaAprobacion: fechaAprobacion.toISOString().split("T")[0],
       });
 
-      // 4. Obtener detalles del pedido para el PDF
-      const { LineaPedidoModel } = await import("../models/lineapedido.js");
-      const detalles = await LineaPedidoModel.getByPedido({ id_pedido: id });
+      const pedidoAprobado = await this.pedidoModel.update({
+        id,
+        input: {
+          id_estadoPedido: 2, // Aprobado
+          fechaAprobacion: fechaAprobacion.toISOString().split("T")[0],
+        },
+      });
 
-      // 5. Generar PDF del pedido
-      console.log("🔄 Generando PDF del pedido...");
-      const { generarPDFPedido } = await import("../services/pdfService.js");
-      const pdfBuffer = await generarPDFPedido(pedido, detalles);
-      console.log(
-        "✅ PDF generado exitosamente. Tamaño:",
-        pdfBuffer.length,
-        "bytes"
-      );
+      console.log("✅ Pedido aprobado exitosamente en la BD", pedidoAprobado);
 
-      // 6. Enviar email al proveedor
-      console.log("📧 Enviando email al proveedor...");
-      const { emailService } = await import("../services/emailService.js");
-      await emailService.enviarPedidoProveedor(pedido, pdfBuffer);
-      console.log("✅ Email enviado exitosamente");
+      // 5. Intentar obtener detalles y enviar comunicaciones (opcionales)
+      let pdfGenerado = false;
+      let emailEnviado = false;
+
+      try {
+        // Obtener detalles del pedido para el PDF
+        const { LineaPedidoModel } = await import("../models/lineapedido.js");
+        const detalles = await LineaPedidoModel.getByPedido({ id_pedido: id });
+
+        // 6. Generar PDF del pedido
+        console.log("🔄 Generando PDF del pedido...");
+        const { generarPDFPedido } = await import("../services/pdfService.js");
+        const pdfBuffer = await generarPDFPedido(pedido, detalles);
+        console.log(
+          "✅ PDF generado exitosamente. Tamaño:",
+          pdfBuffer.length,
+          "bytes",
+        );
+        pdfGenerado = true;
+
+        // 7. Intentar enviar email al proveedor
+        try {
+          console.log("📧 Enviando email al proveedor...");
+          const { emailService } = await import("../services/emailService.js");
+          await emailService.enviarPedidoProveedor(pedido, pdfBuffer);
+          console.log("✅ Email enviado exitosamente");
+          emailEnviado = true;
+        } catch (emailError) {
+          console.warn("⚠️ Error al enviar email:", emailError.message);
+          // El pedido ya está aprobado, continuamos sin el email
+        }
+      } catch (pdfError) {
+        console.warn(
+          "⚠️ Error al generar PDF o comunicaciones:",
+          pdfError.message,
+        );
+        // El pedido ya está aprobado, continuamos sin el PDF/email
+      }
 
       res.json({
         success: true,
-        message: "Pedido aprobado y enviado al proveedor exitosamente",
-        pedido: {
-          ...pedido,
-          estado: "Aprobado",
+        message: "Pedido aprobado exitosamente",
+        pedido: pedidoAprobado,
+        comunicaciones: {
+          pdfGenerado,
+          emailEnviado,
         },
       });
     } catch (error) {
       console.error("❌ Error al aprobar pedido:", error);
+      console.error("❌ Stack trace:", error.stack);
       res.status(500).json({
         success: false,
         message: "Error al aprobar pedido: " + error.message,
+        detalles: error.toString(),
+      });
+    }
+  };
+
+  // Generar token para confirmación de proveedor
+  generateTokenForProveedor = async (req, res) => {
+    try {
+      const { idPedido, idProveedor } = req.body;
+
+      if (!idPedido || !idProveedor) {
+        return res.status(400).json({
+          message: "Faltan datos requeridos: idPedido, idProveedor",
+        });
+      }
+
+      const token = await this.pedidoModel.generateTokenForProveedor({
+        idPedido,
+        idProveedor,
+      });
+
+      // Usar URL base de variable de entorno
+      const baseUrl =
+        process.env.FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
+      const link = `${baseUrl}/proveedor/confirmacion/${token}`;
+
+      res.json({
+        message: "Token generado correctamente",
+        token,
+        link,
+      });
+    } catch (error) {
+      console.error("❌ Error al generar token para proveedor:", error);
+      res.status(500).json({
+        message: "Error interno del servidor: " + error.message,
+      });
+    }
+  };
+
+  // Obtener datos del pedido por token (para proveedor)
+  getByTokenProveedor = async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      if (!token) {
+        return res.status(400).json({
+          message: "Token es requerido",
+        });
+      }
+
+      const datos = await this.pedidoModel.getByTokenProveedor({ token });
+
+      res.json(datos);
+    } catch (error) {
+      console.error("❌ Error al obtener datos por token:", error);
+
+      if (error.message.includes("Token")) {
+        return res.status(401).json({
+          message: error.message,
+        });
+      }
+
+      // VALIDACIÓN DE SEGURIDAD: Acceso denegado (proveedor no autorizado)
+      if (
+        error.message.includes("No tiene pedidos asignados") ||
+        error.message.includes("Proveedor no encontrado")
+      ) {
+        return res.status(403).json({
+          message:
+            "No tiene pedidos asignados. Contacte al administrador si cree que es un error.",
+        });
+      }
+
+      res.status(500).json({
+        message: "Error interno del servidor",
+      });
+    }
+  };
+
+  // Confirmar disponibilidad de insumos por proveedor
+  confirmarInsumosProveedor = async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { confirmaciones } = req.body;
+
+      if (!token || !confirmaciones || !Array.isArray(confirmaciones)) {
+        return res.status(400).json({
+          message: "Token y confirmaciones son requeridos",
+        });
+      }
+
+      const resultado = await this.pedidoModel.confirmarInsumosProveedor({
+        token,
+        confirmaciones,
+      });
+
+      // Generar y enviar PDF con confirmación
+      try {
+        await this.enviarConfirmacionPDFProveedor(resultado, token);
+      } catch (error) {
+        console.warn(
+          "⚠️ Advertencia: No se pudo enviar el PDF:",
+          error.message,
+        );
+        // No rechazar la respuesta, solo avisar
+      }
+
+      res.json({
+        message: "Confirmación procesada correctamente",
+        ...resultado,
+      });
+    } catch (error) {
+      console.error("❌ Error al confirmar insumos:", error);
+
+      if (error.message.includes("Token")) {
+        return res.status(401).json({
+          message: error.message,
+        });
+      }
+
+      if (error.message.includes("ya fue procesado")) {
+        return res.status(409).json({
+          message: error.message,
+        });
+      }
+
+      res.status(500).json({
+        message: "Error interno del servidor: " + error.message,
+      });
+    }
+  };
+
+  // Enviar email de confirmación al proveedor
+  enviarEmailConfirmacion = async (req, res) => {
+    try {
+      const { idPedido, idProveedor, enlaceConfirmacion, datosAdicionales } =
+        req.body;
+
+      if (!idPedido || !idProveedor || !enlaceConfirmacion) {
+        return res.status(400).json({
+          message:
+            "Faltan datos requeridos: idPedido, idProveedor, enlaceConfirmacion",
+        });
+      }
+
+      const resultado = await this.pedidoModel.enviarEmailConfirmacion({
+        idPedido,
+        idProveedor,
+        enlaceConfirmacion,
+        datosAdicionales: datosAdicionales || {},
+      });
+
+      res.json({
+        message: "Email enviado correctamente",
+        ...resultado,
+      });
+    } catch (error) {
+      console.error("❌ Error al enviar email de confirmación:", error);
+      res.status(500).json({
+        message: "Error al enviar email: " + error.message,
+      });
+    }
+  };
+
+  // Enviar PDF de confirmación al proveedor
+  enviarConfirmacionPDFProveedor = async (resultado, token) => {
+    try {
+      // Obtener datos del token y pedido
+      const tokenData = await this.pedidoModel.validateTokenProveedor(token);
+      const { idPedido, idProveedor } = tokenData;
+
+      // Obtener datos completos del pedido
+      const [pedidos] = await connection.query(
+        `SELECT 
+          p.id_pedido,
+          BIN_TO_UUID(p.id_proveedor) as id_proveedor,
+          p.fechaEmision,
+          pr.razonSocial,
+          pr.mail,
+          pr.telefono
+         FROM Pedidos p
+         JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
+         WHERE BIN_TO_UUID(p.id_pedido) = ?`,
+        [idPedido],
+      );
+
+      if (pedidos.length === 0) {
+        throw new Error("Pedido no encontrado");
+      }
+
+      const pedido = pedidos[0];
+
+      // Obtener detalles del pedido original
+      const [detalles] = await connection.query(
+        `SELECT 
+          dp.id_detallePedido,
+          i.nombreInsumo,
+          i.unidadMedida,
+          dp.cantidadSolicitada,
+          dp.estadoConfirmacion
+         FROM DetallePedido dp
+         JOIN Insumos i ON dp.id_insumo = i.id_insumo
+         WHERE BIN_TO_UUID(dp.id_pedido) = ? AND BIN_TO_UUID(dp.id_proveedor) = ?`,
+        [idPedido, idProveedor],
+      );
+
+      // Separar insumos confirmados y rechazados
+      const insumosConfirmados = detalles.filter(
+        (d) => d.estadoConfirmacion === "Disponible",
+      );
+      const insumosRechazados = detalles.filter(
+        (d) => d.estadoConfirmacion === "No Disponible",
+      );
+
+      // CASO 1: Hay insumos confirmados - enviar PDF al proveedor original
+      if (insumosConfirmados.length > 0) {
+        // Generar PDF
+        const pdfBuffer = await generarPDFConfirmacionProveedor({
+          numeroPedido: `PEDIDO-${idPedido.substring(0, 8).toUpperCase()}`,
+          proveedor: {
+            razonSocial: pedido.razonSocial,
+            mail: pedido.mail,
+            telefono: pedido.telefono,
+          },
+          fechaPedido: pedido.fechaEmision,
+          insumosConfirmados,
+          insumosNoDisponibles: insumosRechazados,
+        });
+
+        // Enviar correo con PDF
+        await enviarPDFConfirmacionMail(
+          pedido.mail,
+          pedido.razonSocial,
+          pdfBuffer,
+          idPedido.substring(0, 8).toUpperCase(),
+        );
+
+        console.log(
+          `✅ PDF de confirmación enviado a ${pedido.mail} con ${insumosConfirmados.length} insumos confirmados`,
+        );
+      }
+
+      // CASO 2: Hay insumos rechazados y fueron redistribuidos
+      if (
+        insumosRechazados.length > 0 &&
+        resultado.nuevoPedidoCreado &&
+        resultado.nuevoPedidoId
+      ) {
+        console.log(
+          `✅ Insumos rechazados redistribuidos. Nuevo pedido creado: ${resultado.nuevoPedidoId}`,
+        );
+
+        // El nuevo pedido será procesado por el sistema automáticamente
+        // Los proveedores alternativos recibirán notificaciones por el sistema normal
+      }
+
+      // CASO 3: Hay insumos rechazados pero NO se pudieron redistribuir
+      if (insumosRechazados.length > 0 && !resultado.nuevoPedidoCreado) {
+        console.warn(
+          `⚠️ ${insumosRechazados.length} insumo(s) no pudieron ser redistribuidos a otros proveedores:`,
+          insumosRechazados.map((i) => i.nombreInsumo),
+        );
+        // TODO: Notificar al administrador que estos insumos no tienen proveedores alternativos
+      }
+    } catch (error) {
+      console.error("❌ Error al enviar PDF de confirmación:", error.message);
+      throw error;
+    }
+  };
+
+  // Enviar notificación por Telegram al proveedor para confirmar pedido
+  enviarNotificacionTelegramProveedor = async (req, res) => {
+    try {
+      const { idPedido, idProveedor, enlaceConfirmacion } = req.body;
+
+      if (!idPedido || !idProveedor || !enlaceConfirmacion) {
+        return res.status(400).json({
+          message:
+            "Faltan datos requeridos: idPedido, idProveedor, enlaceConfirmacion",
+        });
+      }
+
+      const resultado =
+        await this.pedidoModel.enviarNotificacionTelegramProveedor({
+          idPedido,
+          idProveedor,
+          enlaceConfirmacion,
+        });
+
+      res.json({
+        message: "Notificación enviada correctamente",
+        ...resultado,
+      });
+    } catch (error) {
+      console.error("❌ Error al enviar notificación por Telegram:", error);
+      res.status(500).json({
+        message: "Error al enviar notificación: " + error.message,
+      });
+    }
+  };
+
+  // Obtener pedidos confirmados agrupados por proveedor
+  getPedidosConfirmados = async (req, res) => {
+    try {
+      const [result] = await connection.query(
+        `SELECT 
+          p.id_pedido,
+          BIN_TO_UUID(p.id_pedido) as id_pedido_uuid,
+          p.fechaEmision,
+          pr.id_proveedor,
+          BIN_TO_UUID(pr.id_proveedor) as id_proveedor_uuid,
+          pr.razonSocial,
+          pr.mail,
+          pr.telefono,
+          ep.nombreEstado as estadoPedido,
+          COUNT(CASE WHEN dp.estadoConfirmacion = 'Disponible' THEN 1 END) as insumosConfirmados,
+          COUNT(CASE WHEN dp.estadoConfirmacion = 'No Disponible' THEN 1 END) as insumosRechazados,
+          COUNT(CASE WHEN dp.estadoConfirmacion = 'Pendiente' THEN 1 END) as insumosPendientes
+         FROM Pedidos p
+         JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
+         JOIN EstadoPedido ep ON p.id_estadoPedido = ep.id_estadoPedido
+         JOIN DetallePedido dp ON p.id_pedido = dp.id_pedido
+         WHERE dp.estadoConfirmacion IN ('Disponible', 'No Disponible')
+         AND p.id_estadoPedido != (SELECT id_estadoPedido FROM EstadoPedido WHERE nombreEstado = 'Cancelado' LIMIT 1)
+         GROUP BY p.id_pedido, pr.id_proveedor
+         ORDER BY p.fechaEmision DESC`,
+      );
+
+      res.json(result);
+    } catch (error) {
+      console.error("❌ Error al obtener pedidos confirmados:", error);
+      res.status(500).json({
+        message: "Error al obtener pedidos confirmados: " + error.message,
+      });
+    }
+  };
+
+  // Obtener detalles de confirmación de un pedido específico
+  getDetallesPedidoConfirmacion = async (req, res) => {
+    try {
+      const { idPedido } = req.params;
+
+      // Debug: Validar que el UUID es válido
+      console.log("📋 Parámetro idPedido recibido:", idPedido);
+      console.log("📋 Longitud del parámetro:", idPedido.length);
+
+      // Validar que sea un UUID válido (36 caracteres con guiones)
+      if (!idPedido || idPedido.length < 36) {
+        return res.status(400).json({
+          message: "ID de pedido inválido. Debe ser un UUID válido.",
+          received: idPedido,
+        });
+      }
+
+      const [detalles] = await connection.query(
+        `SELECT 
+          HEX(dp.id_detallePedido) as id_detallePedido_hex,
+          i.nombreInsumo,
+          i.unidadMedida,
+          dp.cantidadSolicitada,
+          dp.estadoConfirmacion,
+          dp.fechaConfirmacion,
+          BIN_TO_UUID(dp.id_proveedor) as id_proveedor_uuid,
+          pr.razonSocial
+         FROM DetallePedido dp
+         JOIN Insumos i ON dp.id_insumo = i.id_insumo
+         JOIN Proveedores pr ON dp.id_proveedor = pr.id_proveedor
+         WHERE dp.id_pedido = UUID_TO_BIN(?)
+         AND dp.estadoConfirmacion IN ('Disponible', 'No Disponible')
+         ORDER BY i.nombreInsumo`,
+        [idPedido],
+      );
+
+      res.json(detalles);
+    } catch (error) {
+      console.error("❌ Error al obtener detalles de confirmación:", error);
+      res.status(500).json({
+        message: "Error al obtener detalles: " + error.message,
       });
     }
   };

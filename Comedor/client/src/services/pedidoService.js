@@ -210,6 +210,16 @@ const pedidoService = {
     }
   },
 
+  // Obtener detalles del pedido (líneas)
+  getDetalles: async (id) => {
+    try {
+      const response = await axiosInstance.get(`/lineaspedidos/pedido/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Obtener pedido completo con detalles
   getPedidoCompleto: async (id) => {
     try {

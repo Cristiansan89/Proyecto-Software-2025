@@ -7,9 +7,14 @@ import {
 
 // Controlador para manejar las operaciones relacionadas con los Proveedores
 export class ProveedorController {
-  // Recibe el modelo de Proveedor por inyección de dependencias
-  constructor({ proveedorModel }) {
+  // Recibe los modelos por inyección de dependencias
+  constructor({ proveedorModel, usuarioModel, personaModel }) {
     this.proveedorModel = proveedorModel;
+    this.usuarioModel = usuarioModel;
+    this.personaModel = personaModel;
+
+    // Inyectar usuarioModel en proveedorModel para la creación automática de usuarios
+    this.proveedorModel.setUsuarioModel(usuarioModel);
   }
 
   // Obtiene todos los Proveedores

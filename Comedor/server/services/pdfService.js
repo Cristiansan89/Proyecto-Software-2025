@@ -1,6 +1,22 @@
 import PDFDocument from "pdfkit";
 import EscuelaService from "./escuelaService.js";
 import { generarPDFPedidoJsPDF } from "./pdfServiceJsPDF.js";
+import nodemailer from "nodemailer";
+
+/**
+ * Convertir cantidad según la unidad de medida
+ * Si la unidad contiene "Gramo" o "Mililitro" y cantidad > 1000, divide por 1000
+ */
+const convertirCantidad = (cantidad, unidad) => {
+  const cantidadNum = Number(cantidad) || 0;
+  if (
+    (unidad.includes("Gramo") || unidad.includes("Mililitro")) &&
+    cantidadNum > 1000
+  ) {
+    return Math.round((cantidadNum / 1000) * 100) / 100;
+  }
+  return cantidadNum;
+};
 
 /**
  * Generar PDF del pedido - Ahora usa jsPDF como implementación principal
@@ -107,7 +123,7 @@ const generarPDFPedidoPDFKit = async (pedido, detalles) => {
         .text(
           `${new Date(pedido.fechaEmision).toLocaleDateString("es-ES")}`,
           60,
-          yPos + 85
+          yPos + 85,
         )
         .text(`Estado:`, 60, yPos + 100)
         .fillColor("#2e7d32")
@@ -175,11 +191,17 @@ const generarPDFPedidoPDFKit = async (pedido, detalles) => {
           doc.rect(50, yPos, 500, 20).stroke("#e0e0e0");
         }
 
+        // Convertir cantidad según unidad
+        const cantidadMostrada = convertirCantidad(
+          detalle.cantidadSolicitada,
+          detalle.unidadMedida,
+        );
+
         doc
           .fontSize(10)
           .fillColor("#424242")
           .text(detalle.nombreInsumo || "N/A", 60, yPos + 6, { width: 210 })
-          .text(detalle.cantidadSolicitada || "0", 280, yPos + 6, {
+          .text(cantidadMostrada || "0", 280, yPos + 6, {
             width: 90,
             align: "center",
           })
@@ -218,7 +240,7 @@ const generarPDFPedidoPDFKit = async (pedido, detalles) => {
             pedido.origen === "Generado" ? "🤖 Sistema Automático" : "👤 Manual"
           }`,
           360,
-          yPos + 45
+          yPos + 45,
         );
 
       // Pie de página
@@ -233,22 +255,22 @@ const generarPDFPedidoPDFKit = async (pedido, detalles) => {
         .text(
           "• Por favor, confirme la disponibilidad de todos los productos listados",
           50,
-          yPos + 15
+          yPos + 15,
         )
         .text(
           "• Incluya en su respuesta los precios unitarios y el tiempo de entrega estimado",
           50,
-          yPos + 30
+          yPos + 30,
         )
         .text(
           "• Este pedido fue generado automáticamente por nuestro sistema de gestión",
           50,
-          yPos + 45
+          yPos + 45,
         )
         .text(
           `• Documento generado el: ${new Date().toLocaleString("es-ES")}`,
           50,
-          yPos + 60
+          yPos + 60,
         );
 
       // Información de contacto en pie
@@ -260,7 +282,7 @@ const generarPDFPedidoPDFKit = async (pedido, detalles) => {
           "Para consultas contactar a: comedor@escuela.edu | Tel: (011) 4567-8900",
           50,
           yPos,
-          { align: "center" }
+          { align: "center" },
         );
 
       doc.end();
@@ -268,4 +290,179 @@ const generarPDFPedidoPDFKit = async (pedido, detalles) => {
       reject(error);
     }
   });
+};
+
+/**
+ * Generar PDF de confirmación de pedido por proveedor
+ * @param {Object} datos - Datos del pedido confirmado
+ * @returns {Promise<Buffer>} - Buffer con el contenido del PDF
+ */
+export const generarPDFConfirmacionProveedor = async (datos) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const {
+        numeroPedido,
+        proveedor,
+        fechaPedido,
+        insumosConfirmados = [],
+        insumosNoDisponibles = [],
+      } = datos;
+
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers = [];
+
+      doc.on("data", buffers.push.bind(buffers));
+      doc.on("end", () => {
+        const pdfData = Buffer.concat(buffers);
+        resolve(pdfData);
+      });
+
+      doc.on("error", (error) => {
+        reject(error);
+      });
+
+      // Encabezado
+      doc
+        .fontSize(20)
+        .fillColor("#1a237e")
+        .text("CONFIRMACIÓN DE PEDIDO", { align: "center" });
+
+      doc.fontSize(11).fillColor("#000000").moveDown(0.5);
+
+      // Información del pedido
+      doc.fontSize(11).text(`Número de Pedido: ${numeroPedido}`);
+      doc.text(
+        `Fecha de Pedido: ${new Date(fechaPedido).toLocaleDateString("es-AR")}`,
+      );
+      doc.text(
+        `Fecha de Confirmación: ${new Date().toLocaleDateString("es-AR")}`,
+      );
+
+      // Información del proveedor
+      doc.moveDown(0.5);
+      doc.fontSize(12).fillColor("#1565c0").text("Datos del Proveedor");
+      doc.fontSize(11).fillColor("#000000");
+      doc.text(`Razón Social: ${proveedor?.razonSocial || "N/A"}`);
+      doc.text(`Email: ${proveedor?.mail || "N/A"}`);
+      if (proveedor?.telefono) {
+        doc.text(`Teléfono: ${proveedor.telefono}`);
+      }
+
+      // Tabla de insumos confirmados
+      if (insumosConfirmados.length > 0) {
+        doc.moveDown(1);
+        doc.fontSize(12).fillColor("#1565c0").text("INSUMOS CONFIRMADOS");
+        doc.fontSize(10).fillColor("#000000").moveDown(0.3);
+
+        // Encabezados
+        const tableTop = doc.y;
+        const colWidth = 150;
+        doc.text("Insumo", 50, tableTop);
+        doc.text("Cantidad", 250, tableTop);
+        doc.text("Estado", 400, tableTop);
+
+        // Línea
+        doc
+          .moveTo(50, tableTop + 15)
+          .lineTo(550, tableTop + 15)
+          .stroke();
+
+        // Datos
+        let y = tableTop + 25;
+        insumosConfirmados.forEach((insumo) => {
+          doc.fontSize(10);
+
+          const cantidad = Number(insumo.cantidadSolicitada);
+          const unidad = insumo.unidadMedida || "";
+
+          // Aplicar conversión usando la función auxiliar
+          const cantidadMostrada = convertirCantidad(cantidad, unidad);
+
+          doc.text(insumo.nombreInsumo || "N/A", 50, y, { width: 200 });
+          doc.text(`${cantidadMostrada} ${unidad}`, 250, y);
+          doc.text("✓ Disponible", 400, y);
+          y += 25;
+        });
+
+        // Resumen
+        doc.moveTo(50, y).lineTo(550, y).stroke();
+        doc.fontSize(11).fillColor("#1a237e");
+        doc.text(
+          `Total Confirmados: ${insumosConfirmados.length} insumo(s)`,
+          50,
+          y + 10,
+        );
+      }
+
+      // Pie de página
+      doc.moveDown(2);
+      doc.fontSize(9).fillColor("#666666");
+      doc.text(
+        "Este documento es una confirmación oficial de disponibilidad de insumos.",
+        50,
+        doc.y,
+      );
+
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+/**
+ * Enviar PDF de confirmación al proveedor por correo
+ * @param {string} email - Email del proveedor
+ * @param {string} nombreProveedor - Nombre del proveedor
+ * @param {Buffer} pdfBuffer - Buffer del PDF
+ * @param {string} numeroPedido - Número del pedido
+ * @returns {Promise<void>}
+ */
+export const enviarPDFConfirmacionMail = async (
+  email,
+  nombreProveedor,
+  pdfBuffer,
+  numeroPedido,
+) => {
+  try {
+    // Configurar transporte de correo
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: process.env.SMTP_PORT || 587,
+      secure: process.env.SMTP_SECURE === "true",
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+
+    // Enviar correo con PDF
+    await transporter.sendMail({
+      from: process.env.SMTP_USER || "comedor@escuela.edu",
+      to: email,
+      subject: `Confirmación de Pedido - ${nombreProveedor}`,
+      html: `
+        <h2>Confirmación de Pedido</h2>
+        <p>Estimado ${nombreProveedor},</p>
+        <p>Adjuntamos la confirmación de disponibilidad de insumos para el pedido realizado.</p>
+        <p>Los insumos no disponibles han sido redistribuidos a otros proveedores.</p>
+        <p>Saludos cordiales,<br><strong>Sistema de Comedor</strong></p>
+      `,
+      attachments: [
+        {
+          filename: `confirmacion-pedido-${numeroPedido}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    console.log(`✅ PDF de confirmación enviado a ${email}`);
+  } catch (error) {
+    console.error(
+      "❌ Error al enviar PDF de confirmación por mail:",
+      error.message,
+    );
+    throw error;
+  }
 };

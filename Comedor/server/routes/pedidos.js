@@ -7,22 +7,47 @@ export const createPedidoRouter = ({ pedidoModel }) => {
 
   // Rutas básicas CRUD
   pedidosRouter.get("/", pedidoController.getAll);
-  pedidosRouter.get("/:id", pedidoController.getById);
   pedidosRouter.post("/", pedidoController.create);
-  pedidosRouter.delete("/:id", pedidoController.delete);
-  pedidosRouter.patch("/:id", pedidoController.update);
 
-  // Rutas especializadas (deben ir antes de las rutas con parámetros dinámicos)
+  // Rutas especializadas (deben ir ANTES de las rutas con parámetros dinámicos)
   pedidosRouter.post("/manual", pedidoController.crearPedidoManual);
   pedidosRouter.post("/automatico", pedidoController.generarPedidoAutomatico);
-  pedidosRouter.post("/:id/aprobar", pedidoController.aprobarPedido);
   pedidosRouter.get("/resumen", pedidoController.getResumenPorPeriodo);
+
+  // Rutas para visualizar pedidos confirmados (ANTES de /:id)
+  pedidosRouter.get("/confirmados", pedidoController.getPedidosConfirmados);
+  pedidosRouter.get(
+    "/confirmados/:idPedido",
+    pedidoController.getDetallesPedidoConfirmacion,
+  );
+
+  // Rutas para confirmación de proveedores
+  pedidosRouter.post(
+    "/generar-token-proveedor",
+    pedidoController.generateTokenForProveedor,
+  );
+  pedidosRouter.get(
+    "/confirmacion/:token",
+    pedidoController.getByTokenProveedor,
+  );
+  pedidosRouter.post(
+    "/confirmacion/:token",
+    pedidoController.confirmarInsumosProveedor,
+  );
+  pedidosRouter.post(
+    "/enviar-email-confirmacion",
+    pedidoController.enviarEmailConfirmacion,
+  );
+  pedidosRouter.post(
+    "/enviar-telegram-proveedor",
+    pedidoController.enviarNotificacionTelegramProveedor,
+  );
 
   // Rutas por estado y proveedor
   pedidosRouter.get("/estado/:estado", pedidoController.getByEstado);
   pedidosRouter.get(
     "/proveedor/:id_proveedor",
-    pedidoController.getByProveedor
+    pedidoController.getByProveedor,
   );
 
   // Rutas para gestión de estados
@@ -32,6 +57,12 @@ export const createPedidoRouter = ({ pedidoModel }) => {
 
   // Ruta para obtener pedido completo
   pedidosRouter.get("/:id/completo", pedidoController.getPedidoCompleto);
+
+  // Rutas CRUD de ID (AL FINAL - son las más genéricas)
+  pedidosRouter.get("/:id", pedidoController.getById);
+  pedidosRouter.delete("/:id", pedidoController.delete);
+  pedidosRouter.patch("/:id", pedidoController.update);
+  pedidosRouter.post("/:id/aprobar", pedidoController.aprobarPedido);
 
   return pedidosRouter;
 };

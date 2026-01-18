@@ -19,6 +19,13 @@ const ServicioRecetaModel = {
       const [servicios] = await connection.query(query, [id_receta]);
       return servicios;
     } catch (error) {
+      // Si la tabla no existe, retornar array vacío
+      if (error.code === "ER_NO_SUCH_TABLE") {
+        console.warn(
+          "Advertencia: Tabla RecetaServicio no existe. Retornando array vacío."
+        );
+        return [];
+      }
       console.error("Error en getServiciosPorReceta:", error);
       throw error;
     }
@@ -45,6 +52,13 @@ const ServicioRecetaModel = {
       const [recetas] = await connection.query(query, [id_servicio]);
       return recetas;
     } catch (error) {
+      // Si la tabla no existe, retornar array vacío
+      if (error.code === "ER_NO_SUCH_TABLE") {
+        console.warn(
+          "Advertencia: Tabla RecetaServicio no existe. Retornando array vacío."
+        );
+        return [];
+      }
       console.error("Error en getRecetasPorServicio:", error);
       throw error;
     }

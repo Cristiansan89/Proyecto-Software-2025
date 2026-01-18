@@ -31,7 +31,7 @@ export const createAuthRouter = ({ usuarioModel }) => {
 
       const validPassword = await bcrypt.compare(
         contrasena,
-        usuario.contrasena
+        usuario.contrasena,
       );
 
       if (!validPassword) {
@@ -68,14 +68,16 @@ export const createAuthRouter = ({ usuarioModel }) => {
           id: usuario.idUsuario,
           nombreUsuario: usuario.nombreUsuario,
           rol: usuario.nombreRol,
+          idProveedor: usuario.idProveedor,
         },
         process.env.JWT_SECRET,
-        { expiresIn: "8h" }
+        { expiresIn: "8h" },
       );
 
       const userData = {
         idUsuario: usuario.idUsuario,
         idPersona: usuario.idPersona,
+        idProveedor: usuario.idProveedor,
         nombreUsuario: usuario.nombreUsuario,
         nombres: usuario.nombres,
         nombre: usuario.nombre,
@@ -85,6 +87,15 @@ export const createAuthRouter = ({ usuarioModel }) => {
         mail: usuario.mail,
         telefono: usuario.telefono,
       };
+
+      // Configurar cookie de autenticación para dominios externos (ngrok, etc)
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 8 * 60 * 60 * 1000, // 8 horas
+        path: "/",
+      });
 
       res.json({
         token,

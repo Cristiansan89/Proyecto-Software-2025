@@ -10,14 +10,19 @@ import AdminDashboard from "./pages/admins/Dashboard";
 import ListaGrados from "./pages/admins/ListaGrados";
 import GestionRolesPermisos from "./pages/admins/GestionRolesPermisos";
 import ListaInsumos from "./pages/admins/ListaInsumos";
-import ListaProveedores from "./pages/admins/ListaProveedores";
+import Proveedores from "./pages/admins/Proveedores";
 import Configuracion from "./pages/admins/Configuracion";
 import ParametrosSistema from "./pages/admins/ParametrosSistema";
 import Persona from "./pages/admins/Personas";
+import Usuarios from "./pages/admins/Usuarios";
 import PersonaGrado from "./pages/admins/PersonaGrado";
 import Auditoria from "./pages/admins/Auditoria";
 import RegistroAsistenciasMovil from "./pages/movil/RegistroAsistenciasMovil.jsx";
+import LoginAsistencia from "./pages/movil/LoginAsistencia.jsx";
 import RegistroExitoso from "./pages/movil/RegistroExitoso.jsx";
+import ConfirmacionProveedor from "./pages/proveedor/confirmacionProveedor.jsx";
+import ConfirmacionExitosa from "./pages/proveedor/ConfirmacionExitosa.jsx";
+import ProveedorPedidos from "./pages/proveedor/ProveedorPedidos.jsx";
 import GestionAsistencias from "./pages/docente/GestionAsistencias";
 import DocenteDashboard from "./pages/docente/DocenteDashboard";
 import DocenteAsistencias from "./pages/docente/DocenteAsistencias";
@@ -28,6 +33,7 @@ import AsistenciaFinalizado from "./pages/docente/AsistenciaFinalizado";
 import AdminLayout from "./layouts/AdminLayout";
 import DocenteLayout from "./layouts/DocenteLayout";
 import CocineraLayout from "./layouts/CocineraLayout";
+import ProveedorLayout from "./layouts/ProveedorLayout.jsx";
 import CocineraDashboard from "./pages/cocinera/CocineraDashboard";
 import CocineraGestionAsistencias from "./pages/cocinera/GestionAsistencias";
 import CocineraMenu from "./pages/cocinera/CocineraMenu";
@@ -35,6 +41,7 @@ import ControlInventario from "./pages/cocinera/ControlInventario";
 import MenuesDiaria from "./pages/cocinera/MenuesDiaria";
 import CocineraRecetas from "./pages/cocinera/CocineraRecetas";
 import Consumos from "./pages/cocinera/Consumos";
+import Pedidos from "./pages/cocinera/Pedidos";
 import PedidoInsumo from "./pages/cocinera/PedidoInsumo";
 import InsumosSemanal from "./pages/cocinera/InsumosSemanal";
 import Estadistica from "./pages/cocinera/Estadistica";
@@ -57,9 +64,11 @@ const DashboardRedirect = () => {
     return <Navigate to="/docente/dashboard" replace />;
   } else if (userRole === "Cocinera") {
     return <Navigate to="/cocinera/dashboard" replace />;
+  } else if (userRole === "Proveedor") {
+    return <Navigate to="/proveedor/pedidos" replace />;
   } else {
-    // Para otros roles, redirigir a admin por defecto
-    return <Navigate to="/admin/dashboard" replace />;
+    // Para otros roles, redirigir a login por defecto
+    return <Navigate to="/login" replace />;
   }
 };
 
@@ -72,6 +81,12 @@ function App() {
             {/* Ruta pública de login */}
             <Route path="/login" element={<Login />} />
 
+            {/* Ruta pública para login de asistencias */}
+            <Route
+              path="/asistencias/login/:token"
+              element={<LoginAsistencia />}
+            />
+
             {/* Ruta pública para registro de asistencias móvil */}
             <Route
               path="/asistencias/registro/:token"
@@ -80,6 +95,16 @@ function App() {
 
             {/* Ruta pública para registro exitoso */}
             <Route path="/registro-exitoso" element={<RegistroExitoso />} />
+
+            {/* Rutas públicas para confirmación de proveedores */}
+            <Route
+              path="/proveedor/confirmacion/:token"
+              element={<ConfirmacionProveedor />}
+            />
+            <Route
+              path="/confirmacion-exitosa"
+              element={<ConfirmacionExitosa />}
+            />
 
             {/* Rutas protegidas del panel administrativo */}
             <Route
@@ -94,13 +119,11 @@ function App() {
                       <Route path="/" element={<AdminDashboard />} />
                       <Route path="/dashboard" element={<AdminDashboard />} />
                       <Route path="/personas" element={<Persona />} />
+                      <Route path="/usuarios" element={<Usuarios />} />
                       <Route path="/grados" element={<ListaGrados />} />
                       <Route path="/roles" element={<GestionRolesPermisos />} />
                       <Route path="/insumos" element={<ListaInsumos />} />
-                      <Route
-                        path="/proveedores"
-                        element={<ListaProveedores />}
-                      />
+                      <Route path="/proveedores" element={<Proveedores />} />
                       <Route
                         path="/personasgrados"
                         element={<PersonaGrado />}
@@ -176,7 +199,7 @@ function App() {
                         element={<ControlInventario />}
                       />
                       <Route path="/menu-diaria" element={<MenuesDiaria />} />
-                      <Route path="/pedidos" element={<PedidoInsumo />} />
+                      <Route path="/pedidos" element={<Pedidos />} />
                       <Route path="/consumos" element={<Consumos />} />
                       <Route
                         path="/insumos-semanal"
@@ -185,6 +208,21 @@ function App() {
                       <Route path="/estadisticas" element={<Estadistica />} />
                     </Routes>
                   </CocineraLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Rutas protegidas del panel proveedor */}
+            <Route
+              path="/proveedor/*"
+              element={
+                <ProtectedRoute requireAuth={true} allowedRoles={["Proveedor"]}>
+                  <ProveedorLayout>
+                    <Routes>
+                      <Route path="/" element={<ProveedorPedidos />} />
+                      <Route path="/pedidos" element={<ProveedorPedidos />} />
+                    </Routes>
+                  </ProveedorLayout>
                 </ProtectedRoute>
               }
             />

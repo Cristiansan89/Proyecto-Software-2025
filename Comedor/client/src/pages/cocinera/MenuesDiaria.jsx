@@ -161,7 +161,7 @@ const MenuesDiaria = () => {
         );*/
         showError(
           "Error",
-          "❌ Ocurrió un error al obtener los menús. Por favor, intente nuevamente más tarde."
+          "❌ No hay menús planificados para este día. Por favor, intente registrar una planificación para la fecha seleccionada."
         );
         menusResponse = [];
       }
@@ -796,10 +796,7 @@ const MenuesDiaria = () => {
                           0 && (
                           <span className="badge bg-info">
                             <i className="fas fa-user-check me-1"></i>
-                            {
-                              comensalesPorServicio[horario.id].comensales_total
-                            }{" "}
-                            para cocinar
+                            Preparado para cocinar
                           </span>
                         )}
                       </div>

@@ -124,11 +124,13 @@ CREATE TABLE DetalleConsumo(
 -- -----------------------------------------------------
 
 CREATE TABLE DetallePedido(
-    id_detallePedido      INT               AUTO_INCREMENT,
-    id_pedido             BINARY(16)        NOT NULL,
-    id_proveedor          BINARY(16)        NOT NULL,
-    id_insumo             INT               NOT NULL,
-    cantidadSolicitada    DECIMAL(10, 3)    NOT NULL,
+    id_detallePedido           INT               AUTO_INCREMENT,
+    id_pedido                  BINARY(16)        NOT NULL,
+    id_proveedor               BINARY(16)        NOT NULL,
+    id_insumo                  INT               NOT NULL,
+    cantidadSolicitada         DECIMAL(10, 3)    NOT NULL,
+    estadoConfirmacion         ENUM('Pendiente', 'Disponible', 'No Disponible') DEFAULT 'Pendiente',
+    fechaConfirmacion          DATETIME,
     PRIMARY KEY (id_detallePedido)
 )ENGINE=INNODB;
 
@@ -148,14 +150,13 @@ CREATE TABLE DocenteGrado(
 )ENGINE=INNODB;
 
 
-
 -- -----------------------------------------------------
 -- TABLE: EstadoPedido 
 -- -----------------------------------------------------
 
 CREATE TABLE EstadoPedido(
     id_estadoPedido    INT                        AUTO_INCREMENT,
-    nombreEstado       ENUM('Pendiente', 'Aprobado', 'Cancelado', 'Entregado')	NOT NULL DEFAULT 'Pendiente',
+    nombreEstado       ENUM('Pendiente', 'Aprobado', 'Cancelado', 'Entregado', 'Confirmado', 'Enviado', 'En espera', 'Recibido', 'Fallido')	NOT NULL DEFAULT 'Pendiente',
     descripcion        VARCHAR(100),
     PRIMARY KEY (id_estadoPedido)
 )ENGINE=INNODB;
@@ -185,7 +186,7 @@ CREATE TABLE Insumos(
     nombreInsumo    VARCHAR(100)    NOT NULL,
     descripcion     VARCHAR(100),
     unidadMedida    VARCHAR(100)    NOT NULL,
-    categoria       ENUM('Carnes', 'Lacteos', 'Cereales', 'Verduras', 'Condimentos', 'Otros') DEFAULT 'Otros',
+    categoria       ENUM('Carnes', 'Lacteos', 'Cereales', 'Verduras', 'Frutas', 'Legumbres', 'Condimentos', 'Bebidas', 'Enlatados', 'Conservas', 'Limpieza', 'Descartables', 'Otros') DEFAULT 'Otros',
     stockMinimo     DECIMAL(10,2)  DEFAULT 0.00,
     fecha           DATE           DEFAULT '2025-01-01',
     estado          ENUM('Activo', 'Inactivo') NOT NULL DEFAULT 'Activo',
@@ -218,9 +219,8 @@ CREATE TABLE ItemsRecetas(
     id_itemReceta         INT               AUTO_INCREMENT,
     id_receta             BINARY(16)        NOT NULL,
     id_insumo             INT               NOT NULL,
-    cantidadPorPorcion    DECIMAL(10, 3)    NOT NULL,
-    unidadPorPorcion ENUM(
-    'Gramo', 'Kilogramo', 'Mililitro', 'Litro', 'Unidad', 'Pizca', 'Cucharadita', 'Cucharada', 'Taza') NOT NULL DEFAULT 'Unidad';
+    cantidadPorPorcion    INT               NOT NULL DEFAULT 0,
+    unidadPorPorcion ENUM('gramo','gramos','kilogramo','kilogramos','mililitro','mililitros','litro','litros','unidad','unidades') NOT NULL DEFAULT 'unidad',
     PRIMARY KEY (id_itemReceta)
 )ENGINE=INNODB;
 
@@ -289,6 +289,7 @@ CREATE TABLE Pedidos(
     fechaEmision         DATE                       DEFAULT '2025-01-01',
     origen               ENUM('Editado', 'Generado', 'Manual')    NOT NULL DEFAULT 'Generado',
     fechaAprobacion      DATE,
+    fechaConfirmacion    DATETIME,
     motivoCancelacion    VARCHAR(100),
     PRIMARY KEY (id_pedido)
 )ENGINE=INNODB;
@@ -383,6 +384,19 @@ CREATE TABLE Proveedores(
 
 
 
+-- Tabla para configuración de Telegram de Proveedores
+CREATE TABLE IF NOT EXISTS ProveedorConfiguracionTelegram (
+    id_config INT AUTO_INCREMENT PRIMARY KEY,
+    id_proveedor BINARY(16) NOT NULL UNIQUE,
+    telegramChatId VARCHAR(100),
+    telegramUsuario VARCHAR(100),
+    notificacionesTelegram ENUM('Activo', 'Inactivo') DEFAULT 'Inactivo',
+    fechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fechaActualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_proveedor) REFERENCES Proveedores(id_proveedor) ON DELETE CASCADE
+)ENGINE=INNODB;
+
+
 -- -----------------------------------------------------
 -- TABLE: ProveedorInsumo 
 -- -----------------------------------------------------
@@ -409,6 +423,20 @@ CREATE TABLE Recetas(
     fechaAlta        DATE                       DEFAULT '2025-01-01',
     estado           ENUM('Activo', 'Inactivo') NOT NULL DEFAULT 'Activo',
     PRIMARY KEY (id_receta)
+)ENGINE=INNODB;
+
+
+
+-- -----------------------------------------------------
+-- TABLE: RecetaServicio
+-- Tabla intermedia entre Recetas y Servicios
+-- -----------------------------------------------------
+
+CREATE TABLE RecetaServicio(
+    id_receta       BINARY(16)  NOT NULL,
+    id_servicio     INT         NOT NULL,
+    fechaAsociacion DATE        DEFAULT '2025-01-01',
+    PRIMARY KEY (id_receta, id_servicio)
 )ENGINE=INNODB;
 
 
@@ -520,11 +548,13 @@ CREATE TABLE Turnos(
 
 -- -----------------------------------------------------
 -- TABLE: Usuarios 
+-- Modificada para soportar usuarios de proveedores
 -- -----------------------------------------------------
 
 CREATE TABLE Usuarios(
     id_usuario              BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_persona              INT                        NOT NULL,
+    id_persona              INT,
+    id_proveedor            BINARY(16),
     nombreUsuario           VARCHAR(100)               NOT NULL,
     contrasenia             VARCHAR(255)               NOT NULL,
     mail                    VARCHAR(100),
@@ -532,7 +562,8 @@ CREATE TABLE Usuarios(
     fechaAlta               DATETIME                   DEFAULT CURRENT_TIMESTAMP,
     fechaUltimaActividad    DATETIME,
     estado                  ENUM('Activo', 'Inactivo')    NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_usuario)
+    PRIMARY KEY (id_usuario),
+    CONSTRAINT chk_usuario_persona_or_proveedor CHECK (id_persona IS NOT NULL OR id_proveedor IS NOT NULL)
 )ENGINE=INNODB;
 
 
@@ -931,6 +962,12 @@ CREATE UNIQUE INDEX uk_usuarios_nombre ON Usuarios(nombreUsuario)
 CREATE UNIQUE INDEX uk_usuario_mail ON Usuarios(mail)
 ;
 -- 
+-- INDEX: idx_usuario_proveedor
+--
+
+CREATE INDEX idx_usuario_proveedor ON Usuarios(id_proveedor)
+;
+-- 
 -- INDEX: Ref2169 
 --
 
@@ -1061,7 +1098,7 @@ ALTER TABLE DocenteGrado ADD CONSTRAINT RefPersonas934
     REFERENCES Personas(id_persona)
 ;
 
-ALTER TABLE DocenteGrado ADD CONSTRAINT RefGrados944 
+ALTER TABLE DocenteGrado ADD CONSTRAINT RefGrados945 
     FOREIGN KEY (nombreGrado)
     REFERENCES Grados(nombreGrado)
 ;
@@ -1099,6 +1136,16 @@ ALTER TABLE ItemsRecetas ADD CONSTRAINT RefInsumos334
 ALTER TABLE ItemsRecetas ADD CONSTRAINT RefRecetas134 
     FOREIGN KEY (id_receta)
     REFERENCES Recetas(id_receta)
+;
+
+ALTER TABLE RecetaServicio ADD CONSTRAINT RefRecetasServicio 
+    FOREIGN KEY (id_receta)
+    REFERENCES Recetas(id_receta)
+;
+
+ALTER TABLE RecetaServicio ADD CONSTRAINT RefServiciosReceta 
+    FOREIGN KEY (id_servicio)
+    REFERENCES Servicios(id_servicio)
 ;
 
 
@@ -1269,6 +1316,11 @@ ALTER TABLE ServicioTurno ADD CONSTRAINT RefTurnos594
 ALTER TABLE Usuarios ADD CONSTRAINT RefPersonas694 
     FOREIGN KEY (id_persona)
     REFERENCES Personas(id_persona)
+;
+
+ALTER TABLE Usuarios ADD CONSTRAINT RefProveedores895
+    FOREIGN KEY (id_proveedor)
+    REFERENCES Proveedores(id_proveedor)
 ;
 
 
@@ -1444,5 +1496,111 @@ SELECT
     COUNT(DISTINCT aa.id_insumo) as total_insumos_criticos
 FROM AlertasInventario aa
 WHERE aa.estado IN ('activa', 'completada');
+
+
+-- =====================================================
+-- TABLE: UsuariosRoles 
+-- Relación muchos-a-muchos entre Usuarios y Roles
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS UsuariosRoles (
+  id_usuarioRol INT AUTO_INCREMENT PRIMARY KEY,
+  id_usuario BINARY(16) NOT NULL,
+  id_rol INT NOT NULL,
+  fechaAsignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  estado ENUM('Activo', 'Inactivo') DEFAULT 'Activo',
+  
+  -- Índices
+  INDEX idx_usuario (id_usuario),
+  INDEX idx_rol (id_rol),
+  INDEX idx_estado (estado),
+  
+  -- Claves foráneas
+  CONSTRAINT fk_usuariorol_usuario FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario) ON DELETE CASCADE,
+  CONSTRAINT fk_usuariorol_rol FOREIGN KEY (id_rol) REFERENCES Roles(id_rol) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =====================================================
+-- TABLE: EmailsEnviados 
+-- Auditoría de emails enviados
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS EmailsEnviados (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  id_pedido BINARY(16) NOT NULL,
+  id_proveedor BINARY(16) NOT NULL,
+  email_destinatario VARCHAR(255) NOT NULL,
+  asunto VARCHAR(500) NOT NULL,
+  enlace_confirmacion LONGTEXT,
+  fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  estado ENUM('Pendiente', 'Enviado', 'Fallido', 'Simulado') DEFAULT 'Pendiente',
+  fecha_lectura TIMESTAMP NULL,
+  intentos INT DEFAULT 0,
+  ultimo_intento TIMESTAMP NULL,
+  error_mensaje LONGTEXT,
+  
+  -- Índices para mejor búsqueda
+  INDEX idx_id_pedido (id_pedido),
+  INDEX idx_id_proveedor (id_proveedor),
+  INDEX idx_email (email_destinatario),
+  INDEX idx_fecha_envio (fecha_envio),
+  INDEX idx_estado (estado),
+  
+  -- Claves foráneas
+  CONSTRAINT fk_email_pedido FOREIGN KEY (id_pedido) REFERENCES Pedidos(id_pedido) ON DELETE CASCADE,
+  CONSTRAINT fk_email_proveedor FOREIGN KEY (id_proveedor) REFERENCES Proveedores(id_proveedor) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =====================================================
+-- DATOS INICIALES
+-- =====================================================
+
+--
+-- Insertar Estados de Pedido
+--
+INSERT INTO EstadoPedido (nombreEstado, descripcion)
+SELECT 'Pendiente', 'Pedido pendiente de aprobación'
+WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Pendiente');
+
+INSERT INTO EstadoPedido (nombreEstado, descripcion)
+SELECT 'Aprobado', 'Pedido aprobado'
+WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Aprobado');
+
+INSERT INTO EstadoPedido (nombreEstado, descripcion)
+SELECT 'Confirmado', 'Pedido confirmado por el proveedor'
+WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Confirmado');
+
+INSERT INTO EstadoPedido (nombreEstado, descripcion)
+SELECT 'Enviado', 'Pedido enviado por el proveedor'
+WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Enviado');
+
+INSERT INTO EstadoPedido (nombreEstado, descripcion)
+SELECT 'En espera', 'Pedido en espera'
+WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'En espera');
+
+INSERT INTO EstadoPedido (nombreEstado, descripcion)
+SELECT 'Recibido', 'Pedido recibido'
+WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Recibido');
+
+INSERT INTO EstadoPedido (nombreEstado, descripcion)
+SELECT 'Entregado', 'Pedido entregado'
+WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Entregado');
+
+INSERT INTO EstadoPedido (nombreEstado, descripcion)
+SELECT 'Cancelado', 'Pedido cancelado'
+WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Cancelado');
+
+INSERT INTO EstadoPedido (nombreEstado, descripcion)
+SELECT 'Fallido', 'Pedido fallido'
+WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Fallido');
+
+--
+-- Insertar Rol "Proveedor"
+--
+INSERT INTO Roles (nombreRol, descripcionRol, habilitaCuentaUsuario, estado)
+SELECT 'Proveedor', 'Rol para proveedores del sistema', 'Si', 'Activo'
+WHERE NOT EXISTS (SELECT 1 FROM Roles WHERE nombreRol = 'Proveedor');
 
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import PedidoFormSimple from "../../components/cocinera/PedidoFormSimple";
 import PedidoAutomaticoForm from "../../components/cocinera/PedidoAutomaticoForm";
@@ -6,6 +7,7 @@ import pedidoService from "../../services/pedidoService";
 import estadoPedidoService from "../../services/estadoPedidoService";
 import insumoService from "../../services/insumoService";
 import auditoriaService from "../../services/auditoriaService";
+import API from "../../services/api.js";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import {
@@ -40,24 +42,82 @@ const PedidoInsumo = () => {
   const [mostrarDetallesPedido, setMostrarDetallesPedido] = useState(null);
   const [mostrarAutomatico, setMostrarAutomatico] = useState(false);
 
+  // Función auxiliar para parsear fechas de manera consistente
+  const parsearFecha = (fechaString) => {
+    if (!fechaString) return null;
+
+    try {
+      let fecha;
+
+      // Si ya tiene formato de fecha completa (con hora)
+      if (fechaString.includes("T") || fechaString.includes(":")) {
+        fecha = new Date(fechaString);
+      } else {
+        // Si es solo fecha (YYYY-MM-DD), agregar hora para evitar problemas de zona horaria
+        fecha = new Date(fechaString + "T12:00:00");
+      }
+
+      // Verificar si la fecha es válida
+      if (isNaN(fecha.getTime())) {
+        return null;
+      }
+
+      return fecha;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  // Función para formatear fechas evitando problemas de zona horaria
+  const formatearFecha = (fechaString) => {
+    if (!fechaString) return "-";
+
+    try {
+      const fecha = parsearFecha(fechaString);
+      if (!fecha) {
+        console.error("Fecha inválida:", fechaString);
+        return "-";
+      }
+
+      return fecha.toLocaleDateString("es-ES");
+    } catch (error) {
+      console.error("Error al formatear fecha:", fechaString, error);
+      return "-";
+    }
+  };
+
   // Función para calcular fecha de entrega desde fecha de aprobación
   const calcularFechaEntrega = (fechaAprobacion) => {
     if (!fechaAprobacion) return null;
 
-    const fecha = new Date(fechaAprobacion);
-    // Agregar 1 día a la fecha de aprobación
-    fecha.setDate(fecha.getDate() + 1);
+    try {
+      const fecha = parsearFecha(fechaAprobacion);
+      if (!fecha) {
+        console.error("Fecha de aprobación inválida:", fechaAprobacion);
+        return null;
+      }
 
-    // Si cae en sábado (6), mover al lunes
-    if (fecha.getDay() === 6) {
-      fecha.setDate(fecha.getDate() + 2);
-    }
-    // Si cae en domingo (0), mover al lunes
-    else if (fecha.getDay() === 0) {
+      // Agregar 1 día a la fecha de aprobación
       fecha.setDate(fecha.getDate() + 1);
-    }
 
-    return fecha;
+      // Si cae en sábado (6), mover al lunes
+      if (fecha.getDay() === 6) {
+        fecha.setDate(fecha.getDate() + 2);
+      }
+      // Si cae en domingo (0), mover al lunes
+      else if (fecha.getDay() === 0) {
+        fecha.setDate(fecha.getDate() + 1);
+      }
+
+      return fecha;
+    } catch (error) {
+      console.error(
+        "Error al calcular fecha de entrega:",
+        fechaAprobacion,
+        error,
+      );
+      return null;
+    }
   };
 
   // Función para verificar si hay filtros aplicados
@@ -81,13 +141,26 @@ const PedidoInsumo = () => {
     aplicarFiltros();
   }, [pedidos, filtros]);
 
+  useEffect(() => {
+    // Bloquear scroll del body cuando se abre el modal de detalles
+    if (mostrarDetallesPedido) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [mostrarDetallesPedido]);
+
   const aplicarFiltros = () => {
     let pedidosTemp = [...pedidos];
 
     // Filtrar por estado
     if (filtros.estado) {
       pedidosTemp = pedidosTemp.filter(
-        (pedido) => pedido.id_estadoPedido.toString() === filtros.estado
+        (pedido) => pedido.id_estadoPedido.toString() === filtros.estado,
       );
     }
 
@@ -96,7 +169,7 @@ const PedidoInsumo = () => {
       pedidosTemp = pedidosTemp.filter((pedido) =>
         pedido.nombreProveedor
           .toLowerCase()
-          .includes(filtros.proveedor.toLowerCase())
+          .includes(filtros.proveedor.toLowerCase()),
       );
     }
 
@@ -105,29 +178,32 @@ const PedidoInsumo = () => {
       pedidosTemp = pedidosTemp.filter((pedido) =>
         pedido.nombreUsuario
           .toLowerCase()
-          .includes(filtros.usuario.toLowerCase())
+          .includes(filtros.usuario.toLowerCase()),
       );
     }
 
     // Filtrar por origen
     if (filtros.origen) {
       pedidosTemp = pedidosTemp.filter(
-        (pedido) => pedido.origen === filtros.origen
+        (pedido) => pedido.origen === filtros.origen,
       );
     }
 
     // Filtrar por fechas
     if (filtros.fechaInicio) {
-      pedidosTemp = pedidosTemp.filter(
-        (pedido) =>
-          new Date(pedido.fechaEmision) >= new Date(filtros.fechaInicio)
-      );
+      pedidosTemp = pedidosTemp.filter((pedido) => {
+        const fechaPedido = parsearFecha(pedido.fechaEmision);
+        const fechaFiltro = parsearFecha(filtros.fechaInicio);
+        return fechaPedido && fechaFiltro && fechaPedido >= fechaFiltro;
+      });
     }
 
     if (filtros.fechaFin) {
-      pedidosTemp = pedidosTemp.filter(
-        (pedido) => new Date(pedido.fechaEmision) <= new Date(filtros.fechaFin)
-      );
+      pedidosTemp = pedidosTemp.filter((pedido) => {
+        const fechaPedido = parsearFecha(pedido.fechaEmision);
+        const fechaFiltro = parsearFecha(filtros.fechaFin);
+        return fechaPedido && fechaFiltro && fechaPedido <= fechaFiltro;
+      });
     }
 
     setPedidosFiltrados(pedidosTemp);
@@ -190,34 +266,239 @@ const PedidoInsumo = () => {
       //console.error("Error al cargar insumos bajo stock:", error);
       showError(
         "Error",
-        "Error al cargar insumos bajo stock: " + error.message
+        "Error al cargar insumos bajo stock: " + error.message,
       );
     }
   };
-
   const aprobarPedido = async (id) => {
-    if (
-      !confirm(
-        "¿Está seguro de que desea aprobar este pedido?\n\nEsto generará un PDF y lo enviará automáticamente al proveedor por email."
-      )
-    )
-      return;
+    // 1. Confirmación asíncrona con advertencia de acción externa
+    const confirmed = await showConfirm(
+      "Aprobar Pedido",
+      "¿Está seguro de que desea aprobar este pedido?. Se enviará automáticamente un email al proveedor con un enlace para confirmar la disponibilidad de los insumos.",
+      "Sí, aprobar y enviar",
+      "Cancelar",
+    );
+
+    if (!confirmed) return;
 
     try {
+      // Debug: obtener información del pedido antes de aprobar
+      const pedidoActual = pedidos.find((p) => p.id_pedido === id);
+      console.log("📋 Información del pedido a aprobar:", {
+        id_pedido: id,
+        estadoPedido: pedidoActual?.estadoPedido,
+        id_estadoPedido: pedidoActual?.id_estadoPedido,
+        nombreProveedor: pedidoActual?.nombreProveedor,
+      });
+
+      // 2. Procesar aprobación en backend
       const response = await pedidoService.aprobar(id);
-      showInfo(
-        "Información",
-        `✅ Pedido aprobado exitosamente.\n📧 Email enviado al proveedor: ${
-          response.pedido?.nombreProveedor || "Proveedor"
-        }`
+
+      // 3. Gestión de comunicación con proveedores
+      await enviarEnlacesConfirmacion(id, response.pedido);
+
+      // 4. Feedback de éxito detallado
+      showSuccess(
+        "Pedido Aprobado",
+        "El pedido ha sido procesado correctamente y los enlaces de confirmación han sido enviados a los proveedores involucrados.",
       );
-      cargarPedidos();
+
+      // 5. Refrescar la lista de pedidos
+      await cargarPedidos();
     } catch (error) {
-      //console.error("Error al aprobar pedido:", error);
+      // 5. Manejo de errores profesional con información detallada
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Error al procesar la aprobación del pedido.";
+
+      // Si hay información del estado actual, incluirla en el error
+      if (error.response?.data?.estadoActual) {
+        showError(
+          "Error de Aprobación",
+          `${msg}\n\nEstado actual del pedido: ${error.response.data.estadoActual}\nID de Estado: ${error.response.data.id_estadoPedido}`,
+        );
+      } else {
+        showError("Error de Aprobación", msg);
+      }
+
+      console.error("❌ Detalles del error:", error.response?.data);
+    }
+  };
+
+  const enviarEnlacesConfirmacion = async (idPedido, pedidoData) => {
+    try {
+      // Obtener detalles del pedido para identificar proveedores
+      const detalles = await pedidoService.getDetalles(idPedido);
+
+      // Agrupar por proveedor
+      const proveedoresUnicos = [
+        ...new Set(detalles.map((d) => d.id_proveedor)),
+      ];
+
+      console.log(
+        `📧 Enviando enlaces de confirmación a ${proveedoresUnicos.length} proveedor(es)...`,
+      );
+
+      // Generar y enviar un enlace para cada proveedor
+      const promesasEnvio = proveedoresUnicos.map(async (idProveedor) => {
+        try {
+          // 1. Generar token de confirmación
+          const tokenResponse = await API.post(
+            "/pedidos/generar-token-proveedor",
+            {
+              idPedido,
+              idProveedor,
+            },
+          );
+          const enlaceConfirmacion = tokenResponse.data.link;
+          console.log(
+            `🔗 Enlace generado para proveedor ${idProveedor}: ${enlaceConfirmacion}`,
+          );
+
+          // 2. Enviar email automáticamente al proveedor
+          let emailEnviado = false;
+          let emailError = null;
+          try {
+            const emailResponse = await API.post(
+              "/pedidos/enviar-email-confirmacion",
+              {
+                idPedido,
+                idProveedor,
+                enlaceConfirmacion,
+                datosAdicionales: {
+                  nombreCocinera: user
+                    ? `${user.nombre} ${user.apellido}`
+                    : "Sistema",
+                  fechaPedido:
+                    pedidoData?.fechaEmision || new Date().toISOString(),
+                },
+              },
+            );
+
+            console.log(
+              `✅ Email enviado exitosamente al proveedor ${idProveedor}`,
+            );
+            emailEnviado = true;
+          } catch (err) {
+            console.warn(
+              `⚠️ Error al enviar email al proveedor ${idProveedor}:`,
+              err,
+            );
+            emailError = err.message;
+          }
+
+          // 3. Enviar notificación por Telegram al proveedor (nuevo)
+          let telegramEnviado = false;
+          let telegramError = null;
+          try {
+            const telegramResponse = await API.post(
+              "/pedidos/enviar-telegram-proveedor",
+              {
+                idPedido,
+                idProveedor,
+                enlaceConfirmacion,
+              },
+            );
+
+            if (telegramResponse.data.telegramEnviado) {
+              console.log(
+                `✅ Mensaje Telegram enviado exitosamente al proveedor ${idProveedor}`,
+              );
+              telegramEnviado = true;
+            } else {
+              console.warn(
+                `⚠️ Telegram no disponible para proveedor ${idProveedor}:`,
+                telegramResponse.data.motivo,
+              );
+            }
+          } catch (err) {
+            console.warn(
+              `⚠️ Error al enviar mensaje por Telegram al proveedor ${idProveedor}:`,
+              err,
+            );
+            telegramError = err.message;
+          }
+
+          return {
+            ...tokenResponse.data,
+            emailEnviado,
+            emailError,
+            telegramEnviado,
+            telegramError,
+          };
+        } catch (error) {
+          console.warn(
+            `⚠️ Error al generar enlace para proveedor ${idProveedor}:`,
+            error,
+          );
+          return null;
+        }
+      });
+
+      const resultados = await Promise.all(promesasEnvio);
+      const exitosos = resultados.filter((r) => r !== null);
+      const emailsEnviados = exitosos.filter((r) => r.emailEnviado);
+      const emailsFallidos = exitosos.filter((r) => !r.emailEnviado);
+      const telegramEnviados = exitosos.filter((r) => r.telegramEnviado);
+      const telegramFallidos = exitosos.filter((r) => !r.telegramEnviado);
+
+      // Mostrar resultado detallado
+      if (exitosos.length > 0) {
+        let mensaje = `Se generaron ${exitosos.length} enlaces de confirmación.`;
+
+        if (emailsEnviados.length > 0) {
+          mensaje += `\n📧 ${emailsEnviados.length} email(s) enviado(s) exitosamente.`;
+        }
+
+        if (emailsFallidos.length > 0) {
+          mensaje += `\n⚠️ ${emailsFallidos.length} email(s) no pudieron ser enviados (pero los enlaces fueron generados).`;
+        }
+
+        if (telegramEnviados.length > 0) {
+          mensaje += `\n📱 ${telegramEnviados.length} mensaje(s) de Telegram enviado(s) exitosamente.`;
+        }
+
+        if (telegramFallidos.length > 0) {
+          mensaje += `\n⚠️ ${telegramFallidos.length} proveedor(es) sin notificaciones de Telegram configuradas.`;
+        }
+
+        // Mostrar enlaces manualmente para los que fallaron
+        if (emailsFallidos.length > 0 || telegramFallidos.length > 0) {
+          emailsFallidos.forEach((resultado) => {
+            console.log(`🔗 Enlace manual para proveedor: ${resultado.link}`);
+          });
+          telegramFallidos.forEach((resultado) => {
+            console.log(
+              `🔗 Enlace manual para proveedor sin Telegram: ${resultado.link}`,
+            );
+          });
+        }
+
+        if (
+          emailsEnviados.length === exitosos.length &&
+          telegramEnviados.length === exitosos.length
+        ) {
+          showSuccess(
+            "✅ Enlaces Enviados",
+            mensaje +
+              "\n\nTodos los proveedores fueron notificados por email y Telegram.",
+          );
+        } else if (emailsEnviados.length > 0 || telegramEnviados.length > 0) {
+          showInfo("⚠️ Envío Parcial", mensaje);
+        } else {
+          showWarning(
+            "⚠️ Enlaces Generados",
+            mensaje +
+              "\n\nVerifique la configuración de email y Telegram del sistema.",
+          );
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error al procesar enlaces de confirmación:", error);
       showError(
-        "Error",
-        "Error al aprobar pedido: " +
-          (error.response?.data?.message || error.message)
+        "Error de Comunicación",
+        "El pedido fue aprobado correctamente, pero hubo problemas al enviar los enlaces de confirmación a los proveedores. Contacte al administrador del sistema.",
       );
     }
   };
@@ -226,7 +507,7 @@ const PedidoInsumo = () => {
     // 1. Solicitar el motivo de cancelación
     const motivo = await showCancelar(
       "Cancelar Pedido",
-      "Escriba el motivo aquí..."
+      "Escriba el motivo aquí...",
     );
 
     // 2. Si el usuario proporcionó un motivo
@@ -264,7 +545,7 @@ const PedidoInsumo = () => {
     // Mostrar mensaje de éxito
     showInfo(
       "Información",
-      `¡Éxito! ${resultado.message}\n\nTotal pedidos creados: ${resultado.totalPedidosCreados}`
+      `¡Éxito! ${resultado.message}\n\nTotal pedidos creados: ${resultado.totalPedidosCreados}`,
     );
 
     // Recargar datos
@@ -282,7 +563,7 @@ const PedidoInsumo = () => {
     try {
       setLoading(true);
       const pedidoCompleto = await pedidoService.getPedidoCompleto(
-        pedido.id_pedido
+        pedido.id_pedido,
       );
       setMostrarDetallesPedido(pedidoCompleto);
     } catch (error) {
@@ -299,7 +580,7 @@ const PedidoInsumo = () => {
       "Eliminar Pedido",
       "¿Está seguro de que desea eliminar este pedido? Esta acción podría revertir movimientos de inventario pendientes.",
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     if (!confirmed) return;
@@ -352,7 +633,7 @@ const PedidoInsumo = () => {
     //console.log("Botón PDF clickeado, pedidos:", pedidos); // Debug
     // Filtrar solo pedidos aprobados
     const pedidosAprobados = pedidos.filter(
-      (p) => p.estadoPedido === "Aprobado"
+      (p) => p.estadoPedido === "Aprobado",
     );
 
     if (pedidosAprobados.length === 0) {
@@ -376,23 +657,21 @@ const PedidoInsumo = () => {
       doc.text(
         `Fecha de generación: ${new Date().toLocaleString("es-ES")}`,
         14,
-        40
+        40,
       );
       doc.text(
         `Total de pedidos aprobados: ${pedidosAprobados.length}`,
         14,
-        48
+        48,
       );
 
       // Preparar datos para tabla
       const tableData = pedidosAprobados.map((pedido) => [
-        new Date(pedido.fechaEmision).toLocaleDateString("es-ES"),
+        formatearFecha(pedido.fechaEmision),
         pedido.nombreProveedor,
         pedido.nombreUsuario,
         pedido.estadoPedido,
-        pedido.fechaAprobacion
-          ? new Date(pedido.fechaAprobacion).toLocaleDateString("es-ES")
-          : "-",
+        formatearFecha(pedido.fechaAprobacion),
       ]);
 
       // Tabla
@@ -421,7 +700,7 @@ const PedidoInsumo = () => {
         doc.text(
           `Página ${i} de ${pageCount}`,
           doc.internal.pageSize.width - 30,
-          doc.internal.pageSize.height - 10
+          doc.internal.pageSize.height - 10,
         );
       }
 
@@ -437,7 +716,7 @@ const PedidoInsumo = () => {
 
       showSuccess(
         "Éxito",
-        "Reporte PDF de pedidos aprobados generado exitosamente"
+        "Reporte PDF de pedidos aprobados generado exitosamente",
       );
     } catch (error) {
       console.error("Error al generar PDF:", error);
@@ -487,15 +766,11 @@ const PedidoInsumo = () => {
   }
 
   return (
-    <div>
+    <div className="content-page">
       {/* Encabezado */}
       <div className="page-header">
         <div className="header-left mx-3">
-          <h1 className="page-title">
-            {" "}
-            <i className="fas fa-boxes-packing me-2"></i> Gestión de Pedidos
-          </h1>
-          <p>Administre los pedidos de insumos manual y automáticamente</p>
+          <h1 className="page-title">Lista de Pedidos</h1>
         </div>
         <div className="header-actions">
           <div className="btn-group">
@@ -743,11 +1018,7 @@ const PedidoInsumo = () => {
                       <td>
                         <strong>{index + 1}</strong>
                       </td>
-                      <td>
-                        {new Date(pedido.fechaEmision).toLocaleDateString(
-                          "es-ES"
-                        )}
-                      </td>
+                      <td>{formatearFecha(pedido.fechaEmision)}</td>
                       <td>
                         <strong>{pedido.nombreProveedor}</strong>
                       </td>
@@ -773,7 +1044,7 @@ const PedidoInsumo = () => {
                       <td>
                         <span
                           className={`badge ${getEstadoBadgeClass(
-                            pedido.estadoPedido
+                            pedido.estadoPedido,
                           )}`}
                         >
                           {pedido.estadoPedido}
@@ -784,15 +1055,12 @@ const PedidoInsumo = () => {
                           <div className="d-flex flex-column">
                             <span className="text-success">
                               {calcularFechaEntrega(
-                                pedido.fechaAprobacion
+                                pedido.fechaAprobacion,
                               ).toLocaleDateString("es-ES")}
                             </span>
                             <small className="text-muted">
                               (Aprobado:{" "}
-                              {new Date(
-                                pedido.fechaAprobacion
-                              ).toLocaleDateString("es-ES")}
-                              )
+                              {formatearFecha(pedido.fechaAprobacion)})
                             </small>
                           </div>
                         ) : pedido.estadoPedido === "Pendiente" ? (
@@ -830,7 +1098,7 @@ const PedidoInsumo = () => {
                                     setLoading(true);
                                     const pedidoCompleto =
                                       await pedidoService.getPedidoCompleto(
-                                        pedido.id_pedido
+                                        pedido.id_pedido,
                                       );
                                     setPedidoEditando(pedidoCompleto);
                                     setVistaActual("crear");
@@ -838,7 +1106,7 @@ const PedidoInsumo = () => {
                                     showError(
                                       "Error",
                                       "Error al cargar el pedido: " +
-                                        error.message
+                                        error.message,
                                     );
                                   } finally {
                                     setLoading(false);
@@ -880,129 +1148,157 @@ const PedidoInsumo = () => {
       </div>
 
       {/* Modal de detalles del pedido */}
-      {mostrarDetallesPedido && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+      {mostrarDetallesPedido &&
+        createPortal(
           <div
-            className="modal-content"
+            className="modal-overlay"
             style={{
-              backgroundColor: "white",
-              borderRadius: "8px",
-              padding: "0",
-              maxWidth: "900px",
-              width: "90%",
-              maxHeight: "80vh",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <div className="modal-header">
-              <h5 className="modal-title">
-                <i className="fas fa-info-circle me-2"></i>
-                Detalles del Pedido
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setMostrarDetallesPedido(null)}
-              ></button>
-            </div>
             <div
-              className="modal-body"
-              style={{ maxHeight: "60vh", overflowY: "auto" }}
+              className="modal-content"
+              style={{
+                backgroundColor: "white",
+                borderRadius: "8px",
+                padding: "0",
+                maxWidth: "900px",
+                width: "90%",
+                maxHeight: "80vh",
+              }}
             >
-              <div className="row mb-3">
-                <div className="col-md-6">
-                  <strong>Proveedor:</strong>{" "}
-                  {mostrarDetallesPedido.nombreProveedor}
-                </div>
-                <div className="col-md-6">
-                  <strong>Fecha de Emisión:</strong>{" "}
-                  {new Date(
-                    mostrarDetallesPedido.fechaEmision
-                  ).toLocaleDateString("es-ES")}
-                </div>
-                <div className="col-md-6">
-                  <strong>Usuario:</strong>{" "}
-                  {mostrarDetallesPedido.nombreUsuario}
-                </div>
-                <div className="col-md-6">
-                  <strong>Estado:</strong>
-                  <span
-                    className={`badge ms-2 ${getEstadoBadgeClass(
-                      mostrarDetallesPedido.estadoPedido
-                    )}`}
-                  >
-                    {mostrarDetallesPedido.estadoPedido}
-                  </span>
-                </div>
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="fas fa-info-circle me-2"></i>
+                  Detalles del Pedido
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setMostrarDetallesPedido(null)}
+                ></button>
               </div>
-
-              {mostrarDetallesPedido.observaciones && (
-                <div className="mb-3">
-                  <strong>Observaciones:</strong>
-                  <p className="mt-1">{mostrarDetallesPedido.observaciones}</p>
-                </div>
-              )}
-
-              <h6>
-                <i className="fas fa-list me-2"></i>Insumos del Pedido
-              </h6>
-              {mostrarDetallesPedido.detalles &&
-              mostrarDetallesPedido.detalles.length > 0 ? (
-                <div className="table-responsive">
-                  <table className="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Insumo</th>
-                        <th>Unidad</th>
-                        <th>Cantidad</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mostrarDetallesPedido.detalles.map((detalle, index) => (
-                        <tr
-                          key={detalle.id_detallePedido || `detalle-${index}`}
-                        >
-                          <td>{detalle.nombreInsumo}</td>
-                          <td>{detalle.unidadMedida}</td>
-                          <td>
-                            {detalle.cantidad || detalle.cantidadSolicitada}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-muted">
-                  No hay detalles disponibles para este pedido.
-                </p>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setMostrarDetallesPedido(null)}
+              <div
+                className="modal-body"
+                style={{ maxHeight: "60vh", overflowY: "auto" }}
               >
-                Cerrar
-              </button>
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <strong>Proveedor:</strong>{" "}
+                    {mostrarDetallesPedido.nombreProveedor}
+                  </div>
+                  <div className="col-md-6">
+                    <strong>Fecha de Emisión:</strong>{" "}
+                    {formatearFecha(mostrarDetallesPedido.fechaEmision)}
+                  </div>
+                  <div className="col-md-6">
+                    <strong>Usuario:</strong>{" "}
+                    {mostrarDetallesPedido.nombreUsuario}
+                  </div>
+                  <div className="col-md-6">
+                    <strong>Estado:</strong>
+                    <span
+                      className={`badge ms-2 ${getEstadoBadgeClass(
+                        mostrarDetallesPedido.estadoPedido,
+                      )}`}
+                    >
+                      {mostrarDetallesPedido.estadoPedido}
+                    </span>
+                  </div>
+                </div>
+
+                {mostrarDetallesPedido.observaciones && (
+                  <div className="mb-3">
+                    <strong>Observaciones:</strong>
+                    <p className="mt-1">
+                      {mostrarDetallesPedido.observaciones}
+                    </p>
+                  </div>
+                )}
+
+                <h6>
+                  <i className="fas fa-list me-2"></i>Insumos del Pedido
+                </h6>
+                {mostrarDetallesPedido.detalles &&
+                mostrarDetallesPedido.detalles.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Insumo</th>
+                          <th>Unidad</th>
+                          <th>Cantidad</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {mostrarDetallesPedido.detalles.map(
+                          (detalle, index) => (
+                            <tr
+                              key={
+                                detalle.id_detallePedido || `detalle-${index}`
+                              }
+                            >
+                              <td>{detalle.nombreInsumo}</td>
+                              <td>{detalle.unidadMedida}</td>
+                              <td>
+                                {(() => {
+                                  const cantidad = Number(
+                                    detalle.cantidad ||
+                                      detalle.cantidadSolicitada,
+                                  );
+                                  const unidad = detalle.unidadMedida || "";
+
+                                  // Si es en Gramos o Mililitros Y la cantidad es mayor a 1000,
+                                  // entonces está en unidades menores (dividir por 1000)
+                                  if (
+                                    (unidad.includes("Gramo") ||
+                                      unidad.includes("Mililitro")) &&
+                                    cantidad > 1000
+                                  ) {
+                                    const cantidadConvertida = cantidad / 1000;
+                                    // Remover decimales innecesarios
+                                    return (
+                                      Math.round(cantidadConvertida * 100) / 100
+                                    );
+                                  }
+
+                                  return Math.round(cantidad * 100) / 100;
+                                })()}
+                              </td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-muted">
+                    No hay detalles disponibles para este pedido.
+                  </p>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setMostrarDetallesPedido(null)}
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {/* Modal de Generación Automática */}
       <PedidoAutomaticoForm

@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
           .catch((err) => {
             //console.warn("Error al registrar logout en auditoría:", err);
             showInfoError(
-              "Error al registrar el cierre de sesión en auditoría."
+              "Error al registrar el cierre de sesión en auditoría.",
             );
             return;
             show;
@@ -107,6 +107,10 @@ export const AuthProvider = ({ children }) => {
     return hasRole("Cocinera");
   };
 
+  const isProveedor = () => {
+    return hasRole("Proveedor");
+  };
+
   const value = {
     user,
     login,
@@ -117,6 +121,7 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     isDocente,
     isCocinera,
+    isProveedor,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

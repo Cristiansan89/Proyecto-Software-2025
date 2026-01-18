@@ -416,11 +416,13 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
                 <option value="">
                   {loadingRoles ? "Cargando roles..." : "Seleccionar Rol"}
                 </option>
-                {roles.map((rol) => (
-                  <option key={rol.idRol} value={rol.idRol}>
-                    {rol.nombreRol}
-                  </option>
-                ))}
+                {roles
+                  .filter((rol) => rol.nombreRol?.toLowerCase() !== "proveedor")
+                  .map((rol) => (
+                    <option key={rol.idRol} value={rol.idRol}>
+                      {rol.nombreRol}
+                    </option>
+                  ))}
               </select>
 
               {rolSeleccionado && (

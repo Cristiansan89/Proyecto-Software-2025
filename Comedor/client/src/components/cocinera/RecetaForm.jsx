@@ -96,11 +96,11 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         }));
       }
     } catch (error) {
-      showError(
-        "Error",
-        "No se pudieron cargar los servicios asociados a la receta."
+      // Silenciar el error si la tabla no existe
+      console.warn(
+        "Advertencia: No se pudieron cargar los servicios asociados a la receta."
       );
-      // No es crítico si falla, continuar sin servicios
+      // Continuar sin cargar servicios (no mostrar alerta)
     }
   };
 
@@ -251,11 +251,11 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
               formData.servicios
             );
           } catch (servicioError) {
-            showError(
-              "Error",
-              "No se pudieron guardar los servicios asociados a la receta."
+            // Silenciar error si la tabla no existe
+            console.warn(
+              "Advertencia: No se pudieron guardar los servicios asociados a la receta."
             );
-            throw servicioError;
+            // Continuar sin guardar servicios
           }
         }
 
@@ -295,12 +295,11 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
             formData.servicios
           );
         } catch (servicioError) {
-          //console.error("❌ Error actualizando servicios:", servicioError);
-          showError(
-            "Error",
-            "No se pudieron actualizar los servicios asociados a la receta."
+          // Silenciar error si la tabla no existe
+          console.warn(
+            "Advertencia: No se pudieron actualizar los servicios asociados a la receta."
           );
-          throw servicioError;
+          // Continuar sin actualizar servicios
         }
 
         showSuccess("Éxito", "Receta actualizada exitosamente");

@@ -1,5 +1,6 @@
 import express from "express";
 import { corsMiddleware } from "./middlewares/cors.js";
+import { cookieMiddleware } from "./middlewares/cookies.js";
 import { auditoriaMiddleware } from "./middlewares/auditoria.js";
 import { authRequired } from "./middlewares/auth.js";
 import { createAuthRouter } from "./routes/auth.js";
@@ -73,6 +74,7 @@ export const createApp = ({
   // Middlewares
   app.use(express.json());
   app.use(corsMiddleware());
+  app.use(cookieMiddleware());
   app.disable("x-powered-by");
 
   // Rutas públicas (no requieren autenticación ni auditoría)
@@ -109,7 +111,10 @@ export const createApp = ({
     "/api/planificacion-menus",
     createPlanificacionMenuRouter({ planificacionMenuModel })
   );
-  app.use("/api/proveedores", createProveedorRouter({ proveedorModel }));
+  app.use(
+    "/api/proveedores",
+    createProveedorRouter({ proveedorModel, usuarioModel, personaModel })
+  );
   app.use("/api/recetas", createRecetaRouter({ recetaModel }));
   app.use(
     "/api/registros-asistencias",

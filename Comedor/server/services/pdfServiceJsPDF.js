@@ -3,6 +3,21 @@ import autoTable from "jspdf-autotable";
 import { EscuelaService } from "./escuelaService.js";
 
 /**
+ * Convertir cantidad según la unidad de medida
+ * Si la unidad contiene "Gramo" o "Mililitro" y cantidad > 1000, divide por 1000
+ */
+const convertirCantidad = (cantidad, unidad) => {
+  const cantidadNum = Number(cantidad) || 0;
+  if (
+    (unidad.includes("Gramo") || unidad.includes("Mililitro")) &&
+    cantidadNum > 1000
+  ) {
+    return Math.round((cantidadNum / 1000) * 100) / 100;
+  }
+  return cantidadNum;
+};
+
+/**
  * Generar PDF del pedido usando jsPDF
  */
 export const generarPDFPedidoJsPDF = async (pedido, detalles) => {
@@ -71,7 +86,7 @@ export const generarPDFPedidoJsPDF = async (pedido, detalles) => {
     doc.text("Fecha de Emisión:", 120, infoY + 8);
     doc.setFont(undefined, "bold");
     const fechaEmision = new Date(pedido.fechaEmision).toLocaleDateString(
-      "es-ES"
+      "es-ES",
     );
     doc.text(fechaEmision, 120, infoY + 15);
     doc.setFont(undefined, "normal");
@@ -89,7 +104,7 @@ export const generarPDFPedidoJsPDF = async (pedido, detalles) => {
     doc.text(
       `Razón Social: ${pedido.nombreProveedor || "No especificado"}`,
       15,
-      yPos
+      yPos,
     );
     yPos += 5;
 
@@ -128,7 +143,10 @@ export const generarPDFPedidoJsPDF = async (pedido, detalles) => {
         item.codigoInsumo || `INS-${String(item.id_insumo).padStart(4, "0")}`,
         item.nombreInsumo || "Producto",
         item.unidadMedida || "UN",
-        `${item.cantidad || item.cantidadSolicitada || 0}`,
+        `${convertirCantidad(
+          item.cantidad || item.cantidadSolicitada || 0,
+          item.unidadMedida,
+        )}`,
       ]);
 
       autoTable(doc, {
@@ -177,13 +195,13 @@ export const generarPDFPedidoJsPDF = async (pedido, detalles) => {
       "Este documento fue generado automáticamente por el Sistema de Comedor Escolar",
       105,
       pageHeight - 20,
-      { align: "center" }
+      { align: "center" },
     );
     doc.text(
       `Generado el: ${new Date().toLocaleString("es-ES")}`,
       105,
       pageHeight - 15,
-      { align: "center" }
+      { align: "center" },
     );
 
     // Convertir a buffer
@@ -193,7 +211,7 @@ export const generarPDFPedidoJsPDF = async (pedido, detalles) => {
     console.log(
       "✅ PDF generado exitosamente. Tamaño:",
       pdfBuffer.length,
-      "bytes"
+      "bytes",
     );
 
     return pdfBuffer;

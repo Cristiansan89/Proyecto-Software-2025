@@ -391,7 +391,8 @@ const CocineraGestionAsistencias = () => {
         // Generar token compatible con el backend usando Buffer para manejar caracteres especiales
         const tokenString = JSON.stringify(tokenData);
         const token = btoa(unescape(encodeURIComponent(tokenString))); // Maneja caracteres UTF-8
-        const enlace = `${window.location.origin}/asistencias/registro/${token}`;
+        // Cambiar a /asistencias/login para requerir autenticación primero
+        const enlace = `${window.location.origin}/asistencias/login/${token}`;
 
         enlacesGenerados.push({
           id: `${gradoId}-${formulario.idServicio}`,

@@ -170,7 +170,6 @@ export class ConsumoModel {
                     COALESCE(CONCAT(p.nombre, ' ', p.apellido), u.nombreUsuario, 'Usuario no especificado') as nombreUsuario,
                     i.nombreInsumo,
                     dc.cantidadUtilizada,
-                    dc.unidadMedida,
                     dc.cantidadCalculada,
                     dc.id_itemReceta
                  FROM Consumos c

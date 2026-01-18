@@ -1,6 +1,10 @@
 import { connection } from "./db.js";
 
 export class ProveedorModel {
+  // Permitir inyectar usuarioModel para crear usuarios automáticamente
+  static setUsuarioModel(usuarioModel) {
+    this.usuarioModel = usuarioModel;
+  }
   static async getAll() {
     const [proveedores] = await connection.query(
       `SELECT 
@@ -36,7 +40,36 @@ export class ProveedorModel {
       [id]
     );
     if (proveedores.length === 0) return null;
-    return proveedores[0];
+
+    const proveedor = proveedores[0];
+
+    // Obtener usuario asociado al proveedor (si la columna existe)
+    try {
+      const [usuarios] = await connection.query(
+        `SELECT 
+                  BIN_TO_UUID(u.id_usuario) as idUsuario,
+                  u.nombreUsuario,
+                  u.mail,
+                  u.telefono,
+                  u.estado
+               FROM Usuarios u
+               WHERE u.id_proveedor = UUID_TO_BIN(?);`,
+        [id]
+      );
+
+      if (usuarios.length > 0) {
+        proveedor.usuario = usuarios[0];
+      }
+    } catch (error) {
+      // Si falla, significa que la columna id_proveedor no existe en la BD
+      // Continuar sin obtener el usuario
+      console.warn(
+        "Advertencia: No se pudo obtener usuario del proveedor:",
+        error.message
+      );
+    }
+
+    return proveedor;
   }
 
   static async create({ input }) {
@@ -47,6 +80,7 @@ export class ProveedorModel {
       telefono,
       mail,
       estado = "Activo",
+      usuario,
     } = input;
 
     try {
@@ -89,7 +123,36 @@ export class ProveedorModel {
         [razonSocial, CUIT]
       );
 
-      return this.getById({ id: newProveedor[0].idProveedor });
+      const proveedorId = newProveedor[0].idProveedor;
+
+      // Si se proporcionan datos de usuario, crear el usuario automáticamente
+      if (
+        usuario &&
+        usuario.nombreUsuario &&
+        usuario.contrasena &&
+        this.usuarioModel
+      ) {
+        try {
+          const usuarioData = {
+            nombreUsuario: usuario.nombreUsuario,
+            contrasena: usuario.contrasena,
+            mail: mail,
+            telefono: telefono || null,
+            estado: estado,
+            idProveedor: proveedorId, // Vinculación automática
+          };
+
+          await this.usuarioModel.createForProveedor({ input: usuarioData });
+        } catch (userError) {
+          // Log del error pero no fallar la creación del proveedor
+          console.error(
+            "Error al crear usuario para proveedor:",
+            userError.message
+          );
+        }
+      }
+
+      return this.getById({ id: proveedorId });
     } catch (error) {
       if (error.code === "ER_DUP_ENTRY") {
         throw new Error("Ya existe un proveedor con esta razón social y CUIT");
@@ -220,6 +283,16 @@ export class ProveedorModel {
   // Asignar insumos a un proveedor
   static async asignarInsumos({ idProveedor, insumos }) {
     try {
+      // Si no hay insumos a asignar, eliminar todas las asignaciones actuales
+      if (!insumos || insumos.length === 0) {
+        await connection.query(
+          `DELETE FROM ProveedorInsumo 
+                   WHERE id_proveedor = UUID_TO_BIN(?);`,
+          [idProveedor]
+        );
+        return true;
+      }
+
       // Primero desactivar todas las asignaciones actuales
       await connection.query(
         `UPDATE ProveedorInsumo 
@@ -283,11 +356,36 @@ export class ProveedorModel {
              ORDER BY p.razonSocial;`
     );
 
-    // Para cada proveedor, obtener sus insumos
+    // Para cada proveedor, obtener sus insumos y usuario
     for (let proveedor of proveedores) {
       proveedor.insumos = await this.getInsumosAsignados({
         id: proveedor.idProveedor,
       });
+
+      // Obtener usuario asociado al proveedor (si la columna existe)
+      try {
+        const [usuarios] = await connection.query(
+          `SELECT 
+                    BIN_TO_UUID(u.id_usuario) as idUsuario,
+                    u.nombreUsuario,
+                    u.mail,
+                    u.telefono,
+                    u.estado
+                 FROM Usuarios u
+                 WHERE u.id_proveedor = UUID_TO_BIN(?);`,
+          [proveedor.idProveedor]
+        );
+
+        if (usuarios.length > 0) {
+          proveedor.usuario = usuarios[0];
+        }
+      } catch (error) {
+        // Si falla, significa que la columna id_proveedor no existe en la BD
+        console.warn(
+          "Advertencia: No se pudo obtener usuario del proveedor:",
+          error.message
+        );
+      }
     }
 
     return proveedores;
@@ -311,11 +409,36 @@ export class ProveedorModel {
              ORDER BY p.razonSocial;`
     );
 
-    // Para cada proveedor, obtener sus insumos
+    // Para cada proveedor, obtener sus insumos y usuario
     for (let proveedor of proveedores) {
       proveedor.insumos = await this.getInsumosAsignados({
         id: proveedor.idProveedor,
       });
+
+      // Obtener usuario asociado al proveedor (si la columna existe)
+      try {
+        const [usuarios] = await connection.query(
+          `SELECT 
+                    BIN_TO_UUID(u.id_usuario) as idUsuario,
+                    u.nombreUsuario,
+                    u.mail,
+                    u.telefono,
+                    u.estado
+                 FROM Usuarios u
+                 WHERE u.id_proveedor = UUID_TO_BIN(?);`,
+          [proveedor.idProveedor]
+        );
+
+        if (usuarios.length > 0) {
+          proveedor.usuario = usuarios[0];
+        }
+      } catch (error) {
+        // Si falla, significa que la columna id_proveedor no existe en la BD
+        console.warn(
+          "Advertencia: No se pudo obtener usuario del proveedor:",
+          error.message
+        );
+      }
     }
 
     return proveedores;

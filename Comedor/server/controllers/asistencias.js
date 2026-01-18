@@ -46,9 +46,63 @@ export class AsistenciaController {
   getByToken = async (req, res) => {
     try {
       const { token } = req.params;
+      const userFromToken = req.user; // Usuario autenticado en middleware
 
       // Validar token
       const tokenData = await this.asistenciaModel.validateToken(token);
+
+      console.log("🔐 Validación de acceso a asistencia:", {
+        tokenDocente: tokenData.idPersonaDocente,
+        tokenGrado: tokenData.nombreGrado,
+        usuarioAutenticado: userFromToken?.id_persona,
+        gradosUsuario: userFromToken?.gradosAsignados,
+      });
+
+      // Si hay usuario autenticado, validar que coincida con el del token
+      if (userFromToken) {
+        if (userFromToken.id_persona !== tokenData.idPersonaDocente) {
+          console.error("❌ ACCESO DENEGADO: Docente mismatch", {
+            tokenDocente: tokenData.idPersonaDocente,
+            usuarioLogueado: userFromToken.id_persona,
+            tokenNombre: tokenData.nombreDocente,
+            usuarioNombre: userFromToken.nombre,
+          });
+
+          return res.status(403).json({
+            success: false,
+            message:
+              `❌ Acceso Denegado: Este enlace es exclusivamente para ${tokenData.nombreDocente}. ` +
+              `Tú estás logueado como ${userFromToken.nombre}.`,
+            error: "WRONG_USER",
+          });
+        }
+
+        // Validar que el usuario está asignado al grado del token
+        const gradoAsignado = userFromToken.gradosAsignados?.some(
+          (g) => g.nombreGrado === tokenData.nombreGrado
+        );
+
+        if (!gradoAsignado) {
+          console.error("❌ ACCESO DENEGADO: Grado mismatch", {
+            gradoRequerido: tokenData.nombreGrado,
+            gradosDisponibles: userFromToken.gradosAsignados?.map(
+              (g) => g.nombreGrado
+            ),
+          });
+
+          return res.status(403).json({
+            success: false,
+            message:
+              `❌ No estás asignado al grado ${tokenData.nombreGrado}. ` +
+              `Tus grados: ${
+                userFromToken.gradosAsignados
+                  ?.map((g) => g.nombreGrado)
+                  .join(", ") || "ninguno"
+              }`,
+            error: "GRADE_MISMATCH",
+          });
+        }
+      }
 
       // Obtener alumnos del grado del docente
       const alumnos = await this.asistenciaModel.getAlumnosByDocenteGrado({
@@ -69,20 +123,41 @@ export class AsistenciaController {
         descripcion: "",
       };
 
+      console.log("✅ Acceso permitido. Datos cargados:", {
+        grado: tokenData.nombreGrado,
+        alumnos: alumnos.length,
+      });
+
       res.json({
+        success: true,
         tokenData,
         alumnos,
         servicio,
       });
     } catch (error) {
-      console.error(error);
-      if (
-        error.message === "Token expirado" ||
-        error.message === "Token inválido"
-      ) {
-        return res.status(401).json({ message: error.message });
+      console.error("❌ Error en getByToken:", error.message);
+
+      if (error.message === "Token expirado") {
+        return res.status(401).json({
+          success: false,
+          message: "⏰ El enlace ha expirado. Solicita uno nuevo.",
+          error: "TOKEN_EXPIRED",
+        });
       }
-      res.status(500).json({ message: "Error interno del servidor" });
+
+      if (error.message === "Token inválido") {
+        return res.status(401).json({
+          success: false,
+          message: "🔒 Enlace inválido o dañado.",
+          error: "INVALID_TOKEN",
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+        error: error.message,
+      });
     }
   };
 
@@ -90,6 +165,7 @@ export class AsistenciaController {
     try {
       const { token } = req.params;
       const { asistencias } = req.body;
+      const userFromToken = req.user; // Usuario autenticado
 
       console.log("📝 Iniciando registro de asistencias...");
       console.log("Token:", token.substring(0, 20) + "...");
@@ -99,10 +175,39 @@ export class AsistenciaController {
       const tokenData = await this.asistenciaModel.validateToken(token);
       console.log("✅ Token validado:", tokenData);
 
+      // VALIDACIONES DE SEGURIDAD
+      // 1. Si hay usuario autenticado, validar que coincida con el del token
+      if (userFromToken) {
+        if (userFromToken.id_persona !== tokenData.idPersonaDocente) {
+          console.error("❌ ACCESO DENEGADO AL REGISTRAR: Docente mismatch");
+          return res.status(403).json({
+            success: false,
+            message:
+              "❌ No tienes permisos para registrar asistencias en este grado.",
+            error: "UNAUTHORIZED_REGISTRATION",
+          });
+        }
+
+        // 2. Validar que el usuario está asignado al grado del token
+        const gradoAsignado = userFromToken.gradosAsignados?.some(
+          (g) => g.nombreGrado === tokenData.nombreGrado
+        );
+
+        if (!gradoAsignado) {
+          console.error("❌ ACCESO DENEGADO AL REGISTRAR: Grado mismatch");
+          return res.status(403).json({
+            success: false,
+            message: `❌ No estás asignado al grado ${tokenData.nombreGrado}.`,
+            error: "GRADE_NOT_ASSIGNED",
+          });
+        }
+      }
+
       if (!asistencias || !Array.isArray(asistencias)) {
-        return res
-          .status(400)
-          .json({ message: "Datos de asistencias inválidos" });
+        return res.status(400).json({
+          success: false,
+          message: "Datos de asistencias inválidos",
+        });
       }
 
       const resultados = [];
@@ -117,7 +222,27 @@ export class AsistenciaController {
 
         if (!["Si", "No", "Ausente"].includes(tipoAsistencia)) {
           return res.status(400).json({
+            success: false,
             message: `Tipo de asistencia inválido: ${tipoAsistencia}. Debe ser 'Si', 'No' o 'Ausente'`,
+          });
+        }
+
+        // VALIDACIÓN: Verificar que el alumno pertenece al grado del token
+        const [alumnoVerif] = await connection.query(
+          `SELECT ag.id_alumnoGrado, ag.nombreGrado 
+           FROM AlumnoGrado ag 
+           WHERE ag.id_alumnoGrado = ? AND ag.nombreGrado = ?`,
+          [idAlumnoGrado, tokenData.nombreGrado]
+        );
+
+        if (!alumnoVerif || alumnoVerif.length === 0) {
+          console.error(
+            `❌ ALUMNO NO AUTORIZADO: ${idAlumnoGrado} no pertenece a ${tokenData.nombreGrado}`
+          );
+          return res.status(403).json({
+            success: false,
+            message: `❌ El alumno ${idAlumnoGrado} no pertenece al grado ${tokenData.nombreGrado}.`,
+            error: "UNAUTHORIZED_STUDENT",
           });
         }
 
@@ -126,7 +251,7 @@ export class AsistenciaController {
           idAlumnoGrado: parseInt(idAlumnoGrado),
           fecha: tokenData.fecha,
           tipoAsistencia,
-          estado: "Completado", // Cambiar a Completado cuando se registra desde el token
+          estado: "Completado",
         });
 
         console.log(
@@ -140,7 +265,9 @@ export class AsistenciaController {
         "🎉 Todas las asistencias procesadas exitosamente:",
         resultados.length
       );
+
       res.json({
+        success: true,
         message: "Asistencias registradas correctamente",
         registradas: resultados.length,
         asistencias: resultados,
@@ -149,15 +276,27 @@ export class AsistenciaController {
       console.error("❌ ERROR EN REGISTRAR ASISTENCIAS:");
       console.error("Mensaje:", error.message);
       console.error("Stack:", error.stack);
-      console.error("Código:", error.code);
 
-      if (
-        error.message === "Token expirado" ||
-        error.message === "Token inválido"
-      ) {
-        return res.status(401).json({ message: error.message });
+      if (error.message === "Token expirado") {
+        return res.status(401).json({
+          success: false,
+          message: "⏰ El enlace ha expirado. Solicita uno nuevo.",
+          error: "TOKEN_EXPIRED",
+        });
       }
-      res.status(500).json({ message: "Error interno del servidor" });
+
+      if (error.message === "Token inválido") {
+        return res.status(401).json({
+          success: false,
+          message: "🔒 Enlace inválido o dañado.",
+          error: "INVALID_TOKEN",
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
     }
   };
 
@@ -182,7 +321,8 @@ export class AsistenciaController {
       // Usar URL base de variable de entorno (debe ser HTTPS para Telegram)
       const baseUrl =
         process.env.FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
-      const link = `${baseUrl}/asistencias/registro/${token}`;
+      // Cambiar a /asistencias/login para requerir autenticación primero
+      const link = `${baseUrl}/asistencias/login/${token}`;
 
       res.json({
         message: "Token generado correctamente",
