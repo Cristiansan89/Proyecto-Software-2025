@@ -211,7 +211,7 @@ const CocineraMovimiento = () => {
     const elemento = document.createElement("a");
     elemento.setAttribute(
       "href",
-      "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
+      "data:text/csv;charset=utf-8," + encodeURIComponent(csv),
     );
     elemento.setAttribute("download", `Movimientos_${Date.now()}.csv`);
     elemento.style.display = "none";
@@ -232,7 +232,7 @@ const CocineraMovimiento = () => {
         new Date(m.fechaHora).toLocaleString("es-ES"),
         m.tipoMovimiento,
         m.nombreInsumo || "",
-        parseFloat(m.cantidadMovimiento).toFixed(2),
+        Number(m.cantidadMovimiento),
         m.unidadMedida || "",
         m.nombreUsuario || "Sistema",
         m.comentarioMovimiento || "",
@@ -518,7 +518,7 @@ const CocineraMovimiento = () => {
                           <strong>
                             <small className="text-muted">
                               {new Date(mov.fechaHora).toLocaleDateString(
-                                "es-ES"
+                                "es-ES",
                               )}
                             </small>
                             <br />
@@ -528,7 +528,7 @@ const CocineraMovimiento = () => {
                                 {
                                   hour: "2-digit",
                                   minute: "2-digit",
-                                }
+                                },
                               )}
                             </small>
                           </strong>
@@ -536,7 +536,7 @@ const CocineraMovimiento = () => {
                         <td>
                           <span
                             className={`badge bg-${obtenerBadgeColor(
-                              mov.tipoMovimiento
+                              mov.tipoMovimiento,
                             )}`}
                           >
                             <span className="ms-1">{mov.tipoMovimiento}</span>
@@ -547,7 +547,7 @@ const CocineraMovimiento = () => {
                         </td>
                         <td>
                           <span className="badge bg-light text-dark">
-                            {parseFloat(mov.cantidadMovimiento).toFixed(2)}
+                            {Number(mov.cantidadMovimiento)}
                           </span>
                         </td>
                         <td>
@@ -623,7 +623,7 @@ const CocineraMovimiento = () => {
               <h3 className="text-success">
                 {
                   movimientosFiltrados.filter(
-                    (m) => m.tipoMovimiento === "Entrada"
+                    (m) => m.tipoMovimiento === "Entrada",
                   ).length
                 }
               </h3>
@@ -639,7 +639,7 @@ const CocineraMovimiento = () => {
               <h3 className="text-warning">
                 {
                   movimientosFiltrados.filter(
-                    (m) => m.tipoMovimiento === "Salida"
+                    (m) => m.tipoMovimiento === "Salida",
                   ).length
                 }
               </h3>
@@ -655,7 +655,7 @@ const CocineraMovimiento = () => {
               <h3 className="text-danger">
                 {
                   movimientosFiltrados.filter(
-                    (m) => m.tipoMovimiento === "Merma"
+                    (m) => m.tipoMovimiento === "Merma",
                   ).length
                 }
               </h3>

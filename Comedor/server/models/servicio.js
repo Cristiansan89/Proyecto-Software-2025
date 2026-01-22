@@ -8,10 +8,10 @@ export class ServicioModel {
                 nombre,
                 descripcion,
                 fechaAlta,
-                fecha_modificacion as fechaModificacion,
+                fechaModificacion,
                 estado
              FROM Servicios
-             ORDER BY nombre;`
+             ORDER BY nombre;`,
     );
     return servicios;
   }
@@ -23,11 +23,11 @@ export class ServicioModel {
                 nombre,
                 descripcion,
                 fechaAlta,
-                fecha_modificacion as fechaModificacion,
+                fechaModificacion,
                 estado
              FROM Servicios
              WHERE id_servicio = ?;`,
-      [id]
+      [id],
     );
     if (servicios.length === 0) return null;
     return servicios[0];
@@ -40,7 +40,7 @@ export class ServicioModel {
       const [result] = await connection.query(
         `INSERT INTO Servicios (nombre, descripcion, estado)
                  VALUES (?, ?, ?);`,
-        [nombre, descripcion, estado]
+        [nombre, descripcion, estado],
       );
 
       return this.getById({ id: result.insertId });
@@ -58,7 +58,7 @@ export class ServicioModel {
       const [result] = await connection.query(
         `DELETE FROM Servicios
                  WHERE id_servicio = ?;`,
-        [id]
+        [id],
       );
       console.log("ServicioModel: Resultado de DELETE:", result);
       console.log("ServicioModel: Filas afectadas:", result.affectedRows);
@@ -80,7 +80,7 @@ export class ServicioModel {
        SELECT COUNT(*) as count
        FROM ServicioTurno
        WHERE id_servicio = ?`,
-      [id, id]
+      [id, id],
     );
     return result.some((r) => r.count > 0);
   }
@@ -107,14 +107,14 @@ export class ServicioModel {
 
       if (updates.length === 0) return this.getById({ id });
 
-      updates.push("fecha_modificacion = NOW()");
+      updates.push("fechaModificacion = NOW()");
       values.push(id);
 
       await connection.query(
         `UPDATE Servicios
                  SET ${updates.join(", ")}
                  WHERE id_servicio = ?;`,
-        values
+        values,
       );
 
       return this.getById({ id });
@@ -134,7 +134,7 @@ export class ServicioModel {
                 descripcion
              FROM Servicios
              WHERE estado = 'Activo'
-             ORDER BY nombre;`
+             ORDER BY nombre;`,
     );
     return servicios;
   }
@@ -154,7 +154,7 @@ export class ServicioModel {
              JOIN Turnos t ON st.id_turno = t.id_turno
              WHERE s.estado = 'Activo' AND t.estado = 'Activo'
              GROUP BY s.id_servicio, s.nombre, s.descripcion
-             ORDER BY s.nombre;`
+             ORDER BY s.nombre;`,
     );
     return servicios;
   }
@@ -171,30 +171,30 @@ export class ServicioModel {
       const [exists] = await connection.query(
         `SELECT id FROM ServiciosCompletados 
                  WHERE fecha = ? AND id_servicio = ?`,
-        [fecha, id_servicio]
+        [fecha, id_servicio],
       );
 
       if (exists.length > 0) {
         // Actualizar registro existente
         await connection.query(
           `UPDATE ServiciosCompletados 
-                     SET completado = ?, comensales_total = ?, fecha_actualizacion = NOW()
+                     SET completado = ?, comensales_total = ?, fechaActualizacion = NOW()
                      WHERE fecha = ? AND id_servicio = ?`,
-          [completado ? 1 : 0, comensales_total, fecha, id_servicio]
+          [completado ? 1 : 0, comensales_total, fecha, id_servicio],
         );
       } else {
         // Crear nuevo registro
         await connection.query(
-          `INSERT INTO ServiciosCompletados (fecha, id_servicio, completado, comensales_total, fecha_creacion)
+          `INSERT INTO ServiciosCompletados (fecha, id_servicio, completado, comensales_total, fechaCreacion)
                      VALUES (?, ?, ?, ?, NOW())`,
-          [fecha, id_servicio, completado ? 1 : 0, comensales_total]
+          [fecha, id_servicio, completado ? 1 : 0, comensales_total],
         );
       }
 
       console.log(
         `✅ Servicio ${id_servicio} marcado como ${
           completado ? "completado" : "pendiente"
-        } en ${fecha} con ${comensales_total} comensales`
+        } en ${fecha} con ${comensales_total} comensales`,
       );
 
       return {
@@ -220,7 +220,7 @@ export class ServicioModel {
         `SELECT id_servicio, completado
                  FROM ServiciosCompletados
                  WHERE fecha = ?`,
-        [fecha]
+        [fecha],
       );
 
       // Convertir a objeto para fácil acceso {id_servicio: completado}
@@ -243,12 +243,12 @@ export class ServicioModel {
         `SELECT 
           id_servicio,
           completado,
-          fecha_creacion,
-          fecha_actualizacion
+          fechaCreacion,
+          fechaActualizacion
          FROM ServiciosCompletados
          WHERE fecha = ?
          ORDER BY id_servicio`,
-        [fecha]
+        [fecha],
       );
 
       // Convertir a objeto para fácil acceso {id_servicio: {completado, comensales_total}}
@@ -259,8 +259,8 @@ export class ServicioModel {
         comensales[reg.id_servicio] = {
           comensales_total: 0, // Se calculará desde RegistrosAsistencias
           completado: Boolean(reg.completado),
-          fecha_creacion: reg.fecha_creacion,
-          fecha_actualizacion: reg.fecha_actualizacion,
+          fechaCreacion: reg.fechaCreacion,
+          fechaActualizacion: reg.fechaActualizacion,
         };
       });
 

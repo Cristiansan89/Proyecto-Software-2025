@@ -70,7 +70,7 @@ const MenuesDiaria = () => {
         // Intentar primero con Activo, si no hay resultados, usar Pendiente
         //console.log("🔍 Buscando planificaciones con estado Activo...");
         let planificacionesResponse = await API.get(
-          "/planificacion-menus/estado/Activo"
+          "/planificacion-menus/estado/Activo",
         );
         let planificacionesActivas =
           planificacionesResponse.data?.data ||
@@ -94,7 +94,7 @@ const MenuesDiaria = () => {
             "⚠️ No hay planificaciones Activas, buscando Pendientes..."
           );*/
           planificacionesResponse = await API.get(
-            "/planificacion-menus/estado/Pendiente"
+            "/planificacion-menus/estado/Pendiente",
           );
           planificacionesActivas =
             planificacionesResponse.data?.data ||
@@ -137,14 +137,14 @@ const MenuesDiaria = () => {
           // Buscar menús dentro del rango de la planificación
           menusResponse = await planificacionMenuService.getMenusSemana(
             planificacion.fechaInicio,
-            planificacion.fechaFin
+            planificacion.fechaFin,
           );
         } else {
           /*console.warn(
             "⚠️ No hay planificaciones disponibles (ni Activas ni Pendientes)"
           );*/
           showWarning(
-            "No hay planificaciones disponibles. Por favor, cree una planificación para continuar."
+            "No hay planificaciones disponibles. Por favor, cree una planificación para continuar.",
           );
           setHayPlanificacion(false);
         }
@@ -161,7 +161,7 @@ const MenuesDiaria = () => {
         );*/
         showError(
           "Error",
-          "❌ No hay menús planificados para este día. Por favor, intente registrar una planificación para la fecha seleccionada."
+          "❌ No hay menús planificados para este día. Por favor, intente registrar una planificación para la fecha seleccionada.",
         );
         menusResponse = [];
       }
@@ -242,7 +242,7 @@ const MenuesDiaria = () => {
         //console.error("❌ Error al cargar asistencia real:", error);
         showError(
           "Error",
-          "❌ Ocurrió un error al cargar la asistencia real. Por favor, intente nuevamente más tarde."
+          "❌ Ocurrió un error al cargar la asistencia real. Por favor, intente nuevamente más tarde.",
         );
         // Continuar con los comensales estimados si la asistencia no está disponible
         setAsistenciaReal({});
@@ -267,7 +267,7 @@ const MenuesDiaria = () => {
       //console.error("Error al cargar datos del día:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los datos del día. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los datos del día. Por favor, intente nuevamente más tarde.",
       );
       mostrarNotificacion("Error al cargar los datos del día", "error");
     } finally {
@@ -278,9 +278,8 @@ const MenuesDiaria = () => {
   // Nueva función para verificar asistencias registradas
   const verificarAsistenciasRegistradas = async (fecha) => {
     try {
-      const response = await asistenciasService.verificarAsistenciasCompletas(
-        fecha
-      );
+      const response =
+        await asistenciasService.verificarAsistenciasCompletas(fecha);
       if (response.success && response.data) {
         setAsistenciasCompletas(response.data.completas || false);
         /*console.log(
@@ -295,7 +294,7 @@ const MenuesDiaria = () => {
       //console.error("Error al verificar asistencias:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al verificar las asistencias. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al verificar las asistencias. Por favor, intente nuevamente más tarde.",
       );
       setAsistenciasCompletas(false);
     }
@@ -313,7 +312,7 @@ const MenuesDiaria = () => {
       //console.error(`Error al cargar receta ${idReceta}:`, error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar la receta. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar la receta. Por favor, intente nuevamente más tarde.",
       );
     }
   };
@@ -321,7 +320,7 @@ const MenuesDiaria = () => {
   const cargarEstadoServicios = async (fechaStr) => {
     try {
       const response = await API.get(
-        `/servicios/estado-completado?fecha=${fechaStr}`
+        `/servicios/estado-completado?fecha=${fechaStr}`,
       );
       if (response.data) {
         setServiciosCompletados(response.data);
@@ -330,7 +329,7 @@ const MenuesDiaria = () => {
       //console.warn("No se pudo cargar el estado de servicios:", error);
       showWarning(
         "Advertencia",
-        "⚠️ No se pudo cargar el estado de servicios. Por favor, intente nuevamente más tarde."
+        "⚠️ No se pudo cargar el estado de servicios. Por favor, intente nuevamente más tarde.",
       );
     }
   };
@@ -338,7 +337,7 @@ const MenuesDiaria = () => {
   const cargarComensalesPorServicio = async (fechaStr) => {
     try {
       const response = await API.get(
-        `/servicios/comensales/por-servicio?fecha=${fechaStr}`
+        `/servicios/comensales/por-servicio?fecha=${fechaStr}`,
       );
       if (response.data) {
         //console.log("📊 Comensales por servicio cargados:", response.data);
@@ -348,7 +347,7 @@ const MenuesDiaria = () => {
       //console.warn("No se pudo cargar comensales por servicio:", error);
       showWarning(
         "Advertencia",
-        "⚠️ No se pudo cargar comensales por servicio. Por favor, intente nuevamente más tarde."
+        "⚠️ No se pudo cargar comensales por servicio. Por favor, intente nuevamente más tarde.",
       );
     }
   };
@@ -398,7 +397,7 @@ const MenuesDiaria = () => {
       );*/
       showWarning(
         "Advertencia",
-        `⚠️ No hay asistencia real registrada para servicio ${idServicio}. Por favor, verifique la información.`
+        `⚠️ No hay asistencia real registrada para servicio ${idServicio}. Por favor, verifique la información.`,
       );
       return []; // No mostrar ingredientes si no hay asistencia
     }
@@ -409,16 +408,16 @@ const MenuesDiaria = () => {
 
     // Calcular cantidad total de cada ingrediente basándose en asistencia real
     return receta.insumos.map((ingrediente) => {
-      // Asegurarse de parsear cualquier string numérico y permitir coma como separador
-      const cantidadPorPorcion = parseFloat(
-        String(ingrediente.cantidadPorPorcion).replace(/,/g, ".")
+      // Parsear cantidad como entero (ya que cantidadPorPorcion es INT en BD)
+      const cantidadPorPorcion = parseInt(
+        String(ingrediente.cantidadPorPorcion),
       );
       const cantidadTotal =
         (isNaN(cantidadPorPorcion) ? 0 : cantidadPorPorcion) *
         Number(comensalesServicio);
       const mejorUnidad = obtenerMejorUnidad(
         cantidadTotal,
-        ingrediente.unidadPorPorcion
+        ingrediente.unidadPorPorcion,
       );
       /*console.log(
         cantidadPorPorcion,
@@ -503,14 +502,14 @@ const MenuesDiaria = () => {
           );*/
           showError(
             "Error",
-            `❌ Ocurrió un error al registrar los consumos para el servicio. Por favor, intente nuevamente más tarde.`
+            `❌ Ocurrió un error al registrar los consumos para el servicio. Por favor, intente nuevamente más tarde.`,
           );
         }
       }
 
       const response = await API.post(
         "/servicios/marcar-completado",
-        requestData
+        requestData,
       );
 
       if (response.data.success) {
@@ -533,11 +532,11 @@ const MenuesDiaria = () => {
       //console.error("Error al marcar servicio como completado:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al actualizar el estado del servicio. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al actualizar el estado del servicio. Por favor, intente nuevamente más tarde.",
       );
       mostrarNotificacion(
         "Error al actualizar el estado del servicio",
-        "error"
+        "error",
       );
     }
   };
@@ -740,11 +739,11 @@ const MenuesDiaria = () => {
                 const menu = menuDia[horario.id];
                 const completado = serviciosCompletados[horario.id];
                 const ingredientes = calcularIngredientesParaServicio(
-                  horario.id
+                  horario.id,
                 );
                 const comensalesServicio =
                   comensalesHoy?.servicios?.find(
-                    (s) => s.id_servicio === horario.id
+                    (s) => s.id_servicio === horario.id,
                   )?.totalComensales || 0;
 
                 return (
@@ -894,7 +893,7 @@ const MenuesDiaria = () => {
                                       imprimirRecetaTicket(
                                         horario,
                                         ingredientes,
-                                        menu
+                                        menu,
                                       )
                                     }
                                     title="Imprimir receta en formato ticket"

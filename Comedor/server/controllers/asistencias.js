@@ -79,14 +79,14 @@ export class AsistenciaController {
 
         // Validar que el usuario está asignado al grado del token
         const gradoAsignado = userFromToken.gradosAsignados?.some(
-          (g) => g.nombreGrado === tokenData.nombreGrado
+          (g) => g.nombreGrado === tokenData.nombreGrado,
         );
 
         if (!gradoAsignado) {
           console.error("❌ ACCESO DENEGADO: Grado mismatch", {
             gradoRequerido: tokenData.nombreGrado,
             gradosDisponibles: userFromToken.gradosAsignados?.map(
-              (g) => g.nombreGrado
+              (g) => g.nombreGrado,
             ),
           });
 
@@ -115,7 +115,7 @@ export class AsistenciaController {
       // Obtener información del servicio
       const [servicios] = await connection.query(
         "SELECT nombre, descripcion FROM Servicios WHERE id_servicio = ?",
-        [tokenData.idServicio]
+        [tokenData.idServicio],
       );
 
       const servicio = servicios?.[0] || {
@@ -190,7 +190,7 @@ export class AsistenciaController {
 
         // 2. Validar que el usuario está asignado al grado del token
         const gradoAsignado = userFromToken.gradosAsignados?.some(
-          (g) => g.nombreGrado === tokenData.nombreGrado
+          (g) => g.nombreGrado === tokenData.nombreGrado,
         );
 
         if (!gradoAsignado) {
@@ -217,7 +217,7 @@ export class AsistenciaController {
         const { idAlumnoGrado, tipoAsistencia } = asistencia;
 
         console.log(
-          `Procesando alumno ${idAlumnoGrado} con tipo ${tipoAsistencia}`
+          `Procesando alumno ${idAlumnoGrado} con tipo ${tipoAsistencia}`,
         );
 
         if (!["Si", "No", "Ausente"].includes(tipoAsistencia)) {
@@ -232,12 +232,12 @@ export class AsistenciaController {
           `SELECT ag.id_alumnoGrado, ag.nombreGrado 
            FROM AlumnoGrado ag 
            WHERE ag.id_alumnoGrado = ? AND ag.nombreGrado = ?`,
-          [idAlumnoGrado, tokenData.nombreGrado]
+          [idAlumnoGrado, tokenData.nombreGrado],
         );
 
         if (!alumnoVerif || alumnoVerif.length === 0) {
           console.error(
-            `❌ ALUMNO NO AUTORIZADO: ${idAlumnoGrado} no pertenece a ${tokenData.nombreGrado}`
+            `❌ ALUMNO NO AUTORIZADO: ${idAlumnoGrado} no pertenece a ${tokenData.nombreGrado}`,
           );
           return res.status(403).json({
             success: false,
@@ -256,14 +256,14 @@ export class AsistenciaController {
 
         console.log(
           `✅ Asistencia registrada para alumno ${idAlumnoGrado}:`,
-          resultado
+          resultado,
         );
         resultados.push(resultado);
       }
 
       console.log(
         "🎉 Todas las asistencias procesadas exitosamente:",
-        resultados.length
+        resultados.length,
       );
 
       res.json({
@@ -441,7 +441,7 @@ export class AsistenciaController {
       // Obtener información del servicio para el mensaje
       const [servicios] = await connection.query(
         "SELECT nombre FROM Servicios WHERE idServicio = ?",
-        [idServicio]
+        [idServicio],
       );
       const nombreServicio = servicios[0]?.nombre || "Servicio";
 
@@ -456,7 +456,7 @@ export class AsistenciaController {
            WHERE ra.fechaAsistencia = ? 
            AND ra.id_servicio = ?
          )`,
-        [nombreGrado, fecha, idServicio]
+        [nombreGrado, fecha, idServicio],
       );
 
       // Preparar mensaje para Telegram
@@ -478,7 +478,7 @@ export class AsistenciaController {
       // Obtener chat ID de la cocinera desde parámetros del sistema
       const [parametros] = await connection.query(
         "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo'",
-        ["TELEGRAM_COCINERA_CHAT_ID"]
+        ["TELEGRAM_COCINERA_CHAT_ID"],
       );
 
       if (parametros && parametros.length > 0) {
@@ -492,13 +492,13 @@ export class AsistenciaController {
         } catch (error) {
           console.warn(
             "⚠️ Error al enviar notificación Telegram:",
-            error.message
+            error.message,
           );
           // No interrumpir el flujo si falla Telegram
         }
       } else {
         console.warn(
-          "⚠️ Chat ID de cocinera no configurado en parámetros del sistema"
+          "⚠️ Chat ID de cocinera no configurado en parámetros del sistema",
         );
       }
 
@@ -536,7 +536,7 @@ export class AsistenciaController {
       // Obtener el nombreGrado basado en id_grado
       const [grados] = await connection.query(
         "SELECT nombreGrado FROM Grados WHERE id_grado = ?",
-        [id_grado]
+        [id_grado],
       );
 
       if (!grados || grados.length === 0) {
@@ -578,19 +578,19 @@ export class AsistenciaController {
 
           resultados.push(resultado);
           console.log(
-            `✅ Asistencia inicializada para alumno ${alumno.id_alumnoGrado}`
+            `✅ Asistencia inicializada para alumno ${alumno.id_alumnoGrado}`,
           );
         } catch (error) {
           console.warn(
             `⚠️ Error al inicializar asistencia para alumno ${alumno.id_alumnoGrado}:`,
-            error.message
+            error.message,
           );
           // Continuar con otros alumnos si uno falla
         }
       }
 
       console.log(
-        `🎉 Asistencias inicializadas: ${resultados.length} registros`
+        `🎉 Asistencias inicializadas: ${resultados.length} registros`,
       );
       res.status(201).json({
         message: "Asistencias inicializadas en estado Pendiente correctamente",
@@ -692,8 +692,8 @@ export class AsistenciaController {
           a.id_grado,
           a.cantidadPresentes,
           DATE_FORMAT(a.fecha, '%Y-%m-%d') as fecha,
-          DATE_FORMAT(a.fecha_creacion, '%Y-%m-%d %H:%i:%s') as fechaCreacion,
-          DATE_FORMAT(a.fecha_actualizacion, '%Y-%m-%d %H:%i:%s') as fechaActualizacion,
+          DATE_FORMAT(a.fechaCreacion, '%Y-%m-%d %H:%i:%s') as fechaCreacion,
+          DATE_FORMAT(a.fechaActualizacion, '%Y-%m-%d %H:%i:%s') as fechaActualizacion,
           g.nombreGrado,
           s.nombre as nombreServicio
         FROM RegistrosAsistencias a
@@ -731,7 +731,7 @@ export class AsistenciaController {
     } catch (error) {
       console.error(
         "Error al obtener registros de asistencias por servicio:",
-        error
+        error,
       );
       res.status(500).json({
         success: false,
@@ -761,7 +761,7 @@ export class AsistenciaController {
          AND id_servicio = ? 
          AND id_grado = ? 
          AND tipoAsistencia = 'Si'`,
-        [fecha, idServicio, idGrado]
+        [fecha, idServicio, idGrado],
       );
 
       const cantidadPresentes = countResult[0]?.cantidadPresentes || 0;
@@ -773,16 +773,16 @@ export class AsistenciaController {
          WHERE fecha = ? 
          AND id_servicio = ? 
          AND id_grado = ?`,
-        [fecha, idServicio, idGrado]
+        [fecha, idServicio, idGrado],
       );
 
       if (existingRecord.length > 0) {
         // Actualizar registro existente
         await connection.query(
           `UPDATE RegistrosAsistencias 
-           SET cantidadPresentes = ?, fecha_actualizacion = CURRENT_TIMESTAMP
+           SET cantidadPresentes = ?, fechaActualizacion = CURRENT_TIMESTAMP
            WHERE id_asistencia = UUID_TO_BIN(?)`,
-          [cantidadPresentes, existingRecord[0].id_asistencia]
+          [cantidadPresentes, existingRecord[0].id_asistencia],
         );
 
         res.json({
@@ -799,7 +799,7 @@ export class AsistenciaController {
         await connection.query(
           `INSERT INTO RegistrosAsistencias (id_grado, id_servicio, fecha, cantidadPresentes)
            VALUES (?, ?, ?, ?)`,
-          [idGrado, idServicio, fecha, cantidadPresentes]
+          [idGrado, idServicio, fecha, cantidadPresentes],
         );
 
         // Obtener el ID del registro recién creado
@@ -807,8 +807,8 @@ export class AsistenciaController {
           `SELECT BIN_TO_UUID(id_asistencia) as id_asistencia
            FROM RegistrosAsistencias 
            WHERE fecha = ? AND id_servicio = ? AND id_grado = ?
-           ORDER BY fecha_creacion DESC LIMIT 1`,
-          [fecha, idServicio, idGrado]
+           ORDER BY fechaCreacion DESC LIMIT 1`,
+          [fecha, idServicio, idGrado],
         );
 
         res.json({
@@ -853,7 +853,7 @@ export class AsistenciaController {
          JOIN Grados g ON ag.nombreGrado = g.nombreGrado
          JOIN Servicios s ON a.id_servicio = s.id_servicio
          WHERE DATE(a.fecha) = ?`,
-        [fecha]
+        [fecha],
       );
 
       const resultados = [];
@@ -870,7 +870,7 @@ export class AsistenciaController {
              AND a.id_servicio = ? 
              AND g.id_grado = ? 
              AND a.tipoAsistencia = 'Si'`,
-            [fecha, combinacion.id_servicio, combinacion.id_grado]
+            [fecha, combinacion.id_servicio, combinacion.id_grado],
           );
 
           const cantidadPresentes = countResult[0]?.cantidadPresentes || 0;
@@ -882,16 +882,16 @@ export class AsistenciaController {
              WHERE fecha = ? 
              AND id_servicio = ? 
              AND id_grado = ?`,
-            [fecha, combinacion.id_servicio, combinacion.id_grado]
+            [fecha, combinacion.id_servicio, combinacion.id_grado],
           );
 
           if (existingRecord.length > 0) {
             // Actualizar
             await connection.query(
               `UPDATE RegistrosAsistencias 
-               SET cantidadPresentes = ?, fecha_actualizacion = CURRENT_TIMESTAMP
+               SET cantidadPresentes = ?, fechaActualizacion = CURRENT_TIMESTAMP
                WHERE id_asistencia = ?`,
-              [cantidadPresentes, existingRecord[0].id_asistencia]
+              [cantidadPresentes, existingRecord[0].id_asistencia],
             );
 
             resultados.push({
@@ -910,7 +910,7 @@ export class AsistenciaController {
                 combinacion.id_servicio,
                 fecha,
                 cantidadPresentes,
-              ]
+              ],
             );
 
             resultados.push({
@@ -923,7 +923,7 @@ export class AsistenciaController {
         } catch (combError) {
           console.error(
             `Error procesando ${combinacion.nombreServicio} - ${combinacion.nombreGrado}:`,
-            combError
+            combError,
           );
           resultados.push({
             servicio: combinacion.nombreServicio,
@@ -969,10 +969,10 @@ export class AsistenciaController {
 
       // Obtener un servicio y un grado activos
       const [servicios] = await connection.query(
-        "SELECT id_servicio FROM Servicios WHERE estado = 'Activo' LIMIT 1"
+        "SELECT id_servicio FROM Servicios WHERE estado = 'Activo' LIMIT 1",
       );
       const [grados] = await connection.query(
-        "SELECT nombreGrado FROM Grados WHERE estado = 'Activo' LIMIT 1"
+        "SELECT nombreGrado FROM Grados WHERE estado = 'Activo' LIMIT 1",
       );
 
       if (servicios.length === 0 || grados.length === 0) {
@@ -989,7 +989,7 @@ export class AsistenciaController {
       // Obtener alumnos del grado
       const [alumnos] = await connection.query(
         "SELECT id_alumnoGrado FROM AlumnoGrado WHERE nombreGrado = ? LIMIT 20",
-        [nombreGrado]
+        [nombreGrado],
       );
 
       if (alumnos.length === 0) {
@@ -1030,13 +1030,13 @@ export class AsistenciaController {
         } catch (error) {
           console.warn(
             `⚠️ Error al crear asistencia para alumno ${alumno.id_alumnoGrado}:`,
-            error.message
+            error.message,
           );
         }
       }
 
       console.log(
-        `✅ Se crearon ${registrosCreados.length} registros de prueba`
+        `✅ Se crearon ${registrosCreados.length} registros de prueba`,
       );
 
       res.json({

@@ -12,8 +12,8 @@ export class RegistroAsistenciaModel {
                     s.nombre as nombreServicio,
                     a.fecha,
                     a.cantidadPresentes,
-                    a.fecha_creacion,
-                    a.fecha_actualizacion
+                    a.fechaCreacion,
+                    a.fechaActualizacion
                 FROM RegistrosAsistencias a
                 INNER JOIN Grados g ON a.id_grado = g.id_grado
                 INNER JOIN Servicios s ON a.id_servicio = s.id_servicio
@@ -62,13 +62,13 @@ export class RegistroAsistenciaModel {
                     s.nombre as nombreServicio,
                     a.fecha,
                     a.cantidadPresentes,
-                    a.fecha_creacion,
-                    a.fecha_actualizacion
+                    a.fechaCreacion,
+                    a.fechaActualizacion
                  FROM RegistrosAsistencias a
                  INNER JOIN Grados g ON a.id_grado = g.id_grado
                  INNER JOIN Servicios s ON a.id_servicio = s.id_servicio
                  WHERE a.id_asistencia = UUID_TO_BIN(?);`,
-        [id]
+        [id],
       );
       if (asistencias.length === 0) return null;
       return asistencias[0];
@@ -89,15 +89,15 @@ export class RegistroAsistenciaModel {
                     fecha, 
                     cantidadPresentes
                 ) VALUES (?, ?, ?, ?);`,
-        [id_grado, id_servicio, fecha, cantidadPresentes]
+        [id_grado, id_servicio, fecha, cantidadPresentes],
       );
 
       const [newAsistencia] = await connection.query(
         `SELECT BIN_TO_UUID(id_asistencia) as id_asistencia 
                  FROM RegistrosAsistencias 
                  WHERE id_grado = ? AND id_servicio = ? AND fecha = ?
-                 ORDER BY fecha_creacion DESC LIMIT 1;`,
-        [id_grado, id_servicio, fecha]
+                 ORDER BY fechaCreacion DESC LIMIT 1;`,
+        [id_grado, id_servicio, fecha],
       );
 
       return this.getById({ id: newAsistencia[0].id_asistencia });
@@ -105,7 +105,7 @@ export class RegistroAsistenciaModel {
       console.error("Error al crear el registro de asistencia:", error);
       if (error.code === "ER_DUP_ENTRY") {
         throw new Error(
-          "Ya existe un registro para este grado, fecha y servicio"
+          "Ya existe un registro para este grado, fecha y servicio",
         );
       }
       throw new Error("Error al crear el registro de asistencia");
@@ -117,7 +117,7 @@ export class RegistroAsistenciaModel {
       await connection.query(
         `DELETE FROM RegistrosAsistencias
                  WHERE id_asistencia = UUID_TO_BIN(?);`,
-        [id]
+        [id],
       );
       return true;
     } catch (error) {
@@ -134,7 +134,7 @@ export class RegistroAsistenciaModel {
         `UPDATE RegistrosAsistencias
                  SET cantidadPresentes = ?, fecha = ?
                  WHERE id_asistencia = UUID_TO_BIN(?);`,
-        [cantidadPresentes, fecha, id]
+        [cantidadPresentes, fecha, id],
       );
 
       return this.getById({ id });
@@ -161,7 +161,7 @@ export class RegistroAsistenciaModel {
                  INNER JOIN Servicios s ON a.id_servicio = s.id_servicio
                  WHERE a.fecha = ?
                  ORDER BY g.nombreGrado, s.nombre;`,
-        [fecha]
+        [fecha],
       );
       return rows;
     } catch (error) {
@@ -191,7 +191,7 @@ export class RegistroAsistenciaModel {
                  WHERE a.id_grado = UUID_TO_BIN(?)
                    AND a.fecha BETWEEN ? AND ?
                  ORDER BY a.fecha DESC, s.nombreServicio;`,
-        [id_grado, fechaInicio, fechaFin]
+        [id_grado, fechaInicio, fechaFin],
       );
       return rows;
     } catch (error) {
@@ -218,7 +218,7 @@ export class RegistroAsistenciaModel {
                  WHERE a.fecha BETWEEN ? AND ?
                  GROUP BY g.id_grado, a.id_servicio
                  ORDER BY g.nombreGrado, s.nombre;`,
-        [fechaInicio, fechaFin]
+        [fechaInicio, fechaFin],
       );
       return rows;
     } catch (error) {
@@ -308,7 +308,7 @@ export class RegistroAsistenciaModel {
 
       const [gradosEsperados] = await connection.query(
         queryGrados,
-        paramsGrados
+        paramsGrados,
       );
 
       // Obtener asistencias ya registradas
@@ -326,7 +326,7 @@ export class RegistroAsistenciaModel {
 
       const [asistenciasRegistradas] = await connection.query(
         queryAsistencias,
-        paramsAsistencias
+        paramsAsistencias,
       );
 
       // Determinar qué grados faltan por registrar
@@ -334,7 +334,7 @@ export class RegistroAsistenciaModel {
         return !asistenciasRegistradas.some(
           (asistencia) =>
             asistencia.id_grado === grado.id_grado &&
-            (!idServicio || asistencia.id_servicio === parseInt(idServicio))
+            (!idServicio || asistencia.id_servicio === parseInt(idServicio)),
         );
       });
 

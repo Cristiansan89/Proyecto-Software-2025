@@ -38,7 +38,7 @@ ChartJS.register(
   ArcElement,
   Tooltip,
   Legend,
-  Title
+  Title,
 );
 
 const Estadistica = () => {
@@ -77,7 +77,7 @@ const Estadistica = () => {
       //console.error("Error cargando datos:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar las estadísticas. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar las estadísticas. Por favor, intente nuevamente más tarde.",
       );
     } finally {
       setLoading(false);
@@ -114,7 +114,7 @@ const Estadistica = () => {
           const insumo = consumo.nombreInsumo || "Desconocido";
           insumosPorTipo[insumo] =
             (insumosPorTipo[insumo] || 0) +
-            (parseFloat(consumo.cantidadUtilizada) || 0);
+            (Number(consumo.cantidadUtilizada) || 0);
         });
 
         const topInsumos = Object.entries(insumosPorTipo)
@@ -132,7 +132,7 @@ const Estadistica = () => {
       //console.error("Error al cargar consumos:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los consumos. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los consumos. Por favor, intente nuevamente más tarde.",
       );
     }
   };
@@ -140,7 +140,7 @@ const Estadistica = () => {
   const cargarAsistencias = async () => {
     try {
       const response = await asistenciasService.obtenerRegistrosAsistencias(
-        `fechaInicio=${filtros.fechaInicio}&fechaFin=${filtros.fechaFin}`
+        `fechaInicio=${filtros.fechaInicio}&fechaFin=${filtros.fechaFin}`,
       );
 
       //console.log("📊 Respuesta de asistencias:", response);
@@ -149,11 +149,11 @@ const Estadistica = () => {
         // Calcular totales
         const totalPresentes = response.data.reduce(
           (sum, reg) => sum + (reg.cantidadPresentes || 0),
-          0
+          0,
         );
         const totalAusentes = response.data.reduce(
           (sum, reg) => sum + (reg.cantidadAusentes || 0),
-          0
+          0,
         );
         const totalRegistros = response.data.length;
 
@@ -186,14 +186,14 @@ const Estadistica = () => {
         //console.warn("⚠️ Sin datos de asistencia disponibles");
         showWarning(
           "Advertencia",
-          "⚠️ No se encontraron datos de asistencia para el período seleccionado."
+          "⚠️ No se encontraron datos de asistencia para el período seleccionado.",
         );
       }
     } catch (error) {
       //console.error("❌ Error al cargar asistencias:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde.",
       );
       setDatosAsistencias(null);
     }
@@ -236,7 +236,7 @@ const Estadistica = () => {
       //console.error("Error al cargar inventario:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar el inventario. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar el inventario. Por favor, intente nuevamente más tarde.",
       );
     }
   };
@@ -247,7 +247,7 @@ const Estadistica = () => {
 
       if (response.data && Array.isArray(response.data)) {
         const serviciosActivos = response.data.filter(
-          (s) => s.estado === "Activo"
+          (s) => s.estado === "Activo",
         ).length;
         const serviciosPorTipo = response.data.reduce((acc, servicio) => {
           acc[servicio.nombre] = (acc[servicio.nombre] || 0) + 1;
@@ -264,7 +264,7 @@ const Estadistica = () => {
       //console.error("Error al cargar servicios:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los servicios. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los servicios. Por favor, intente nuevamente más tarde.",
       );
     }
   };
@@ -297,17 +297,17 @@ const Estadistica = () => {
       pdf.text(
         `Período: ${filtros.fechaInicio} a ${filtros.fechaFin}`,
         margin,
-        margin + 12
+        margin + 12,
       );
       pdf.text(
         `Generado por: ${user.nombre} ${user.apellido}`,
         margin,
-        margin + 17
+        margin + 17,
       );
       pdf.text(
         `Fecha: ${new Date().toLocaleString("es-ES")}`,
         margin,
-        margin + 22
+        margin + 22,
       );
 
       position = margin + 35;
@@ -339,13 +339,13 @@ const Estadistica = () => {
         pdf.text(
           `Asistencia Total: ${datosAsistencias.totalPresentes}`,
           margin,
-          position
+          position,
         );
         position += 7;
         pdf.text(
           `Porcentaje de Asistencia: ${datosAsistencias.porcentajeAsistencia}%`,
           margin,
-          position
+          position,
         );
         position += 7;
       }
@@ -354,13 +354,13 @@ const Estadistica = () => {
         pdf.text(
           `Total de Insumos: ${datosInventario.total}`,
           margin,
-          position
+          position,
         );
         position += 7;
         pdf.text(
           `Insumos Activos: ${datosInventario.activos}`,
           margin,
-          position
+          position,
         );
         position += 7;
       }
@@ -392,7 +392,7 @@ const Estadistica = () => {
           "Información",
           `✅ ${response.message}\n\nRegistros creados: ${
             response.data?.registros || 0
-          }`
+          }`,
         );
         // Recargar los datos
         await cargarDatos();

@@ -160,14 +160,14 @@ const Auditoria = () => {
       ? `<pre style="text-align: left; background: #f4f4f4; padding: 10px; border-radius: 5px; font-size: 0.85em; max-height: 300px; overflow: auto;">${JSON.stringify(
           log.detalles,
           null,
-          2
+          2,
         )}</pre>`
       : `<p style="color: #666; font-style: italic;">Sin detalles adicionales</p>`;
 
     // 2. Construir el cuerpo del modal con Template Literals
     const contenidoHtml = `
     <div style="text-align: left; line-height: 1.6;">
-      <p><strong>🕒 Fecha:</strong> ${formatearFecha(log.fecha_creacion)}</p>
+      <p><strong>🕒 Fecha:</strong> ${formatearFecha(log.fechaHora)}</p>
       <p><strong>👤 Usuario:</strong> ${log.nombre_usuario ?? "N/A"} 
          <span style="color: #666; font-size: 0.9em;">(${
            log.email_usuario ?? "Sin email"
@@ -201,7 +201,7 @@ const Auditoria = () => {
     ];
 
     const csvData = logs.map((log) => [
-      formatearFecha(log.fecha_creacion),
+      formatearFecha(log.fechaHora),
       `${log.nombre_usuario || "Sin usuario"} (${
         log.email_usuario || "Sin email"
       })`,
@@ -231,7 +231,7 @@ const Auditoria = () => {
     showSuccess(
       "Exportación exitosa",
       `Se exportaron ${logs.length} registros`,
-      2000
+      2000,
     );
   };
 
@@ -492,13 +492,13 @@ const Auditoria = () => {
                       <td>
                         <div className="auditoria__fecha-info">
                           <span className="auditoria__fecha-date">
-                            {new Date(log.fecha_creacion).toLocaleDateString(
-                              "es-ES"
+                            {new Date(log.fechaHora).toLocaleDateString(
+                              "es-ES",
                             )}
                           </span>
                           <small className="auditoria__fecha-time">
-                            {new Date(log.fecha_creacion).toLocaleTimeString(
-                              "es-ES"
+                            {new Date(log.fechaHora).toLocaleTimeString(
+                              "es-ES",
                             )}
                           </small>
                         </div>

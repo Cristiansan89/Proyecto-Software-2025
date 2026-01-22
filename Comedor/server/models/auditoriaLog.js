@@ -30,14 +30,14 @@ class AuditoriaLog {
         accion === "CREAR"
           ? "Registrar"
           : accion === "ACTUALIZAR"
-          ? "Modificar"
-          : accion === "ELIMINAR"
-          ? "Eliminar"
-          : accion === "CONSULTAR"
-          ? "Consultar"
-          : accion === "DESCARGAR"
-          ? "Exportar"
-          : "Registrar";
+            ? "Modificar"
+            : accion === "ELIMINAR"
+              ? "Eliminar"
+              : accion === "CONSULTAR"
+                ? "Consultar"
+                : accion === "DESCARGAR"
+                  ? "Exportar"
+                  : "Registrar";
 
       const values = [
         id_usuario || "00000000-0000-0000-0000-000000000000",
@@ -67,7 +67,7 @@ class AuditoriaLog {
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
-          a.fechaHora as fecha_creacion,
+          a.fechaHora,
           a.estado
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
@@ -131,7 +131,7 @@ class AuditoriaLog {
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
-          a.fechaHora as fecha_creacion,
+          a.fechaHora,
           a.estado
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
@@ -194,7 +194,7 @@ class AuditoriaLog {
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
-          a.fechaHora as fecha_creacion
+          a.fechaHora
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
         WHERE a.modulo = ? AND a.estado = 'Exito'
@@ -223,7 +223,7 @@ class AuditoriaLog {
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
-          a.fechaHora as fecha_creacion
+          a.fechaHora
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
         WHERE a.id_usuario = UUID_TO_BIN(?) AND a.estado = 'Exito'
@@ -269,7 +269,7 @@ class AuditoriaLog {
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
-          a.fechaHora as fecha_creacion
+          a.fechaHora
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
         WHERE DATE(a.fechaHora) = CURDATE() AND a.estado = 'Exito'
@@ -387,7 +387,7 @@ class AuditoriaLog {
 
       const [result] = await connection.execute(query, values);
       console.log(
-        `📄 Reporte PDF registrado: ${nombreReporte} por usuario: ${nombreUsuario}`
+        `📄 Reporte PDF registrado: ${nombreReporte} por usuario: ${nombreUsuario}`,
       );
       return result;
     } catch (error) {
@@ -408,7 +408,7 @@ class AuditoriaLog {
           a.tipoReporte,
           a.descripcion,
           a.detallesReporte,
-          a.fechaHora as fecha_creacion,
+          a.fechaHora,
           a.estado
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
@@ -461,7 +461,7 @@ class AuditoriaLog {
           u.nombreUsuario as nombre_usuario,
           a.tipoAccion,
           a.descripcion,
-          a.fechaHora as fecha_creacion,
+          a.fechaHora,
           a.estado
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario

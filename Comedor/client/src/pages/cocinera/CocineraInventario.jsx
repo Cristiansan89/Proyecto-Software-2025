@@ -134,7 +134,7 @@ const CocineraInventario = () => {
 
   const obtenerCategorias = () => {
     const cats = [...new Set(inventarios.map((inv) => inv.categoria))].filter(
-      Boolean
+      Boolean,
     );
     return cats;
   };
@@ -180,7 +180,7 @@ const CocineraInventario = () => {
       const movimientoData = {
         id_insumo: parseInt(nuevoMovimiento.id_insumo),
         tipoMovimiento: nuevoMovimiento.tipoMovimiento,
-        cantidadMovimiento: parseFloat(nuevoMovimiento.cantidadMovimiento),
+        cantidadMovimiento: parseInt(nuevoMovimiento.cantidadMovimiento),
         comentarioMovimiento: nuevoMovimiento.comentarioMovimiento,
         id_usuario: user.idUsuario || user.id_usuario,
         id_tipoMerma:
@@ -205,7 +205,7 @@ const CocineraInventario = () => {
       showError(
         "Error",
         "Error al registrar el movimiento: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
       );
     } finally {
       setLoading(false);
@@ -264,8 +264,8 @@ const CocineraInventario = () => {
       backgroundColor: state.isSelected
         ? "#0d6efd"
         : state.isFocused
-        ? "#f8f9fa"
-        : "white",
+          ? "#f8f9fa"
+          : "white",
       color: state.isSelected ? "white" : "#212529",
     }),
   };
@@ -355,8 +355,8 @@ const CocineraInventario = () => {
                           alerta.tipo === "critico"
                             ? "danger"
                             : alerta.tipo === "agotado"
-                            ? "dark"
-                            : "warning"
+                              ? "dark"
+                              : "warning"
                         } mb-0`}
                       >
                         <strong>{alerta.insumo}</strong>
@@ -527,7 +527,7 @@ const CocineraInventario = () => {
                             <td>
                               <strong>
                                 {Math.round(
-                                  parseFloat(inventario.cantidadActual)
+                                  parseFloat(inventario.cantidadActual),
                                 )}{" "}
                                 {inventario.unidadMedida}
                               </strong>
@@ -535,7 +535,7 @@ const CocineraInventario = () => {
                             <td className="text-danger">
                               <strong>
                                 {Math.round(
-                                  parseFloat(inventario.nivelMinimoAlerta)
+                                  parseFloat(inventario.nivelMinimoAlerta),
                                 )}{" "}
                                 {inventario.unidadMedida}
                               </strong>
@@ -556,7 +556,7 @@ const CocineraInventario = () => {
                                     style={{
                                       width: `${Math.min(
                                         porcentajeDelMinimo,
-                                        100
+                                        100,
                                       )}%`,
                                     }}
                                   ></div>
@@ -569,7 +569,7 @@ const CocineraInventario = () => {
                             </td>
                             <td className="text-center">
                               {new Date(
-                                inventario.fechaUltimaActualizacion
+                                inventario.fechaUltimaActualizacion,
                               ).toLocaleDateString("es-ES")}
                             </td>
                           </tr>
@@ -710,7 +710,7 @@ const CocineraInventario = () => {
                     const insumo = inventarios.find(
                       (inv) =>
                         inv.id_insumo === mov.idInsumo ||
-                        inv.id_insumo === mov.id_insumo
+                        inv.id_insumo === mov.id_insumo,
                     );
 
                     return (
@@ -721,19 +721,19 @@ const CocineraInventario = () => {
                               mov.tipoMovimiento === "Entrada"
                                 ? "success"
                                 : mov.tipoMovimiento === "Salida"
-                                ? "danger"
-                                : "warning"
+                                  ? "danger"
+                                  : "warning"
                             }`}
                           >
                             {mov.tipoMovimiento === "Entrada"
                               ? "↗️ Entrada"
                               : mov.tipoMovimiento === "Salida"
-                              ? "↙️ Salida"
-                              : "🗑️ Merma"}
+                                ? "↙️ Salida"
+                                : "🗑️ Merma"}
                           </span>
                           <small className="text-muted mx-2">
                             {new Date(mov.fechaHora).toLocaleDateString(
-                              "es-ES"
+                              "es-ES",
                             )}
                           </small>
                         </div>
@@ -798,7 +798,7 @@ const CocineraInventario = () => {
                     options={opcionesInsumos}
                     value={
                       opcionesInsumos.find(
-                        (opt) => opt.value == nuevoMovimiento.id_insumo
+                        (opt) => opt.value == nuevoMovimiento.id_insumo,
                       ) || null
                     }
                     onChange={(selectedOption) => {
@@ -822,8 +822,8 @@ const CocineraInventario = () => {
                           {option.data.inventario &&
                             ` | Stock: ${Math.round(
                               parseFloat(
-                                option.data.inventario.cantidadActual || 0
-                              )
+                                option.data.inventario.cantidadActual || 0,
+                              ),
                             )}`}
                         </div>
                       </div>
@@ -835,11 +835,11 @@ const CocineraInventario = () => {
                     <small className="form-text text-muted">
                       {(() => {
                         const inventarioSeleccionado = inventarios.find(
-                          (inv) => inv.id_insumo == nuevoMovimiento.id_insumo
+                          (inv) => inv.id_insumo == nuevoMovimiento.id_insumo,
                         );
                         if (inventarioSeleccionado) {
                           return `Stock actual: ${Math.round(
-                            parseFloat(inventarioSeleccionado.cantidadActual)
+                            parseFloat(inventarioSeleccionado.cantidadActual),
                           )} ${
                             inventarioSeleccionado.unidadMedida
                           } | Categoría: ${
@@ -857,7 +857,7 @@ const CocineraInventario = () => {
                     <Select
                       options={opcionesTiposMovimiento}
                       value={opcionesTiposMovimiento.find(
-                        (opt) => opt.value === nuevoMovimiento.tipoMovimiento
+                        (opt) => opt.value === nuevoMovimiento.tipoMovimiento,
                       )}
                       onChange={(selectedOption) => {
                         setNuevoMovimiento({
@@ -896,7 +896,7 @@ const CocineraInventario = () => {
                       options={opcionesTiposMerma}
                       value={
                         opcionesTiposMerma.find(
-                          (opt) => opt.value == nuevoMovimiento.id_tipoMerma
+                          (opt) => opt.value == nuevoMovimiento.id_tipoMerma,
                         ) || null
                       }
                       onChange={(selectedOption) => {
@@ -919,8 +919,8 @@ const CocineraInventario = () => {
                     {nuevoMovimiento.tipoMovimiento === "Entrada"
                       ? "Observaciones (proveedor, factura, etc.)"
                       : nuevoMovimiento.tipoMovimiento === "Salida"
-                      ? "Observaciones (destino, receta, etc.)"
-                      : "Descripción de la merma"}
+                        ? "Observaciones (destino, receta, etc.)"
+                        : "Descripción de la merma"}
                   </label>
                   <textarea
                     className="form-control"
@@ -936,8 +936,8 @@ const CocineraInventario = () => {
                       nuevoMovimiento.tipoMovimiento === "Entrada"
                         ? "Proveedor, número de factura, lote..."
                         : nuevoMovimiento.tipoMovimiento === "Salida"
-                        ? "Para qué receta, consumo directo..."
-                        : "Detalles sobre la causa de la merma..."
+                          ? "Para qué receta, consumo directo..."
+                          : "Detalles sobre la causa de la merma..."
                     }
                   />
                 </div>

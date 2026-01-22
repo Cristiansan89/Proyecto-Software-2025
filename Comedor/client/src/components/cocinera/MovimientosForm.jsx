@@ -87,8 +87,8 @@ const MovimientosForm = ({
       backgroundColor: state.isSelected
         ? "#0d6efd"
         : state.isFocused
-        ? "#f8f9fa"
-        : "white",
+          ? "#f8f9fa"
+          : "white",
       color: state.isSelected ? "white" : "#212529",
     }),
   };
@@ -113,7 +113,7 @@ const MovimientosForm = ({
       const movimientoData = {
         id_insumo: parseInt(nuevoMovimiento.id_insumo),
         tipoMovimiento: nuevoMovimiento.tipoMovimiento,
-        cantidadMovimiento: parseFloat(nuevoMovimiento.cantidadMovimiento),
+        cantidadMovimiento: parseInt(nuevoMovimiento.cantidadMovimiento),
         comentarioMovimiento: nuevoMovimiento.comentarioMovimiento,
         id_usuario: user.idUsuario || user.id_usuario,
         id_tipoMerma:
@@ -144,7 +144,7 @@ const MovimientosForm = ({
       showError(
         "Error",
         "Error al registrar el movimiento: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
       );
     } finally {
       setLoading(false);
@@ -168,7 +168,7 @@ const MovimientosForm = ({
           options={opcionesInsumos}
           value={
             opcionesInsumos.find(
-              (opt) => opt.value == nuevoMovimiento.id_insumo
+              (opt) => opt.value == nuevoMovimiento.id_insumo,
             ) || null
           }
           onChange={(selectedOption) => {
@@ -192,7 +192,7 @@ const MovimientosForm = ({
                 {option.data.categoria || "Sin categoría"}
                 {option.data.inventario &&
                   ` | Stock: ${Math.round(
-                    parseFloat(option.data.inventario.cantidadActual || 0)
+                    parseFloat(option.data.inventario.cantidadActual || 0),
                   )}`}
               </div>
             </div>
@@ -204,11 +204,11 @@ const MovimientosForm = ({
           <small className="form-text text-muted">
             {(() => {
               const inventarioSeleccionado = inventarios.find(
-                (inv) => inv.id_insumo == nuevoMovimiento.id_insumo
+                (inv) => inv.id_insumo == nuevoMovimiento.id_insumo,
               );
               if (inventarioSeleccionado) {
                 return `Stock actual: ${Math.round(
-                  parseFloat(inventarioSeleccionado.cantidadActual)
+                  parseFloat(inventarioSeleccionado.cantidadActual),
                 )} ${inventarioSeleccionado.unidadMedida}`;
               }
               return "";
@@ -223,7 +223,7 @@ const MovimientosForm = ({
           <Select
             options={opcionesTiposMovimiento}
             value={opcionesTiposMovimiento.find(
-              (opt) => opt.value === nuevoMovimiento.tipoMovimiento
+              (opt) => opt.value === nuevoMovimiento.tipoMovimiento,
             )}
             onChange={(selectedOption) => {
               setNuevoMovimiento({
@@ -265,7 +265,7 @@ const MovimientosForm = ({
             options={opcionesTiposMerma}
             value={
               opcionesTiposMerma.find(
-                (opt) => opt.value == nuevoMovimiento.id_tipoMerma
+                (opt) => opt.value == nuevoMovimiento.id_tipoMerma,
               ) || null
             }
             onChange={(selectedOption) => {
@@ -288,8 +288,8 @@ const MovimientosForm = ({
           {nuevoMovimiento.tipoMovimiento === "Entrada"
             ? "Observaciones (proveedor, factura, etc.)"
             : nuevoMovimiento.tipoMovimiento === "Salida"
-            ? "Observaciones (destino, receta, etc.)"
-            : "Descripción de la merma"}
+              ? "Observaciones (destino, receta, etc.)"
+              : "Descripción de la merma"}
         </label>
         <textarea
           className="form-control"
@@ -305,8 +305,8 @@ const MovimientosForm = ({
             nuevoMovimiento.tipoMovimiento === "Entrada"
               ? "Proveedor, número de factura, lote..."
               : nuevoMovimiento.tipoMovimiento === "Salida"
-              ? "Para qué receta, consumo directo..."
-              : "Detalles sobre la causa de la merma..."
+                ? "Para qué receta, consumo directo..."
+                : "Detalles sobre la causa de la merma..."
           }
           disabled={loading}
         />

@@ -102,7 +102,7 @@ const AuditoriaForm = ({ show, onHide }) => {
       }
 
       setSuccess(
-        `Se cargaron ${logsResponse.data?.length || 0} registros correctamente`
+        `Se cargaron ${logsResponse.data?.length || 0} registros correctamente`,
       );
     } catch (error) {
       console.error("Error al cargar datos:", error);
@@ -167,19 +167,19 @@ const AuditoriaForm = ({ show, onHide }) => {
       doc.text(
         `Período: ${filtros.fechaInicio} al ${filtros.fechaFin}`,
         40,
-        yPosition
+        yPosition,
       );
       yPosition += 15;
 
       if (filtros.usuario)
-        doc.text(`Filtro de usuario: ${filtros.usuario}`, 40, yPosition),
-          (yPosition += 15);
+        (doc.text(`Filtro de usuario: ${filtros.usuario}`, 40, yPosition),
+          (yPosition += 15));
       if (filtros.accion)
-        doc.text(`Filtro de acción: ${filtros.accion}`, 40, yPosition),
-          (yPosition += 15);
+        (doc.text(`Filtro de acción: ${filtros.accion}`, 40, yPosition),
+          (yPosition += 15));
       if (filtros.modulo)
-        doc.text(`Filtro de módulo: ${filtros.modulo}`, 40, yPosition),
-          (yPosition += 15);
+        (doc.text(`Filtro de módulo: ${filtros.modulo}`, 40, yPosition),
+          (yPosition += 15));
 
       yPosition += 10;
 
@@ -230,7 +230,7 @@ const AuditoriaForm = ({ show, onHide }) => {
 
       // Preparar datos para la tabla
       const tableData = logs.map((log) => [
-        formatearFecha(log.fecha_creacion),
+        formatearFecha(log.fechaHora),
         log.nombre_usuario || "Sistema",
         log.accion,
         log.modulo,
@@ -297,7 +297,7 @@ const AuditoriaForm = ({ show, onHide }) => {
         doc.text(
           `• Total de registros en el período: ${logs.length}`,
           40,
-          yPosition
+          yPosition,
         );
         yPosition += 15;
 
@@ -305,7 +305,7 @@ const AuditoriaForm = ({ show, onHide }) => {
         doc.text(
           `• Acciones registradas: ${accionesUnicas.join(", ")}`,
           40,
-          yPosition
+          yPosition,
         );
         yPosition += 15;
 
@@ -313,7 +313,7 @@ const AuditoriaForm = ({ show, onHide }) => {
         doc.text(
           `• Módulos afectados: ${modulosUnicos.join(", ")}`,
           40,
-          yPosition
+          yPosition,
         );
       }
 
@@ -327,7 +327,7 @@ const AuditoriaForm = ({ show, onHide }) => {
           `Sistema de Gestión de Comedor Escolar - Página ${i} de ${totalPages}`,
           pageWidth / 2,
           pageHeight - 20,
-          { align: "center" }
+          { align: "center" },
         );
       }
 
