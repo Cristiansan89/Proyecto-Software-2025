@@ -130,7 +130,7 @@ const ConfirmacionExitosa = () => {
       <div className="footer-contacto">
         <p>
           Si tiene alguna consulta, puede contactarnos al{" "}
-          <a href="tel:+3764239133">(376) 4239133</a> o{" "}
+          <a href="tel:+543764239133">+54 (376) 4239133</a> o{" "}
           <a href="mailto:crisanz89@gmail.com">crisanz89@gmail.com</a>
         </p>
       </div>
