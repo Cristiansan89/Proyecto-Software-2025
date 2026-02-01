@@ -20,6 +20,7 @@ const AdminLayout = ({ children }) => {
     if (path.includes("/grados")) return "grados";
     if (path.includes("/roles")) return "roles";
     if (path.includes("/insumos")) return "insumos";
+    if (path.includes("/usuarios")) return "usuarios";
     if (path.includes("/proveedores")) return "proveedores";
     if (path.includes("/personasgrados")) return "personasgrados";
     if (path.includes("/configuracion")) return "configuracion";
