@@ -47,8 +47,12 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
+    console.log("🔐 Token encontrado, enviando con solicitud");
     config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.log("⚠️ No hay token en localStorage, enviando sin autenticación");
   }
+  console.log("📤 Headers de solicitud:", config.headers);
   return config;
 });
 

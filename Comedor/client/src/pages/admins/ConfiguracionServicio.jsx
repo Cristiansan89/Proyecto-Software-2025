@@ -218,7 +218,7 @@ const ConfiguracionServiciosAutomaticos = () => {
   };
 
   const handleEliminar = async (id, nombreServicio) => {
-    // 1. Confirmación asíncrona con alertService
+    // Confirmación asíncrona con alertService
     const result = await showConfirm(
       "Eliminar Configuración",
       `¿Está seguro de que desea eliminar la configuración del servicio "${nombreServicio}"?`,
@@ -226,21 +226,37 @@ const ConfiguracionServiciosAutomaticos = () => {
       "Cancelar"
     );
 
-    // 2. Proceder solo si el usuario confirmó
-    if (result.isConfirmed) {
+   
+    if (result) {
       try {
-        await configuracionAutomaticaAPI.eliminar(id);
-
-        // 3. Mostrar éxito
+        // Convertir el id a número
+        const idNum = typeof id === "number" ? id : parseInt(id, 10);
+       
+        
+        if (!idNum || isNaN(idNum)) {
+        
+          showError("Error", "ID de configuración inválido");
+          return;
+        }
+        
+    
+        const response = await configuracionAutomaticaAPI.eliminar(idNum);
+    
+        
+        // Mostrar éxito
+      
         showSuccess("¡Éxito!", "Configuración eliminada exitosamente");
 
-        // 4. Recargar los datos de la tabla
-        cargarDatos();
+        // IMPORTANTE: Esperar a que cargarDatos() termine ANTES de continuar
+       
+        await cargarDatos();
+     
       } catch (err) {
-        // 5. Gestión de errores
-        // console.error("Error al eliminar:", err);
+       
         showError("Error", "No se pudo eliminar la configuración");
       }
+    } else {
+      // showInfo("Operación cancelada", "La configuración no fue eliminada");
     }
   };
   const getNombreServicio = (idServicio) => {
@@ -292,6 +308,7 @@ const ConfiguracionServiciosAutomaticos = () => {
               >
                 <thead className="table-header-fixed">
                   <tr>
+                    <th>#</th>
                     <th>Servicio</th>
                     <th>Hora Inicio</th>
                     <th>Hora Fin</th>
@@ -301,8 +318,9 @@ const ConfiguracionServiciosAutomaticos = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {configuraciones.map((config) => (
+                  {configuraciones.map((config, index) => (
                     <tr key={config.id_configuracion}>
+                      <td className="fw-bold">{index + 1}</td>
                       <td>
                         <strong>{getNombreServicio(config.id_servicio)}</strong>
                       </td>

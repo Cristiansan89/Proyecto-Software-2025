@@ -45,7 +45,7 @@ export class PlanificacionMenuModel {
                  FROM PlanificacionMenus pm
                  JOIN Usuarios u ON pm.id_usuario = u.id_usuario
                  JOIN Personas p ON u.id_persona = p.id_persona
-                 ORDER BY pm.fechaInicio DESC;`
+                 ORDER BY pm.fechaInicio ASC;`
       );
       return planificaciones;
     } catch (error) {
@@ -182,7 +182,7 @@ export class PlanificacionMenuModel {
 
       // 4. Eliminar asignaciones de recetas (dependen de JornadaPlanificada)
       await conn.query(
-        `DELETE psr FROM PlanificacionServicioReceta psr
+        `DELETE psr FROM RecetaJornada psr
                  JOIN JornadaPlanificada jp ON psr.id_jornada = jp.id_jornada
                  WHERE jp.id_planificacion = UUID_TO_BIN(?);`,
         [id]
@@ -326,7 +326,7 @@ export class PlanificacionMenuModel {
 
     try {
       const [result] = await connection.query(
-        `INSERT INTO PlanificacionServicioReceta (
+        `INSERT INTO RecetaJornada (
                     id_recetaAsignada,
                     id_jornada,
                     id_receta
@@ -340,7 +340,7 @@ export class PlanificacionMenuModel {
                     BIN_TO_UUID(psr.id_jornada) as id_jornada,
                     BIN_TO_UUID(psr.id_receta) as id_receta,
                     r.nombrePlato
-                 FROM PlanificacionServicioReceta psr
+                 FROM RecetaJornada psr
                  JOIN Recetas r ON psr.id_receta = r.id_receta
                  WHERE psr.id_jornada = UUID_TO_BIN(?) AND psr.id_receta = UUID_TO_BIN(?);`,
         [id_jornada, id_receta]
@@ -362,10 +362,10 @@ export class PlanificacionMenuModel {
                     BIN_TO_UUID(psr.id_receta) as id_receta,
                     r.nombrePlato,
                     r.descripcion
-                 FROM PlanificacionServicioReceta psr
+                 FROM RecetaJornada psr
                  JOIN Recetas r ON psr.id_receta = r.id_receta
                  WHERE psr.id_jornada = UUID_TO_BIN(?)
-                 ORDER BY r.nombrePlato;`,
+                 ORDER BY r.nombreReceta;`,
         [id_jornada]
       );
       return recetas;
@@ -390,7 +390,7 @@ export class PlanificacionMenuModel {
                  JOIN Usuarios u ON pm.id_usuario = u.id_usuario
                  JOIN Personas p ON u.id_persona = p.id_persona
                  WHERE pm.id_usuario = UUID_TO_BIN(?)
-                 ORDER BY pm.fechaInicio DESC;`,
+                 ORDER BY pm.fechaInicio ASC;`,
         [id_usuario]
       );
       return planificaciones;
@@ -415,7 +415,7 @@ export class PlanificacionMenuModel {
                  JOIN Usuarios u ON pm.id_usuario = u.id_usuario
                  JOIN Personas p ON u.id_persona = p.id_persona
                  WHERE pm.estado = ?
-                 ORDER BY pm.fechaInicio DESC;`,
+                 ORDER BY pm.fechaInicio ASC;`,
         [estado]
       );
       return planificaciones;
@@ -443,7 +443,7 @@ export class PlanificacionMenuModel {
                     r.nombreReceta
                  FROM JornadaPlanificada jp
                  JOIN Servicios s ON jp.id_servicio = s.id_servicio
-                 LEFT JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
+                 LEFT JOIN RecetaJornada psr ON jp.id_jornada = psr.id_jornada
                  LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
                  WHERE jp.id_planificacion = UUID_TO_BIN(?)
                  ORDER BY 
@@ -586,14 +586,14 @@ export class PlanificacionMenuModel {
 
       // Verificar si ya existe una asignación y eliminarla
       await conn.query(
-        `DELETE FROM PlanificacionServicioReceta 
+        `DELETE FROM RecetaJornada 
                  WHERE id_jornada = UUID_TO_BIN(?);`,
         [id_jornada]
       );
 
       // Crear nueva asignación
       await conn.query(
-        `INSERT INTO PlanificacionServicioReceta (
+        `INSERT INTO RecetaJornada (
                     id_recetaAsignada,
                     id_jornada,
                     id_receta
@@ -613,7 +613,7 @@ export class PlanificacionMenuModel {
                     ? as fecha,
                     ? as id_servicio,
                     s.nombre as nombreServicio
-                 FROM PlanificacionServicioReceta psr
+                 FROM RecetaJornada psr
                  JOIN Recetas r ON psr.id_receta = r.id_receta
                  JOIN JornadaPlanificada jp ON psr.id_jornada = jp.id_jornada
                  JOIN Servicios s ON jp.id_servicio = s.id_servicio
@@ -653,7 +653,7 @@ export class PlanificacionMenuModel {
                  FROM PlanificacionMenus pm
                  JOIN JornadaPlanificada jp ON pm.id_planificacion = jp.id_planificacion
                  JOIN Servicios s ON jp.id_servicio = s.id_servicio
-                 LEFT JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
+                 LEFT JOIN RecetaJornada psr ON jp.id_jornada = psr.id_jornada
                  LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
                  WHERE pm.fechaInicio <= ? AND pm.fechaFin >= ? 
                    AND pm.estado IN ('Pendiente', 'Activo')
@@ -793,7 +793,7 @@ export class PlanificacionMenuModel {
 
       // Eliminar la asignación de receta
       const [result] = await conn.query(
-        `DELETE FROM PlanificacionServicioReceta 
+        `DELETE FROM RecetaJornada 
                  WHERE id_jornada = UUID_TO_BIN(?);`,
         [id_jornada]
       );
@@ -839,7 +839,7 @@ export class PlanificacionMenuModel {
                  WHERE (pm.fechaInicio <= ? AND pm.fechaFin >= ?) 
                     OR (pm.fechaInicio <= ? AND pm.fechaFin >= ?)
                     OR (pm.fechaInicio >= ? AND pm.fechaFin <= ?)
-                 ORDER BY pm.fechaInicio DESC;`,
+                 ORDER BY pm.fechaInicio ASC;`,
         [
           fecha_fin,
           fecha_inicio,

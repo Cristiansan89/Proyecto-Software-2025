@@ -28,7 +28,7 @@ export const generarInsumosSemanales = async (req, res) => {
         r.nombreReceta,
         s.nombre as nombreServicio
        FROM JornadaPlanificada jp
-       LEFT JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
+       LEFT JOIN RecetaJornada psr ON jp.id_jornada = psr.id_jornada
        LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
        LEFT JOIN Servicios s ON jp.id_servicio = s.id_servicio
        WHERE jp.id_planificacion = UUID_TO_BIN(?)
@@ -458,7 +458,7 @@ export const obtenerInsumosSemanales = async (req, res) => {
         r.nombreReceta,
         s.nombre as nombreServicio
        FROM JornadaPlanificada jp
-       LEFT JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
+       LEFT JOIN RecetaJornada psr ON jp.id_jornada = psr.id_jornada
        LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
        LEFT JOIN Servicios s ON jp.id_servicio = s.id_servicio
        WHERE jp.id_planificacion = UUID_TO_BIN(?)
@@ -744,7 +744,7 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
         r.nombreReceta,
         s.nombre as nombreServicio
        FROM JornadaPlanificada jp
-       LEFT JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
+       LEFT JOIN RecetaJornada psr ON jp.id_jornada = psr.id_jornada
        LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
        LEFT JOIN Servicios s ON jp.id_servicio = s.id_servicio
        WHERE jp.id_planificacion = UUID_TO_BIN(?)

@@ -2,9 +2,8 @@ import { connection } from "./db.js";
 import { SoftDeleteService } from "./softDeleteService.js";
 
 export class GradoModel {
-  static async getAll() {
-    const [grados] = await connection.query(
-      `SELECT 
+  static async getAll({ estado = null } = {}) {
+    let query = `SELECT 
                 g.id_grado as idGrado,
                 g.id_turno as idTurno,
                 g.nombreGrado,
@@ -13,10 +12,22 @@ export class GradoModel {
                 t.horaInicio,
                 t.horaFin
              FROM Grados g
-             JOIN Turnos t ON g.id_turno = t.id_turno
-             WHERE g.estado = 'Activo'
-             ORDER BY g.nombreGrado, t.nombre;`
-    );
+             JOIN Turnos t ON g.id_turno = t.id_turno`;
+    
+    const params = [];
+    
+    // Si se especifica estado, filtrar por él. Si no, devolver todos (incluyendo Inactivo)
+    if (estado) {
+      query += ` WHERE g.estado = ?`;
+      params.push(estado);
+    } else {
+      // Por defecto mostrar solo Activos para compatibilidad
+      query += ` WHERE g.estado = 'Activo'`;
+    }
+    
+    query += ` ORDER BY g.nombreGrado, t.nombre;`;
+    
+    const [grados] = await connection.query(query, params);
     return grados;
   }
 
@@ -35,6 +46,7 @@ export class GradoModel {
              WHERE g.id_grado = ? AND g.estado = 'Activo';`,
       [id]
     );
+    console.log("GradoModel.getById: Buscando ID:", id, "Resultados:", grados);
     if (grados.length === 0) return null;
     return grados[0];
   }
@@ -69,7 +81,9 @@ export class GradoModel {
       );
 
       console.log("GradoModel: Grado insertado con ID:", result.insertId);
-      return this.getById({ id: result.insertId });
+      const nuevoGrado = await this.getById({ id: result.insertId });
+      console.log("GradoModel: getById retornó:", nuevoGrado);
+      return nuevoGrado;
     } catch (error) {
       console.error("GradoModel: Error al crear grado:", error);
       if (

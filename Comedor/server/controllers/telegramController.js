@@ -580,4 +580,108 @@ export class TelegramController {
       });
     }
   }
+
+  // Guardar Chat ID para un docente específico
+  static async saveDocenteChatId(req, res) {
+    try {
+      const { docenteId, chatId, telegramUsuario } = req.body;
+
+      if (!docenteId || !chatId) {
+        return res.status(400).json({
+          success: false,
+          message: "Se requieren docenteId y chatId",
+        });
+      }
+
+      const { connection } = await import("../models/db.js");
+
+      // Insertar o actualizar la configuración de Telegram del docente
+      const [result] = await connection.query(
+        `INSERT INTO DocenteConfiguracionTelegram (id_docenteTitular, telegramChatId, telegramUsuario, notificacionesTelegram)
+         VALUES (?, ?, ?, 'Activo')
+         ON DUPLICATE KEY UPDATE
+         telegramChatId = VALUES(telegramChatId),
+         telegramUsuario = VALUES(telegramUsuario),
+         notificacionesTelegram = VALUES(notificacionesTelegram)`,
+        [docenteId, String(chatId), telegramUsuario || ""]
+      );
+
+      console.log(`✅ Chat ID del docente ${docenteId} guardado:`, chatId);
+      res.json({
+        success: true,
+        message: "Chat ID del docente guardado correctamente",
+        docenteId,
+        chatId,
+      });
+    } catch (error) {
+      console.error("❌ Error al guardar Chat ID del docente:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Error interno del servidor",
+      });
+    }
+  }
+
+  // Listar todos los docentes con sus Chat IDs
+  static async listDocentesWithChatId(req, res) {
+    try {
+      const { connection } = await import("../models/db.js");
+
+      const [docentes] = await connection.query(
+        `SELECT 
+          dg.id_docenteTitular,
+          p.nombre,
+          p.apellido,
+          dg.nombreGrado,
+          u.mail,
+          u.telefono,
+          ct.telegramChatId,
+          ct.telegramUsuario,
+          ct.notificacionesTelegram
+        FROM DocenteGrado dg
+        JOIN Personas p ON dg.id_persona = p.id_persona
+        LEFT JOIN Usuarios u ON p.id_persona = u.id_persona
+        LEFT JOIN DocenteConfiguracionTelegram ct ON dg.id_docenteTitular = ct.id_docenteTitular
+        WHERE p.nombreRol = 'Docente' AND p.estado = 'Activo'
+        ORDER BY dg.nombreGrado ASC, p.apellido ASC, p.nombre ASC`
+      );
+
+      if (docentes && docentes.length > 0) {
+        const docentesConTelegram = docentes.map((d) => ({
+          id: d.id_docenteTitular,
+          nombre: d.nombre,
+          apellido: d.apellido,
+          nombreGrado: d.nombreGrado,
+          email: d.mail,
+          telefono: d.telefono,
+          chatId: d.telegramChatId,
+          telegramUsuario: d.telegramUsuario,
+          notificacionesActivas: d.notificacionesTelegram === "Activo",
+          configurado: d.telegramChatId !== null,
+        }));
+
+        res.json({
+          success: true,
+          total: docentesConTelegram.length,
+          configurados: docentesConTelegram.filter((d) => d.configurado).length,
+          docentes: docentesConTelegram,
+          message: "Listado de docentes obtenido",
+        });
+      } else {
+        res.json({
+          success: true,
+          total: 0,
+          configurados: 0,
+          docentes: [],
+          message: "No hay docentes disponibles",
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error al listar docentes con Chat ID:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Error interno del servidor",
+      });
+    }
+  }
 }

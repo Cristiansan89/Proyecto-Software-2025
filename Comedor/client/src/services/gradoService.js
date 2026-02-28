@@ -3,10 +3,11 @@ import api from './api.js'
 const GRADOS_ENDPOINT = '/grados'
 
 export const gradoService = {
-    // Obtener todos los grados
-    getAll: async () => {
+    // Obtener todos los grados (con filtro opcional de estado)
+    getAll: async (estado = null) => {
         try {
-            const response = await api.get(GRADOS_ENDPOINT)
+            const params = estado ? { estado } : {}
+            const response = await api.get(GRADOS_ENDPOINT, { params })
             return response.data
         } catch (error) {
             throw error

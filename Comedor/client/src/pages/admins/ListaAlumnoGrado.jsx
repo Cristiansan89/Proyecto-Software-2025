@@ -70,12 +70,18 @@ const ListaAlumnosGrados = () => {
 
     // Filtro por búsqueda de texto
     if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (alumno) =>
-          alumno.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          alumno.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          alumno.dni.includes(searchTerm) ||
-          alumno.nombreGrado.toLowerCase().includes(searchTerm.toLowerCase())
+        (alumno) => {
+          const nombreCompleto = `${alumno.nombre} ${alumno.apellido}`.toLowerCase();
+          return (
+            alumno.nombre.toLowerCase().includes(searchLower) ||
+            alumno.apellido.toLowerCase().includes(searchLower) ||
+            nombreCompleto.includes(searchLower) ||
+            alumno.dni.includes(searchTerm) ||
+            alumno.nombreGrado.toLowerCase().includes(searchLower)
+          );
+        }
       );
     }
 
@@ -190,7 +196,7 @@ const ListaAlumnosGrados = () => {
         );
         setSelectedAlumnos([]);
         loadAlumnos();
-        showInfo("Asignaciones eliminadas correctamente", 4000);
+        showSuccess("Éxito", "Asignaciones eliminadas correctamente");
       } catch (error) {
         //console.error("Error al eliminar asignaciones:", error);
         showError("Error", "Error al eliminar algunas asignaciones");
@@ -204,12 +210,12 @@ const ListaAlumnosGrados = () => {
     loadAlumnos();
 
     if (modalMode === "create") {
-      showInfo(
-        "Información",
-        `Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`
+      showSuccess(
+        "Éxito",
+        `Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${new Date(result.cicloLectivo).getFullYear()}`
       );
     } else {
-      showInfo("Asignación actualizada correctamente!", 4000);
+      showSuccess("Éxito", "Asignación actualizada correctamente!");
     }
   };
 

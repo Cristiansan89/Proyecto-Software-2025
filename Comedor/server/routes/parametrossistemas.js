@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { ParametroSistemaController } from "../controllers/parametrossistemas.js";
+import { verificarPermiso } from "../middlewares/verificarPermiso.js";
 
 export const createParametroSistemaRouter = ({ parametroSistemaModel }) => {
   const parametrosSistemasRouter = Router();
@@ -7,21 +8,29 @@ export const createParametroSistemaRouter = ({ parametroSistemaModel }) => {
     parametroSistemaModel,
   });
 
-  parametrosSistemasRouter.get("/", parametroSistemaController.getAll);
-  parametrosSistemasRouter.get("/:id", parametroSistemaController.getById);
-  parametrosSistemasRouter.post("/", parametroSistemaController.create);
-  parametrosSistemasRouter.delete("/:id", parametroSistemaController.delete);
-  parametrosSistemasRouter.patch("/:id", parametroSistemaController.update);
-
   // Endpoints especializados
   parametrosSistemasRouter.get(
     "/clave/:clave",
     parametroSistemaController.getByClave
   );
+
+  // Lectura
+  parametrosSistemasRouter.get("/", parametroSistemaController.getAll);
+  parametrosSistemasRouter.get("/:id", parametroSistemaController.getById);
+
+  // Creación - Protegido
+  parametrosSistemasRouter.post("/", verificarPermiso("Parámetros", "Registrar"), parametroSistemaController.create);
+  
+  // Modificación - Protegido
+  parametrosSistemasRouter.patch("/:id", verificarPermiso("Parámetros", "Modificar"), parametroSistemaController.update);
   parametrosSistemasRouter.patch(
     "/clave/:clave",
+    verificarPermiso("Parámetros", "Modificar"),
     parametroSistemaController.updateByClave
   );
+  
+  // Eliminación - Protegido
+  parametrosSistemasRouter.delete("/:id", verificarPermiso("Parámetros", "Eliminar"), parametroSistemaController.delete);
 
   // Endpoints para Telegram
   parametrosSistemasRouter.post(

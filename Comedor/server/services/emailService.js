@@ -46,7 +46,7 @@ const emailTemplates = {
                             <tr>
                                 <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Usuario:</td>
                                 <td style="padding: 8px 0; color: #667eea; font-weight: 600; font-family: monospace;">${
-                                  userData.username
+                                  userData.nombreUsuario
                                 }</td>
                             </tr>
                             <tr>
@@ -124,7 +124,7 @@ const emailTemplates = {
                             <tr>
                                 <td style="padding: 8px 0; color: #6c757d; font-weight: 600;">Usuario:</td>
                                 <td style="padding: 8px 0; color: #f093fb; font-weight: 600; font-family: monospace;">${
-                                  userData.username
+                                  userData.nombreUsuario
                                 }</td>
                             </tr>
                             <tr>

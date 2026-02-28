@@ -214,4 +214,47 @@ export class RolPermisoModel {
     static async revocarPermisoRol({ id_rol, id_permiso }) {
         return this.delete({ id_rol, id_permiso })
     }
+
+    // Obtener permisos por nombre de rol
+    static async getPermisosByNombreRol({ nombreRol }) {
+        try {
+            const [permisos] = await connection.query(
+                `SELECT DISTINCT
+                    p.id_permiso,
+                    p.nombrePermiso,
+                    p.descripcionPermiso,
+                    p.modulo,
+                    p.accion,
+                    p.estado
+                 FROM RolesPermisos rp
+                 INNER JOIN Roles r ON rp.id_rol = r.id_rol
+                 INNER JOIN Permisos p ON rp.id_permiso = p.id_permiso
+                 WHERE r.nombreRol = ? AND p.estado = 'Activo'
+                 ORDER BY p.modulo, p.accion;`,
+                [nombreRol]
+            )
+            return permisos
+        } catch (error) {
+            console.error('Error al obtener permisos por nombre de rol:', error)
+            return []
+        }
+    }
+
+    // Verificar si un rol tiene un permiso específico
+    static async tienePermiso({ nombreRol, modulo, accion }) {
+        try {
+            const [resultado] = await connection.query(
+                `SELECT COUNT(*) as count
+                 FROM RolesPermisos rp
+                 INNER JOIN Roles r ON rp.id_rol = r.id_rol
+                 INNER JOIN Permisos p ON rp.id_permiso = p.id_permiso
+                 WHERE r.nombreRol = ? AND p.modulo = ? AND p.accion = ? AND p.estado = 'Activo'`,
+                [nombreRol, modulo, accion]
+            )
+            return resultado[0].count > 0
+        } catch (error) {
+            console.error('Error al verificar permiso:', error)
+            return false
+        }
+    }
 }

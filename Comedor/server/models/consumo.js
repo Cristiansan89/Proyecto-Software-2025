@@ -323,7 +323,7 @@ export class ConsumoModel {
           const [items] = await connection.query(
             `SELECT ir.id_itemReceta, ir.cantidadPorPorcion, ir.unidadPorPorcion
              FROM ItemsRecetas ir
-             JOIN PlanificacionServicioReceta psr ON ir.id_receta = psr.id_receta
+             JOIN RecetaJornada psr ON ir.id_receta = psr.id_receta
              WHERE psr.id_jornada = UUID_TO_BIN(?) 
              AND ir.id_insumo = ?
              LIMIT 1;`,

@@ -95,11 +95,15 @@ const ListaEstadoPedido = () => {
   };
 
   // Manejar guardado exitoso
-  const handleGuardadoExitoso = async () => {
+  const handleGuardadoExitoso = async (accion) => {
     setShowModal(false);
     setSelectedEstado(null);
     await cargarEstadosPedido();
-    showSuccess("Éxito", "Estado de pedido guardado exitosamente");
+    if (accion === "updated") {
+      showSuccess("Éxito", "Estado de pedido actualizado exitosamente");
+    } else {
+      showSuccess("Éxito", "Estado de pedido guardado exitosamente");
+    }
   };
 
   if (loading) {
@@ -114,6 +118,9 @@ const ListaEstadoPedido = () => {
       </div>
     );
   }
+
+  // Ordenar por id_estadoPedido ascendente
+  const estadosPedidoOrdenados = [...estadosPedido].sort((a, b) => a.id_estadoPedido - b.id_estadoPedido);
 
   return (
     <div>
@@ -149,12 +156,12 @@ const ListaEstadoPedido = () => {
                     <th>#</th>
                     <th>Nombre del Estado</th>
                     <th>Descripción</th>
-                    <th>Estado</th>
+                    {/* <th>Estado</th> */}
                     <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {estadosPedido.map((estado) => (
+                  {estadosPedidoOrdenados.map((estado) => (
                     <tr key={estado.id_estadoPedido}>
                       <td>
                         <strong>{estado.id_estadoPedido}</strong>
@@ -164,17 +171,17 @@ const ListaEstadoPedido = () => {
                         <strong>{estado.nombreEstado}</strong>
                       </td>
                       <td>{estado.descripcion || "-"}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            estado.estado === "Activo"
-                              ? "bg-success"
-                              : "bg-secondary"
-                          }`}
-                        >
-                          {estado.estado}
-                        </span>
-                      </td>
+                      {/* <td>
+                          <span
+                            className={`badge ${
+                              estado.estado === "Activo"
+                                ? "bg-success"
+                                : "bg-secondary"
+                            }`}
+                          >
+                            {estado.estado}
+                          </span>
+                        </td> */}
                       <td>
                         <div className="action-buttons">
                           <button

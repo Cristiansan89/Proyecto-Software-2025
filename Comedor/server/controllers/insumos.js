@@ -67,25 +67,57 @@ export class InsumoController {
     try {
       const { id } = req.params;
 
+      console.log(`[InsumoController.delete] Iniciando eliminación de insumo ${id}`);
+
       // Verificar si el insumo tiene relaciones activas
       const hasActiveRelations = await this.insumoModel.hasActiveRelations({
         id,
       });
+      
+      console.log(
+        `[InsumoController.delete] hasActiveRelations=${hasActiveRelations}`
+      );
+
       if (hasActiveRelations) {
+        console.log(
+          `[InsumoController.delete] Insumo ${id} tiene relaciones activas`
+        );
+        
+        // Obtener detalles de las relaciones activas
+        const relations = await this.insumoModel.getActiveRelationsDetails({ id });
+        
+        const recipeNames = relations.recetas.map(r => r.nombreReceta).join(", ");
+        const providerNames = relations.proveedores.map(p => p.razonSocial).join(", ");
+        
+        let details = [];
+        if (recipeNames) details.push(`Recetas: ${recipeNames}`);
+        if (providerNames) details.push(`Proveedores: ${providerNames}`);
+        
+        const detailsText = details.length > 0 ? `\n\nRelaciones activas:\n${details.join("\n")}` : "";
+        
         return res.status(409).json({
-          message:
-            "No se puede eliminar el insumo porque está vinculado a registros activos",
+          message: `No se puede eliminar el insumo porque está vinculado a recetas o proveedores activos.${detailsText}`,
+          details: {
+            recetas: relations.recetas,
+            proveedores: relations.proveedores,
+          }
         });
       }
 
       const deleted = await this.insumoModel.delete({ id });
 
       if (!deleted) {
+        console.log(`[InsumoController.delete] Insumo ${id} no encontrado`);
         return res.status(404).json({ message: "Insumo no encontrado" });
       }
+
+      console.log(`[InsumoController.delete] Insumo ${id} eliminado exitosamente`);
       return res.json({ message: "Insumo eliminado correctamente" });
     } catch (error) {
-      console.error("Error al eliminar insumo:", error);
+      console.error(
+        `[InsumoController.delete] Error al eliminar insumo ${req.params.id}:`,
+        error
+      );
       if (
         error.message.includes("referencia") ||
         error.message.includes("usado")
@@ -94,7 +126,10 @@ export class InsumoController {
           message: "No se puede eliminar el insumo porque está en uso",
         });
       }
-      res.status(500).json({ message: "Error interno del servidor" });
+      res.status(500).json({
+        message: "Error interno del servidor",
+        error: error.message,
+      });
     }
   };
 

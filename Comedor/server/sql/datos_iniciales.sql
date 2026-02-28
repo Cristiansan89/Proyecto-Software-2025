@@ -809,7 +809,7 @@ INSERT INTO Inventarios (id_insumo, cantidadActual, nivelMinimoAlerta, stockMaxi
 --          Proveedores
 -- ==============================
 
-INSERT INTO Proveedores (razonSocial, CUIT, direccion, telefono, mail, fechaAlta, fechaModificacion, estado) VALUES
+INSERT INTO Proveedores (id_proveedor, razonSocial, CUIT, direccion, telefono, mail, fechaAlta, fechaModificacion, estado) VALUES
 (UUID_TO_BIN('63876D5DF11211F084A0C48E8F71E7A1'),'Distribuidora El Buen Sabor','30-71234567-3','Av. Uruguay 2450, Posadas, Misiones','+543764123456','elbuensabor@mail.com','2025-11-22',NULL,'Activo'),
 (UUID_TO_BIN('63882BD2F11211F084A0C48E8F71E7A1'), 'Alimentos Don Mateo SRL','30-68952341-7','Calle Félix de Azara 1820, Posadas, Misiones','+543764559821','donmateo@mail.com','2025-11-22',NULL,'Activo'),
 (UUID_TO_BIN('63882DF2F11211F084A0C48E8F71E7A1'), 'Lácteos La Misión','30-70331892-4','Av. López y Planes 3215, Posadas, Misiones','+543764780012','lacteolamision@mail.com','2025-11-22',NULL,'Activo'),
@@ -901,13 +901,20 @@ INSERT INTO ProveedorInsumo (id_insumo, id_proveedor, calificacion, estado)
 -- CATEGORÍA: CEREALES (Insumos 34 al 51)
 -- Múltiples proveedores según descripción: Alimentos La Porteña, Panificados Doña Rosa, La estrella.
 INSERT INTO ProveedorInsumo (id_insumo, id_proveedor, calificacion, estado)
-SELECT id_insumo, UUID_TO_BIN('6389B97EF11211F084A0C48E8F71E7A1'), 'Bueno', 'Activo' FROM Insumos WHERE categoria = 'Cereales';
+SELECT id_insumo, UUID_TO_BIN('6389B97EF11211F084A0C48E8F71E7A1'), 'Bueno', 'Activo'
+FROM Insumos WHERE categoria = 'Cereales';
+
 INSERT INTO ProveedorInsumo (id_insumo, id_proveedor, calificacion, estado)
-SELECT id_insumo, UUID_TO_BIN('6389B7ADF11211F084A0C48E8F71E7A1'), 'Bueno', 'Activo' FROM Insumos WHERE categoria = 'Cereales';
+SELECT id_insumo, UUID_TO_BIN('6389B7ADF11211F084A0C48E8F71E7A1'), 'Bueno', 'Activo'
+FROM Insumos WHERE categoria = 'Cereales';
+
 INSERT INTO ProveedorInsumo (id_insumo, id_proveedor, calificacion, estado)
-SELECT id_insumo, UUID_TO_BIN('6389BE57F11211F084A0C48E8F71E7A1'), 'Bueno', 'Activo' FROM Insumos WHERE categoria = 'Cereales';
+SELECT id_insumo, UUID_TO_BIN('6389BE57F11211F084A0C48E8F71E7A1'), 'Bueno', 'Activo'
+FROM Insumos WHERE categoria = 'Cereales';
+
 INSERT INTO ProveedorInsumo (id_insumo, id_proveedor, calificacion, estado)
-SELECT id_insumo, UUID_TO_BIN('63876D5DF11211F084A0C48E8F71E7A1'), 'Bueno', 'Activo' FROM Insumos WHERE categoria = 'Cereales';
+SELECT id_insumo, UUID_TO_BIN('63876D5DF11211F084A0C48E8F71E7A1'), 'Bueno', 'Activo'
+FROM Insumos WHERE categoria = 'Cereales';
 
 
 -- CATEGORÍA: VERDURAS (Insumos 52 al 72)
@@ -1381,13 +1388,13 @@ INSERT INTO DocenteGrado(id_docenteTitular, id_persona, nombreGrado, fechaAsigna
 --           Estado Pedidos
 -- ========================================
 
-INSERT INTO EstadoPedidos (id_estadoPedido, nombreEstado) VALUES
-(1,'Pendiente'),
-(2,'Aprobado'),
-(3,'Confirmado'),
-(4,'Enviado'),
-(5,'En espera'),
-(6,'Recibido'),
-(7,'Entregado'),
-(8,'Cancelado'),
-(9,'Fallido');
+INSERT INTO EstadoPedidos (id_estadoPedido, nombreEstado, descripcion) VALUES
+(1, 'Pendiente',  'El pedido fue generado pero aún no procesado.'),
+(2, 'Aprobado',   'El pedido fue revisado y aceptado para continuar.'),
+(3, 'Confirmado', 'El proveedor confirmó la disponibilidad.'),
+(4, 'Enviado',    'El pedido fue despachado hacia el destino.'),
+(5, 'En espera',  'El pedido está detenido por algún motivo temporal.'),
+(6, 'Recibido',   'El pedido llegó al destino y fue recibido.'),
+(7, 'Entregado',  'El pedido fue entregado correctamente al destinatario final.'),
+(8, 'Cancelado',  'El pedido fue cancelado y no continuará su proceso.'),
+(9, 'Fallido',    'El pedido no pudo completarse por un error o incidencia.');

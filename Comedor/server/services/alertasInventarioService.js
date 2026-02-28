@@ -184,28 +184,28 @@ class AlertasInventarioService {
 
       if (alerta) {
         // Verificar si ya se han enviado 3 alertas
-        if (alerta.contador_envios >= 3) {
+        if (alerta.contadorEnvios >= 3) {
           console.log(
-            `⚠️ Límite de alertas alcanzado para: ${insumo.nombreInsumo} (${alerta.contador_envios}/3)`
+            `⚠️ Límite de alertas alcanzado para: ${insumo.nombreInsumo} (${alerta.contadorEnvios}/3)`
           );
           return;
         }
 
         // Incrementar contador y enviar
-        const nuevoContador = alerta.contador_envios + 1;
+        const nuevoContador = alerta.contadorEnvios + 1;
         await this.enviarAlerta(insumo, nuevoContador);
 
         // Actualizar contador en la BD
         await AlertaInventarioModel.actualizarContador({
           id_insumo: insumo.id_insumo,
-          contador_envios: nuevoContador,
+          contadorEnvios: nuevoContador,
         });
       } else {
         // Crear nueva alerta y enviar
         await AlertaInventarioModel.create({
           id_insumo: insumo.id_insumo,
-          tipo_alerta: insumo.estado,
-          contador_envios: 1,
+          tipoAlerta: insumo.estado,
+          contadorEnvios: 1,
         });
         await this.enviarAlerta(insumo, 1);
       }

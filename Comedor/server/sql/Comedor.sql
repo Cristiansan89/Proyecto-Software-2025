@@ -73,7 +73,12 @@ CREATE TABLE Auditorias(
     fechaHora      DATETIME                   DEFAULT CURRENT_TIMESTAMP,
     modulo         VARCHAR(100)               NOT NULL,
     tipoAccion     ENUM('---', 'Registrar', 'Modificar', 'Eliminar', 'Buscar', 'Consultar', 'Exportar', 'Login', 'Logout')    NOT NULL DEFAULT '---',
-    descripcion    VARCHAR(100)               NOT NULL,
+    descripcion    VARCHAR(500)               NOT NULL,
+    valor_anterior LONGTEXT,
+    valor_nuevo    LONGTEXT,
+    id_registro_afectado VARCHAR(50),
+    nivel_criticidad VARCHAR(20),
+    resultado_accion VARCHAR(100),
     estado         ENUM('---', 'Exito', 'Error', 'Advertencia')    NOT NULL DEFAULT '---',
     nombreReporte  VARCHAR(255),
     tipoReporte    VARCHAR(50),
@@ -312,7 +317,7 @@ CREATE TABLE Permisos(
     fechaModificacion     DATETIME,
     estado                ENUM('Activo', 'Inactivo')    NOT NULL DEFAULT 'Activo',
     PRIMARY KEY (id_permiso)
-)ENGINE=INNODB;
+)ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
 
@@ -396,6 +401,17 @@ CREATE TABLE IF NOT EXISTS ProveedorConfiguracionTelegram (
     FOREIGN KEY (id_proveedor) REFERENCES Proveedores(id_proveedor) ON DELETE CASCADE
 )ENGINE=INNODB;
 
+CREATE TABLE IF NOT EXISTS DocenteConfiguracionTelegram (
+    id_config INT AUTO_INCREMENT PRIMARY KEY,
+    id_docenteTitular INT NOT NULL UNIQUE,
+    telegramChatId VARCHAR(100),
+    telegramUsuario VARCHAR(100),
+    notificacionesTelegram ENUM('Activo', 'Inactivo') DEFAULT 'Inactivo',
+    fechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fechaActualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_docenteTitular) REFERENCES DocenteGrado(id_docenteTitular) ON DELETE CASCADE
+)ENGINE=INNODB;
+
 
 -- -----------------------------------------------------
 -- TABLE: ProveedorInsumo 
@@ -453,7 +469,7 @@ CREATE TABLE ReemplazoDocente(
     cicloLectivo           DATE                       NOT NULL,
     fechaInicio            DATE                       NOT NULL,
     fechaFin               DATE,
-    motivo                 ENUM('Licencia Médica', 'Licencia por Maternidad', 'Licencia Anual', 'Cambio Funciones', 'Renuncia', 'Jubilación', 'Ausencia Prolongada')    NOT NULL,
+    motivo                 ENUM('licencia_medica', 'licencia_maternidad', 'licencia_anual', 'cambio_funciones', 'renuncia', 'jubilacion', 'ausencia_prolongada')    NOT NULL,
     estado                 ENUM('Activo', 'Finalizado', 'Programado')    NOT NULL DEFAULT 'Activo',
     PRIMARY KEY (id_reemplazoDocente)
 )ENGINE=INNODB;
@@ -589,7 +605,7 @@ CREATE INDEX Ref646 ON AlumnoGrado(nombreGrado)
 -- INDEX: uk_asistencias_unica 
 --
 
-CREATE UNIQUE INDEX uk_asistencias_unica ON Asistencias(fecha, id_servicio)
+CREATE UNIQUE INDEX uk_asistencias_unica ON Asistencias(fecha, id_servicio, id_alumnoGrado)
 ;
 -- 
 -- INDEX: Ref2688 
@@ -1269,11 +1285,6 @@ ALTER TABLE ProveedorInsumo ADD CONSTRAINT RefInsumos554
 -- 
 -- TABLE: ReemplazoDocente 
 --
-
-ALTER TABLE ReemplazoDocente ADD CONSTRAINT RefDocenteGrado954 
-    FOREIGN KEY (id_docenteTitular, id_persona, nombreGrado)
-    REFERENCES DocenteGrado(id_docenteTitular, id_persona, nombreGrado)
-;
 
 ALTER TABLE ReemplazoDocente ADD CONSTRAINT RefPersonas964 
     FOREIGN KEY (id_persona)

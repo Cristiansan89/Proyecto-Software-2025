@@ -818,7 +818,7 @@ export class PedidoController {
 
       // CASO 1: Hay insumos confirmados - enviar PDF al proveedor original
       if (insumosConfirmados.length > 0) {
-        // Generar PDF
+        // Generar PDF solo con insumos confirmados
         const pdfBuffer = await generarPDFConfirmacionProveedor({
           numeroPedido: `PEDIDO-${idPedido.substring(0, 8).toUpperCase()}`,
           proveedor: {
@@ -828,15 +828,15 @@ export class PedidoController {
           },
           fechaPedido: pedido.fechaEmision,
           insumosConfirmados,
-          insumosNoDisponibles: insumosRechazados,
         });
 
-        // Enviar correo con PDF
+        // Enviar correo con PDF solo de insumos confirmados
         await enviarPDFConfirmacionMail(
           pedido.mail,
           pedido.razonSocial,
           pdfBuffer,
           idPedido.substring(0, 8).toUpperCase(),
+          insumosRechazados.length > 0,  // Indicar que hay rechazados
         );
 
         console.log(

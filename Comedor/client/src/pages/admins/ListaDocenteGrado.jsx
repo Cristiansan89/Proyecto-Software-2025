@@ -74,12 +74,18 @@ const ListaDocentesGrados = () => {
 
     // Filtro por búsqueda de texto
     if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (docente) =>
-          docente.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          docente.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          docente.dni.includes(searchTerm) ||
-          docente.nombreGrado.toLowerCase().includes(searchTerm.toLowerCase())
+        (docente) => {
+          const nombreCompleto = `${docente.nombre} ${docente.apellido}`.toLowerCase();
+          return (
+            docente.nombre.toLowerCase().includes(searchLower) ||
+            docente.apellido.toLowerCase().includes(searchLower) ||
+            nombreCompleto.includes(searchLower) ||
+            docente.dni.includes(searchTerm) ||
+            docente.nombreGrado.toLowerCase().includes(searchLower)
+          );
+        }
       );
     }
 
@@ -108,8 +114,15 @@ const ListaDocentesGrados = () => {
 
   const totalPages = Math.max(1, Math.ceil(filteredDocentes.length / pageSize));
 
-  // Ordenar docentes por ID
+  // Ordenar docentes por grado y luego por ID
   const sortedDocentes = filteredDocentes.slice().sort((a, b) => {
+    // Comparar por grado primero
+    const gradoComparison = (a.nombreGrado || "").localeCompare(
+      b.nombreGrado || ""
+    );
+    if (gradoComparison !== 0) return gradoComparison;
+
+    // Si son del mismo grado, comparar por ID
     const idA = a.idDocenteTitular || 0;
     const idB = b.idDocenteTitular || 0;
     return idA - idB;
@@ -187,12 +200,12 @@ const ListaDocentesGrados = () => {
     loadDocentes();
 
     if (modalMode === "create") {
-      showInfo(
-        "Información",
-        `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${result.cicloLectivo}`
+      showSuccess(
+        "Éxito",
+        `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${new Date(result.cicloLectivo).getFullYear()}`
       );
     } else {
-      showInfo("Información", "Asignación actualizada correctamente!");
+      showSuccess("Éxito", "Asignación actualizada correctamente!");
     }
   };
 
@@ -255,10 +268,10 @@ const ListaDocentesGrados = () => {
                 ) : (
                   grados.map((grado) => (
                     <option
-                      key={grado.idGrado || grado.id}
-                      value={grado.nombre}
+                      key={grado.id_grado || grado.idGrado || grado.id}
+                      value={grado.nombreGrado || grado.nombre}
                     >
-                      {grado.nombre}
+                      {grado.nombreGrado || grado.nombre}
                     </option>
                   ))
                 )}

@@ -1,14 +1,25 @@
 import { z } from 'zod'
 
 const motivosReemplazo = [
-    'Licencia Médica',
-    'Licencia por Maternidad',
-    'Licencia Anual',
-    'Cambio Funciones',
-    'Renuncia',
-    'Jubilación',
-    'Ausencia Prolongada'
+    'licencia_medica',
+    'licencia_maternidad',
+    'licencia_anual',
+    'cambio_funciones',
+    'renuncia',
+    'jubilacion',
+    'ausencia_prolongada'
 ]
+
+// Mapeo de valores en BD a nombres amigables para mostrar
+const motivosDisplay = {
+    'licencia_medica': 'Licencia Médica',
+    'licencia_maternidad': 'Licencia por Maternidad',
+    'licencia_anual': 'Licencia Anual',
+    'cambio_funciones': 'Cambio Funciones',
+    'renuncia': 'Renuncia',
+    'jubilacion': 'Jubilación',
+    'ausencia_prolongada': 'Ausencia Prolongada'
+}
 
 const estadosReemplazo = ['Activo', 'Finalizado', 'Programado']
 
@@ -42,22 +53,22 @@ const reemplazoDocenteSchema = z.object({
         .optional()
         .nullable(),
 
-    motivo: z.enum(motivosReemplazo, {
+    motivo: z.string().trim().pipe(z.enum(motivosReemplazo, {
         required_error: 'Motivo del reemplazo es requerido',
         invalid_type_error: 'Motivo inválido',
-    }),
+    })),
 
-    estado: z.enum(estadosReemplazo, {
+    estado: z.string().trim().pipe(z.enum(estadosReemplazo, {
         invalid_type_error: 'Estado inválido',
-    }).optional(),
+    })).optional(),
 })
 
 const reemplazoDocenteUpdateSchema = z.object({
     idPersona: z.number().positive().optional(),
     fechaInicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     fechaFin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
-    motivo: z.enum(motivosReemplazo).optional(),
-    estado: z.enum(estadosReemplazo).optional(),
+    motivo: z.string().trim().pipe(z.enum(motivosReemplazo)).optional(),
+    estado: z.string().trim().pipe(z.enum(estadosReemplazo)).optional(),
 })
 
 // Validación adicional para fechas
@@ -117,4 +128,4 @@ export function validatePartialReemplazoDocente(input) {
     return basicValidation
 }
 
-export { motivosReemplazo, estadosReemplazo }
+export { motivosReemplazo, estadosReemplazo, motivosDisplay }

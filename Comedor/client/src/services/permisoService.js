@@ -92,6 +92,56 @@ export const permisoService = {
         } catch (error) {
             throw error;
         }
+    },
+
+    // Obtener permisos de un rol por nombre
+    async getPermisosByRolNombre(nombreRol) {
+        try {
+            const response = await api.get(`/rol-permisos/rol/${nombreRol}/permisos`);
+            return response.data || [];
+        } catch (error) {
+            console.error('Error al obtener permisos del rol:', error);
+            return [];
+        }
+    },
+
+    // Verificar si un usuario tiene un permiso específico
+    async tienePermiso(usuario, modulo, accion) {
+        try {
+            if (!usuario || !usuario.rol) {
+                return false;
+            }
+
+            const permisos = await this.getPermisosByRolNombre(usuario.rol);
+            const tienePermiso = permisos.some(p => p.modulo === modulo && p.accion === accion);
+            return tienePermiso;
+        } catch (error) {
+            console.error('Error al verificar permiso:', error);
+            return false;
+        }
+    },
+
+    // Verificar múltiples permisos (si tiene alguno)
+    async tieneAlgunoPermiso(usuario, permisos) {
+        try {
+            if (!usuario || !usuario.rol) {
+                return false;
+            }
+
+            const permisosUsuario = await this.getPermisosByRolNombre(usuario.rol);
+            
+            for (const permiso of permisos) {
+                const existe = permisosUsuario.some(
+                    p => p.modulo === permiso.modulo && p.accion === permiso.accion
+                );
+                if (existe) return true;
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('Error al verificar permisos:', error);
+            return false;
+        }
     }
 };
 

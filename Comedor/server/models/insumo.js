@@ -187,21 +187,73 @@ export class InsumoModel {
   }
 
   static async hasActiveRelations({ id }) {
-    const [result] = await connection.query(
-      `SELECT COUNT(*) as count
-       FROM ItemsRecetas
-       WHERE id_insumo = ?
-       UNION ALL
-       SELECT COUNT(*) as count
-       FROM Inventarios
-       WHERE id_insumo = ?
-       UNION ALL
-       SELECT COUNT(*) as count
-       FROM ProveedorInsumo
-       WHERE id_insumo = ? AND estado = 'Activo'`,
-      [id, id, id]
-    );
-    return result.some((r) => r.count > 0);
+    try {
+      // Verificar en ItemsRecetas con recetas activas
+      const [itemsRecetas] = await connection.query(
+        `SELECT COUNT(*) as count
+         FROM ItemsRecetas ir
+         JOIN Recetas r ON ir.id_receta = r.id_receta
+         WHERE ir.id_insumo = ? AND r.estado = 'Activo'`,
+        [id]
+      );
+
+      // Verificar en ProveedorInsumo activo
+      const [proveedorInsumo] = await connection.query(
+        `SELECT COUNT(*) as count
+         FROM ProveedorInsumo
+         WHERE id_insumo = ? AND estado = 'Activo'`,
+        [id]
+      );
+
+      const countItemsRecetas = itemsRecetas[0]?.count || 0;
+      const countProveedorInsumo = proveedorInsumo[0]?.count || 0;
+
+      console.log(
+        `[hasActiveRelations] id_insumo=${id} | ItemsRecetas(RecetasActivas)=${countItemsRecetas} | ProveedorInsumo(Activos)=${countProveedorInsumo}`
+      );
+
+      return countItemsRecetas > 0 || countProveedorInsumo > 0;
+    } catch (error) {
+      console.error(
+        `[hasActiveRelations] Error verificando relaciones para id_insumo=${id}:`,
+        error
+      );
+      return false;
+    }
+  }
+
+  // Nuevo método: obtener detalles de relaciones activas
+  static async getActiveRelationsDetails({ id }) {
+    try {
+      // Obtener recetas activas que usan este insumo
+      const [recetas] = await connection.query(
+        `SELECT DISTINCT r.id_receta, r.nombreReceta
+         FROM ItemsRecetas ir
+         JOIN Recetas r ON ir.id_receta = r.id_receta
+         WHERE ir.id_insumo = ? AND r.estado = 'Activo'`,
+        [id]
+      );
+
+      // Obtener proveedores activos para este insumo
+      const [proveedores] = await connection.query(
+        `SELECT DISTINCT pr.id_proveedor, pr.razonSocial
+         FROM ProveedorInsumo pi
+         JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor
+         WHERE pi.id_insumo = ? AND pi.estado = 'Activo'`,
+        [id]
+      );
+
+      return {
+        recetas: recetas || [],
+        proveedores: proveedores || [],
+      };
+    } catch (error) {
+      console.error(
+        `[getActiveRelationsDetails] Error obteniendo detalles para id_insumo=${id}:`,
+        error
+      );
+      return { recetas: [], proveedores: [] };
+    }
   }
 
   static async update({ id, input }) {

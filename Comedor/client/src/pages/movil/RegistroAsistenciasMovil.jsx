@@ -33,7 +33,7 @@ const RegistroAsistenciasMovil = () => {
       const asistenciaToken = localStorage.getItem("asistenciaToken");
 
       // Si no hay sesión o el token almacenado no coincide, redirigir a login
-      if (!userData.idPersonaDocente || asistenciaToken !== token) {
+      if (!userData.idPersona || asistenciaToken !== token) {
         console.log(
           "⚠️ Sin sesión activa o token mismatch. Redirigiendo a login..."
         );

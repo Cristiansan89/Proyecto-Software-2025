@@ -132,10 +132,12 @@ export class ConfiguracionServicioAutomaticoModel {
 
   static async delete({ id }) {
     try {
+      console.log("Modelo: Eliminando registro con ID:", id);
       const [result] = await connection.query(
         `DELETE FROM ConfiguracionServiciosAutomaticos WHERE id_configuracion = ?`,
         [id]
       );
+      console.log("Modelo: Resultado DELETE - affectedRows:", result.affectedRows);
       return result.affectedRows > 0;
     } catch (error) {
       throw new Error(`Error al eliminar configuración: ${error.message}`);

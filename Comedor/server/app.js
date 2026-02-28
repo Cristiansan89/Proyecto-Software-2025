@@ -3,6 +3,7 @@ import { corsMiddleware } from "./middlewares/cors.js";
 import { cookieMiddleware } from "./middlewares/cookies.js";
 import { auditoriaMiddleware } from "./middlewares/auditoria.js";
 import { authRequired } from "./middlewares/auth.js";
+import { verificarPermiso, verificarAlgunoPermiso } from "./middlewares/verificarPermiso.js";
 import { createAuthRouter } from "./routes/auth.js";
 
 // Importar todas las rutas
@@ -85,7 +86,8 @@ export const createApp = ({
   app.use(authRequired);
 
   // Middleware de auditoría para todas las rutas siguientes
-  app.use(auditoriaMiddleware("Sistema", "CONSULTAR"));
+  // SIN parámetros para que detecte automáticamente el módulo por ruta
+  app.use(auditoriaMiddleware());
 
   // Todas las rutas ahora son públicas
   app.use("/api/roles", createRolRouter({ rolModel }));

@@ -589,29 +589,6 @@ const AuditoriaForm = ({ show, onHide }) => {
                     </>
                   )}
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={generarPDF}
-                  disabled={loading || generatingPDF}
-                >
-                  {generatingPDF ? (
-                    <>
-                      <div
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                      >
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      Generando PDF...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-file-pdf me-2"></i>
-                      Generar PDF
-                    </>
-                  )}
-                </button>
               </div>
             </div>
           </div>

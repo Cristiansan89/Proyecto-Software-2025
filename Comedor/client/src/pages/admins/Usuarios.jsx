@@ -146,7 +146,7 @@ const Usuarios = () => {
     // 1. Confirmación asíncrona con textos dinámicos
     const confirmed = await showConfirm(
       isActive ? "Deshabilitar Usuario" : "Activar Usuario",
-      `¿Está seguro de que desea ${action} al usuario "${usuario.nombre}"?`,
+      `¿Está seguro de que desea ${action} al usuario "<b>${usuario.nombreUsuario}</b>"?`,
       isActive ? "Sí, deshabilitar" : "Sí, activar",
       "Cancelar"
     );
@@ -160,12 +160,12 @@ const Usuarios = () => {
         if (newState === "Activo") {
           showSuccess(
             "Usuario Activado",
-            `El usuario "${usuario.nombre}" ahora tiene acceso al sistema.`
+            `El usuario "<b>${usuario.nombreUsuario}</b>" ahora tiene acceso al sistema.`
           );
         } else {
           showInfo(
             "Usuario Deshabilitado",
-            `El usuario "${usuario.nombre}" ha sido inactivado correctamente.`
+            `El usuario "<b>${usuario.nombreUsuario}</b>" ha sido inactivado correctamente.`
           );
         }
 

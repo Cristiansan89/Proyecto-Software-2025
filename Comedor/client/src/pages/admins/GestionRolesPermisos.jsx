@@ -146,12 +146,13 @@ const GestionRolesPermisos = () => {
   const [filterCuentaHabilitada, setFilterCuentaHabilitada] = useState("");
   const [filterEstado, setFilterEstado] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageAsignaciones, setCurrentPageAsignaciones] = useState(1);
   const [selectedPermisos, setSelectedPermisos] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("create"); // 'create', 'edit', 'view'
   const [selectedPermiso, setSelectedPermiso] = useState(null);
-
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(5); // Permios: 5, 10, 20, 50
+  const [itemsPerPageAsignaciones, setItemsPerPageAsignaciones] = useState(10); // Asignaciones: 5, 10, 20, 50
 
   // Handlers globales para búsqueda y filtros (usados por Permisos y Roles)
   const handleSearch = (e) => {
@@ -337,6 +338,7 @@ const GestionRolesPermisos = () => {
       const asignaciones = response.data;
       //console.log("Asignaciones cargadas:", asignaciones.length);
       setAsignacionesIndividuales(asignaciones);
+      setCurrentPageAsignaciones(1); // Resetear a la primera página
     } catch (error) {
       // console.error("Error al cargar asignaciones:", error);
       showError("Error", `Error al cargar asignaciones: ${error.message}`);
@@ -347,63 +349,6 @@ const GestionRolesPermisos = () => {
     }
   };
 
-  // Cargar roles con sus permisos asignados
-  /*
-    // Cargar roles con sus permisos asignados - Función deshabilitada temporalmente
-    const loadRolesConPermisos = async () => {
-        try {
-            console.log('Iniciando carga de roles con permisos...');
-            setLoading(true);
- 
-            const rolesData = await rolService.getAll();
-            console.log('Roles cargados:', rolesData.length);
- 
-            // Para cada rol, obtener sus permisos asignados con timeout
-            const rolesConPermisosData = await Promise.allSettled(
-                rolesData.map(async (rol) => {
-                    try {
-                        const permisosDelRol = await Promise.race([
-                            rolPermisoService.getPermisosByRol(rol.idRol),
-                            new Promise((_, reject) =>
-                                setTimeout(() => reject(new Error('Timeout')), 5000)
-                            )
-                        ]);
-                        console.log(`Permisos cargados para rol ${rol.nombreRol}:`, permisosDelRol.length);
-                        return {
-                            ...rol,
-                            permisos: permisosDelRol
-                        };
-                    } catch (error) {
-                        console.warn(`Error al cargar permisos del rol ${rol.nombreRol}:`, error.message);
-                        return {
-                            ...rol,
-                            permisos: []
-                        };
-                    }
-                })
-            );
- 
-            const resultados = rolesConPermisosData.map(result =>
-                result.status === 'fulfilled' ? result.value : result.reason
-            );
- 
-            setRolesConPermisos(resultados);
-            console.log('Carga de roles con permisos completada');
-        } catch (error) {
-            console.error('Error al cargar roles con permisos:', error);
-            // Fallback: cargar solo roles sin permisos
-            try {
-                const rolesData = await rolService.getAll();
-                setRolesConPermisos(rolesData.map(rol => ({ ...rol, permisos: [] })));
-            } catch (fallbackError) {
-                console.error('Error en fallback:', fallbackError);
-                setRolesConPermisos([]);
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-    */ // Obtener permisos asignados a un rol (texto para mostrar)
   const _getPermisosAsignados = (idRol) => {
     const rol = rolesConPermisos.find((r) => r.idRol === idRol);
     if (!rol || !rol.permisos || rol.permisos.length === 0) {
@@ -421,7 +366,7 @@ const GestionRolesPermisos = () => {
   };
 
   // Nueva función para eliminar una asignación individual
-  const handleEliminarAsignacionIndividual = async (idRol, idPermiso) => {
+  const handleEliminarAsignacionIndividual = async (idRol, idPermiso, nombrePermiso, nombreRol) => {
     // 1. Validación de seguridad inicial
     if (!idRol || !idPermiso) {
       showError("Error", "Error: Datos de asignación inválidos");
@@ -431,7 +376,7 @@ const GestionRolesPermisos = () => {
     // 2. Confirmación personalizada
     const confirmed = await showConfirm(
       "Eliminar Permiso",
-      "¿Está seguro de eliminar esta asignación específica de permiso para este rol?",
+      `¿Está seguro de eliminar <b>"${nombrePermiso}"</b> esta asignación específica de permiso para este rol de <b>"${nombreRol}"</b>?`,
       "Sí, eliminar",
       "Cancelar"
     );
@@ -513,6 +458,7 @@ const GestionRolesPermisos = () => {
       setShowModal(false);
       setSelectedPermiso(null);
       setModalMode("create");
+      setCurrentPage(1); // Reiniciar a la primera página
     };
 
     const handleSavePermiso = async (permisoData) => {
@@ -530,11 +476,13 @@ const GestionRolesPermisos = () => {
         await loadPermisos();
         closeModal();
 
-        // Mostrar mensaje de éxito
+        // Mostrar mensaje de éxito detallado
         showSuccess(
+          isEditing ? "Actualización Exitosa" : "Permiso Creado",
           isEditing
-            ? `Permiso "${permisoData.nombrePermiso}" actualizado correctamente`
-            : `Permiso "${permisoData.nombrePermiso}" creado correctamente`
+            ? `Permiso "<strong>${permisoData.nombrePermiso}</strong>" actualizado correctamente`
+            : `Permiso "<strong>${permisoData.nombrePermiso}</strong>" creado correctamente`,
+          3000
         );
         setPermisoServerError(null);
       } catch (error) {
@@ -894,13 +842,42 @@ const GestionRolesPermisos = () => {
         {totalPages > 1 && (
           <div className="pagination-container">
             <div className="pagination-info">
-              Mostrando {startIndex + 1} a{" "}
-              {Math.min(endIndex, filteredPermisos.length)} de{" "}
-              {filteredPermisos.length} permisos
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
+                <div>
+                  Mostrando {startIndex + 1} a{" "}
+                  {Math.min(endIndex, filteredPermisos.length)} de{" "}
+                  {filteredPermisos.length} permisos
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <label htmlFor="itemsPerPageSelect" style={{ fontSize: "0.9rem", fontWeight: "500" }}>
+                    Registros por página:
+                  </label>
+                  <select
+                    id="itemsPerPageSelect"
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(parseInt(e.target.value, 10));
+                      setCurrentPage(1); // Resetear a la primera página
+                    }}
+                    style={{
+                      padding: "0.4rem 0.6rem",
+                      borderRadius: "0.375rem",
+                      border: "1px solid #dee2e6",
+                      cursor: "pointer",
+                      fontSize: "0.9rem"
+                    }}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
             </div>
             <div className="pagination">
               <button
-                className="page-btn"
+                className="pagination-btn"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
               >
@@ -911,7 +888,7 @@ const GestionRolesPermisos = () => {
                 (page) => (
                   <button
                     key={page}
-                    className={`page-btn ${
+                    className={`pagination-btn ${
                       currentPage === page ? "active" : ""
                     }`}
                     onClick={() => handlePageChange(page)}
@@ -922,7 +899,7 @@ const GestionRolesPermisos = () => {
               )}
 
               <button
-                className="page-btn"
+                className="pagination-btn"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
               >
@@ -1142,7 +1119,7 @@ const GestionRolesPermisos = () => {
             </div>
             <div className="pagination">
               <button
-                className="page-btn"
+                className="pagination-btn"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
               >
@@ -1153,7 +1130,7 @@ const GestionRolesPermisos = () => {
                 (page) => (
                   <button
                     key={page}
-                    className={`page-btn ${
+                    className={`pagination-btn ${
                       currentPage === page ? "active" : ""
                     }`}
                     onClick={() => handlePageChange(page)}
@@ -1164,7 +1141,7 @@ const GestionRolesPermisos = () => {
               )}
 
               <button
-                className="page-btn"
+                className="pagination-btn"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPagesRoles}
               >
@@ -1178,7 +1155,20 @@ const GestionRolesPermisos = () => {
   };
 
   // Renderizar vista de asignaciones
-  const renderVistaAsignaciones = () => (
+  const renderVistaAsignaciones = () => {
+    // Calcular paginación para tabla de asignaciones
+    const totalPages = Math.ceil(asignacionesIndividuales.length / itemsPerPageAsignaciones);
+    const startIndex = (currentPageAsignaciones - 1) * itemsPerPageAsignaciones;
+    const endIndex = startIndex + itemsPerPageAsignaciones;
+    const currentAsignaciones = asignacionesIndividuales.slice(startIndex, endIndex);
+
+    // Generar números de página
+    const pageNumbers = [];
+    for (let i = Math.max(1, currentPageAsignaciones - 2); i <= Math.min(totalPages, currentPageAsignaciones + 2); i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
     <div className="tab-content">
       <div className="page-header mb-3">
         <div className="header-left">
@@ -1217,12 +1207,12 @@ const GestionRolesPermisos = () => {
               </tr>
             </thead>
             <tbody>
-              {asignacionesIndividuales.map((asignacion, index) => (
+              {currentAsignaciones.map((asignacion, index) => (
                 <tr
                   key={`${asignacion.id_rol}-${asignacion.id_permiso}-${index}`}
                 >
                   <td>
-                    <strong>{index + 1}</strong>
+                    <strong>{startIndex + index + 1}</strong>
                   </td>
                   <td>
                     <strong>{asignacion.nombreRol}</strong>
@@ -1250,7 +1240,9 @@ const GestionRolesPermisos = () => {
                         onClick={() =>
                           handleEliminarAsignacionIndividual(
                             asignacion.id_rol,
-                            asignacion.id_permiso
+                            asignacion.id_permiso,
+                            asignacion.nombrePermiso,
+                            asignacion.nombreRol
                           )
                         }
                         title="Eliminar asignación"
@@ -1265,6 +1257,108 @@ const GestionRolesPermisos = () => {
           </table>
         )}
       </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
+              <div>
+                Mostrando {startIndex + 1} a {Math.min(endIndex, asignacionesIndividuales.length)} de{" "}
+                {asignacionesIndividuales.length} asignaciones
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <label htmlFor="itemsPerPageSelectAsignaciones" style={{ fontSize: "0.9rem", fontWeight: "500" }}>
+                  Registros por página:
+                </label>
+                <select
+                  id="itemsPerPageSelectAsignaciones"
+                  value={itemsPerPageAsignaciones}
+                  onChange={(e) => {
+                    setItemsPerPageAsignaciones(parseInt(e.target.value, 10));
+                    setCurrentPageAsignaciones(1); // Resetear a la primera página
+                  }}
+                  style={{
+                    padding: "0.4rem 0.6rem",
+                    borderRadius: "0.375rem",
+                    border: "1px solid #dee2e6",
+                    cursor: "pointer",
+                    fontSize: "0.9rem"
+                  }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <nav className="pagination-nav">
+            <ul className="pagination">
+              <li className={`page-item ${currentPageAsignaciones === 1 ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPageAsignaciones(currentPageAsignaciones - 1)}
+                  disabled={currentPageAsignaciones === 1}
+                >
+                  <i className="fas fa-chevron-left"></i> Anterior
+                </button>
+              </li>
+
+              {currentPageAsignaciones > 3 && (
+                <li className="page-item">
+                  <button className="page-link" onClick={() => setCurrentPageAsignaciones(1)}>
+                    1
+                  </button>
+                </li>
+              )}
+
+              {currentPageAsignaciones > 4 && (
+                <li className="page-item disabled">
+                  <span className="page-link">...</span>
+                </li>
+              )}
+
+              {pageNumbers.map((page) => (
+                <li key={page} className={`page-item ${page === currentPageAsignaciones ? "active" : ""}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPageAsignaciones(page)}
+                  >
+                    {page}
+                  </button>
+                </li>
+              ))}
+
+              {currentPageAsignaciones < totalPages - 3 && (
+                <li className="page-item disabled">
+                  <span className="page-link">...</span>
+                </li>
+              )}
+
+              {currentPageAsignaciones < totalPages - 2 && (
+                <li className="page-item">
+                  <button className="page-link" onClick={() => setCurrentPageAsignaciones(totalPages)}>
+                    {totalPages}
+                  </button>
+                </li>
+              )}
+
+              <li className={`page-item ${currentPageAsignaciones === totalPages ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPageAsignaciones(currentPageAsignaciones + 1)}
+                  disabled={currentPageAsignaciones === totalPages}
+                >
+                  Siguiente <i className="fas fa-chevron-right"></i>
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
 
       {/* Modal para asignar permisos */}
       {showAsignarPermisosForm && (
@@ -1309,7 +1403,8 @@ const GestionRolesPermisos = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   // Manejo de errores críticos
   if (

@@ -36,4 +36,10 @@ router.get("/proveedor-chat-id", TelegramController.getProveedorChatId);
 // Listar todos los proveedores con sus Chat IDs
 router.get("/proveedores-list", TelegramController.listProveedoresWithChatId);
 
+// Guardar Chat ID de docente individual
+router.post("/docente-chat-id", TelegramController.saveDocenteChatId);
+
+// Listar todos los docentes con sus Chat IDs
+router.get("/docentes-list", TelegramController.listDocentesWithChatId);
+
 export default router;

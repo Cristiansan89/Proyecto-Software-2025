@@ -362,8 +362,8 @@ const Parametros = () => {
 
             <div className="card-body">
               {parametrosPaginados.length === 0 ? (
-                <div className="alert alert-light text-center">
-                  No hay parámetros disponibles
+                <div className="no-data">
+                  No se encontraron parámetros que coincidan con los filtros aplicados.
                 </div>
               ) : (
                 <div className="table-container">

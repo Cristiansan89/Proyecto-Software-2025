@@ -10,7 +10,7 @@ export const showSuccess = (title = "Éxito", message = "", timer = 2000) => {
   return Swal.fire({
     icon: "success",
     title,
-    text: message,
+    html: message,
     timer,
     timerProgressBar: true,
     showConfirmButton: timer ? false : true,
@@ -27,7 +27,7 @@ export const showError = (title = "Error", message = "") => {
   return Swal.fire({
     icon: "error",
     title,
-    text: message,
+    html: message,
     confirmButtonColor: "#dc3545",
   });
 };
@@ -41,7 +41,7 @@ export const showWarning = (title = "Advertencia", message = "") => {
   return Swal.fire({
     icon: "warning",
     title,
-    text: message,
+    html: message,
     confirmButtonColor: "#ffc107",
     confirmButtonTextColor: "#000",
   });
@@ -56,7 +56,7 @@ export const showInfo = (title = "Información", message = "") => {
   return Swal.fire({
     icon: "info",
     title,
-    text: message,
+    html: message,
     confirmButtonColor: "#17a2b8",
   });
 };
@@ -65,7 +65,7 @@ export const showInfoError = (title = "Información", message = "") => {
   return Swal.fire({
     icon: "error",
     title,
-    text: message,
+    html: message,
     confirmButtonColor: "#b8172aff",
   });
 };
@@ -96,7 +96,7 @@ export const showConfirm = (
   return Swal.fire({
     icon: "question",
     title,
-    text: message,
+    html: message,
     showCancelButton: true,
     confirmButtonColor: "#28a745",
     cancelButtonColor: "#6c757d",

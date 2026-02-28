@@ -94,7 +94,7 @@ export class RecetaModel {
 
       // Eliminar asignaciones en planificaciones
       await conn.query(
-        `DELETE FROM PlanificacionServicioReceta WHERE id_receta = UUID_TO_BIN(?); `,
+        `DELETE FROM RecetaJornada WHERE id_receta = UUID_TO_BIN(?); `,
         [id]
       );
 
@@ -118,12 +118,12 @@ export class RecetaModel {
   static async hasActiveRelations({ id }) {
     try {
       // Verificar si la receta está asociada a una PlanificacionMenu activa
-      // Relación: Receta <- PlanificacionServicioReceta <- JornadaPlanificada -> PlanificacionMenus
+      // Relación: Receta <- RecetaJornada <- JornadaPlanificada -> PlanificacionMenus
       const [result] = await connection.query(
         `SELECT COUNT(DISTINCT pm.id_planificacion) as count
          FROM PlanificacionMenus pm
          INNER JOIN JornadaPlanificada jp ON pm.id_planificacion = jp.id_planificacion
-         INNER JOIN PlanificacionServicioReceta psr ON jp.id_jornada = psr.id_jornada
+         INNER JOIN RecetaJornada psr ON jp.id_jornada = psr.id_jornada
          WHERE psr.id_receta = UUID_TO_BIN(?) AND pm.estado = 'Activo'`,
         [id]
       );

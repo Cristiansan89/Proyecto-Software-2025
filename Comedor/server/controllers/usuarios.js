@@ -66,11 +66,7 @@ export class UsuarioController {
             "El usuario no tiene un correo válido. Se omitió el envío del correo de bienvenida."
           );
         } else {
-          await sendWelcomeEmail(
-            newUsuario.mail,
-            newUsuario.nombreUsuario,
-            originalPassword // Usar la contraseña original antes del hash
-          );
+          await sendWelcomeEmail(newUsuario, originalPassword);
           console.log("Correo de bienvenida enviado a:", newUsuario.mail);
         }
       } catch (emailError) {

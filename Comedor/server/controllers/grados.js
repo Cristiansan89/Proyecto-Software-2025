@@ -8,10 +8,12 @@ export class GradoController {
     this.gradoModel = gradoModel;
   }
 
-  // Obtiene todos los Grados
+  // Obtiene todos los Grados (con filtro opcional de estado)
   getAll = async (req, res) => {
     try {
-      const grados = await this.gradoModel.getAll();
+      // Aceptar parámetro de query: ?estado=Activo o ?estado=Inactivo
+      const { estado } = req.query;
+      const grados = await this.gradoModel.getAll({ estado });
       res.json(grados);
     } catch (error) {
       console.error("Error al obtener grados:", error);
@@ -67,7 +69,17 @@ export class GradoController {
       console.log("GradoController: Creando grado con datos:", result.data);
       const newGrado = await this.gradoModel.create({ input: result.data });
       console.log("GradoController: Grado creado:", newGrado);
-      res.status(201).json(newGrado);
+      
+      // Validar que se creó correctamente
+      if (!newGrado) {
+        console.error("GradoController: El modelo no retornó grado creado");
+        return res.status(500).json({ 
+          success: false, 
+          message: "Error: No se pudo recuperar el grado creado" 
+        });
+      }
+      
+      res.status(201).json({ success: true, data: newGrado });
     } catch (error) {
       console.error("GradoController: Error al crear grado:", error);
       if (error.message.toLowerCase().includes("ya existe")) {
@@ -82,6 +94,10 @@ export class GradoController {
     try {
       const { id } = req.params;
       console.log("GradoController: Eliminando grado con ID:", id);
+
+      // PASO 1: Capturar el grado ANTES de eliminarlo (para auditoría)
+      const gradoAnterior = await this.gradoModel.getById({ id });
+      console.log("GradoController: Grado a eliminar:", gradoAnterior);
 
       // Verificar si el grado tiene relaciones activas
       const hasActiveRelations = await this.gradoModel.hasActiveRelations({
@@ -103,7 +119,14 @@ export class GradoController {
       }
 
       console.log("GradoController: Grado eliminado exitosamente");
-      return res.json({ message: "Grado eliminado correctamente" });
+      
+      // PASO 2: Pasar datos al middleware para auditoría
+      req.auditoria = { valorAnterior: gradoAnterior };
+      
+      return res.json({ 
+        success: true,
+        message: "Grado eliminado correctamente" 
+      });
     } catch (error) {
       console.error("GradoController: Error al eliminar grado:", error);
       // Manejo específico de error de clave foránea

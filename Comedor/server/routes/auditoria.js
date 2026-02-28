@@ -10,7 +10,7 @@ router.use(authRequired);
 /**
  * GET /api/auditoria/logs
  * Obtener logs con filtros (paginación opcional)
- * Query params: fechaInicio, fechaFin, usuario, accion, modulo
+ * Query params: fechaInicio, fechaFin, usuario, rol, accion, modulo, criticidad, resultado
  */
 router.get("/logs", AuditoriaController.obtenerLogs);
 
@@ -26,6 +26,12 @@ router.get("/logs/:id", AuditoriaController.obtenerLog);
  * Query params: fechaInicio, fechaFin
  */
 router.get("/estadisticas", AuditoriaController.obtenerEstadisticas);
+
+/**
+ * GET /api/auditoria/roles
+ * Obtener roles disponibles
+ */
+router.get("/roles", AuditoriaController.obtenerRoles);
 
 /**
  * GET /api/auditoria/modulo/:modulo

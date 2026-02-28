@@ -16,8 +16,11 @@ const auditoriaService = {
         params.append("fechaInicio", filtros.fechaInicio);
       if (filtros.fechaFin) params.append("fechaFin", filtros.fechaFin);
       if (filtros.usuario) params.append("usuario", filtros.usuario);
+      if (filtros.rol) params.append("rol", filtros.rol);
       if (filtros.accion) params.append("accion", filtros.accion);
       if (filtros.modulo) params.append("modulo", filtros.modulo);
+      if (filtros.criticidad) params.append("criticidad", filtros.criticidad);
+      if (filtros.resultado) params.append("resultado", filtros.resultado);
 
       const queryString = params.toString();
       const response = await API.get(
@@ -60,6 +63,19 @@ const auditoriaService = {
       return response.data;
     } catch (error) {
       console.error("Error al obtener estadísticas:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener roles disponibles
+   */
+  obtenerRoles: async () => {
+    try {
+      const response = await API.get(`/auditoria/roles`);
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener roles:", error);
       throw error;
     }
   },

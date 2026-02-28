@@ -4,7 +4,7 @@ class AuditoriaController {
   // Obtener todos los logs con filtros
   static async obtenerLogs(req, res) {
     try {
-      const { fechaInicio, fechaFin, usuario, accion, modulo } = req.query;
+      const { fechaInicio, fechaFin, usuario, accion, modulo, rol, criticidad, resultado } = req.query;
 
       const filtros = {};
       if (fechaInicio) filtros.fechaInicio = fechaInicio;
@@ -12,6 +12,9 @@ class AuditoriaController {
       if (usuario) filtros.usuario = usuario;
       if (accion) filtros.accion = accion;
       if (modulo) filtros.modulo = modulo;
+      if (rol) filtros.rol = rol;
+      if (criticidad) filtros.criticidad = criticidad;
+      if (resultado) filtros.resultado = resultado;
 
       const logs = await AuditoriaLog.obtener(filtros);
 
@@ -262,6 +265,25 @@ class AuditoriaController {
       res.status(500).json({
         success: false,
         message: "Error al obtener logins de usuarios",
+        error: error.message,
+      });
+    }
+  }
+
+  // Obtener roles disponibles
+  static async obtenerRoles(req, res) {
+    try {
+      const roles = await AuditoriaLog.obtenerRolesDisponibles();
+
+      res.json({
+        success: true,
+        data: roles,
+      });
+    } catch (error) {
+      console.error("Error al obtener roles:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al obtener roles disponibles",
         error: error.message,
       });
     }

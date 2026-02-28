@@ -13,7 +13,6 @@ const EstadoPedidoForm = ({ estadoPedido, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
     nombre: estadoPedido?.nombreEstado || "",
     descripcion: estadoPedido?.descripcion || "",
-    estado: estadoPedido?.estado || "Activo",
   });
 
   const [errors, setErrors] = useState({});
@@ -26,7 +25,6 @@ const EstadoPedidoForm = ({ estadoPedido, mode, onSave, onCancel }) => {
       setFormData({
         nombre: estadoPedido.nombreEstado || estadoPedido.nombre || "",
         descripcion: estadoPedido.descripcion || "",
-        estado: estadoPedido.estado || "Activo",
       });
       setServerError(null);
     }
@@ -78,13 +76,14 @@ const EstadoPedidoForm = ({ estadoPedido, mode, onSave, onCancel }) => {
     try {
       if (mode === "create") {
         await estadoPedidoService.create(formData);
+        onSave("created");
       } else if (mode === "edit") {
         await estadoPedidoService.update(
-          estadoPedido.id_estado_pedido,
+          estadoPedido.id_estadoPedido,
           formData
         );
+        onSave("updated");
       }
-      onSave();
     } catch (error) {
       console.error("Error completo:", error);
       console.error("Error response:", error.response);
@@ -171,22 +170,7 @@ const EstadoPedidoForm = ({ estadoPedido, mode, onSave, onCancel }) => {
             <div className="form-text">Máximo 200 caracteres</div>
           </div>
 
-          <div className="mb-3">
-            <label htmlFor="estado" className="form-label">
-              Estado
-            </label>
-            <select
-              className="form-select"
-              id="estado"
-              name="estado"
-              value={formData.estado}
-              onChange={handleInputChange}
-              disabled={loading}
-            >
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
-          </div>
+          {/* Eliminado campo Estado porque no existe en backend */}
 
           {/* Mostrar error del servidor */}
           {serverError && (

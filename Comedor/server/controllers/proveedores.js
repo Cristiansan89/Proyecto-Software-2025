@@ -98,7 +98,7 @@ export class ProveedorController {
       if (hasActiveInsumos) {
         return res.status(409).json({
           message:
-            "No se puede eliminar el proveedor porque está vinculado a registros activos",
+            "No se puede eliminar el proveedor porque está vinculado a registros de insumos activos",
         });
       }
 
@@ -110,6 +110,20 @@ export class ProveedorController {
       return res.json({ message: "Proveedor eliminado correctamente" });
     } catch (error) {
       console.error("Error al eliminar proveedor:", error);
+      
+      // Detectar errores de restricción de clave foránea
+      if (
+        error.code === "ER_ROW_IS_REFERENCED_2" ||
+        error.sqlState === "23000" ||
+        error.message.includes("FOREIGN KEY") ||
+        error.message.includes("foreign key")
+      ) {
+        return res.status(409).json({
+          message:
+            "No se puede eliminar el proveedor porque está vinculado a otros registros en el sistema (usuarios, pedidos, etc.)",
+        });
+      }
+      
       if (
         error.message.includes("referencia") ||
         error.message.includes("usado")

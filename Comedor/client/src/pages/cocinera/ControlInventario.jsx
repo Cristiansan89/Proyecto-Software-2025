@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { showError } from "../../utils/alertService";
 import CocineraInventario from "./CocineraInventario";
 import CocineraMovimiento from "./CocineraMovimiento";
 import MovimientosForm from "../../components/cocinera/MovimientosForm";

@@ -7,12 +7,14 @@ import {
 } from "../controllers/passwordController.js";
 import { authRequired } from "../middlewares/auth.js";
 import AuditoriaLog from "../models/auditoriaLog.js";
+import { connection } from "../models/db.js";
 
 export const createAuthRouter = ({ usuarioModel }) => {
   const authRouter = Router();
 
   authRouter.post("/login", async (req, res) => {
     try {
+      console.log("=== 🔐 INICIANDO LOGIN ===");
       const { nombreUsuario, contrasena } = req.body;
 
       if (!nombreUsuario || !contrasena) {
@@ -63,16 +65,55 @@ export const createAuthRouter = ({ usuarioModel }) => {
         // No interrumpir el login si falla la auditoría
       }
 
+      // Obtener grados asignados si es docente (ANTES de generar JWT)
+      let gradosAsignados = [];
+      console.log("🔍 DEBUG: usuario.nombreRol =", usuario.nombreRol);
+      if (usuario.nombreRol && usuario.nombreRol.includes("Docente")) {
+        try {
+          console.log("🔍 DEBUG: Obteniendo grados para id_persona =", usuario.idPersona);
+          const [grados] = await connection.query(
+            `SELECT g.id_grado, g.nombreGrado
+             FROM DocenteGrado dg
+             JOIN Grados g ON dg.nombreGrado = g.nombreGrado
+             WHERE dg.id_persona = ?`,
+            [usuario.idPersona]
+          );
+          console.log("🔍 DEBUG: Grados obtenidos:", grados);
+          gradosAsignados = grados || [];
+        } catch (error) {
+          console.warn("⚠️ Error al obtener grados asignados:", error.message);
+        }
+      } else {
+        console.log("ℹ️ Usuario no es docente, saltando obtención de grados");
+      }
+
+      console.log("✅ Procediendo a generar JWT con:", {
+        id_persona: usuario.idPersona,
+        gradosAsignados: gradosAsignados,
+      });
+
+      // Generar JWT con id_persona y gradosAsignados incluidos
       const token = jwt.sign(
         {
           id: usuario.idUsuario,
+          id_persona: usuario.idPersona,
           nombreUsuario: usuario.nombreUsuario,
           rol: usuario.nombreRol,
           idProveedor: usuario.idProveedor,
+          gradosAsignados: gradosAsignados,
         },
         process.env.JWT_SECRET,
         { expiresIn: "8h" },
       );
+
+      console.log("🔑 JWT Payload generado:", {
+        id: usuario.idUsuario,
+        id_persona: usuario.idPersona,
+        nombreUsuario: usuario.nombreUsuario,
+        rol: usuario.nombreRol,
+        idProveedor: usuario.idProveedor,
+        gradosAsignados: gradosAsignados,
+      });
 
       const userData = {
         idUsuario: usuario.idUsuario,
@@ -86,6 +127,7 @@ export const createAuthRouter = ({ usuarioModel }) => {
         nombre_rol: usuario.nombreRol, // Para compatibilidad
         mail: usuario.mail,
         telefono: usuario.telefono,
+        gradosAsignados: gradosAsignados,
       };
 
       // Configurar cookie de autenticación para dominios externos (ngrok, etc)

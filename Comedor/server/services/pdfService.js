@@ -1,6 +1,6 @@
 import PDFDocument from "pdfkit";
 import EscuelaService from "./escuelaService.js";
-import { generarPDFPedidoJsPDF } from "./pdfServiceJsPDF.js";
+// import { generarPDFPedidoJsPDF } from "./pdfServiceJsPDF.js"; // Deshabilitado: problemas con jspdf-autotable en servidor
 import nodemailer from "nodemailer";
 
 /**
@@ -19,15 +19,15 @@ const convertirCantidad = (cantidad, unidad) => {
 };
 
 /**
- * Generar PDF del pedido - Ahora usa jsPDF como implementación principal
+ * Generar PDF del pedido - Usa PDFKit como implementación en servidor
  */
 export const generarPDFPedido = async (pedido, detalles) => {
   try {
-    console.log("📄 Generando PDF del pedido con jsPDF...");
-    return await generarPDFPedidoJsPDF(pedido, detalles);
-  } catch (error) {
-    console.error("❌ Error con jsPDF, intentando con PDFKit como fallback...");
+    console.log("📄 Generando PDF del pedido con PDFKit...");
     return await generarPDFPedidoPDFKit(pedido, detalles);
+  } catch (error) {
+    console.error("❌ Error al generar PDF:", error);
+    throw error;
   }
 };
 
@@ -423,6 +423,7 @@ export const enviarPDFConfirmacionMail = async (
   nombreProveedor,
   pdfBuffer,
   numeroPedido,
+  hayInsumosRechazados = false,
 ) => {
   try {
     // Configurar transporte de correo
@@ -436,6 +437,11 @@ export const enviarPDFConfirmacionMail = async (
       },
     });
 
+    // Crear mensaje con información sobre insumos rechazados si los hay
+    const mensajeRechazados = hayInsumosRechazados
+      ? `<p><strong>Nota:</strong> Algunos insumos no disponibles han sido automáticamente redistribuidos a otros proveedores para asegurar la continuidad del servicio.</p>`
+      : "";
+
     // Enviar correo con PDF
     await transporter.sendMail({
       from: process.env.SMTP_USER || "comedor@escuela.edu",
@@ -444,8 +450,9 @@ export const enviarPDFConfirmacionMail = async (
       html: `
         <h2>Confirmación de Pedido</h2>
         <p>Estimado ${nombreProveedor},</p>
-        <p>Adjuntamos la confirmación de disponibilidad de insumos para el pedido realizado.</p>
-        <p>Los insumos no disponibles han sido redistribuidos a otros proveedores.</p>
+        <p>Adjuntamos la confirmación de disponibilidad de insumos para el pedido Nº <strong>${numeroPedido}</strong>.</p>
+        <p>En el documento PDF encontrará el detalle de los insumos confirmados.</p>
+        ${mensajeRechazados}
         <p>Saludos cordiales,<br><strong>Sistema de Comedor</strong></p>
       `,
       attachments: [

@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+// jspdf-autotable needs to be loaded after jsPDF to register the autoTable method
+import jspdfAutotable from "jspdf-autotable";
 import { EscuelaService } from "./escuelaService.js";
 
 /**
@@ -149,7 +150,7 @@ export const generarPDFPedidoJsPDF = async (pedido, detalles) => {
         )}`,
       ]);
 
-      autoTable(doc, {
+      doc.autoTable({
         head: [tableColumns],
         body: tableRows,
         startY: yPos,

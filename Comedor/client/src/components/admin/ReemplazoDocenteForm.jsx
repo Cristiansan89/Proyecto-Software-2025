@@ -12,6 +12,22 @@ import {
 } from "../../utils/alertService";
 
 const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
+  // Mapeo de valores de BD a nombres amigables
+  const motivosMap = {
+    'licencia_medica': 'Licencia Médica',
+    'licencia_maternidad': 'Licencia por Maternidad',
+    'licencia_anual': 'Licencia Anual',
+    'cambio_funciones': 'Cambio Funciones',
+    'renuncia': 'Renuncia',
+    'jubilacion': 'Jubilación',
+    'ausencia_prolongada': 'Ausencia Prolongada'
+  };
+
+  // Mapeo inverso: nombres amigables a valores de BD
+  const motivosMapInverso = Object.entries(motivosMap).reduce((acc, [key, value]) => {
+    acc[value] = key;
+    return acc;
+  }, {});
   const [formData, setFormData] = useState({
     idPersona: reemplazo?.idPersona || "",
     idDocenteTitular: reemplazo?.idDocenteTitular || "",
@@ -81,6 +97,17 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
           fechaInicioValue = new Date().toISOString().split("T")[0];
         }
       }
+
+      // Procesar fechaFin igual que fechaInicio
+      let fechaFinValue = reemplazo.fechaFin ?? reemplazo.fecha_fin ?? "";
+      if (fechaFinValue && typeof fechaFinValue === "string" && fechaFinValue.includes("T")) {
+        try {
+          fechaFinValue = new Date(fechaFinValue).toISOString().split("T")[0];
+        } catch (e) {
+          fechaFinValue = "";
+        }
+      }
+
       setFormData((prev) => ({
         ...prev,
         idPersona:
@@ -92,8 +119,8 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
         nombreGrado:
           reemplazo.nombreGrado ?? reemplazo.nombre_grado ?? prev.nombreGrado,
         fechaInicio: fechaInicioValue,
-        fechaFin: reemplazo.fechaFin ?? reemplazo.fecha_fin ?? prev.fechaFin,
-        motivo: reemplazo.motivo ?? prev.motivo,
+        fechaFin: fechaFinValue,
+        motivo: motivosMap[reemplazo.motivo] ?? reemplazo.motivo ?? prev.motivo,
         estado: reemplazo.estado ?? prev.estado,
         cicloLectivo: cicloValue,
       }));
@@ -183,6 +210,9 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
     setLoading(true);
 
     try {
+      // Convertir motivo amigable back a valor de BD
+      const motivoValue = motivosMapInverso[formData.motivo] || formData.motivo;
+
       const submitData = {
         idPersona: parseInt(formData.idPersona),
         idDocenteTitular: parseInt(formData.idDocenteTitular),
@@ -190,7 +220,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
         cicloLectivo: formData.cicloLectivo,
         fechaInicio: formData.fechaInicio,
         fechaFin: formData.fechaFin || null,
-        motivo: formData.motivo,
+        motivo: motivoValue,
         estado: formData.estado,
       };
 
@@ -204,7 +234,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
             idPersona: parseInt(formData.idPersona),
             fechaInicio: formData.fechaInicio,
             fechaFin: formData.fechaFin || null,
-            motivo: formData.motivo,
+            motivo: motivoValue,
             estado: formData.estado,
           }
         );

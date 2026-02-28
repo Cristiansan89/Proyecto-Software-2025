@@ -1,5 +1,12 @@
 import { connection } from "./db.js";
 
+// Función helper para validar si es un UUID válido
+const isValidUUID = (value) => {
+  if (!value) return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(String(value));
+};
+
 class AuditoriaLog {
   // Crear un nuevo registro de auditoría
   static async crear(datos) {
@@ -14,7 +21,15 @@ class AuditoriaLog {
         detalles,
         ip,
         userAgent,
+        valor_anterior,
+        valor_nuevo,
+        id_registro_afectado,
+        nivel_criticidad,
+        resultado_accion,
       } = datos;
+
+      // Validar si id_registro_afectado es un UUID válido
+      const isUUID = isValidUUID(id_registro_afectado);
 
       const query = `
         INSERT INTO Auditorias (
@@ -22,8 +37,13 @@ class AuditoriaLog {
           modulo,
           tipoAccion,
           descripcion,
+          valor_anterior,
+          valor_nuevo,
+          id_registro_afectado,
+          nivel_criticidad,
+          resultado_accion,
           estado
-        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ${isUUID ? "UUID_TO_BIN(?)" : "?"}, ?, ?, ?)
       `;
 
       const tipoAccionMapeado =
@@ -39,11 +59,21 @@ class AuditoriaLog {
                   ? "Exportar"
                   : "Registrar";
 
+      // Mapear nivel de criticidad según la acción
+      let nivelCriticidad = nivel_criticidad || "Bajo";
+      if (accion === "ELIMINAR") nivelCriticidad = "Alto";
+      else if (accion === "ACTUALIZAR") nivelCriticidad = "Medio";
+
       const values = [
         id_usuario || "00000000-0000-0000-0000-000000000000",
         modulo,
         tipoAccionMapeado,
         descripcion || "",
+        valor_anterior ? JSON.stringify(valor_anterior) : null,
+        valor_nuevo ? JSON.stringify(valor_nuevo) : null,
+        isUUID ? (id_registro_afectado || null) : null,
+        nivelCriticidad,
+        resultado_accion || "Éxito",
         "Exito",
       ];
 
@@ -64,13 +94,25 @@ class AuditoriaLog {
           BIN_TO_UUID(a.id_usuario) as id_usuario,
           u.nombreUsuario as nombre_usuario,
           u.mail as email_usuario,
+          COALESCE(r.nombreRol, 'Sin Rol') as nombre_rol,
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
+          a.valor_anterior,
+          a.valor_nuevo,
+          CASE 
+            WHEN a.id_registro_afectado IS NULL THEN NULL
+            WHEN LENGTH(a.id_registro_afectado) = 16 THEN BIN_TO_UUID(a.id_registro_afectado)
+            ELSE CAST(a.id_registro_afectado AS CHAR)
+          END as id_registro_afectado,
+          a.nivel_criticidad,
+          a.resultado_accion,
           a.fechaHora,
           a.estado
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
+        LEFT JOIN UsuariosRoles ur ON u.id_usuario = ur.id_usuario AND ur.estado = 'Activo'
+        LEFT JOIN Roles r ON ur.id_rol = r.id_rol
         WHERE a.estado = 'Exito'
       `;
 
@@ -90,8 +132,14 @@ class AuditoriaLog {
 
       // Filtro por usuario (por nombre)
       if (filtros.usuario) {
-        query += ` AND u.nombreUsuario LIKE ?`;
-        params.push(`%${filtros.usuario}%`);
+        query += ` AND u.nombreUsuario = ?`;
+        params.push(filtros.usuario);
+      }
+
+      // Filtro por rol
+      if (filtros.rol) {
+        query += ` AND r.nombreRol = ?`;
+        params.push(filtros.rol);
       }
 
       // Filtro por acción
@@ -104,6 +152,18 @@ class AuditoriaLog {
       if (filtros.modulo) {
         query += ` AND a.modulo = ?`;
         params.push(filtros.modulo);
+      }
+
+      // Filtro por criticidad
+      if (filtros.criticidad) {
+        query += ` AND a.nivel_criticidad = ?`;
+        params.push(filtros.criticidad);
+      }
+
+      // Filtro por resultado
+      if (filtros.resultado) {
+        query += ` AND a.resultado_accion = ?`;
+        params.push(filtros.resultado);
       }
 
       // Orden por fecha descendente
@@ -131,6 +191,15 @@ class AuditoriaLog {
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
+          a.valor_anterior,
+          a.valor_nuevo,
+          CASE 
+            WHEN a.id_registro_afectado IS NULL THEN NULL
+            WHEN LENGTH(a.id_registro_afectado) = 16 THEN BIN_TO_UUID(a.id_registro_afectado)
+            ELSE CAST(a.id_registro_afectado AS CHAR)
+          END as id_registro_afectado,
+          a.nivel_criticidad,
+          a.resultado_accion,
           a.fechaHora,
           a.estado
         FROM Auditorias a
@@ -194,6 +263,13 @@ class AuditoriaLog {
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
+          CASE 
+            WHEN a.id_registro_afectado IS NULL THEN NULL
+            WHEN LENGTH(a.id_registro_afectado) = 16 THEN BIN_TO_UUID(a.id_registro_afectado)
+            ELSE CAST(a.id_registro_afectado AS CHAR)
+          END as id_registro_afectado,
+          a.nivel_criticidad,
+          a.resultado_accion,
           a.fechaHora
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
@@ -223,6 +299,13 @@ class AuditoriaLog {
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
+          CASE 
+            WHEN a.id_registro_afectado IS NULL THEN NULL
+            WHEN LENGTH(a.id_registro_afectado) = 16 THEN BIN_TO_UUID(a.id_registro_afectado)
+            ELSE CAST(a.id_registro_afectado AS CHAR)
+          END as id_registro_afectado,
+          a.nivel_criticidad,
+          a.resultado_accion,
           a.fechaHora
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
@@ -269,6 +352,13 @@ class AuditoriaLog {
           a.tipoAccion as accion,
           a.modulo,
           a.descripcion,
+          CASE 
+            WHEN a.id_registro_afectado IS NULL THEN NULL
+            WHEN LENGTH(a.id_registro_afectado) = 16 THEN BIN_TO_UUID(a.id_registro_afectado)
+            ELSE CAST(a.id_registro_afectado AS CHAR)
+          END as id_registro_afectado,
+          a.nivel_criticidad,
+          a.resultado_accion,
           a.fechaHora
         FROM Auditorias a
         LEFT JOIN Usuarios u ON a.id_usuario = u.id_usuario
@@ -296,8 +386,10 @@ class AuditoriaLog {
           modulo,
           tipoAccion,
           descripcion,
+          nivel_criticidad,
+          resultado_accion,
           estado
-        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -305,6 +397,8 @@ class AuditoriaLog {
         "Autenticación",
         "Login",
         `Inicio de sesión de usuario: ${nombreUsuario}`,
+        "Bajo",
+        "Éxito",
         "Exito",
       ];
 
@@ -328,8 +422,10 @@ class AuditoriaLog {
           modulo,
           tipoAccion,
           descripcion,
+          nivel_criticidad,
+          resultado_accion,
           estado
-        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -337,6 +433,8 @@ class AuditoriaLog {
         "Autenticación",
         "Logout",
         `Cierre de sesión de usuario: ${nombreUsuario}`,
+        "Bajo",
+        "Éxito",
         "Exito",
       ];
 
@@ -367,11 +465,13 @@ class AuditoriaLog {
           modulo,
           tipoAccion,
           descripcion,
+          nivel_criticidad,
+          resultado_accion,
           estado,
           nombreReporte,
           tipoReporte,
           detallesReporte
-        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -379,6 +479,8 @@ class AuditoriaLog {
         "Reportes",
         "Exportar",
         descripcion || `Generación de reporte PDF: ${nombreReporte}`,
+        "Bajo",
+        "Éxito",
         "Exito",
         nombreReporte,
         tipoReporte,
@@ -408,6 +510,8 @@ class AuditoriaLog {
           a.tipoReporte,
           a.descripcion,
           a.detallesReporte,
+          a.nivel_criticidad,
+          a.resultado_accion,
           a.fechaHora,
           a.estado
         FROM Auditorias a
@@ -461,6 +565,8 @@ class AuditoriaLog {
           u.nombreUsuario as nombre_usuario,
           a.tipoAccion,
           a.descripcion,
+          a.nivel_criticidad,
+          a.resultado_accion,
           a.fechaHora,
           a.estado
         FROM Auditorias a
@@ -500,6 +606,24 @@ class AuditoriaLog {
       return rows;
     } catch (error) {
       console.error("Error al obtener logins de usuarios:", error);
+      throw error;
+    }
+  }
+
+  // Obtener roles disponibles
+  static async obtenerRolesDisponibles() {
+    try {
+      const query = `
+        SELECT DISTINCT r.nombreRol
+        FROM Roles r
+        WHERE r.estado = 'Activo'
+        ORDER BY r.nombreRol
+      `;
+
+      const [rows] = await connection.execute(query);
+      return rows.map(row => row.nombreRol);
+    } catch (error) {
+      console.error("Error al obtener roles disponibles:", error);
       throw error;
     }
   }

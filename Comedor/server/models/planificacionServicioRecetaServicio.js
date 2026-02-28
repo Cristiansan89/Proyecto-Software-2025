@@ -72,7 +72,7 @@ export class PlanificacionServicioRecetaServicio {
           r.estado,
           psrs.id_servicio,
           s.nombre as nombreServicio
-        FROM PlanificacionServicioReceta psr
+        FROM RecetaJornada psr
         INNER JOIN PlanificacionServicioRecetaServicio psrs ON BIN_TO_UUID(psr.id_recetaAsignada) = BIN_TO_UUID(psrs.id_recetaAsignada)
         INNER JOIN Recetas r ON psr.id_receta = r.id_receta
         INNER JOIN Servicios s ON psrs.id_servicio = s.id_servicio

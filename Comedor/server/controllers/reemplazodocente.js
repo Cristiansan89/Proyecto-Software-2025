@@ -1,7 +1,13 @@
 import { ReemplazoDocenteModel } from '../models/reemplazodocente.js'
-import { validateReemplazoDocente, validatePartialReemplazoDocente, motivosReemplazo, estadosReemplazo } from '../schemas/reemplazodocente.js'
+import { validateReemplazoDocente, validatePartialReemplazoDocente, motivosReemplazo, estadosReemplazo, motivosDisplay } from '../schemas/reemplazodocente.js'
 
 export class ReemplazoDocenteController {
+    // Mapeo inverso de nombres amigables a valores en BD
+    static motivosInverso = Object.entries(motivosDisplay).reduce((acc, [key, value]) => {
+        acc[value] = key;
+        return acc;
+    }, {});
+
     // Función para normalizar fechas de timestamp a YYYY-MM-DD
     static normalizeFecha(fecha) {
         if (!fecha) return fecha;
@@ -15,6 +21,27 @@ export class ReemplazoDocenteController {
         }
 
         return fechaStr;
+    }
+
+    // Función para normalizar el campo motivo
+    // Convierte nombres amigables (ej: 'Licencia Médica') a valores sin acentos (ej: 'licencia_medica')
+    static normalizarMotivo(motivo) {
+        if (!motivo) return motivo;
+        
+        // Convertir a string y hacer trim para eliminar espacios en blanco
+        const motivoTrimmed = String(motivo).trim();
+        
+        // Buscar en el mapeo inverso (si viene con nombre amigable)
+        if (this.motivosInverso[motivoTrimmed]) {
+            return this.motivosInverso[motivoTrimmed];
+        }
+        
+        // Si ya es un valor sin acentos, validar que sea permitido
+        if (motivosReemplazo.includes(motivoTrimmed)) {
+            return motivoTrimmed;
+        }
+        
+        throw new Error(`Motivo inválido: ${motivo}. Motivos permitidos: ${Object.values(this.motivosInverso).join(', ')}`);
     }
 
     static async getAll(req, res) {
@@ -72,7 +99,8 @@ export class ReemplazoDocenteController {
                 ...req.body,
                 fechaInicio: ReemplazoDocenteController.normalizeFecha(req.body.fechaInicio),
                 fechaFin: ReemplazoDocenteController.normalizeFecha(req.body.fechaFin),
-                cicloLectivo: ReemplazoDocenteController.normalizeFecha(req.body.cicloLectivo)
+                cicloLectivo: ReemplazoDocenteController.normalizeFecha(req.body.cicloLectivo),
+                motivo: ReemplazoDocenteController.normalizarMotivo(req.body.motivo)
             };
 
             const result = validateReemplazoDocente(normalizedData)
@@ -126,7 +154,8 @@ export class ReemplazoDocenteController {
                 ...req.body,
                 fechaInicio: ReemplazoDocenteController.normalizeFecha(req.body.fechaInicio),
                 fechaFin: ReemplazoDocenteController.normalizeFecha(req.body.fechaFin),
-                cicloLectivo: ReemplazoDocenteController.normalizeFecha(req.body.cicloLectivo)
+                cicloLectivo: ReemplazoDocenteController.normalizeFecha(req.body.cicloLectivo),
+                motivo: req.body.motivo ? ReemplazoDocenteController.normalizarMotivo(req.body.motivo) : undefined
             };
 
             const result = validatePartialReemplazoDocente(normalizedData)
@@ -251,7 +280,7 @@ export class ReemplazoDocenteController {
     static async getOptions(req, res) {
         try {
             res.json({
-                motivos: motivosReemplazo,
+                motivos: Object.values(motivosDisplay),
                 estados: estadosReemplazo
             })
         } catch (error) {

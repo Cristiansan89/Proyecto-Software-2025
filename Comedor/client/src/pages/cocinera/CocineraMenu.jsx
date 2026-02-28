@@ -22,8 +22,9 @@ const PlanificacionMenus = () => {
     try {
       const response = await planificacionMenuService.getAll();
       if (Array.isArray(response)) {
+        // Las planificaciones ya vienen ordenadas por fechaInicio ASC del backend
         setPlanificaciones(response);
-        // Si no hay planificación seleccionada y hay disponibles, seleccionar la primera
+        // Si no hay planificación seleccionada y hay disponibles, seleccionar la primera (más antigua)
         if (!planificacionSeleccionada && response.length > 0) {
           setPlanificacionSeleccionada(response[0]);
         }
@@ -43,12 +44,19 @@ const PlanificacionMenus = () => {
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     if (tabId === "calendario") {
+      // Ordenar planificaciones por fecha de inicio (de menor a mayor)
+      const planificacionesOrdenadas = [...planificaciones].sort((a, b) => {
+        const fechaA = new Date(a.fechaInicio);
+        const fechaB = new Date(b.fechaInicio);
+        return fechaA - fechaB;
+      });
+
       // Buscar una planificación activa o la primera disponible
-      const planificacionActiva = planificaciones.find(
+      const planificacionActiva = planificacionesOrdenadas.find(
         (p) => p.estado === "Activo"
       );
       const planificacionASeleccionar =
-        planificacionActiva || planificaciones[0];
+        planificacionActiva || planificacionesOrdenadas[0];
 
       if (
         planificacionASeleccionar &&

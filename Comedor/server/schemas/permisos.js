@@ -10,8 +10,8 @@ const permisoSchema = z.object({
         invalid_type_error: 'La descripción del permiso debe ser un texto'
     }).min(1, 'La descripción del permiso no puede estar vacía').max(100, 'La descripción del permiso no puede tener más de 100 caracteres'),
     modulo: z.enum([
-        'Sin Módulo', 'Asistencias', 'Auditoria', 'Consumos', 'Insumos', 'Inventarios',
-        'Parámetros', 'Pedidos', 'Permisos', 'Personas', 'Planificación de Menús',
+        'Sin Módulo', 'Asistencias', 'Auditoria', 'Configuración del Sistema', 'Consumos', 'Insumos', 'Inventarios',
+        'Menú del Día', 'Parámetros', 'Pedidos', 'Permisos', 'Personas', 'Planificación de Menús',
         'Proveedores', 'Recetas', 'Reportes', 'Roles', 'Seguridad', 'Turnos', 'Usuarios'
     ], {
         required_error: 'El módulo es requerido',

@@ -123,6 +123,12 @@ export class ProveedorModel {
         [razonSocial, CUIT]
       );
 
+      if (!newProveedor || newProveedor.length === 0) {
+        throw new Error(
+          "No se pudo obtener el ID del proveedor creado. Intente nuevamente."
+        );
+      }
+
       const proveedorId = newProveedor[0].idProveedor;
 
       // Si se proporcionan datos de usuario, crear el usuario automáticamente
@@ -163,14 +169,43 @@ export class ProveedorModel {
 
   static async delete({ id }) {
     try {
-      await connection.query(
+      // Verificar si el proveedor existe antes de intentar eliminarlo
+      const [exists] = await connection.query(
+        `SELECT id_proveedor FROM Proveedores
+                 WHERE id_proveedor = UUID_TO_BIN(?) LIMIT 1;`,
+        [id]
+      );
+
+      if (!exists || exists.length === 0) {
+        return false;
+      }
+
+      // Eliminar primero los usuarios asociados a este proveedor
+      try {
+        await connection.query(
+          `DELETE FROM Usuarios
+                   WHERE id_proveedor = UUID_TO_BIN(?);`,
+          [id]
+        );
+      } catch (userError) {
+        // Si hay un error al eliminar usuarios, continuar (puede que no haya usuarios o la columna no exista)
+        console.warn(
+          "Advertencia: No se pudieron eliminar usuarios del proveedor:",
+          userError.message
+        );
+      }
+
+      // Ahora eliminar el proveedor
+      const [result] = await connection.query(
         `DELETE FROM Proveedores
                  WHERE id_proveedor = UUID_TO_BIN(?);`,
         [id]
       );
-      return true;
+
+      return result.affectedRows > 0;
     } catch (error) {
-      return false;
+      console.error("Error al eliminar proveedor:", error);
+      throw error;
     }
   }
 

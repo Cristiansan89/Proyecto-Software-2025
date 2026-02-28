@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api.js";
@@ -14,9 +14,17 @@ const LoginAsistencia = () => {
   const [success, setSuccess] = useState("");
 
   const [formulario, setFormulario] = useState({
-    email: "",
+    usuario: "",
     password: "",
   });
+
+  // Limpiar tokens viejos cuando se accede a esta página
+  useEffect(() => {
+    console.log("🧹 LoginAsistencia: Limpiando tokens viejos del localStorage");
+    localStorage.removeItem("token");
+    localStorage.removeItem("asistenciaToken");
+    localStorage.removeItem("user");
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,8 +38,8 @@ const LoginAsistencia = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formulario.email || !formulario.password) {
-      setError("Por favor ingrese correo y contraseña");
+    if (!formulario.usuario || !formulario.password) {
+      setError("Por favor ingrese usuario y contraseña");
       return;
     }
 
@@ -53,21 +61,21 @@ const LoginAsistencia = () => {
       // Luego autenticar al docente
       console.log("🔐 Autenticando docente...");
       const loginResponse = await API.post("/auth/login", {
-        email: formulario.email,
-        password: formulario.password,
+        nombreUsuario: formulario.usuario,
+        contrasena: formulario.password,
       });
 
       const userData = loginResponse.data.user;
 
       // VALIDACIÓN CRÍTICA: Verificar que el docente logueado coincide con el del token
-      if (userData.idPersonaDocente !== tokenData.idPersonaDocente) {
+      if (userData.idPersona !== tokenData.idPersonaDocente) {
         setError(
           `❌ Acceso Denegado: Este enlace es para ${tokenData.nombreDocente}. ` +
             `Tú eres ${userData.nombre}.`
         );
         console.error("⚠️ Intento de acceso no autorizado", {
           docenteToken: tokenData.idPersonaDocente,
-          docenteLogin: userData.idPersonaDocente,
+          docenteLogin: userData.idPersona,
           nombreToken: tokenData.nombreDocente,
           nombreLogin: userData.nombre,
         });
@@ -75,6 +83,17 @@ const LoginAsistencia = () => {
       }
 
       // Verificar que el docente está asignado al grado del token
+      if (!userData.gradosAsignados || userData.gradosAsignados.length === 0) {
+        setError(
+          `❌ No tienes grados asignados. Contacta al administrador.`
+        );
+        console.error("⚠️ Usuario sin grados asignados", {
+          usuario: userData.nombreUsuario,
+          gradosAsignados: userData.gradosAsignados,
+        });
+        return;
+      }
+
       const gradoAsignado = userData.gradosAsignados?.some(
         (g) => g.nombreGrado === tokenData.nombreGrado
       );
@@ -82,10 +101,7 @@ const LoginAsistencia = () => {
       if (!gradoAsignado) {
         setError(
           `❌ No estás asignado al grado ${tokenData.nombreGrado}. ` +
-            `Tus grados: ${
-              userData.gradosAsignados?.map((g) => g.nombreGrado).join(", ") ||
-              "ninguno"
-            }`
+            `Tus grados: ${userData.gradosAsignados?.map((g) => g.nombreGrado).join(", ")}`
         );
         console.error("⚠️ Docente no asignado al grado", {
           docenteGrados: userData.gradosAsignados,
@@ -114,7 +130,7 @@ const LoginAsistencia = () => {
       console.error("❌ Error en login:", error);
 
       if (error.response?.status === 401) {
-        setError("❌ Correo o contraseña incorrectos");
+        setError("❌ Usuario o contraseña incorrectos");
       } else if (error.response?.data?.message) {
         setError(`❌ ${error.response.data.message}`);
       } else {
@@ -156,21 +172,21 @@ const LoginAsistencia = () => {
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="email">
-              <i className="fas fa-envelope me-2"></i>
-              Correo Electrónico
+            <label htmlFor="usuario">
+              <i className="fas fa-user me-2"></i>
+              Nombre de Usuario
             </label>
             <input
-              type="email"
-              id="email"
-              name="email"
+              type="text"
+              id="usuario"
+              name="usuario"
               className="form-control"
-              placeholder="tu@email.com"
-              value={formulario.email}
+              placeholder="tu_usuario"
+              value={formulario.usuario}
               onChange={handleChange}
               disabled={loading}
               required
-              autoComplete="email"
+              autoComplete="username"
             />
           </div>
 

@@ -50,7 +50,9 @@ const ListaInsumos = () => {
       insumo.unidadMedida.toLowerCase().includes(searchTerm.toLowerCase()) ||
       insumo.categoria.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "todos" || insumo.estado === statusFilter;
+      statusFilter === "todos" 
+        ? insumo.estado === "Activo"
+        : insumo.estado === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -106,8 +108,38 @@ const ListaInsumos = () => {
         // 5. Manejo de errores detallado
         const msg =
           error.response?.data?.message || "Error al eliminar el insumo";
+        const relationsData = error.response?.data?.details;
 
-        if (error.response?.data?.message) {
+        // Si el error es por relaciones activas
+        if (error.response?.status === 409) {
+          let detailsMsg = msg;
+          
+          // Si tenemos detalles de las relaciones, construir mensaje más claro
+          if (relationsData) {
+            let relationsList = [];
+            
+            if (relationsData.recetas && relationsData.recetas.length > 0) {
+              const recetasNames = relationsData.recetas.map(r => r.nombreReceta).join(", ");
+              relationsList.push(`📋 Recetas: ${recetasNames}`);
+            }
+            
+            if (relationsData.proveedores && relationsData.proveedores.length > 0) {
+              const proveedoresNames = relationsData.proveedores.map(p => p.razonSocial).join(", ");
+              relationsList.push(`🏪 Proveedores: ${proveedoresNames}`);
+            }
+            
+            if (relationsList.length > 0) {
+              detailsMsg = `No se puede eliminar porque está asociado a:\n\n${relationsList.join("\n")}\n\nAlternativa: Usa el botón de desactivar (✗) para marcarlo como inactivo sin perder el historial.`;
+            }
+          } else {
+            detailsMsg = `${msg}\n\nAlternativa: Usa el botón de desactivar (✗) para marcarlo como inactivo sin perder el historial.`;
+          }
+          
+          showWarning(
+            "No se puede eliminar",
+            detailsMsg
+          );
+        } else if (error.response?.data?.message) {
           showInfo("Información", `Error: ${msg}`);
         } else {
           showError("Error", msg);

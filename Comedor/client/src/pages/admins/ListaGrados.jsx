@@ -25,12 +25,14 @@ const ListaGrados = () => {
 
   useEffect(() => {
     loadGrados();
-  }, []);
+  }, [filterEstado]);
 
   const loadGrados = async () => {
     try {
       setLoading(true);
-      const gradosData = await gradoService.getAll();
+      // Si hay un filtro de estado activo, pasar al servicio
+      // Si no, obtener todos (el backend devolverá Activos por defecto)
+      const gradosData = await gradoService.getAll(filterEstado || null);
       setGrados(gradosData);
       setFilteredGrados(gradosData);
     } catch (error) {
@@ -95,7 +97,7 @@ const ListaGrados = () => {
     try {
       closeModal();
       showSuccess(
-        "Success",
+        "Éxito",
         `Grado ${
           modalMode === "create" ? "creado" : "actualizado"
         } correctamente`
@@ -120,8 +122,15 @@ const ListaGrados = () => {
     if (confirmed) {
       try {
         await gradoService.delete(grado.idGrado);
+        
+        // Remover de forma inmediata de la tabla
+        setGrados(grados.filter(g => g.idGrado !== grado.idGrado));
+        setFilteredGrados(filteredGrados.filter(g => g.idGrado !== grado.idGrado));
+        
         showSuccess("Grado eliminado correctamente");
-        loadGrados(); // Recargar la lista
+        
+        // Recargar para sincronizar con backend (importante para datos de auditoría, etc)
+        setTimeout(() => loadGrados(), 500);
       } catch (error) {
         /*console.error("Error al eliminar grado:", error);*/
 

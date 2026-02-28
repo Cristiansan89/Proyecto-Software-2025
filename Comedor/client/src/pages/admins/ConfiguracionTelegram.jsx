@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
+import ChatIDProveedorForm from "../../components/admin/ChatIDProveedorForm";
+import ChatIDDocenteForm from "../../components/admin/ChatIDDocenteForm";
 import {
   showSuccess,
   showError,
@@ -11,12 +13,13 @@ import {
 import "../../styles/ConfiguracionTelegram.css";
 
 const ConfiguracionTelegram = () => {
-  const [chatIdDocentes, setChatIdDocentes] = useState("");
   const [chatIdCocinera, setChatIdCocinera] = useState("");
   const [proveedores, setProveedores] = useState([]);
+  const [docentes, setDocentes] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [showModalDocente, setShowModalDocente] = useState(false);
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState(null);
-  const [chatIdProveedorActual, setChatIdProveedorActual] = useState("");
-  const [telegramUsuarioActual, setTelegramUsuarioActual] = useState("");
+  const [docenteSeleccionado, setDocenteSeleccionado] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
@@ -24,17 +27,12 @@ const ConfiguracionTelegram = () => {
   useEffect(() => {
     obtenerChatIds();
     cargarProveedores();
+    cargarDocentes();
   }, []);
 
   const obtenerChatIds = async () => {
     try {
       setLoading(true);
-
-      // Obtener Chat ID de docentes
-      const responseDocentes = await api.get("/telegram/docentes-chat-id");
-      if (responseDocentes.data.success && responseDocentes.data.chatId) {
-        setChatIdDocentes(responseDocentes.data.chatId);
-      }
 
       // Obtener Chat ID de cocinera
       const responseCocinera = await api.get("/telegram/cocinera-chat-id");
@@ -61,32 +59,15 @@ const ConfiguracionTelegram = () => {
     }
   };
 
-  const guardarChatIdDocentes = async () => {
-    if (!chatIdDocentes.trim()) {
-      setMessage("El Chat ID no puede estar vacío");
-      setMessageType("error");
-      return;
-    }
-
+  const cargarDocentes = async () => {
     try {
-      setLoading(true);
-      const response = await api.post("/telegram/docentes-chat-id", {
-        chatId: chatIdDocentes.trim(),
-      });
-
+      const response = await api.get("/telegram/docentes-list");
       if (response.data.success) {
-        setMessage("✅ Chat ID de docentes guardado correctamente");
-        setMessageType("success");
-      } else {
-        setMessage("❌ Error al guardar el Chat ID");
-        setMessageType("error");
+        setDocentes(response.data.docentes || []);
       }
     } catch (error) {
-      setMessage("Error: " + error.message);
-      setMessageType("error");
-    } finally {
-      setLoading(false);
-      setTimeout(() => setMessage(""), 3000);
+      console.error("Error cargando docentes:", error);
+      showError("Error al cargar los docentes");
     }
   };
 
@@ -119,57 +100,52 @@ const ConfiguracionTelegram = () => {
     }
   };
 
-  const guardarChatIdProveedor = async () => {
-    if (!proveedorSeleccionado) {
-      setMessage("Debe seleccionar un proveedor");
-      setMessageType("error");
-      return;
-    }
+  const openModal = (proveedor) => {
+    setProveedorSeleccionado(proveedor);
+    setShowModal(true);
+  };
 
-    if (!chatIdProveedorActual.trim()) {
-      setMessage("El Chat ID del proveedor no puede estar vacío");
-      setMessageType("error");
-      return;
-    }
+  const closeModal = () => {
+    setShowModal(false);
+    setProveedorSeleccionado(null);
+  };
 
+  const handleSaveProveedor = async () => {
     try {
-      setLoading(true);
-      const response = await api.post("/telegram/proveedor-chat-id", {
-        proveedorId: proveedorSeleccionado.id,
-        chatId: chatIdProveedorActual.trim(),
-        telegramUsuario: telegramUsuarioActual.trim(),
-      });
-
-      if (response.data.success) {
-        setMessage(
-          `✅ Chat ID del proveedor ${proveedorSeleccionado.nombre} guardado correctamente`
-        );
-        setMessageType("success");
-        await cargarProveedores();
-        limpiarFormularioProveedor();
-      } else {
-        setMessage("❌ Error al guardar el Chat ID del proveedor");
-        setMessageType("error");
-      }
+      closeModal();
+      setMessage("✅ Chat ID guardado correctamente");
+      setMessageType("success");
+      await cargarProveedores();
     } catch (error) {
-      setMessage("Error: " + error.message);
+      setMessage("❌ Error al guardar");
       setMessageType("error");
     } finally {
-      setLoading(false);
       setTimeout(() => setMessage(""), 3000);
     }
   };
 
-  const seleccionarProveedor = (proveedor) => {
-    setProveedorSeleccionado(proveedor);
-    setChatIdProveedorActual(proveedor.chatId || "");
-    setTelegramUsuarioActual(proveedor.telegramUsuario || "");
+  const openModalDocente = (docente) => {
+    setDocenteSeleccionado(docente);
+    setShowModalDocente(true);
   };
 
-  const limpiarFormularioProveedor = () => {
-    setProveedorSeleccionado(null);
-    setChatIdProveedorActual("");
-    setTelegramUsuarioActual("");
+  const closeModalDocente = () => {
+    setShowModalDocente(false);
+    setDocenteSeleccionado(null);
+  };
+
+  const handleSaveDocente = async () => {
+    try {
+      closeModalDocente();
+      setMessage("✅ Chat ID guardado correctamente");
+      setMessageType("success");
+      await cargarDocentes();
+    } catch (error) {
+      setMessage("❌ Error al guardar");
+      setMessageType("error");
+    } finally {
+      setTimeout(() => setMessage(""), 3000);
+    }
   };
 
   const handleInputChange = (e, tipo) => {
@@ -179,10 +155,6 @@ const ConfiguracionTelegram = () => {
 
     if (tipo === "cocinera") {
       setChatIdCocinera(valorPermitido);
-    } else if (tipo === "docentes") {
-      setChatIdDocentes(valorPermitido);
-    } else if (tipo === "proveedor") {
-      setChatIdProveedorActual(valorPermitido);
     }
   };
 
@@ -202,7 +174,7 @@ const ConfiguracionTelegram = () => {
         <div className="card-header text-dark">
           <h3 className="page-title">
             <i className="fas fa-chalkboard-user me-2"></i>
-            Chat ID - Docentes y Cocinera
+            Chat ID - Cocinera
           </h3>
         </div>
         <div className="card-body">
@@ -246,45 +218,89 @@ const ConfiguracionTelegram = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Chat ID de Docentes */}
-            <div className="form-group">
-              <label
-                htmlFor="chatIdDocentes"
-                className="text-dark fw-bold"
-                style={{ fontSize: "1.1rem" }}
-              >
-                Chat ID Docente
-              </label>
-              <input
-                type="number"
-                className="form-control mt-3 mb-3"
-                id="chatIdDocentes"
-                value={chatIdDocentes}
-                onChange={(e) => handleInputChange(e, "docentes")}
-                placeholder="Ej: 123456789 o -1001234567890"
-                required
-                disabled={loading}
-              />
-              <div className="form-actions">
-                <button
-                  onClick={guardarChatIdDocentes}
-                  disabled={loading}
-                  className="btn btn-success"
-                >
-                  {loading ? (
-                    <>
-                      <i className="fas fa-spinner fa-spin"></i>
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-save"></i>
-                      Guardar
-                    </>
-                  )}
-                </button>
-              </div>
+    {/* Configuración de Docentes */}
+      <div className="config-card">
+        <div className="card-header text-dark">
+          <h3 className="page-title">
+            <i className="fas fa-store me-2"></i>
+            Chat ID - Docentes
+          </h3>
+        </div>
+        <div className="card-body">
+          <div className="proveedor-section">
+            {/* Listado de Docentes */}
+            <div className="proveedor-list">
+              <h5 className="mb-3">📦 Docentes ({docentes.length})</h5>
+
+              {docentes.length === 0 ? (
+                <p className="text-muted">No hay docentes disponibles</p>
+              ) : (
+                <div className="table-container">
+                  <table className="table table-striped data-table">
+                    <thead className="table-header-fixed">
+                      <tr>
+                        <th>#</th>
+                        <th>Docente</th>
+                        <th>Grado</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Chat ID Telegram</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {docentes.map((docente, index) => (
+                        <tr key={docente.id}>
+                          <td className="fw-bold">{index + 1}</td>
+                          <td className="fw-bold">{docente.apellido} {docente.nombre}</td>
+                          <td>{docente.nombreGrado}</td>
+                          <td>{docente.email}</td>
+                          <td>{docente.telefono}</td>
+                          <td>
+                            {docente.chatId ? (
+                              <span className="badge bg-success">
+                                {docente.chatId}
+                              </span>
+                            ) : (
+                              <span className="badge bg-warning">
+                                Sin configurar
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {docente.notificacionesActivas ? (
+                              <span className="badge bg-success">
+                                <i className="fas fa-check-circle me-1"></i>
+                                Activo
+                              </span>
+                            ) : (
+                              <span className="badge bg-danger">
+                                <i className="fas fa-times-circle me-1"></i>
+                                Inactivo
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            <button
+                              onClick={() => openModalDocente(docente)}
+                              className="btn btn-sm btn-primary"
+                              disabled={loading}
+                            >
+                              <i className="fas fa-edit me-1"></i>
+                              Editar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -311,6 +327,7 @@ const ConfiguracionTelegram = () => {
                   <table className="table table-striped data-table">
                     <thead className="table-header-fixed">
                       <tr>
+                        <th>#</th>
                         <th>Proveedor</th>
                         <th>Email</th>
                         <th>Teléfono</th>
@@ -320,8 +337,9 @@ const ConfiguracionTelegram = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {proveedores.map((proveedor) => (
+                      {proveedores.map((proveedor, index) => (
                         <tr key={proveedor.id}>
+                          <td className="fw-bold">{index + 1}</td>
                           <td className="fw-bold">{proveedor.nombre}</td>
                           <td>{proveedor.email}</td>
                           <td>{proveedor.telefono}</td>
@@ -351,7 +369,7 @@ const ConfiguracionTelegram = () => {
                           </td>
                           <td>
                             <button
-                              onClick={() => seleccionarProveedor(proveedor)}
+                              onClick={() => openModal(proveedor)}
                               className="btn btn-sm btn-primary"
                               disabled={loading}
                             >
@@ -366,80 +384,6 @@ const ConfiguracionTelegram = () => {
                 </div>
               )}
             </div>
-
-            {/* Formulario de edición de proveedor seleccionado */}
-            {proveedorSeleccionado && (
-              <div className="proveedor-form mt-4 p-4 border rounded bg-light">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h5>
-                    ✏️ Configurar Chat ID:{" "}
-                    <strong>{proveedorSeleccionado.nombre}</strong>
-                  </h5>
-                  <button
-                    onClick={limpiarFormularioProveedor}
-                    className="btn btn-sm btn-outline-danger"
-                    disabled={loading}
-                  >
-                    <i className="fas fa-times"></i>
-                  </button>
-                </div>
-
-                <div className="form-group mb-3">
-                  <label className="text-dark fw-bold">
-                    Chat ID de Telegram
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control mt-2"
-                    value={chatIdProveedorActual}
-                    onChange={(e) => handleInputChange(e, "proveedor")}
-                    placeholder="Ej: 123456789 o -1001234567890"
-                    disabled={loading}
-                  />
-                  <small className="text-muted d-block mt-2">
-                    El Chat ID que recibió el proveedor al ejecutar /chatid en
-                    el bot
-                  </small>
-                </div>
-
-                <div className="form-group mb-3">
-                  <label className="text-dark fw-bold">
-                    Usuario de Telegram (opcional)
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control mt-2"
-                    value={telegramUsuarioActual}
-                    onChange={(e) => setTelegramUsuarioActual(e.target.value)}
-                    placeholder="Ej: @nombreUsuario"
-                    disabled={loading}
-                  />
-                  <small className="text-muted d-block mt-2">
-                    Usuario de Telegram del proveedor (sin el @)
-                  </small>
-                </div>
-
-                <div className="form-actions">
-                  <button
-                    onClick={guardarChatIdProveedor}
-                    disabled={loading || !chatIdProveedorActual}
-                    className="btn btn-success"
-                  >
-                    {loading ? (
-                      <>
-                        <i className="fas fa-spinner fa-spin"></i>
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-save"></i>
-                        Guardar Chat ID
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -546,6 +490,54 @@ const ConfiguracionTelegram = () => {
             } me-2`}
           ></i>
           {message}
+        </div>
+      )}
+
+      {/* Modal para editar proveedor */}
+      {showModal && proveedorSeleccionado && (
+        <div className="modal-overlay">
+          <div className="modal-content proveedor-modal">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-edit me-2"></i>
+                Configurar Chat ID: <strong>{proveedorSeleccionado.nombre}</strong>
+              </h3>
+              <button className="modal-close" onClick={closeModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <ChatIDProveedorForm
+                proveedor={proveedorSeleccionado}
+                onSave={handleSaveProveedor}
+                onCancel={closeModal}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para editar docente */}
+      {showModalDocente && docenteSeleccionado && (
+        <div className="modal-overlay">
+          <div className="modal-content docente-modal">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-edit me-2"></i>
+                Configurar Chat ID: <strong>{docenteSeleccionado.apellido}, {docenteSeleccionado.nombre}</strong>
+              </h3>
+              <button className="modal-close" onClick={closeModalDocente}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <ChatIDDocenteForm
+                docente={docenteSeleccionado}
+                onSave={handleSaveDocente}
+                onCancel={closeModalDocente}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

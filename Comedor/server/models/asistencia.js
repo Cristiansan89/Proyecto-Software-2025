@@ -267,7 +267,7 @@ export class AsistenciaModel {
     // Obtener información del docente y grado
     try {
       const [docenteInfo] = await connection.query(
-        `SELECT p.id_persona, p.nombre, p.apellido, p.email
+        `SELECT p.id_persona, p.nombre, p.apellido
          FROM Personas p
          WHERE p.id_persona = ?`,
         [idPersonaDocente]
@@ -280,8 +280,7 @@ export class AsistenciaModel {
         idPersonaDocente,
         nombreDocente: `${docente.nombre || ""} ${
           docente.apellido || ""
-        }`.trim(),
-        emailDocente: docente.email || "",
+        }`.trim() || "Docente",
         nombreGrado,
         fecha,
         idServicio,

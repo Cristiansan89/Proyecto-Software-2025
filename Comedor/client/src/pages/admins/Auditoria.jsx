@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import auditoriaService from "../../services/auditoriaService";
-import AuditoriaForm from "../../components/admin/AuditoriaForm";
+import AuditoriaInforme from "../../components/admin/AuditoriaInforme";
+import AuditoriaDetalle from "../../components/admin/AuditoriaDetalle";
 import {
   showSuccess,
   showError,
@@ -15,7 +16,14 @@ const Auditoria = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
-  const [showPDFForm, setShowPDFForm] = useState(false);
+  const [usuariosUnicos, setUsuariosUnicos] = useState([]);
+  const [rolesDisponibles, setRolesDisponibles] = useState([]);
+  const [usuarioRolMap, setUsuarioRolMap] = useState({}); // Mapeo de usuario -> rol
+  const [usuariosFiltrados, setUsuariosFiltrados] = useState([]); // Usuarios filtrados por rol
+  const [rolesFiltrados, setRolesFiltrados] = useState([]); // Roles filtrados por usuario
+  const [showInforme, setShowInforme] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
   const [estadisticas, setEstadisticas] = useState({
     totalRegistros: 0,
     usuariosUnicos: 0,
@@ -28,9 +36,15 @@ const Auditoria = () => {
       .split("T")[0], // Última semana
     fechaFin: new Date().toISOString().split("T")[0],
     usuario: "",
+    rol: "",
     accion: "",
     modulo: "",
+    criticidad: "",
+    resultado: "",
   });
+
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [registrosPorPagina, setRegistrosPorPagina] = useState(10);
 
   const acciones = [
     "Registrar",
@@ -40,21 +54,85 @@ const Auditoria = () => {
     "Consultar",
     "Exportar",
   ];
-  const modulos = [
-    "Usuarios",
-    "Insumos",
-    "Inventario",
-    "Pedidos",
-    "Asistencias",
-    "Sistema",
-    "Reportes",
-    "Alertas",
+
+  const criticidades = [
+    "Bajo",
+    "Medio",
+    "Alto",
+  ];
+
+  const resultados = [
+    "Éxito",
+    "Error",
+    "Intento_fallido",
   ];
 
   useEffect(() => {
     cargarLogs();
     cargarEstadisticas();
+    cargarRoles();
   }, [filtros]);
+
+  useEffect(() => {
+    // Extraer usuarios únicos y crear mapeo usuario -> rol
+    const usuarios = [...new Set(logs.map((log) => log.nombre_usuario))].filter(
+      Boolean
+    );
+    setUsuariosUnicos(usuarios);
+    
+    // Crear mapeo de usuario -> rol
+    const mapa = {};
+    logs.forEach((log) => {
+      if (log.nombre_usuario) {
+        mapa[log.nombre_usuario] = log.nombre_rol || "Sin Rol";
+      }
+    });
+    setUsuarioRolMap(mapa);
+    
+    // Resetear filtros dependientes cuando cambian los logs
+    setUsuariosFiltrados(usuarios);
+    setRolesFiltrados(rolesDisponibles);
+    setPaginaActual(1);
+  }, [logs, rolesDisponibles]);
+
+  const modulos = [
+    "Usuarios",
+    "Insumos",
+    "Inventarios",
+    "Pedidos",
+    "Asistencias",
+    "Roles",
+    "Grados",
+    "Personas",
+    "Servicios",
+    "Recetas",
+    "Turnos",
+    "Permisos",
+    "Consumos",
+    "Planificación Menús",
+    "Proveedores",
+    "Items Recetas",
+    "Líneas Pedidos",
+    "Movimientos Inventarios",
+    "Parámetros Sistema",
+    "Registros Asistencias",
+    "Rol Permisos",
+    "Servicio Turnos",
+    "Recetas Servicios",
+    "Proveedor Insumos",
+    "Alumno Grados",
+    "Docente Grados",
+    "Reemplazo Docentes",
+    "Estado Pedidos",
+    "Tipos Merma",
+    "Alertas Inventario",
+    "Generación Automática",
+    "Escuela",
+    "Configuración Servicios",
+    "Telegram",
+    "Auditoría",
+    "Autenticación",
+  ];
 
   const cargarLogs = async () => {
     try {
@@ -91,12 +169,59 @@ const Auditoria = () => {
     }
   };
 
+  const cargarRoles = async () => {
+    try {
+      const response = await auditoriaService.obtenerRoles();
+
+      if (response.success) {
+        setRolesDisponibles(response.data || []);
+      }
+    } catch (error) {
+      //console.error("Error al cargar roles:", error);
+      setRolesDisponibles([]);
+    }
+  };
+
   const handleFiltroChange = (e) => {
     const { name, value } = e.target;
+    
+    // Actualizar filtros principales
     setFiltros((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    // Lógica de filtros dependientes
+    if (name === "rol" && value) {
+      // Si se selecciona un rol, filtrar usuarios por ese rol
+      const usuariosConRol = usuariosUnicos.filter(
+        (usuario) => usuarioRolMap[usuario] === value
+      );
+      setUsuariosFiltrados(usuariosConRol);
+      // Limpiar usuario si no pertenece al rol seleccionado
+      setFiltros((prev) => ({
+        ...prev,
+        usuario: "",
+      }));
+    } else if (name === "rol" && !value) {
+      // Si se limpia el rol, mostrar todos los usuarios
+      setUsuariosFiltrados(usuariosUnicos);
+    }
+
+    if (name === "usuario" && value) {
+      // Si se selecciona un usuario, mostrar solo su rol
+      const rolDelUsuario = usuarioRolMap[value];
+      if (rolDelUsuario) {
+        setRolesFiltrados([rolDelUsuario]);
+        setFiltros((prev) => ({
+          ...prev,
+          rol: rolDelUsuario,
+        }));
+      }
+    } else if (name === "usuario" && !value) {
+      // Si se limpia el usuario, mostrar todos los roles
+      setRolesFiltrados(rolesDisponibles);
+    }
   };
 
   const limpiarFiltros = () => {
@@ -106,9 +231,45 @@ const Auditoria = () => {
         .split("T")[0],
       fechaFin: new Date().toISOString().split("T")[0],
       usuario: "",
+      rol: "",
       accion: "",
       modulo: "",
+      criticidad: "",
+      resultado: "",
     });
+    setUsuariosFiltrados(usuariosUnicos);
+    setRolesFiltrados(rolesDisponibles);
+    setPaginaActual(1);
+  };
+
+  // Funciones de paginación
+  const obtenerLogsActuales = () => {
+    const indiceInicial = (paginaActual - 1) * registrosPorPagina;
+    const indiceFinal = indiceInicial + registrosPorPagina;
+    return logs.slice(indiceInicial, indiceFinal);
+  };
+
+  const totalPaginas = Math.ceil(logs.length / registrosPorPagina);
+
+  const handleRegistrosPorPagina = (e) => {
+    setRegistrosPorPagina(parseInt(e.target.value));
+    setPaginaActual(1);
+  };
+
+  const handlePaginaAnterior = () => {
+    if (paginaActual > 1) {
+      setPaginaActual(paginaActual - 1);
+    }
+  };
+
+  const handlePaginaSiguiente = () => {
+    if (paginaActual < totalPaginas) {
+      setPaginaActual(paginaActual + 1);
+    }
+  };
+
+  const handleIrAPagina = (numeroPagina) => {
+    setPaginaActual(numeroPagina);
   };
 
   const formatearFecha = (fecha) => {
@@ -150,39 +311,43 @@ const Auditoria = () => {
     return colores[accion] || "muted";
   };
 
+  const obtenerColorCriticidad = (criticidad) => {
+    const colores = {
+      "Bajo": "info",
+      "Medio": "warning",
+      "Alto": "danger",
+    };
+    return colores[criticidad] || "secondary";
+  };
+
+  const obtenerColorResultado = (resultado) => {
+    const colores = {
+      "Éxito": "success",
+      "Error": "danger",
+      "Intento_fallido": "warning",
+    };
+    return colores[resultado] || "secondary";
+  };
+
   const formatUuidAsInt = (uuid) =>
     BigInt("0x" + uuid.replace(/-/g, "")).toString();
 
   const verDetalles = (log) => {
-    // 1. Procesar los detalles técnicos (JSON)
-    // Usamos un estilo más moderno para el bloque de código
-    const detallesHtml = log.detalles
-      ? `<pre style="text-align: left; background: #f4f4f4; padding: 10px; border-radius: 5px; font-size: 0.85em; max-height: 300px; overflow: auto;">${JSON.stringify(
-          log.detalles,
-          null,
-          2,
-        )}</pre>`
-      : `<p style="color: #666; font-style: italic;">Sin detalles adicionales</p>`;
+    setSelectedLog(log);
+    setShowDetail(true);
+  };
 
-    // 2. Construir el cuerpo del modal con Template Literals
-    const contenidoHtml = `
-    <div style="text-align: left; line-height: 1.6;">
-      <p><strong>🕒 Fecha:</strong> ${formatearFecha(log.fechaHora)}</p>
-      <p><strong>👤 Usuario:</strong> ${log.nombre_usuario ?? "N/A"} 
-         <span style="color: #666; font-size: 0.9em;">(${
-           log.email_usuario ?? "Sin email"
-         })</span>
-      </p>
-      <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-      <p><strong>🔧 Acción:</strong> ${log.accion}</p>
-      <p><strong>📦 Módulo:</strong> ${log.modulo}</p>
-      <p><strong>📝 Descripción:</strong> ${log.descripcion}</p>
-      
-    </div>
-  `;
+  const cerrarDetalles = () => {
+    setShowDetail(false);
+    setSelectedLog(null);
+  };
 
-    // 3. Mostrar la información
-    showInfoAuditoria("Detalles del Registro de Auditoría", contenidoHtml);
+  const abrirInforme = () => {
+    setShowInforme(true);
+  };
+
+  const cerrarInforme = () => {
+    setShowInforme(false);
   };
 
   const exportarLogs = () => {
@@ -194,21 +359,25 @@ const Auditoria = () => {
     const headers = [
       "Fecha",
       "Usuario",
+      "Email",
       "Acción",
       "Módulo",
       "Descripción",
-      "IP",
+      "Criticidad",
+      "Resultado",
+      "ID Registro Afectado",
     ];
 
     const csvData = logs.map((log) => [
       formatearFecha(log.fechaHora),
-      `${log.nombre_usuario || "Sin usuario"} (${
-        log.email_usuario || "Sin email"
-      })`,
+      log.nombre_usuario || "Sin usuario",
+      log.email_usuario || "Sin email",
       log.accion,
       log.modulo,
       log.descripcion,
-      log.ip_origen || "Sin IP",
+      log.nivel_criticidad || "N/A",
+      log.resultado_accion || "N/A",
+      log.id_registro_afectado || "N/A",
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -237,8 +406,27 @@ const Auditoria = () => {
 
   return (
     <div className="auditoria-container">
-      {/* Header */}
-      <div className="page-header">
+      {/* Vista de informe PDF */}
+      {showInforme ? (
+        <AuditoriaInforme
+          logs={logs}
+          estadisticas={estadisticas}
+          filtrosAuditoria={filtros}
+          cerrarInforme={cerrarInforme}
+          rolesDisponibles={rolesDisponibles}
+        />
+      ) : showDetail && selectedLog ? (
+        <AuditoriaDetalle
+          selectedLog={selectedLog}
+          formatearFecha={formatearFecha}
+          obtenerColorCriticidad={obtenerColorCriticidad}
+          obtenerColorResultado={obtenerColorResultado}
+          cerrarDetalles={cerrarDetalles}
+        />
+      ) : (
+        <>
+          {/* Vista de lista */}
+      <div className="page-header mb-3">
         <div className="header-left">
           <h1 className="page-title">
             <i className="fa-solid fa-file-shield me-2"></i>
@@ -248,10 +436,24 @@ const Auditoria = () => {
             Registro de actividades y eventos del sistema
           </p>
         </div>
+        <div>        
+          <button
+            type="button"
+            className="btn btn-outline-primary"
+            onClick={() => {
+              cargarLogs();
+              cargarEstadisticas();
+             }}
+             disabled={loading}
+          >
+            <i className="fas fa-sync-alt me-1"></i>
+            {loading ? "Actualizando..." : "Actualizar"}
+          </button>
+        </div>
       </div>
 
       {/* Estadísticas rápidas */}
-      <div className="row mb-4">
+      <div className="row mb-2">
         <div className="col-md-3">
           <div className="card auditoria__stats-card">
             <div className="card-body text-center">
@@ -299,149 +501,225 @@ const Auditoria = () => {
       </div>
 
       {/* Filtros */}
-      <div className="card auditoria__card">
-        <div className="auditoria__card-header">
-          <h5 className="auditoria__card-title">
-            <i className="fas fa-filter me-2"></i>
-            Filtros de Auditoría
-          </h5>
-        </div>
-        <div className="auditoria__card-body">
-          <div className="row g-3">
-            <div className="col-md-2">
-              <label htmlFor="fechaInicio" className="form-label">
-                <i className="fas fa-calendar me-2"></i>
-                Fecha Inicio
-              </label>
-              <input
-                type="date"
-                className="form-control"
-                id="fechaInicio"
-                name="fechaInicio"
-                value={filtros.fechaInicio}
-                onChange={handleFiltroChange}
-              />
-            </div>
+     <div className="card auditoria__card">
 
-            <div className="col-md-2">
-              <label htmlFor="fechaFin" className="form-label">
-                <i className="fas fa-calendar me-2"></i>
-                Fecha Fin
-              </label>
-              <input
-                type="date"
-                className="form-control"
-                id="fechaFin"
-                name="fechaFin"
-                value={filtros.fechaFin}
-                onChange={handleFiltroChange}
-              />
-            </div>
+  {/* HEADER */}
+  <div className="auditoria__card-header d-flex justify-content-between align-items-center">
+    <h5 className="auditoria__card-title mb-0">
+      <i className="fas fa-filter me-2"></i>
+      Filtros de Auditoría
+    </h5>
 
-            <div className="col-md-3">
-              <label htmlFor="usuario" className="form-label">
-                <i className="fas fa-user me-2"></i>
-                Usuario
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                id="usuario"
-                name="usuario"
-                value={filtros.usuario}
-                onChange={handleFiltroChange}
-                placeholder="Buscar por nombre o email..."
-              />
-            </div>
+    <div className="d-flex gap-2">
+      <button
+        type="button"
+        className="btn btn-success"
+        onClick={exportarLogs}
+        disabled={logs.length === 0}
+      >
+        <i className="fas fa-file-csv me-2"></i>
+        Exportar CSV
+      </button>
 
-            <div className="col-md-2">
-              <label htmlFor="accion" className="form-label">
-                <i className="fas fa-bolt me-2"></i>
-                Acción
-              </label>
-              <select
-                className="form-select"
-                id="accion"
-                name="accion"
-                value={filtros.accion}
-                onChange={handleFiltroChange}
-              >
-                <option value="">Todas</option>
-                {acciones.map((accion) => (
-                  <option key={accion} value={accion}>
-                    {accion}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <button
+        type="button"
+        className="btn btn-danger"
+        onClick={abrirInforme}
+      >
+        <i className="fas fa-file-pdf me-2"></i>
+        Generar PDF
+      </button>
+    </div>
+  </div>
+  {/* ← ESTE DIV FALTABA */}
+  
 
-            <div className="col-md-2">
-              <label htmlFor="modulo" className="form-label">
-                <i className="fas fa-cubes me-2"></i>
-                Módulo
-              </label>
-              <select
-                className="form-select"
-                id="modulo"
-                name="modulo"
-                value={filtros.modulo}
-                onChange={handleFiltroChange}
-              >
-                <option value="">Todos</option>
-                {modulos.map((modulo) => (
-                  <option key={modulo} value={modulo}>
-                    {modulo}
-                  </option>
-                ))}
-              </select>
-            </div>
+  {/* BODY */}
+  <div className="auditoria__card-body">
+    <div className="row g-3">
 
-            <div className="col-md-1 d-flex align-items-end">
-              <button
-                type="button"
-                className="btn btn-secondary w-100"
-                onClick={limpiarFiltros}
-                title="Limpiar filtros"
-              >
-                <i className="fas fa-broom"></i>
-              </button>
-            </div>
-          </div>
-
-          <div className="d-flex gap-2 mt-3">
-            <button
-              type="button"
-              className="btn btn-success"
-              onClick={exportarLogs}
-              disabled={logs.length === 0}
-            >
-              <i className="fas fa-file-csv me-2"></i>
-              Exportar CSV
-            </button>
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={() => setShowPDFForm(true)}
-            >
-              <i className="fas fa-file-pdf me-2"></i>
-              Generar PDF
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-outline-primary"
-              onClick={() => {
-                cargarLogs();
-                cargarEstadisticas();
-              }}
-              disabled={loading}
-            >
-              <i className="fas fa-sync-alt me-1"></i>
-              {loading ? "Actualizando..." : "Actualizar"}
-            </button>
-          </div>
-        </div>
+      {/* Fecha Inicio */}
+      <div className="col-md-2">
+        <label htmlFor="fechaInicio" className="form-label">
+          <i className="fas fa-calendar me-2"></i>
+          Fecha Inicio
+        </label>
+        <input
+          type="date"
+          className="form-control"
+          id="fechaInicio"
+          name="fechaInicio"
+          value={filtros.fechaInicio}
+          onChange={handleFiltroChange}
+        />
       </div>
+
+      {/* Fecha Fin */}
+      <div className="col-md-2">
+        <label htmlFor="fechaFin" className="form-label">
+          <i className="fas fa-calendar me-2"></i>
+          Fecha Fin
+        </label>
+        <input
+          type="date"
+          className="form-control"
+          id="fechaFin"
+          name="fechaFin"
+          value={filtros.fechaFin}
+          onChange={handleFiltroChange}
+        />
+      </div>
+
+      {/* Usuario */}
+      <div className="col-md-2">
+        <label htmlFor="usuario" className="form-label">
+          <i className="fas fa-user me-2"></i>
+          Usuario
+        </label>
+        <select
+          className="form-select"
+          id="usuario"
+          name="usuario"
+          value={filtros.usuario}
+          onChange={handleFiltroChange}
+          disabled={usuariosFiltrados.length === 0}
+        >
+          <option value="">Todos los usuarios</option>
+          {usuariosFiltrados.map((usuario) => (
+            <option key={usuario} value={usuario}>
+              {usuario}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Rol */}
+      <div className="col-md-2">
+        <label htmlFor="rol" className="form-label">
+          <i className="fas fa-user-tie me-2"></i>
+          Rol
+        </label>
+        <select
+          className="form-select"
+          id="rol"
+          name="rol"
+          value={filtros.rol}
+          onChange={handleFiltroChange}
+          disabled={rolesFiltrados.length === 0}
+        >
+          <option value="">Todos los roles</option>
+          {rolesFiltrados.map((rol) => (
+            <option key={rol} value={rol}>
+              {rol}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Acción */}
+      <div className="col-md-2">
+        <label htmlFor="accion" className="form-label">
+          <i className="fas fa-bolt me-2"></i>
+          Acción
+        </label>
+        <select
+          className="form-select"
+          id="accion"
+          name="accion"
+          value={filtros.accion}
+          onChange={handleFiltroChange}
+        >
+          <option value="">Todas</option>
+          {acciones.map((accion) => (
+            <option key={accion} value={accion}>
+              {accion}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Módulo */}
+      <div className="col-md-2">
+        <label htmlFor="modulo" className="form-label">
+          <i className="fas fa-cubes me-2"></i>
+          Módulo
+        </label>
+        <select
+          className="form-select"
+          id="modulo"
+          name="modulo"
+          value={filtros.modulo}
+          onChange={handleFiltroChange}
+        >
+          <option value="">Todos</option>
+          {modulos.map((modulo) => (
+            <option key={modulo} value={modulo}>
+              {modulo}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Criticidad */}
+      <div className="col-md-2">
+        <label htmlFor="criticidad" className="form-label">
+          <i className="fas fa-exclamation-circle me-2"></i>
+          Criticidad
+        </label>
+        <select
+          className="form-select"
+          id="criticidad"
+          name="criticidad"
+          value={filtros.criticidad}
+          onChange={handleFiltroChange}
+        >
+          <option value="">Todas</option>
+          {criticidades.map((criticidad) => (
+            <option key={criticidad} value={criticidad}>
+              {criticidad}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Resultado */}
+      <div className="col-md-2">
+        <label htmlFor="resultado" className="form-label">
+          <i className="fas fa-check-circle me-2"></i>
+          Resultado
+        </label>
+        <select
+          className="form-select"
+          id="resultado"
+          name="resultado"
+          value={filtros.resultado}
+          onChange={handleFiltroChange}
+        >
+          <option value="">Todos</option>
+          {resultados.map((resultado) => (
+            <option key={resultado} value={resultado}>
+              {resultado}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Botón limpiar*/}
+      <div className="col-md-2 d-flex align-items-end">
+        <button
+          type="button"
+          className="btn btn-secondary w-100"
+          onClick={limpiarFiltros}
+          title="Limpiar filtros"
+        >
+          <i className="fas fa-broom"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
 
       {/* Tabla de logs */}
       <div className="card auditoria__card">
@@ -474,20 +752,22 @@ const Auditoria = () => {
               <table className="table table-striped data-table">
                 <thead className="table-light">
                   <tr>
-                    <th width="5%">ID</th>
-                    <th width="15%">Fecha/Hora</th>
-                    <th width="20%">Usuario</th>
-                    <th width="10%">Acción</th>
-                    <th width="10%">Módulo</th>
-                    <th width="30%">Descripción</th>
-                    <th width="10%">Acciones</th>
+                    <th width="6%">ID</th>
+                    <th width="17%">Fecha/Hora</th>
+                    <th width="17%">Usuario</th>
+                    <th width="12%">Acción</th>
+                    <th width="12%">Módulo</th>
+                    {/*<th width="15%">Descripción</th>*/}
+                    <th width="12%">Criticidad</th>
+                    <th width="12%">Resultado</th>
+                    <th width="12%">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map((log, index) => (
+                  {obtenerLogsActuales().map((log, index) => (
                     <tr key={log.id_auditoria}>
                       <td>
-                        <strong>{index + 1}</strong>
+                        <strong>{(paginaActual - 1) * registrosPorPagina + index + 1}</strong>
                       </td>
                       <td>
                         <div className="auditoria__fecha-info">
@@ -528,10 +808,26 @@ const Auditoria = () => {
                           {log.modulo}
                         </span>
                       </td>
-
+{/* 
                       <td>
                         <span className="text-muted text-truncate-custom">
                           {log.descripcion}
+                        </span>
+                      </td>
+*/}
+                      <td>
+                        <span className={`badge badge-${obtenerColorCriticidad(log.nivel_criticidad)}`}>
+                          <i className="fas fa-exclamation-circle me-1"></i>
+                          {log.nivel_criticidad || "N/A"}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span className={`badge badge-${obtenerColorResultado(log.resultado_accion)}`}>
+                          {log.resultado_accion === "Éxito" && <i className="fas fa-check-circle me-1"></i>}
+                          {log.resultado_accion === "Error" && <i className="fas fa-times-circle me-1"></i>}
+                          {log.resultado_accion === "Intento_fallido" && <i className="fas fa-exclamation-triangle me-1"></i>}
+                          {log.resultado_accion || "N/A"}
                         </span>
                       </td>
 
@@ -554,22 +850,96 @@ const Auditoria = () => {
 
         {logs.length > 0 && (
           <div className="auditoria__card-footer">
-            <div className="row text-center">
-              <div className="col-md-12">
+            <div className="row mb-3 align-items-center">
+              <div className="col-md-4">
+                <div className="d-flex align-items-center">
+                <label htmlFor="registrosPorPagina" className="form-label me-2 mb-0">
+                  <small className="text-muted">
+                    Registros por página:
+                  </small>
+                </label>
+                <select
+                  id="registrosPorPagina"
+                  className="form-select form-select-sm"
+                  value={registrosPorPagina}
+                  onChange={handleRegistrosPorPagina}
+                  style={{ width: "4em" }}
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
+                </div>
+              </div>
+
+              <div className="col-md-4 text-center">
                 <small className="text-muted">
                   <i className="fas fa-info-circle me-1"></i>
-                  Mostrando {logs.length} registro(s) de auditoría | Período:{" "}
-                  {filtros.fechaInicio} - {filtros.fechaFin} | Última
-                  actualización: {new Date().toLocaleTimeString("es-ES")}
+                  Mostrando {obtenerLogsActuales().length} de {logs.length} registros
                 </small>
               </div>
+
+              <div className="col-md-4 text-end">
+                <small className="text-muted">
+                  Período: {filtros.fechaInicio} - {filtros.fechaFin}
+                </small>
+              </div>
+            </div>
+
+            {/* Controles de paginación */}
+            <div className="d-flex justify-content-center align-items-center gap-2 mt-3">
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={handlePaginaAnterior}
+                disabled={paginaActual === 1}
+              >
+                <i className="fas fa-chevron-left"></i> Anterior
+              </button>
+
+              <div className="d-flex gap-1">
+                {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
+                  let numeroPagina;
+                  if (totalPaginas <= 5) {
+                    numeroPagina = i + 1;
+                  } else if (paginaActual <= 3) {
+                    numeroPagina = i + 1;
+                  } else if (paginaActual >= totalPaginas - 2) {
+                    numeroPagina = totalPaginas - 4 + i;
+                  } else {
+                    numeroPagina = paginaActual - 2 + i;
+                  }
+
+                  return (
+                    <button
+                      key={numeroPagina}
+                      className={`btn btn-sm ${paginaActual === numeroPagina ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => handleIrAPagina(numeroPagina)}
+                    >
+                      {numeroPagina}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={handlePaginaSiguiente}
+                disabled={paginaActual === totalPaginas}
+              >
+                Siguiente <i className="fas fa-chevron-right"></i>
+              </button>
+
+              <small className="text-muted ms-2">
+                Página {paginaActual} de {totalPaginas}
+              </small>
             </div>
           </div>
         )}
       </div>
 
-      {/* Modal para generar PDF */}
-      <AuditoriaForm show={showPDFForm} onHide={() => setShowPDFForm(false)} />
+        </>
+      )}
     </div>
   );
 };

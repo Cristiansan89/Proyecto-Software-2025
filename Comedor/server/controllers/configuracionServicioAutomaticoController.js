@@ -138,10 +138,23 @@ export class ConfiguracionServicioAutomaticoController {
 
   eliminar = async (req, res) => {
     try {
-      const { id } = req.params;
+      let { id } = req.params;
+      // Convertir id a número para evitar problemas de tipo
+      id = typeof id === "number" ? id : parseInt(id, 10);
+      console.log("Eliminando configuración con ID:", id, "Tipo:", typeof id);
+      
+      if (!id || isNaN(id)) {
+        console.log("ID inválido:", id);
+        return res.status(400).json({
+          success: false,
+          message: "ID de configuración inválido",
+        });
+      }
       const resultado = await this.configuracionModel.delete({ id });
+      console.log("Resultado de eliminación:", resultado);
 
       if (!resultado) {
+        console.log("No se encontró configuración con ID:", id);
         return res.status(404).json({
           success: false,
           message: "Configuración no encontrada",

@@ -166,12 +166,19 @@ const PlanificacionCalendario = () => {
       // Obtener todas las planificaciones (sin filtrar por semana)
       const todasLasPlanificaciones = await planificacionMenuService.getAll();
 
+      // Ordenar por fecha de inicio (ascendente - menor fecha primero)
+      const planificacionesOrdenadas = [...todasLasPlanificaciones].sort((a, b) => {
+        const fechaA = new Date(a.fechaInicio);
+        const fechaB = new Date(b.fechaInicio);
+        return fechaA - fechaB;
+      });
+
       // Buscar primero una planificación activa, luego pendiente
-      let planificacion = todasLasPlanificaciones.find(
+      let planificacion = planificacionesOrdenadas.find(
         (p) => p.estado === "Activo"
       );
       if (!planificacion) {
-        planificacion = todasLasPlanificaciones.find(
+        planificacion = planificacionesOrdenadas.find(
           (p) => p.estado === "Pendiente"
         );
       }

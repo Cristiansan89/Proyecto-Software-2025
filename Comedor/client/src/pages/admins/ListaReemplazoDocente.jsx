@@ -73,44 +73,44 @@ const ListaReemplazosGrados = () => {
 
     // Filtro por búsqueda de texto
     if (searchTerm.trim()) {
-      filtered = filtered.filter(
-        (reemplazo) =>
-          reemplazo.nombreSuplente
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          reemplazo.apellidoSuplente
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((reemplazo) => {
+        const nombreCompletoSuplente =
+          `${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}`.toLowerCase();
+        const nombreCompletoTitular =
+          `${reemplazo.nombreTitular} ${reemplazo.apellidoTitular}`.toLowerCase();
+        return (
+          reemplazo.nombreSuplente.toLowerCase().includes(searchLower) ||
+          reemplazo.apellidoSuplente.toLowerCase().includes(searchLower) ||
+          nombreCompletoSuplente.includes(searchLower) ||
           reemplazo.dniSuplente.includes(searchTerm) ||
-          reemplazo.nombreTitular
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          reemplazo.apellidoTitular
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
+          reemplazo.nombreTitular.toLowerCase().includes(searchLower) ||
+          reemplazo.apellidoTitular.toLowerCase().includes(searchLower) ||
+          nombreCompletoTitular.includes(searchLower) ||
           reemplazo.dniTitular.includes(searchTerm) ||
-          reemplazo.nombreGrado.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+          reemplazo.nombreGrado.toLowerCase().includes(searchLower)
+        );
+      });
     }
 
     // Filtro por grado
     if (gradoFilter) {
       filtered = filtered.filter(
-        (reemplazo) => reemplazo.nombreGrado === gradoFilter
+        (reemplazo) => reemplazo.nombreGrado === gradoFilter,
       );
     }
 
     // Filtro por estado
     if (estadoFilter) {
       filtered = filtered.filter(
-        (reemplazo) => reemplazo.estado === estadoFilter
+        (reemplazo) => reemplazo.estado === estadoFilter,
       );
     }
 
     // Filtro por motivo
     if (motivoFilter) {
       filtered = filtered.filter(
-        (reemplazo) => reemplazo.motivo === motivoFilter
+        (reemplazo) => reemplazo.motivo === motivoFilter,
       );
     }
 
@@ -124,7 +124,7 @@ const ListaReemplazosGrados = () => {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredReemplazos.length / pageSize)
+    Math.ceil(filteredReemplazos.length / pageSize),
   );
 
   // Ordenar reemplazos por ID
@@ -136,7 +136,7 @@ const ListaReemplazosGrados = () => {
 
   const paginatedReemplazos = sortedReemplazos.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
 
   // Operaciones CRUD
@@ -148,13 +148,51 @@ const ListaReemplazosGrados = () => {
 
   const handleEdit = (reemplazo) => {
     setModalMode("edit");
-    setSelectedReemplazo(reemplazo);
+    // Asegurar que el objeto tiene todos los datos necesarios
+    const reemplazoCompleto = {
+      ...reemplazo,
+      idReemplazoDocente: reemplazo.idReemplazoDocente || reemplazo.id_reemplazoDocente,
+      idPersona: reemplazo.idPersona || reemplazo.id_persona,
+      idDocenteTitular: reemplazo.idDocenteTitular || reemplazo.id_docenteTitular,
+      nombreGrado: reemplazo.nombreGrado || reemplazo.nombre_grado,
+      cicloLectivo: reemplazo.cicloLectivo || reemplazo.ciclo_lectivo,
+      fechaInicio: reemplazo.fechaInicio || reemplazo.fecha_inicio,
+      fechaFin: reemplazo.fechaFin || reemplazo.fecha_fin,
+      motivo: reemplazo.motivo,
+      estado: reemplazo.estado,
+      nombreSuplente: reemplazo.nombreSuplente,
+      apellidoSuplente: reemplazo.apellidoSuplente,
+      dniSuplente: reemplazo.dniSuplente,
+      nombreTitular: reemplazo.nombreTitular,
+      apellidoTitular: reemplazo.apellidoTitular,
+      dniTitular: reemplazo.dniTitular,
+    };
+    setSelectedReemplazo(reemplazoCompleto);
     setShowModal(true);
   };
 
   const handleView = (reemplazo) => {
     setModalMode("view");
-    setSelectedReemplazo(reemplazo);
+    // Asegurar que el objeto tiene todos los datos necesarios
+    const reemplazoCompleto = {
+      ...reemplazo,
+      idReemplazoDocente: reemplazo.idReemplazoDocente || reemplazo.id_reemplazoDocente,
+      idPersona: reemplazo.idPersona || reemplazo.id_persona,
+      idDocenteTitular: reemplazo.idDocenteTitular || reemplazo.id_docenteTitular,
+      nombreGrado: reemplazo.nombreGrado || reemplazo.nombre_grado,
+      cicloLectivo: reemplazo.cicloLectivo || reemplazo.ciclo_lectivo,
+      fechaInicio: reemplazo.fechaInicio || reemplazo.fecha_inicio,
+      fechaFin: reemplazo.fechaFin || reemplazo.fecha_fin,
+      motivo: reemplazo.motivo,
+      estado: reemplazo.estado,
+      nombreSuplente: reemplazo.nombreSuplente,
+      apellidoSuplente: reemplazo.apellidoSuplente,
+      dniSuplente: reemplazo.dniSuplente,
+      nombreTitular: reemplazo.nombreTitular,
+      apellidoTitular: reemplazo.apellidoTitular,
+      dniTitular: reemplazo.dniTitular,
+    };
+    setSelectedReemplazo(reemplazoCompleto);
     setShowModal(true);
   };
 
@@ -164,7 +202,7 @@ const ListaReemplazosGrados = () => {
       "Eliminar Reemplazo",
       `¿Está seguro de eliminar "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" del registro de reemplazo? Esta acción no se puede deshacer.`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     if (confirmed) {
@@ -175,7 +213,7 @@ const ListaReemplazosGrados = () => {
         await loadReemplazos();
         showSuccess(
           "Éxito",
-          `El reemplazo de "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" se ha eliminado correctamente`
+          `El reemplazo de "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" se ha eliminado correctamente`,
         );
       } catch (error) {
         const msg =
@@ -191,7 +229,7 @@ const ListaReemplazosGrados = () => {
       "Finalizar Reemplazo",
       `¿Está seguro de marcar como finalizado el reemplazo de "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" para el titular "${reemplazo.nombreTitular} ${reemplazo.apellidoTitular}"?`,
       "Sí, finalizar",
-      "Cancelar"
+      "Cancelar",
     );
 
     if (confirmed) {
@@ -202,7 +240,7 @@ const ListaReemplazosGrados = () => {
         await loadReemplazos();
         showSuccess(
           "Éxito",
-          `Reemplazo de "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" finalizado correctamente`
+          `Reemplazo de "${reemplazo.nombreSuplente} ${reemplazo.apellidoSuplente}" finalizado correctamente`,
         );
       } catch (error) {
         const msg =
@@ -217,15 +255,25 @@ const ListaReemplazosGrados = () => {
     }
   };
 
+  const formatearMotivo = (motivo) => {
+    if (!motivo) return "";
+    return motivo
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
   const handleSave = (result) => {
     setShowModal(false);
     setSelectedReemplazo(null);
     loadReemplazos();
 
+    const motivoFormateado = formatearMotivo(result.motivo);
+
     if (modalMode === "create") {
-      showInfo(
-        "Información",
-        `✅ Reemplazo creado correctamente!\n\nSuplente: ${result.nombreSuplente} ${result.apellidoSuplente}\nTitular: ${result.nombreTitular} ${result.apellidoTitular}\nGrado: ${result.nombreGrado}\nMotivo: ${result.motivo}`
+      showSuccess(
+        "Éxito",
+        `✅ Reemplazo creado correctamente!\n\nSuplente: ${result.nombreSuplente} ${result.apellidoSuplente}\nTitular: ${result.nombreTitular} ${result.apellidoTitular}\nGrado: ${result.nombreGrado}\nMotivo: ${motivoFormateado}`,
       );
     } else {
       showSuccess("Éxito", "Reemplazo actualizado correctamente!");
@@ -298,9 +346,9 @@ const ListaReemplazosGrados = () => {
                   grados.map((grado) => (
                     <option
                       key={grado.idGrado || grado.id}
-                      value={grado.nombre}
+                      value={grado.nombreGrado}
                     >
-                      {grado.nombre}
+                      {grado.nombreGrado}
                     </option>
                   ))
                 )}
@@ -325,9 +373,10 @@ const ListaReemplazosGrados = () => {
                 onChange={(e) => setMotivoFilter(e.target.value)}
               >
                 <option value="">Todos los motivos</option>
+
                 {motivosUnicos.map((motivo) => (
                   <option key={motivo} value={motivo}>
-                    {motivo}
+                    {formatearMotivo(motivo)}
                   </option>
                 ))}
               </select>
@@ -362,10 +411,12 @@ const ListaReemplazosGrados = () => {
               )}
             </div>
             <div className="page-size-selector d-flex align-items-center gap-2">
-              <label className="mb-0">
+              <label htmlFor="registrosPorPagina" className="mb-0">
                 <strong>Registros por página:</strong>
               </label>
+
               <select
+                id="registrosPorPagina"
                 className="form-select form-select-sm"
                 style={{ width: "70px" }}
                 value={pageSize}
@@ -460,14 +511,14 @@ const ListaReemplazosGrados = () => {
                         </div>
                         <div>
                           <strong>Fin:</strong>{" "}
-                          {reemplazo.fechaFin
+                          {reemplazo.fechaFin && reemplazo.fechaFin.trim()
                             ? new Date(reemplazo.fechaFin).toLocaleDateString()
                             : "Sin definir"}
                         </div>
                       </td>
                       <td>
                         <span className="badge bg-info">
-                          {reemplazo.motivo}
+                          {formatearMotivo(reemplazo.motivo)}
                         </span>
                       </td>
                       <td>
@@ -486,20 +537,22 @@ const ListaReemplazosGrados = () => {
                           >
                             <i className="fas fa-eye"></i>
                           </button>
-                          <button
-                            className="btn-action btn-edit"
-                            onClick={() => handleEdit(reemplazo)}
-                            title="Editar reemplazo"
-                          >
-                            <i className="fas fa-edit"></i>
-                          </button>
+                          {reemplazo.estado !== "Finalizado" && (
+                            <button
+                              className="btn-action btn-edit"
+                              onClick={() => handleEdit(reemplazo)}
+                              title="Editar reemplazo"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                          )}
                           {reemplazo.estado === "Activo" && (
                             <button
                               className="btn-action btn-warning"
                               onClick={() =>
                                 handleFinalizarReemplazo(
                                   reemplazo.idReemplazoDocente,
-                                  reemplazo
+                                  reemplazo,
                                 )
                               }
                               title="Finalizar reemplazo"
@@ -507,18 +560,20 @@ const ListaReemplazosGrados = () => {
                               <i className="fas fa-stop"></i>
                             </button>
                           )}
-                          <button
-                            className="btn-action btn-delete"
-                            onClick={() =>
-                              handleDelete(
-                                reemplazo.idReemplazoDocente,
-                                reemplazo
-                              )
-                            }
-                            title="Eliminar reemplazo"
-                          >
-                            <i className="fas fa-trash"></i>
-                          </button>
+                          {reemplazo.estado !== "Finalizado" && (
+                            <button
+                              className="btn-action btn-delete"
+                              onClick={() =>
+                                handleDelete(
+                                  reemplazo.idReemplazoDocente,
+                                  reemplazo,
+                                )
+                              }
+                              title="Eliminar reemplazo"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -98,11 +98,13 @@ const Personas = () => {
       const searchLower = searchQuery.toLowerCase();
       filtered = filtered.filter((persona) => {
         try {
+          const nombreCompleto = `${persona.nombre || ""} ${persona.apellido || ""}`.toLowerCase();
           return (
             (persona.nombre &&
               persona.nombre.toLowerCase().includes(searchLower)) ||
             (persona.apellido &&
               persona.apellido.toLowerCase().includes(searchLower)) ||
+            nombreCompleto.includes(searchLower) ||
             (persona.dni && persona.dni.toString().includes(searchQuery)) ||
             (persona.numeroDocumento &&
               persona.numeroDocumento.toString().includes(searchQuery)) ||

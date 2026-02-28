@@ -73,7 +73,7 @@ export class PedidoModel {
   static async create({ input }) {
     const {
       id_usuario,
-      id_estadoPedido = 15, // Por defecto "Pendiente"
+      id_estadoPedido = 1, // Por defecto "Pendiente" (ID = 1)
       id_proveedor,
       fechaEmision = new Date().toISOString().split("T")[0],
       origen = "Manual",
@@ -1124,7 +1124,7 @@ export class PedidoModel {
            WHERE pi.id_insumo = ? 
            AND pi.estado = 'Activo'
            AND pi.id_proveedor != UUID_TO_BIN(?)
-           ORDER BY pi.precio ASC
+           ORDER BY pi.calificacion DESC
            LIMIT 1`,
           [insumo.id_insumo, proveedorOriginal],
         );

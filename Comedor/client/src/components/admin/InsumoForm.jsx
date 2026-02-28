@@ -89,8 +89,8 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
       newErrors.unidadMedida = "La unidad de medida es requerida";
     }
 
-    if (formData.descripcion && formData.descripcion.length > 100) {
-      newErrors.descripcion = "La descripción no puede exceder 100 caracteres";
+    if (formData.descripcion && formData.descripcion.length > 255) {
+      newErrors.descripcion = "La descripción no puede exceder 255 caracteres";
     }
 
     // Validaciones numéricas

@@ -1,14 +1,16 @@
 import { Router } from "express";
 import { AsistenciaController } from "../controllers/asistencias.js";
+import { authOptional } from "../middlewares/auth.js";
 
 export const createAsistenciaRouter = ({ asistenciaModel }) => {
   const asistenciasRouter = Router();
   const asistenciaController = new AsistenciaController({ asistenciaModel });
 
-  // Rutas públicas (no requieren autenticación)
-  asistenciasRouter.get("/registro/:token", asistenciaController.getByToken);
+  // Rutas públicas (no requieren autenticación, pero validan JWT si se envía)
+  asistenciasRouter.get("/registro/:token", authOptional, asistenciaController.getByToken);
   asistenciasRouter.post(
     "/registro/:token",
+    authOptional,
     asistenciaController.registrarAsistencias
   );
   asistenciasRouter.post(

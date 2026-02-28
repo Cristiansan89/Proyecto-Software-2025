@@ -151,9 +151,24 @@ const Proveedores = () => {
         const errorMessage =
           error.response?.data?.message || "Error al eliminar el proveedor";
 
-        // Si el error es una restricción de integridad (ej. tiene facturas pendientes)
-        // usamos showInfo para informar la causa, si es un error técnico usamos showError
-        if (error.response?.status === 400 || error.response?.status === 409) {
+        // Si el error es 404, significa que el proveedor no existe (pudo haber sido eliminado por otro usuario)
+        if (error.response?.status === 404) {
+          showInfoError(
+            "Proveedor no encontrado",
+            "El proveedor que intenta eliminar no existe. Podría haber sido eliminado por otro usuario. Se recargará la lista."
+          );
+          // Recargar la lista para sincronizar
+          await loadProveedores();
+        }
+        // Si el error es una restricción de integridad (usuarios, insumos, etc. vinculados)
+        else if (error.response?.status === 409) {
+          showWarning(
+            "No se puede eliminar",
+            `${errorMessage}\n\nVerifique que el proveedor no tenga usuarios ni registros vinculados.`
+          );
+        }
+        // Si el error es validación o técnico
+        else if (error.response?.status === 400) {
           showInfoError("Información", `⚠️ ${errorMessage}`);
         } else {
           showError("Error", errorMessage);
