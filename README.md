@@ -282,15 +282,15 @@ proceso de testing.
 
 ## 📋 Descripción
 
-Interfaz web moderna y responsiva para la gestión del comedor escolar, desarrollada con **React 19** y **Vite 6.0**. Proporciona una experiencia de usuario intuitiva para los diferentes roles del sistema, con dashboards personalizados, gráficos estadísticos interactivos y formularios validados.
+Interfaz web moderna y responsiva para la gestión del comedor escolar, desarrollada con **React 18.3.1** y **Vite 7.1.12**. Proporciona una experiencia de usuario intuitiva para los diferentes roles del sistema, con dashboards personalizados, gráficos estadísticos interactivos y formularios validados.
 
 ## 🛠️ Tecnologías Utilizadas
 
 ### Core
 
-- **React 19**: Framework de UI interactivo
-- **Vite 6.0**: Bundler y servidor de desarrollo
-- **React Router v7**: Navegación y enrutamiento
+- **React 18.3.1**: Framework de UI interactivo
+- **Vite 7.1.12**: Bundler y servidor de desarrollo
+- **React Router v6.28**: Navegación y enrutamiento
 - **Axios**: Cliente HTTP para comunicación con API
 
 ### Visualización de Datos
@@ -299,11 +299,13 @@ Interfaz web moderna y responsiva para la gestión del comedor escolar, desarrol
 - **react-chartjs-2 5.3.1**: Integración de Chart.js con React
 - **html2canvas 1.4.1**: Captura de elementos HTML
 - **jsPDF 3.0.4**: Generación de reportes en PDF
+- **jspdf-autotable 5.0.2**: Generación de tabla en PDF
+- **sweetalert2 11.26.17 **: Mensaje de alerta
 
 ### UI y Estilos
 
 - **Bootstrap 5.3**: Framework CSS
-- **Font Awesome 6**: Iconografía
+- **Font Awesome 7.1.0**: Iconografía
 - **CSS personalizado**: Estilos específicos de la aplicación
 
 ### Validación y Formularios
@@ -579,15 +581,15 @@ DOCENTE:
 
 ### Permisos por Rol
 
-| Funcionalidad           | Admin | Cocinero | Docente |
-| ----------------------- | ----- | -------- | ------- |
-| Gestión de Usuarios     | ✅    | ❌       | ❌      |
-| Gestión de Insumos      | ✅    | ✅       | ❌      |
-| Planificación de Menús  | ✅    | ✅       | ❌      |
-| Registro de Asistencias | ❌    | ✅       | ✅      |
-| Inventario              | ✅    | ✅       | ❌      |
-| Reportes y Estadísticas | ✅    | ✅       | ❌      |
-| Gestión de Pedidos      | ✅    | ✅       | ❌      |
+| Funcionalidad           | Admin | Cocinera | Docente | Proveedor |
+| ----------------------- | ----- | -------- | ------- | ------- |
+| Gestión de Usuarios     | ✅    | ❌       | ❌      |❌      |
+| Gestión de Insumos      | ✅    | ✅       | ❌      |❌      |
+| Planificación de Menús  | ❌    | ✅       | ❌      |❌      |
+| Registro de Asistencias | ❌    | ✅       | ✅      |❌      |
+| Inventario              | ✅    | ✅       | ❌      |❌      |
+| Reportes y Estadísticas | ❌    | ✅       | ❌      |❌      |
+| Gestión de Pedidos      | ❌    | ✅       | ❌      | ✅      |
 
 ---
 
@@ -797,4 +799,4 @@ Proyecto en desarrollo activo con funcionalidades core implementadas y en proces
 - ✅ Búsqueda y filtrado en tablas
 - ✅ Validación de formularios
 
-**Última actualización:** Diciembre 5, 2025
+**Última actualización:** Febrero 4, 2026
