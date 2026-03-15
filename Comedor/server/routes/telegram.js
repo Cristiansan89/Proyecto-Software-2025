@@ -42,4 +42,7 @@ router.post("/docente-chat-id", TelegramController.saveDocenteChatId);
 // Listar todos los docentes con sus Chat IDs
 router.get("/docentes-list", TelegramController.listDocentesWithChatId);
 
+// Manejar callbacks de botones de alertas (Dar visto / Realizar Pedido)
+router.post("/alerta-callback", TelegramController.handleAlertaCallback);
+
 export default router;

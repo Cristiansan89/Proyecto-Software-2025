@@ -89,6 +89,9 @@ class TelegramService {
 
       // Configurar comandos básicos
       this.setupCommands(botType);
+      
+      // Configurar manejador de callbacks (botones)
+      this.setupCallbackHandlers(botType);
 
       return {
         success: true,
@@ -164,6 +167,147 @@ class TelegramService {
     console.log(`🤖 Comandos de Telegram ${botType} configurados`);
   }
 
+  setupCallbackHandlers(botType = "sistema") {
+    // Configurar manejador de botones (callback queries)
+    if (!this.bots[botType]) {
+      console.warn(`⚠️ Bot ${botType} no existe`);
+      return;
+    }
+
+    const bot = this.bots[botType];
+
+    bot.on("callback_query", async (callbackQuery) => {
+      const startTime = Date.now();
+      const timestampLog = `[${new Date().toISOString().substr(11, 8)}]`;
+      
+      try {
+        console.log(`\n${timestampLog} 🔔 [${botType.toUpperCase()}] ═══════════════════════════════════`);
+        console.log(`${timestampLog} 🔔 CALLBACK QUERY RECIBIDO`);
+        console.log(`${timestampLog}    ├─ ID Callback: ${callbackQuery.id}`);
+        console.log(`${timestampLog}    ├─ Datos: "${callbackQuery.data}"`);
+        console.log(`${timestampLog}    ├─ Chat ID: ${callbackQuery.message.chat.id}`);
+        console.log(`${timestampLog}    ├─ Message ID: ${callbackQuery.message.message_id}`);
+        console.log(`${timestampLog}    └─ Usuario: ${callbackQuery.from?.username || callbackQuery.from?.first_name || 'desconocido'}`);
+
+        const callback_query_id = callbackQuery.id;
+        const callback_data = callbackQuery.data;
+        const chat_id = callbackQuery.message.chat.id;
+        const message_id = callbackQuery.message.message_id;
+
+        // ✅ PASO 1: Responder INMEDIATAMENTE a Telegram (BLOQUEANTE - con await)
+        console.log(`${timestampLog} 📱 Respondiendo a Telegram (answerCallbackQuery)...`);
+        try {
+          await bot.answerCallbackQuery(callback_query_id, {
+            text: "⏳ Procesando tu solicitud...",
+            show_alert: false,
+          });
+          console.log(`${timestampLog} ✅ Telegram notificado - descargando botón`);
+        } catch (answerError) {
+          console.error(`${timestampLog} ❌ Error en answerCallbackQuery: ${answerError.message}`);
+          // Continuar de todas formas
+        }
+
+        // ✅ PASO 2: Importar servicio de alertas
+        console.log(`${timestampLog} 📦 Importando alertasService...`);
+        const { default: alertasService } = await import("./alertasInventarioService.js");
+        console.log(`${timestampLog} ✅ alertasService importado`);
+
+        let respuesta = "";
+        let exito = false;
+
+        console.log(`${timestampLog} 📋 Analizando tipo de callback: "${callback_data}"`);
+
+        // Parse del formato: "dar_visto|62,105,94" o "realizar_pedido|62,105,94"
+        const [accion, idsInsumosStr] = callback_data.split("|");
+        
+        if (!idsInsumosStr) {
+          throw new Error(`Formato inválido: "${callback_data}". Esperado: "accion|ids"`);
+        }
+
+        console.log(`${timestampLog} 📋 Acción: "${accion}", IDs: "${idsInsumosStr}"`);
+
+        // ✅ PASO 3: Procesar la acción
+        if (accion === "dar_visto") {
+          console.log(`${timestampLog} → Tipo detectado: DAR VISTO`);
+          console.log(`${timestampLog} 👁️ Llamando a alertasService.darVisto()...`);
+          
+          const resultado = await alertasService.darVisto(idsInsumosStr);
+          console.log(`${timestampLog} 👁️ Resultado recibido:`, {
+            success: resultado.success,
+            message: resultado.message,
+            exitosos: resultado.exitosos,
+            errores: resultado.errores?.length || 0
+          });
+
+          if (resultado.success) {
+            respuesta = `✅ ${resultado.message}`;
+            exito = true;
+          } else {
+            respuesta = `❌ Error: ${resultado.error || "Error desconocido"}`;
+          }
+        } else if (accion === "realizar_pedido") {
+          console.log(`${timestampLog} → Tipo detectado: REALIZAR PEDIDO`);
+          console.log(`${timestampLog} 📦 Llamando a alertasService.realizarPedidoAutomatico()...`);
+          
+          const resultado = await alertasService.realizarPedidoAutomatico(idsInsumosStr);
+          console.log(`${timestampLog} 📦 Resultado recibido:`, {
+            success: resultado.success,
+            message: resultado.message,
+            pedidos: resultado.pedidos?.length || 0
+          });
+
+          if (resultado.success) {
+            respuesta = `✅ ${resultado.message}`;
+            exito = true;
+          } else {
+            respuesta = `❌ ${resultado.error || "Error creando pedido"}`;
+          }
+        } else {
+          respuesta = `❌ Acción no reconocida: ${accion}`;
+          console.warn(`${timestampLog} ⚠️ Acción desconocida: "${accion}"`);
+        }
+
+        // ✅ PASO 4: Editar el mensaje original si fue exitoso
+        if (exito) {
+          try {
+            console.log(`${timestampLog} 📝 Editando mensaje ${message_id}...`);
+            await bot.editMessageText(respuesta, {
+              chat_id: chat_id,
+              message_id: message_id,
+              parse_mode: "Markdown",
+            });
+            console.log(`${timestampLog} ✅ Mensaje editado exitosamente`);
+          } catch (editError) {
+            console.warn(`${timestampLog} ⚠️ Error editando mensaje: ${editError.message}`);
+          }
+        }
+
+        const elapsed = Date.now() - startTime;
+        console.log(`${timestampLog} ✅ CALLBACK COMPLETADO (${elapsed}ms)`);
+        console.log(`${timestampLog} ═══════════════════════════════════\n`);
+      } catch (mainError) {
+        const elapsed = Date.now() - startTime;
+        console.error(`${timestampLog}\n❌ ERROR EN CALLBACK HANDLER (${elapsed}ms)\n`);
+        console.error(`${timestampLog}    Mensaje: ${mainError.message}`);
+        console.error(`${timestampLog}    Tipo: ${mainError.name}`);
+        console.error(`${timestampLog}    Stack:`);
+        console.error(mainError.stack);
+        console.error(`${timestampLog}\n`);
+        
+        try {
+          await bot.answerCallbackQuery(callbackQuery.id, {
+            text: `❌ Error: ${mainError.message}`,
+            show_alert: true,
+          });
+        } catch (errorNotify) {
+          console.error(`${timestampLog} ❌ Fallo doble - error notificando error: ${errorNotify.message}`);
+        }
+      }
+    });
+
+    console.log(`📱 [${botType.toUpperCase()}] Manejador de callbacks configurado ✅`);
+  }
+
   async sendMessage(chatId, message, botType = "sistema", options = {}) {
     try {
       if (!this.isReady[botType]) {
@@ -185,10 +329,22 @@ class TelegramService {
       );
       return { success: true, messageId: result.message_id };
     } catch (error) {
-      console.error(
-        `❌ Error enviando mensaje por Telegram ${botType}:`,
-        error
-      );
+      // "chat not found" significa que el usuario no ha iniciado conversación con el bot
+      const esChatNoEncontrado =
+        error.message?.includes("chat not found") ||
+        error.response?.body?.description?.includes("chat not found");
+
+      if (esChatNoEncontrado) {
+        console.warn(
+          `⚠️ Telegram (${botType}): chat_id=${chatId} no encontrado. ` +
+          `El usuario debe iniciar conversación con el bot primero (/start).`
+        );
+      } else {
+        console.error(
+          `❌ Error enviando mensaje por Telegram ${botType}:`,
+          error.message || error
+        );
+      }
       return {
         success: false,
         error: error.message,
@@ -289,6 +445,53 @@ class TelegramService {
         success: false,
         error: error.message,
       };
+    }
+  }
+
+  // Editar mensaje existente
+  async editMessage(chatId, messageId, newText, botType = "sistema") {
+    try {
+      const bot = this.bots[botType];
+      if (!bot) {
+        throw new Error(`Bot ${botType} no inicializado`);
+      }
+
+      const result = await bot.editMessageText(newText, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      });
+
+      console.log(`✅ Mensaje editado por Telegram ${botType}`);
+      return { success: true, result };
+    } catch (error) {
+      console.error(`❌ Error editando mensaje por Telegram ${botType}:`, error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Responder a callback query (notificar al usuario)
+  async answerCallbackQuery(callbackQueryId, text, showAlert = false, botType = "sistema") {
+    try {
+      const bot = this.bots[botType];
+      if (!bot) {
+        throw new Error(`Bot ${botType} no inicializado`);
+      }
+
+      const result = await bot.answerCallbackQuery(callbackQueryId, {
+        text,
+        show_alert: showAlert,
+      });
+
+      console.log(`✅ Respuesta a callback enviada por Telegram ${botType}`);
+      return { success: true, result };
+    } catch (error) {
+      console.error(
+        `❌ Error respondiendo a callback por Telegram ${botType}:`,
+        error
+      );
+      return { success: false, error: error.message };
     }
   }
 }

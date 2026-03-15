@@ -273,7 +273,7 @@ const Parametros = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const parametrosPaginados = parametrosOrdenados.slice(
     startIndex,
-    startIndex + pageSize
+    startIndex + pageSize,
   );
 
   if (loading) {
@@ -362,8 +362,12 @@ const Parametros = () => {
 
             <div className="card-body">
               {parametrosPaginados.length === 0 ? (
-                <div className="no-data">
-                  No se encontraron parámetros que coincidan con los filtros aplicados.
+                <div colSpan={12}>
+                  <div className="empty-state">
+                    <i className="fas fa-search empty-icon"></i>
+                    <h5>No se encontraron parámetros</h5>
+                    <p>No hay parámetros que coincidan con tu búsqueda.</p>
+                  </div>
                 </div>
               ) : (
                 <div className="table-container">
@@ -438,7 +442,7 @@ const Parametros = () => {
                       Mostrando {startIndex + 1} a{" "}
                       {Math.min(
                         startIndex + pageSize,
-                        parametrosOrdenados.length
+                        parametrosOrdenados.length,
                       )}{" "}
                       de {parametrosOrdenados.length} parámetros
                     </small>
@@ -484,7 +488,7 @@ const Parametros = () => {
                             className="page-link"
                             onClick={() =>
                               setCurrentPage((prev) =>
-                                Math.min(prev + 1, totalPages)
+                                Math.min(prev + 1, totalPages),
                               )
                             }
                           >

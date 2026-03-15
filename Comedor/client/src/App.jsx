@@ -45,6 +45,8 @@ import Pedidos from "./pages/cocinera/Pedidos";
 import PedidoInsumo from "./pages/cocinera/PedidoInsumo";
 import InsumosSemanal from "./pages/cocinera/InsumosSemanal";
 import Estadistica from "./pages/cocinera/Estadistica";
+import CocineraTelegram from "./pages/cocinera/CocineraTelegram";
+import CocineraTelegramExitoso from "./pages/cocinera/CocineraTelegramExitoso";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/App.css";
 
@@ -104,6 +106,24 @@ function App() {
             <Route
               path="/confirmacion-exitosa"
               element={<ConfirmacionExitosa />}
+            />
+
+            {/* Ruta pública para alertas de insumos (Cocinera - sin login) */}
+            <Route
+              path="/cocinera/alertas-insumos"
+              element={<CocineraTelegram />}
+            />
+
+            {/* Ruta pública para resultado exitoso de pedido automático */}
+            <Route
+              path="/cocinera-telegram-exitoso"
+              element={<CocineraTelegramExitoso />}
+            />
+
+            {/* Ruta pública para registro de asistencias del docente (sin login) */}
+            <Route
+              path="/docente/registro-asistencias-publico"
+              element={<RegistroAsistenciasDocente />}
             />
 
             {/* Rutas protegidas del panel administrativo */}

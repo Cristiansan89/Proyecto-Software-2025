@@ -18,6 +18,12 @@ import {
 const CocineraGestionAsistencias = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Función auxiliar para parsear fechas ISO correctamente en zona horaria local
+  const parseFechaLocal = (fechaISO) => {
+    const [year, month, day] = fechaISO.split("-");
+    return new Date(year, month - 1, day);
+  };
   const [servicios, setServicios] = useState([]);
   const [serviciosDisponibles, setServiciosDisponibles] = useState([]);
   const [grados, setGrados] = useState([]);
@@ -391,8 +397,7 @@ const CocineraGestionAsistencias = () => {
         // Generar token compatible con el backend usando Buffer para manejar caracteres especiales
         const tokenString = JSON.stringify(tokenData);
         const token = btoa(unescape(encodeURIComponent(tokenString))); // Maneja caracteres UTF-8
-        // Cambiar a /asistencias/login para requerir autenticación primero
-        const enlace = `${window.location.origin}/asistencias/login/${token}`;
+        const enlace = `${window.location.origin}/asistencias/registro/${token}`;
 
         enlacesGenerados.push({
           id: `${gradoId}-${formulario.idServicio}`,
@@ -519,7 +524,7 @@ ${
   `Te envío el enlace para registrar las asistencias del ${grado} para el servicio de ${servicio}.`
 }
 
-📅 *Fecha:* ${new Date(formulario.fecha).toLocaleDateString("es-ES")}
+📅 *Fecha:* ${parseFechaLocal(formulario.fecha).toLocaleDateString("es-ES")}
 🍽️ *Servicio:* ${servicio}
 📚 *Grado:* ${grado}
 
@@ -1192,7 +1197,7 @@ ${user.nombre} ${user.apellido}
                             {enlace.servicio}
                           </div>
                           <small className="text-muted">
-                            {new Date(enlace.fecha).toLocaleDateString("es-ES")}
+                            {parseFechaLocal(enlace.fecha).toLocaleDateString("es-ES")}
                           </small>
                         </td>
                         <td>

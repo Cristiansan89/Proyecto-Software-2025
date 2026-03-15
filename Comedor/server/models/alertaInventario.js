@@ -206,4 +206,20 @@ export class AlertaInventarioModel {
       throw error;
     }
   }
+
+  // Actualizar estado de alerta
+  static async actualizarEstado({ id_insumo, estado }) {
+    try {
+      const [result] = await connection.query(
+        `UPDATE AlertasInventario 
+         SET estado = ?, fechaUltimaAlerta = NOW()
+         WHERE id_insumo = ?`,
+        [estado, id_insumo]
+      );
+      return result;
+    } catch (error) {
+      console.error("Error al actualizar estado de alerta:", error);
+      throw error;
+    }
+  }
 }

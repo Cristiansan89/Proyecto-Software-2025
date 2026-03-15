@@ -4,13 +4,14 @@ import PedidoConfirmado from "./PedidoConfirmado";
 
 const Pedidos = () => {
   const [activeTab, setActiveTab] = useState("pedido-insumo");
+  const [mostrarPestanas, setMostrarPestanas] = useState(true);
 
   const tabs = [
     {
       id: "pedido-insumo",
       label: "Pedido de Insumos",
       icon: "fas fa-boxes",
-      component: <PedidoInsumo />,
+      component: <PedidoInsumo onModoEdicion={setMostrarPestanas} />,
     },
     {
       id: "pedido-confirmado",
@@ -32,28 +33,31 @@ const Pedidos = () => {
         </div>
       </div>
       {/* Pestañas de navegación */}
-      <div className="navigation-tabs">
-        <div className="tabs-header mb-4">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={`tab-button ${tab.id === activeTab ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <i className={tab.icon}></i> {tab.label}
-            </button>
-          ))}
+      {mostrarPestanas && (
+        <div className="navigation-tabs">
+          <div className="tabs-header mb-4">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                className={`tab-button ${tab.id === activeTab ? "active" : ""}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <i className={tab.icon}></i> {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="tabs-content">
-          {tabs.map(
-            (tab) =>
-              tab.id === activeTab && (
-                <div key={tab.id} className="tab-content">
-                  {tab.component}
-                </div>
-              ),
-          )}
-        </div>
+      )}
+      {/* Contenido del tab activo - siempre renderizado */}
+      <div className="tabs-content">
+        {tabs.map(
+          (tab) =>
+            tab.id === activeTab && (
+              <div key={tab.id} className="tab-content">
+                {tab.component}
+              </div>
+            ),
+        )}
       </div>
     </div>
   );

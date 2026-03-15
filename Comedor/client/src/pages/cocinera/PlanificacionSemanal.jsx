@@ -81,6 +81,15 @@ const PlanificacionSemanal = () => {
       return;
     }
 
+    // Validar que solo se puedan eliminar planificaciones en estado Pendiente
+    if (planificacion.estado !== "Pendiente") {
+      showWarning(
+        "Operación no permitida",
+        `No se puede eliminar una planificación en estado "${planificacion.estado}". Solo se pueden eliminar planificaciones en estado Pendiente.`
+      );
+      return;
+    }
+
     // 1. Confirmación asíncrona personalizada
     const confirmed = await showConfirm(
       "Eliminar Planificación",
@@ -233,17 +242,51 @@ const PlanificacionSemanal = () => {
                       </button>
                       <button
                         className="btn-action btn-edit"
-                        title="Editar"
+                        title={
+                          planificacion.estado === "Activo" ||
+                          planificacion.estado === "Finalizado"
+                            ? "No se puede editar: planificación " +
+                              planificacion.estado.toLowerCase()
+                            : "Editar"
+                        }
                         onClick={() => openModal("edit", planificacion)}
+                        disabled={
+                          planificacion.estado === "Activo" ||
+                          planificacion.estado === "Finalizado"
+                        }
+                        style={{
+                          display:
+                            planificacion.estado === "Activo" ||
+                            planificacion.estado === "Finalizado"
+                              ? "none"
+                              : "block",
+                        }}
                       >
                         <i className="fas fa-edit"></i>
                       </button>
                       <button
                         className="btn-action btn-delete"
-                        title="Eliminar"
+                        title={
+                          planificacion.estado === "Activo" ||
+                          planificacion.estado === "Finalizado"
+                            ? "No se puede eliminar: planificación " +
+                              planificacion.estado.toLowerCase()
+                            : "Eliminar"
+                        }
                         onClick={() =>
                           handleDelete(planificacion.id_planificacion)
                         }
+                        disabled={
+                          planificacion.estado === "Activo" ||
+                          planificacion.estado === "Finalizado"
+                        }
+                        style={{
+                          display:
+                            planificacion.estado === "Activo" ||
+                            planificacion.estado === "Finalizado"
+                              ? "none"
+                              : "block",
+                        }}
                       >
                         <i className="fas fa-trash"></i>
                       </button>

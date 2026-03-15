@@ -51,7 +51,7 @@ const Proveedores = () => {
     // Filtrar por estado
     if (estadoFilter !== "todos") {
       filtered = filtered.filter(
-        (proveedor) => proveedor.estado === estadoFilter
+        (proveedor) => proveedor.estado === estadoFilter,
       );
     }
 
@@ -67,8 +67,10 @@ const Proveedores = () => {
             .includes(searchTerm.toLowerCase()) ||
           proveedor.telefono?.includes(searchTerm) ||
           proveedor.insumos?.some((insumo) =>
-            insumo.nombreInsumo.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+            insumo.nombreInsumo
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()),
+          ),
       );
     }
 
@@ -82,7 +84,7 @@ const Proveedores = () => {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredProveedores.length / pageSize)
+    Math.ceil(filteredProveedores.length / pageSize),
   );
 
   // Ordenar proveedores por id (numérico si corresponde, si no lexicográfico)
@@ -98,7 +100,7 @@ const Proveedores = () => {
 
   const paginatedProveedores = sortedProveedores.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
 
   const handleCreate = () => {
@@ -128,9 +130,9 @@ const Proveedores = () => {
     // 1. Confirmación personalizada asíncrona
     const confirmed = await showConfirm(
       "Eliminar Proveedor",
-      `¿Está seguro de que desea eliminar el proveedor "${proveedor.razonSocial}"? Esta acción podría afectar el historial de compras vinculado.`,
+      `¿Está seguro de que desea eliminar el proveedor "${proveedor.razonSocial}"? Esta acción podría afectar el historial de pedidos vinculado.`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     // 2. Proceder solo si el usuario confirmó
@@ -142,7 +144,7 @@ const Proveedores = () => {
         // Cambiamos showInfo por showSuccess para una confirmación positiva estándar
         showSuccess(
           "Éxito",
-          `El proveedor "${proveedor.razonSocial}" eliminado correctamente`
+          `El proveedor "${proveedor.razonSocial}" eliminado correctamente`,
         );
 
         await loadProveedores();
@@ -155,7 +157,7 @@ const Proveedores = () => {
         if (error.response?.status === 404) {
           showInfoError(
             "Proveedor no encontrado",
-            "El proveedor que intenta eliminar no existe. Podría haber sido eliminado por otro usuario. Se recargará la lista."
+            "El proveedor que intenta eliminar no existe. Podría haber sido eliminado por otro usuario. Se recargará la lista.",
           );
           // Recargar la lista para sincronizar
           await loadProveedores();
@@ -164,7 +166,7 @@ const Proveedores = () => {
         else if (error.response?.status === 409) {
           showWarning(
             "No se puede eliminar",
-            `${errorMessage}\n\nVerifique que el proveedor no tenga usuarios ni registros vinculados.`
+            `${errorMessage}\n\nVerifique que el proveedor no tenga usuarios ni registros vinculados.`,
           );
         }
         // Si el error es validación o técnico
@@ -185,7 +187,7 @@ const Proveedores = () => {
       } else if (modalMode === "edit") {
         await proveedorService.update(
           selectedProveedor.idProveedor,
-          proveedorData
+          proveedorData,
         );
         showSuccess("Éxito", "Proveedor actualizado correctamente");
       }
@@ -205,7 +207,7 @@ const Proveedores = () => {
       await proveedorService.asignarInsumos(selectedProveedor.idProveedor, {
         insumos: insumosData,
       });
-      showInfo("Insumos asignados correctamente");
+      showSuccess("Éxito", "Insumos asignados correctamente");
       setShowInsumosModal(false);
       setSelectedProveedor(null);
       loadProveedores();
@@ -224,7 +226,7 @@ const Proveedores = () => {
     const clearned = cuit.toString().replace(/\D/g, "");
     if (clearned.length === 11) {
       return `${clearned.slice(0, 2)}-${clearned.slice(2, 10)}-${clearned.slice(
-        10
+        10,
       )}`;
     }
 
@@ -368,8 +370,15 @@ const Proveedores = () => {
                 <tbody>
                   {paginatedProveedores.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="no-data">
-                        No se encontraron proveedores
+                      <td colSpan={12}>
+                        {" "}
+                        <div className="empty-state">
+                          <i className="fas fa-search empty-icon"></i>
+                          <h5>No se encontraron proveedores</h5>
+                          <p>
+                            No hay proveedores que coincidan con tu búsqueda.
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -438,7 +447,7 @@ const Proveedores = () => {
                         <td>
                           <span
                             className={`status-badge ${getEstadoBadge(
-                              proveedor.estado
+                              proveedor.estado,
                             )}`}
                           >
                             {proveedor.estado}
@@ -510,14 +519,6 @@ const Proveedores = () => {
                 </div>
               )}
             </div>
-
-            {filteredProveedores.length === 0 && (
-              <div className="empty-state">
-                <i className="fas fa-search empty-icon"></i>
-                <h5>No se encontraron proveedores</h5>
-                <p>No hay proveedores que coincidan con tu búsqueda.</p>
-              </div>
-            )}
           </div>
         </div>
       </div>

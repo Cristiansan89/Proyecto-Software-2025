@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import recetaService from "../../services/recetaService";
@@ -12,7 +13,7 @@ import {
   showConfirm,
 } from "../../utils/alertService";
 
-const PlanificacionCalendario = () => {
+const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
   const { user } = useAuth();
 
   // Debug: Verificar estructura del usuario
@@ -145,9 +146,20 @@ const PlanificacionCalendario = () => {
 
   useEffect(() => {
     cargarRecetasDisponibles();
-    // Solo llamar a verificarPlanificacionActiva en la carga inicial
-    verificarPlanificacionActiva();
+    // Solo llamar a verificarPlanificacionActiva en la carga inicial si no hay planificación seleccionada
+    if (!planificacionSeleccionada) {
+      verificarPlanificacionActiva();
+    }
   }, []);
+
+  // useEffect para actualizar cuando se selecciona una planificación diferente
+  useEffect(() => {
+    if (planificacionSeleccionada) {
+      setPlanificacionActiva(planificacionSeleccionada);
+      // Establecer la semana desde la fecha de inicio de la planificación seleccionada
+      setSemanaActual(new Date(planificacionSeleccionada.fechaInicio));
+    }
+  }, [planificacionSeleccionada]);
 
   useEffect(() => {
     cargarMenusAsignados();
@@ -317,6 +329,8 @@ const PlanificacionCalendario = () => {
 
     setFinalizandoPlanificacion(true);
     try {
+      let nuevoEstado = esPendiente ? "Activo" : "Finalizado";
+      
       if (esPendiente) {
         // Cambio a estado ACTIVO
         await planificacionMenuService.update(
@@ -338,7 +352,15 @@ const PlanificacionCalendario = () => {
         );
       }
 
-      await verificarPlanificacionActiva();
+      // Actualizar el estado localmente sin perder las fechas
+      const planificacionActualizada = {
+        ...planificacionActiva,
+        estado: nuevoEstado
+      };
+      setPlanificacionActiva(planificacionActualizada);
+      
+      // Cargar menús con la planificación actualizada localmente
+      await cargarMenusAsignados();
     } catch (error) {
       // 4. Manejo de errores detallado y seguro
       let mensajeError = "No se pudo actualizar la planificación.";
@@ -503,12 +525,11 @@ const PlanificacionCalendario = () => {
 
       // Si hay una planificación activa, cargar el rango completo
       if (planificacionActiva) {
-        fechaInicio = planificacionActiva.fechaInicio;
-        fechaFin = planificacionActiva.fechaFin;
+        // Extraer solo la fecha sin la hora
+        fechaInicio = new Date(planificacionActiva.fechaInicio).toISOString().split("T")[0];
+        fechaFin = new Date(planificacionActiva.fechaFin).toISOString().split("T")[0];
         /*console.log(
-          `📅 Cargando menús para la planificación completa: ${
-            new Date(fechaInicio).toISOString().split("T")[0]
-          } a ${new Date(fechaFin).toISOString().split("T")[0]}`
+          `📅 Cargando menús para la planificación completa: ${fechaInicio} a ${fechaFin}`
         );*/
       } else {
         // Si no, cargar solo la semana visible
@@ -814,27 +835,10 @@ const PlanificacionCalendario = () => {
                   </>
                 )}
                 {planificacionActiva.estado === "Activo" && (
-                  <button
-                    className="btn btn-success btn-sm"
-                    onClick={finalizarPlanificacion}
-                    disabled={finalizandoPlanificacion}
-                  >
-                    {finalizandoPlanificacion ? (
-                      <>
-                        <span
-                          className="spinner-border spinner-border-sm me-1"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
-                        Finalizando...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-check me-1"></i>
-                        Finalizar Planificación
-                      </>
-                    )}
-                  </button>
+                  <span className="badge bg-warning">
+                    <i className="fas fa-robot me-1"></i>
+                    Planificación Activo (Automatizada)
+                  </span>
                 )}
                 {planificacionActiva.estado === "Finalizado" && (
                   <span className="badge bg-success">
@@ -1095,175 +1099,169 @@ const PlanificacionCalendario = () => {
         </div>
       </div>
 
-      {/* Modal para asignar receta */}
-      {modalAsignacionVisible && (
-        <div
-          className="modal-overlay"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "fixed",
-            top: 100,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            zIndex: 9999,
-          }}
-        >
-          <div className="modal-content-planificacion">
-            <div>
-              <div className="modal-header">
-                <div>
-                  <h5 className="modal-title">
-                    <i className="fas fa-utensils me-2"></i>
-                    {recetaSeleccionada &&
-                    menusAsignados[
-                      `${
-                        asignacionSeleccionada.fecha
-                          ?.toISOString()
-                          .split("T")[0]
-                      }_${asignacionSeleccionada.servicio?.id_servicio}`
-                    ]
-                      ? "Cambiar Menú"
-                      : "Asignar Menú"}
-                  </h5>
-                </div>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={cerrarModalAsignacion}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-2">
-                  <label className="form-label">
-                    <strong>
-                      {asignacionSeleccionada.dia} -{" "}
-                      {asignacionSeleccionada.servicio?.nombre}
-                    </strong>
-                  </label>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">
-                    <strong>Fecha:</strong>{" "}
-                    {asignacionSeleccionada.fecha?.toLocaleDateString("es-ES")}
-                  </label>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">
-                    <strong>Servicio:</strong>{" "}
-                    {asignacionSeleccionada.servicio?.descripcion}
-                  </label>
-                </div>
-
-                <div className="mb-4">
-                  <label htmlFor="recetaSelect" className="form-label">
-                    <i className="fas fa-book me-2"></i>
-                    Seleccionar Receta * (
-                    {asignacionSeleccionada.servicio?.nombre})
-                  </label>
-                  {(() => {
-                    const recetasFiltradas = obtenerRecetasPorServicio(
-                      asignacionSeleccionada.servicio?.id_servicio
-                    );
-                    return (
-                      <>
-                        <select
-                          id="recetaSelect"
-                          className="form-select"
-                          value={recetaSeleccionada}
-                          onChange={(e) =>
-                            setRecetaSeleccionada(e.target.value)
-                          }
-                        >
-                          <option value="">-- Seleccione una receta --</option>
-                          {recetasFiltradas.map((receta) => (
-                            <option
-                              key={receta.id_receta}
-                              value={receta.id_receta}
-                            >
-                              {receta.nombreReceta}
-                            </option>
-                          ))}
-                        </select>
-                        {recetasFiltradas.length === 0 && (
-                          <div className="alert alert-warning mt-2 mb-0">
-                            <i className="fas fa-exclamation-triangle me-2"></i>
-                            No hay recetas disponibles para{" "}
-                            {asignacionSeleccionada.servicio?.nombre}. Cree
-                            recetas y asócielas a este servicio.
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {recetasDisponibles.length === 0 && (
-                  <div className="alert alert-warning">
-                    <i className="fas fa-exclamation-triangle me-2"></i>
-                    No hay recetas disponibles. Por favor, cree algunas recetas
-                    primero.
+      {/* Modal para asignar receta - Renderizado en Portal para cubrir toda la pantalla */}
+      {modalAsignacionVisible &&
+        createPortal(
+          <div 
+            className="modal-overlay-calendario"
+            onClick={(e) => {
+              // Cerrar el modal solo si se hace clic en el overlay, no en el contenido
+              if (e.target === e.currentTarget) {
+                cerrarModalAsignacion();
+              }
+            }}
+          >
+            <div className="modal-content-planificacion">
+                <div className="modal-header">
+                  <div>
+                    <h5 className="modal-title">
+                      <i className="fas fa-utensils me-2"></i>
+                      {recetaSeleccionada &&
+                      menusAsignados[
+                        `${
+                          asignacionSeleccionada.fecha
+                            ?.toISOString()
+                            .split("T")[0]
+                        }_${asignacionSeleccionada.servicio?.id_servicio}`
+                      ]
+                        ? "Cambiar Menú"
+                        : "Asignar Menú"}
+                    </h5>
                   </div>
-                )}
-
-                <div className="form-actions mt-3">
                   <button
                     type="button"
-                    className="btn btn-secondary me-2"
+                    className="btn-close"
                     onClick={cerrarModalAsignacion}
-                  >
-                    <i className="fas fa-times me-2"></i>
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-success"
-                    onClick={asignarMenu}
-                    disabled={!recetaSeleccionada || loading}
-                  >
-                    {loading ? (
-                      <>
-                        <span
-                          className="spinner-border spinner-border-sm me-2"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
-                        {asignacionSeleccionada &&
-                        menusAsignados[
-                          `${
-                            asignacionSeleccionada.fecha
-                              ?.toISOString()
-                              .split("T")[0]
-                          }_${asignacionSeleccionada.servicio?.id_servicio}`
-                        ]
-                          ? "Cambiando..."
-                          : "Asignando..."}
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-check me-2"></i>
-                        {asignacionSeleccionada &&
-                        menusAsignados[
-                          `${
-                            asignacionSeleccionada.fecha
-                              ?.toISOString()
-                              .split("T")[0]
-                          }_${asignacionSeleccionada.servicio?.id_servicio}`
-                        ]
-                          ? "Cambiar Menú"
-                          : "Asignar Menú"}
-                      </>
-                    )}
-                  </button>
+                  ></button>
                 </div>
-              </div>
+                <div className="modal-body">
+                  <div className="mb-2">
+                    <label className="form-label">
+                      <strong>
+                        {asignacionSeleccionada.dia} -{" "}
+                        {asignacionSeleccionada.servicio?.nombre}
+                      </strong>
+                    </label>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      <strong>Fecha:</strong>{" "}
+                      {asignacionSeleccionada.fecha?.toLocaleDateString("es-ES")}
+                    </label>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">
+                      <strong>Servicio:</strong>{" "}
+                      {asignacionSeleccionada.servicio?.descripcion}
+                    </label>
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="recetaSelect" className="form-label">
+                      <i className="fas fa-book me-2"></i>
+                      Seleccionar Receta * (
+                      {asignacionSeleccionada.servicio?.nombre})
+                    </label>
+                    {(() => {
+                      const recetasFiltradas = obtenerRecetasPorServicio(
+                        asignacionSeleccionada.servicio?.id_servicio
+                      );
+                      return (
+                        <>
+                          <select
+                            id="recetaSelect"
+                            className="form-select"
+                            value={recetaSeleccionada}
+                            onChange={(e) =>
+                              setRecetaSeleccionada(e.target.value)
+                            }
+                          >
+                            <option value="">-- Seleccione una receta --</option>
+                            {recetasFiltradas.map((receta) => (
+                              <option
+                                key={receta.id_receta}
+                                value={receta.id_receta}
+                              >
+                                {receta.nombreReceta}
+                              </option>
+                            ))}
+                          </select>
+                          {recetasFiltradas.length === 0 && (
+                            <div className="alert alert-warning mt-2 mb-0">
+                              <i className="fas fa-exclamation-triangle me-2"></i>
+                              No hay recetas disponibles para{" "}
+                              {asignacionSeleccionada.servicio?.nombre}. Cree
+                              recetas y asócielas a este servicio.
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {recetasDisponibles.length === 0 && (
+                    <div className="alert alert-warning">
+                      <i className="fas fa-exclamation-triangle me-2"></i>
+                      No hay recetas disponibles. Por favor, cree algunas recetas
+                      primero.
+                    </div>
+                  )}
+
+                  <div className="form-actions mt-3">
+                    <button
+                      type="button"
+                      className="btn btn-secondary me-2"
+                      onClick={cerrarModalAsignacion}
+                    >
+                      <i className="fas fa-times me-2"></i>
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-success"
+                      onClick={asignarMenu}
+                      disabled={!recetaSeleccionada || loading}
+                    >
+                      {loading ? (
+                        <>
+                          <span
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
+                          {asignacionSeleccionada &&
+                          menusAsignados[
+                            `${
+                              asignacionSeleccionada.fecha
+                                ?.toISOString()
+                                .split("T")[0]
+                            }_${asignacionSeleccionada.servicio?.id_servicio}`
+                          ]
+                            ? "Cambiando..."
+                            : "Asignando..."}
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-check me-2"></i>
+                          {asignacionSeleccionada &&
+                          menusAsignados[
+                            `${
+                              asignacionSeleccionada.fecha
+                                ?.toISOString()
+                                .split("T")[0]
+                            }_${asignacionSeleccionada.servicio?.id_servicio}`
+                          ]
+                            ? "Cambiar Menú"
+                            : "Asignar Menú"}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

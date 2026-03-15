@@ -251,12 +251,22 @@ class SchedulerService {
               json: (data) => {
                 if (data.success && data.finalizadas > 0) {
                   console.log(
-                    `[Scheduler] ✓ Planificación finalizada: ${data.planificacion?.nombre}`
+                    `[Scheduler] ✓ ${data.finalizadas} planificación(es) finalizada(s)`
                   );
-                } else {
+                  if (data.planificacionActivada) {
+                    console.log(
+                      `[Scheduler] ✓ Planificación activada: ${data.planificacionActivada.label}`
+                    );
+                  }
+                } else if (data.success) {
                   console.log(
-                    `[Scheduler] No hay planificaciones para finalizar`
+                    `[Scheduler] No había planificaciones vencidas para finalizar`
                   );
+                  if (data.planificacionActivada) {
+                    console.log(
+                      `[Scheduler] ✓ Planificación activada: ${data.planificacionActivada.label}`
+                    );
+                  }
                 }
               },
               status: (code) => ({

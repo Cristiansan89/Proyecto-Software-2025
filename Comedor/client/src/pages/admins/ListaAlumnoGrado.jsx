@@ -24,7 +24,7 @@ const ListaAlumnosGrados = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [gradoFilter, setGradoFilter] = useState("");
   const [cicloFilter, setCicloFilter] = useState(
-    new Date().getFullYear().toString()
+    new Date().getFullYear().toString(),
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -71,24 +71,23 @@ const ListaAlumnosGrados = () => {
     // Filtro por búsqueda de texto
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (alumno) => {
-          const nombreCompleto = `${alumno.nombre} ${alumno.apellido}`.toLowerCase();
-          return (
-            alumno.nombre.toLowerCase().includes(searchLower) ||
-            alumno.apellido.toLowerCase().includes(searchLower) ||
-            nombreCompleto.includes(searchLower) ||
-            alumno.dni.includes(searchTerm) ||
-            alumno.nombreGrado.toLowerCase().includes(searchLower)
-          );
-        }
-      );
+      filtered = filtered.filter((alumno) => {
+        const nombreCompleto =
+          `${alumno.nombre} ${alumno.apellido}`.toLowerCase();
+        return (
+          alumno.nombre.toLowerCase().includes(searchLower) ||
+          alumno.apellido.toLowerCase().includes(searchLower) ||
+          nombreCompleto.includes(searchLower) ||
+          alumno.dni.includes(searchTerm) ||
+          alumno.nombreGrado.toLowerCase().includes(searchLower)
+        );
+      });
     }
 
     // Filtro por grado
     if (gradoFilter) {
       filtered = filtered.filter(
-        (alumno) => alumno.nombreGrado === gradoFilter
+        (alumno) => alumno.nombreGrado === gradoFilter,
       );
     }
 
@@ -119,7 +118,7 @@ const ListaAlumnosGrados = () => {
 
   const paginatedAlumnos = sortedAlumnos.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
 
   // Operaciones CRUD
@@ -147,7 +146,7 @@ const ListaAlumnosGrados = () => {
       "Eliminar Asignación",
       `¿Está seguro de eliminar esta asignación de alumno? El alumno "${persona.nombre} ${persona.apellido}" dejará de pertenecer a este grado.`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     // 2. Ejecutar solo si el usuario confirmó
@@ -159,7 +158,7 @@ const ListaAlumnosGrados = () => {
         await loadAlumnos();
         showSuccess(
           "Éxito",
-          `Asignación de ${persona.nombre} ${persona.apellido} eliminada correctamente`
+          `Asignación de ${persona.nombre} ${persona.apellido} eliminada correctamente`,
         );
       } catch (error) {
         // Manejo de errores sin logs de consola innecesarios
@@ -168,7 +167,7 @@ const ListaAlumnosGrados = () => {
         } else {
           showError(
             "Error",
-            "Error al eliminar la asignación. Por favor, inténtelo de nuevo."
+            "Error al eliminar la asignación. Por favor, inténtelo de nuevo.",
           );
         }
       }
@@ -180,19 +179,19 @@ const ListaAlumnosGrados = () => {
       showToast(
         "Seleccione al menos una asignación para eliminar",
         "info",
-        2000
+        2000,
       );
       return;
     }
 
     if (
       window.confirm(
-        `¿Está seguro de que desea eliminar ${selectedAlumnos.length} asignación(es)?`
+        `¿Está seguro de que desea eliminar ${selectedAlumnos.length} asignación(es)?`,
       )
     ) {
       try {
         await Promise.all(
-          selectedAlumnos.map((id) => alumnoGradoService.delete(id))
+          selectedAlumnos.map((id) => alumnoGradoService.delete(id)),
         );
         setSelectedAlumnos([]);
         loadAlumnos();
@@ -212,10 +211,13 @@ const ListaAlumnosGrados = () => {
     if (modalMode === "create") {
       showSuccess(
         "Éxito",
-        `Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${new Date(result.cicloLectivo).getFullYear()}`
+        `Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo Lectivo: ${result.cicloLectivo}`,
       );
     } else {
-      showSuccess("Éxito", "Asignación actualizada correctamente!");
+      showSuccess(
+        "Éxito",
+        "Asignación del alumno ha sido actualizada correctamente!",
+      );
     }
   };
 
@@ -372,8 +374,14 @@ const ListaAlumnosGrados = () => {
       {/* Tabla */}
       <div className="table-container">
         {filteredAlumnos.length === 0 ? (
-          <div className="no-data">
-            <p>No se encontraron asignaciones de alumnos</p>
+          <div colSpan={12}>
+            <div className="empty-state">
+              <i className="fas fa-search empty-icon"></i>
+              <h5>No se encontraron asignaciones de alumnos</h5>
+              <p>
+                No hay asignaciones de alumnos que coincidan con tu búsqueda.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="scrollable-table">
@@ -395,8 +403,12 @@ const ListaAlumnosGrados = () => {
                 <tbody>
                   {paginatedAlumnos.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="no-data">
-                        No se encontraron alumnos
+                      <td colSpan={12}>
+                        <div className="empty-state">
+                          <i className="fas fa-search empty-icon"></i>
+                          <h5>No se encontraron alumnos</h5>
+                          <p>No hay alumnos que coincidan con tu búsqueda.</p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -420,7 +432,7 @@ const ListaAlumnosGrados = () => {
                                 {alumno.genero} -{" "}
                                 {alumno.fechaNacimiento
                                   ? new Date(
-                                      alumno.fechaNacimiento
+                                      alumno.fechaNacimiento,
                                     ).toLocaleDateString()
                                   : "Sin fecha"}
                               </small>

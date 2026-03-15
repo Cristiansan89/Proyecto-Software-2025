@@ -112,7 +112,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       // Limitar el nombre de la receta a 25 caracteres solo letra y número
       nombrePermitido = value
         .replace(/[^a-zA-ZáéíóúÁÉÍÓÚ0-9]/g, " ")
-        .slice(0, 25);
+        .slice(0, 50);
     }
     setFormData((prev) => ({
       ...prev,
@@ -351,9 +351,18 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       onSave(savedReceta);
     } catch (error) {
       // Mostrar errores específicos
-      if (error.response?.data?.errors) {
+      const statusCode = error.response?.status;
+      const errorData = error.response?.data;
+      
+      if (statusCode === 409) {
+        // Error de conflicto: nombre duplicado
+        showError(
+          "Receta Duplicada",
+          `Ya existe una receta con el nombre "${formData.nombreReceta}". Por favor, utiliza un nombre diferente.`
+        );
+      } else if (errorData?.errors) {
         const apiErrors = {};
-        error.response.data.errors.forEach((err) => {
+        errorData.errors.forEach((err) => {
           apiErrors[err.field] = err.message;
         });
         setErrors(apiErrors);
@@ -361,12 +370,12 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           "Error",
           "Error de validación. Revise los campos marcados en rojo."
         );
-      } else if (error.response?.data?.message) {
-        showInfoError("Información", `Error: ${error.response.data.message}`);
+      } else if (errorData?.message) {
+        showError("Error", errorData.message);
       } else if (error.response) {
-        showInfoError(
-          "Información",
-          `Error del servidor (${error.response.status}): ${error.response.statusText}`
+        showError(
+          "Error",
+          `Error del servidor (${statusCode}): ${error.response.statusText}`
         );
       } else if (error.request) {
         showError(
@@ -374,7 +383,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           "Error de conexión. Verifique su conexión a internet."
         );
       } else {
-        showInfoError("Información", `Error inesperado: ${error.message}`);
+        showError("Error", `Error inesperado: ${error.message}`);
       }
     } finally {
       setLoading(false);

@@ -7,20 +7,17 @@ import pedidoService from "../../services/pedidoService";
 import estadoPedidoService from "../../services/estadoPedidoService";
 import insumoService from "../../services/insumoService";
 import auditoriaService from "../../services/auditoriaService";
-import API from "../../services/api.js";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import {
   showSuccess,
   showError,
-  showWarning,
   showInfo,
-  showToast,
   showConfirm,
   showCancelar,
 } from "../../utils/alertService";
 
-const PedidoInsumo = () => {
+const PedidoInsumo = ({ onModoEdicion }) => {
   const { user } = useAuth();
   const [vistaActual, setVistaActual] = useState("lista"); // 'lista', 'crear', 'automatico'
   const [pedidos, setPedidos] = useState([]);
@@ -154,6 +151,13 @@ const PedidoInsumo = () => {
     };
   }, [mostrarDetallesPedido]);
 
+  // Notificar al componente padre cuando entra/sale del modo edición o creación
+  useEffect(() => {
+    if (onModoEdicion) {
+      onModoEdicion(vistaActual === "lista");
+    }
+  }, [vistaActual, onModoEdicion]);
+
   const aplicarFiltros = () => {
     let pedidosTemp = [...pedidos];
 
@@ -270,238 +274,6 @@ const PedidoInsumo = () => {
       );
     }
   };
-  const aprobarPedido = async (id) => {
-    // 1. Confirmación asíncrona con advertencia de acción externa
-    const confirmed = await showConfirm(
-      "Aprobar Pedido",
-      "¿Está seguro de que desea aprobar este pedido?. Se enviará automáticamente un email al proveedor con un enlace para confirmar la disponibilidad de los insumos.",
-      "Sí, aprobar y enviar",
-      "Cancelar",
-    );
-
-    if (!confirmed) return;
-
-    try {
-      // Debug: obtener información del pedido antes de aprobar
-      const pedidoActual = pedidos.find((p) => p.id_pedido === id);
-      console.log("📋 Información del pedido a aprobar:", {
-        id_pedido: id,
-        estadoPedido: pedidoActual?.estadoPedido,
-        id_estadoPedido: pedidoActual?.id_estadoPedido,
-        nombreProveedor: pedidoActual?.nombreProveedor,
-      });
-
-      // 2. Procesar aprobación en backend
-      const response = await pedidoService.aprobar(id);
-
-      // 3. Gestión de comunicación con proveedores
-      await enviarEnlacesConfirmacion(id, response.pedido);
-
-      // 4. Feedback de éxito detallado
-      showSuccess(
-        "Pedido Aprobado",
-        "El pedido ha sido procesado correctamente y los enlaces de confirmación han sido enviados a los proveedores involucrados.",
-      );
-
-      // 5. Refrescar la lista de pedidos
-      await cargarPedidos();
-    } catch (error) {
-      // 5. Manejo de errores profesional con información detallada
-      const msg =
-        error.response?.data?.message ||
-        error.message ||
-        "Error al procesar la aprobación del pedido.";
-
-      // Si hay información del estado actual, incluirla en el error
-      if (error.response?.data?.estadoActual) {
-        showError(
-          "Error de Aprobación",
-          `${msg}\n\nEstado actual del pedido: ${error.response.data.estadoActual}\nID de Estado: ${error.response.data.id_estadoPedido}`,
-        );
-      } else {
-        showError("Error de Aprobación", msg);
-      }
-
-      console.error("❌ Detalles del error:", error.response?.data);
-    }
-  };
-
-  const enviarEnlacesConfirmacion = async (idPedido, pedidoData) => {
-    try {
-      // Obtener detalles del pedido para identificar proveedores
-      const detalles = await pedidoService.getDetalles(idPedido);
-
-      // Agrupar por proveedor
-      const proveedoresUnicos = [
-        ...new Set(detalles.map((d) => d.id_proveedor)),
-      ];
-
-      console.log(
-        `📧 Enviando enlaces de confirmación a ${proveedoresUnicos.length} proveedor(es)...`,
-      );
-
-      // Generar y enviar un enlace para cada proveedor
-      const promesasEnvio = proveedoresUnicos.map(async (idProveedor) => {
-        try {
-          // 1. Generar token de confirmación
-          const tokenResponse = await API.post(
-            "/pedidos/generar-token-proveedor",
-            {
-              idPedido,
-              idProveedor,
-            },
-          );
-          const enlaceConfirmacion = tokenResponse.data.link;
-          console.log(
-            `🔗 Enlace generado para proveedor ${idProveedor}: ${enlaceConfirmacion}`,
-          );
-
-          // 2. Enviar email automáticamente al proveedor
-          let emailEnviado = false;
-          let emailError = null;
-          try {
-            const emailResponse = await API.post(
-              "/pedidos/enviar-email-confirmacion",
-              {
-                idPedido,
-                idProveedor,
-                enlaceConfirmacion,
-                datosAdicionales: {
-                  nombreCocinera: user
-                    ? `${user.nombre} ${user.apellido}`
-                    : "Sistema",
-                  fechaPedido:
-                    pedidoData?.fechaEmision || new Date().toISOString(),
-                },
-              },
-            );
-
-            console.log(
-              `✅ Email enviado exitosamente al proveedor ${idProveedor}`,
-            );
-            emailEnviado = true;
-          } catch (err) {
-            console.warn(
-              `⚠️ Error al enviar email al proveedor ${idProveedor}:`,
-              err,
-            );
-            emailError = err.message;
-          }
-
-          // 3. Enviar notificación por Telegram al proveedor (nuevo)
-          let telegramEnviado = false;
-          let telegramError = null;
-          try {
-            const telegramResponse = await API.post(
-              "/pedidos/enviar-telegram-proveedor",
-              {
-                idPedido,
-                idProveedor,
-                enlaceConfirmacion,
-              },
-            );
-
-            if (telegramResponse.data.telegramEnviado) {
-              console.log(
-                `✅ Mensaje Telegram enviado exitosamente al proveedor ${idProveedor}`,
-              );
-              telegramEnviado = true;
-            } else {
-              console.warn(
-                `⚠️ Telegram no disponible para proveedor ${idProveedor}:`,
-                telegramResponse.data.motivo,
-              );
-            }
-          } catch (err) {
-            console.warn(
-              `⚠️ Error al enviar mensaje por Telegram al proveedor ${idProveedor}:`,
-              err,
-            );
-            telegramError = err.message;
-          }
-
-          return {
-            ...tokenResponse.data,
-            emailEnviado,
-            emailError,
-            telegramEnviado,
-            telegramError,
-          };
-        } catch (error) {
-          console.warn(
-            `⚠️ Error al generar enlace para proveedor ${idProveedor}:`,
-            error,
-          );
-          return null;
-        }
-      });
-
-      const resultados = await Promise.all(promesasEnvio);
-      const exitosos = resultados.filter((r) => r !== null);
-      const emailsEnviados = exitosos.filter((r) => r.emailEnviado);
-      const emailsFallidos = exitosos.filter((r) => !r.emailEnviado);
-      const telegramEnviados = exitosos.filter((r) => r.telegramEnviado);
-      const telegramFallidos = exitosos.filter((r) => !r.telegramEnviado);
-
-      // Mostrar resultado detallado
-      if (exitosos.length > 0) {
-        let mensaje = `Se generaron ${exitosos.length} enlaces de confirmación.`;
-
-        if (emailsEnviados.length > 0) {
-          mensaje += `\n📧 ${emailsEnviados.length} email(s) enviado(s) exitosamente.`;
-        }
-
-        if (emailsFallidos.length > 0) {
-          mensaje += `\n⚠️ ${emailsFallidos.length} email(s) no pudieron ser enviados (pero los enlaces fueron generados).`;
-        }
-
-        if (telegramEnviados.length > 0) {
-          mensaje += `\n📱 ${telegramEnviados.length} mensaje(s) de Telegram enviado(s) exitosamente.`;
-        }
-
-        if (telegramFallidos.length > 0) {
-          mensaje += `\n⚠️ ${telegramFallidos.length} proveedor(es) sin notificaciones de Telegram configuradas.`;
-        }
-
-        // Mostrar enlaces manualmente para los que fallaron
-        if (emailsFallidos.length > 0 || telegramFallidos.length > 0) {
-          emailsFallidos.forEach((resultado) => {
-            console.log(`🔗 Enlace manual para proveedor: ${resultado.link}`);
-          });
-          telegramFallidos.forEach((resultado) => {
-            console.log(
-              `🔗 Enlace manual para proveedor sin Telegram: ${resultado.link}`,
-            );
-          });
-        }
-
-        if (
-          emailsEnviados.length === exitosos.length &&
-          telegramEnviados.length === exitosos.length
-        ) {
-          showSuccess(
-            "✅ Enlaces Enviados",
-            mensaje +
-              "\n\nTodos los proveedores fueron notificados por email y Telegram.",
-          );
-        } else if (emailsEnviados.length > 0 || telegramEnviados.length > 0) {
-          showInfo("⚠️ Envío Parcial", mensaje);
-        } else {
-          showWarning(
-            "⚠️ Enlaces Generados",
-            mensaje +
-              "\n\nVerifique la configuración de email y Telegram del sistema.",
-          );
-        }
-      }
-    } catch (error) {
-      console.error("❌ Error al procesar enlaces de confirmación:", error);
-      showError(
-        "Error de Comunicación",
-        "El pedido fue aprobado correctamente, pero hubo problemas al enviar los enlaces de confirmación a los proveedores. Contacte al administrador del sistema.",
-      );
-    }
-  };
 
   const cancelarPedido = async (id) => {
     // 1. Solicitar el motivo de cancelación
@@ -614,8 +386,8 @@ const PedidoInsumo = () => {
 
   const getEstadoBadgeClass = (estado) => {
     switch (estado) {
-      case "Pendiente":
-        return "bg-warning";
+      case "Aprobado":
+        return "bg-success";
       case "Aprobado":
         return "bg-success";
       case "Enviado":
@@ -1053,21 +825,17 @@ const PedidoInsumo = () => {
                       <td>
                         {pedido.fechaAprobacion ? (
                           <div className="d-flex flex-column">
-                            <span className="text-success">
-                              {calcularFechaEntrega(
-                                pedido.fechaAprobacion,
-                              ).toLocaleDateString("es-ES")}
-                            </span>
                             <small className="text-muted">
                               (Aprobado:{" "}
                               {formatearFecha(pedido.fechaAprobacion)})
                             </small>
+                            <span className="text-success">
+                              Entrega:{" "}
+                              {calcularFechaEntrega(
+                                pedido.fechaAprobacion,
+                              ).toLocaleDateString("es-ES")}
+                            </span>
                           </div>
-                        ) : pedido.estadoPedido === "Pendiente" ? (
-                          <span className="text-warning">
-                            <i className="fas fa-clock me-1"></i>
-                            Pendiente de aprobación
-                          </span>
                         ) : (
                           "-"
                         )}
@@ -1082,41 +850,32 @@ const PedidoInsumo = () => {
                             <i className="fas fa-eye"></i>
                           </button>
 
-                          {pedido.estadoPedido === "Pendiente" && (
-                            <>
-                              <button
-                                className="btn btn-outline-success btn-sm me-1"
-                                onClick={() => aprobarPedido(pedido.id_pedido)}
-                                title="Aprobar pedido"
-                              >
-                                <i className="fas fa-check"></i>
-                              </button>
-                              <button
-                                className="btn btn-outline-warning btn-sm me-1"
-                                onClick={async () => {
-                                  try {
-                                    setLoading(true);
-                                    const pedidoCompleto =
-                                      await pedidoService.getPedidoCompleto(
-                                        pedido.id_pedido,
-                                      );
-                                    setPedidoEditando(pedidoCompleto);
-                                    setVistaActual("crear");
-                                  } catch (error) {
-                                    showError(
-                                      "Error",
-                                      "Error al cargar el pedido: " +
-                                        error.message,
+                          {pedido.estadoPedido === "Aprobado" && (
+                            <button
+                              className="btn btn-outline-warning btn-sm me-1"
+                              onClick={async () => {
+                                try {
+                                  setLoading(true);
+                                  const pedidoCompleto =
+                                    await pedidoService.getPedidoCompleto(
+                                      pedido.id_pedido,
                                     );
-                                  } finally {
-                                    setLoading(false);
-                                  }
-                                }}
-                                title="Editar pedido"
-                              >
-                                <i className="fas fa-edit"></i>
-                              </button>
-                            </>
+                                  setPedidoEditando(pedidoCompleto);
+                                  setVistaActual("crear");
+                                } catch (error) {
+                                  showError(
+                                    "Error",
+                                    "Error al cargar el pedido: " +
+                                      error.message,
+                                  );
+                                } finally {
+                                  setLoading(false);
+                                }
+                              }}
+                              title="Editar pedido"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
                           )}
 
                           {pedido.estadoPedido !== "Cancelado" && (

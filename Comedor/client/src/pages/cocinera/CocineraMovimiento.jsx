@@ -252,9 +252,23 @@ const CocineraMovimiento = () => {
           ],
         ],
         body: rows,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [240, 240, 240] },
+        styles: {
+          fontSize: 8,
+          textColor: [40, 40, 40],
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: [33, 102, 187],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          halign: "center",
+          cellPadding: 4,
+        },
+        alternateRowStyles: {
+          fillColor: [245, 248, 251],
+        },
         theme: "striped",
+        margin: { top: 36 },
       });
 
       doc.save(`Movimientos_${Date.now()}.pdf`);
@@ -428,9 +442,13 @@ const CocineraMovimiento = () => {
           ) : movimientosFiltrados.length === 0 ? (
             <div className="text-center py-4">
               <i className="fas fa-inbox fa-2x text-muted mb-3"></i>
-              <p className="text-muted">
-                No hay movimientos con los filtros aplicados
-              </p>
+              <div colSpan={12}>
+                <div className="empty-state">
+                  <i className="fas fa-search empty-icon"></i>
+                  <h5>No se encontraron movimientos</h5>
+                  <p>No hay movimientos que coincidan con tu búsqueda.</p>
+                </div>
+              </div>
             </div>
           ) : (
             <>

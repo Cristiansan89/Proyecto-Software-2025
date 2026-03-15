@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api.js";
 import "../../styles/RegistroAsistenciasDocente.css";
 import { showError, showWarning } from "../../utils/alertService";
 
 const RegistroAsistenciasDocente = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -18,6 +16,7 @@ const RegistroAsistenciasDocente = () => {
   const [servicios, setServicios] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
   const [gradoDocente, setGradoDocente] = useState(null);
+  const [docenteInfo, setDocenteInfo] = useState(null); // Información del docente registrado
 
   // Estados del formulario
   const [formulario, setFormulario] = useState({
@@ -42,59 +41,40 @@ const RegistroAsistenciasDocente = () => {
       setLoading(true);
       setError("");
 
-      //console.log("👨‍🏫 Usuario docente:", user);
-
-      // Cargar servicios disponibles y perfil del docente
+      // Cargar servicios disponibles
       const serviciosResponse = await API.get("/servicios");
-      //console.log("📋 Servicios cargados:", serviciosResponse.data);
       setServicios(serviciosResponse.data);
 
       // Intentar obtener perfil del docente
       try {
         const docenteResponse = await API.get("/personas/perfil");
-        //console.log("👤 Perfil docente:", docenteResponse.data);
 
         // Obtener grado asignado al docente
         if (docenteResponse.data.gradosAsignados?.length > 0) {
           const grado = docenteResponse.data.gradosAsignados[0]; // Por ahora tomamos el primer grado
           setGradoDocente(grado);
+          setDocenteInfo(docenteResponse.data); // Guardar info del docente
           await cargarAlumnosDelGrado(grado.nombreGrado || grado.idGrado);
         } else {
           setError("No se encontró ningún grado asignado a este docente.");
         }
       } catch (perfilError) {
-        /*console.warn(
-          "Error obteniendo perfil, usando datos del contexto:",
-          perfilError
-        );*/
+        // Si no puede obtener perfil (no está autenticado), usar datos por defecto
         showWarning(
-          "Advertencia",
-          "No se pudo obtener el perfil del docente. Usando datos alternativos."
+          "Registro de Asistencias",
+          "Por favor, complete el registro de asistencias del grado."
         );
 
-        // Fallback: usar datos del contexto de autenticación o datos hardcodeados para prueba
-        if (user?.gradosAsignados?.length > 0) {
-          const grado = user.gradosAsignados[0];
-          setGradoDocente(grado);
-          await cargarAlumnosDelGrado(grado.nombreGrado || grado.idGrado);
-        } else {
-          // Para pruebas, usar un grado por defecto
-          //console.warn("Usando datos de prueba para grado del docente");
-          showWarning(
-            "Advertencia",
-            "Usando datos de prueba para el grado del docente."
-          );
-          const gradoPrueba = {
-            nombreGrado: "1° B",
-            idGrado: "1° B",
-            id_docenteTitular: 1,
-          };
-          setGradoDocente(gradoPrueba);
-          await cargarAlumnosDelGrado(gradoPrueba.nombreGrado);
-        }
+        // Para acceso público, usar un grado por defecto
+        const gradoPrueba = {
+          nombreGrado: "1° B",
+          idGrado: "1° B",
+          id_docenteTitular: 1,
+        };
+        setGradoDocente(gradoPrueba);
+        await cargarAlumnosDelGrado(gradoPrueba.nombreGrado);
       }
     } catch (error) {
-      //console.error("❌ Error cargando datos iniciales:", error);
       showError(
         "Error",
         "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde."
@@ -270,7 +250,7 @@ const RegistroAsistenciasDocente = () => {
         fecha: formulario.fecha,
         nombreServicio: servicioSeleccionado?.nombre || "Servicio",
         nombreGrado: gradoDocente?.nombreGrado || gradoDocente?.idGrado,
-        nombreDocente: user?.nombre || "Docente",
+        nombreDocente: docenteInfo?.nombre || "Docente",
         asistencias: asistencias,
         alumnos: alumnos,
       };

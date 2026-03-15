@@ -41,34 +41,38 @@ const PlanificacionMenus = () => {
   };
 
   // Auto-seleccionar planificación cuando se cambia a la pestaña de calendario
-  const handleTabChange = (tabId) => {
+  const handleTabChange = async (tabId) => {
     setActiveTab(tabId);
     if (tabId === "calendario") {
-      // Ordenar planificaciones por fecha de inicio (de menor a mayor)
-      const planificacionesOrdenadas = [...planificaciones].sort((a, b) => {
-        const fechaA = new Date(a.fechaInicio);
-        const fechaB = new Date(b.fechaInicio);
-        return fechaA - fechaB;
-      });
+      // Recargar planificaciones para obtener las más recientes
+      setCargandoPlanificaciones(true);
+      try {
+        const response = await planificacionMenuService.getAll();
+        if (Array.isArray(response)) {
+          setPlanificaciones(response);
+          
+          // Ordenar planificaciones por fecha de inicio (de menor a mayor)
+          const planificacionesOrdenadas = response.sort((a, b) => {
+            const fechaA = new Date(a.fechaInicio);
+            const fechaB = new Date(b.fechaInicio);
+            return fechaA - fechaB;
+          });
 
-      // Buscar una planificación activa o la primera disponible
-      const planificacionActiva = planificacionesOrdenadas.find(
-        (p) => p.estado === "Activo"
-      );
-      const planificacionASeleccionar =
-        planificacionActiva || planificacionesOrdenadas[0];
+          // Buscar una planificación activa o la primera disponible
+          const planificacionActiva = planificacionesOrdenadas.find(
+            (p) => p.estado === "Activo"
+          );
+          const planificacionASeleccionar =
+            planificacionActiva || planificacionesOrdenadas[0];
 
-      if (
-        planificacionASeleccionar &&
-        (!planificacionSeleccionada ||
-          planificacionSeleccionada.id_planificacion !==
-            planificacionASeleccionar.id_planificacion)
-      ) {
-        /* console.log(
-          "📋 Entrando a calendario, auto-seleccionando planificación:",
-          planificacionASeleccionar
-        );*/
-        setPlanificacionSeleccionada(planificacionASeleccionar);
+          if (planificacionASeleccionar) {
+            setPlanificacionSeleccionada(planificacionASeleccionar);
+          }
+        }
+      } catch (error) {
+        //console.error("Error al recargar planificaciones:", error);
+      } finally {
+        setCargandoPlanificaciones(false);
       }
     }
   };
@@ -141,8 +145,8 @@ const PlanificacionMenus = () => {
                 <div className="col-md-6">
                   <label className="form-label fw-bold mb-0">
                     <h2 className="page-title-sub">
-                      <i className="fas fa-folder-open me-2"></i> Seleccionar
-                      Planificación
+                      <i className="fas fa-folder-open me-2"></i> 
+                      Seleccionar Calendario
                     </h2>
                   </label>
                 </div>

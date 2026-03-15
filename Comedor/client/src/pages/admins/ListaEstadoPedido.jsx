@@ -144,9 +144,13 @@ const ListaEstadoPedido = () => {
       {/* Tabla de estados de pedido */}
       <div className="table-container">
         {estadosPedido.length === 0 ? (
-          <div className="no-data">
-            <p>No hay estados de pedido registrados</p>
-          </div>
+           <div colSpan={12}>
+              <div className="empty-state">
+                <i className="fas fa-search empty-icon"></i>
+                <h5>No se encontraron estados de pedido</h5>
+                <p>No hay estados de pedido que coincidan con tu búsqueda.</p>
+              </div>
+            </div>
         ) : (
           <div className="scrollable-table">
             <div className="table-body-scroll">

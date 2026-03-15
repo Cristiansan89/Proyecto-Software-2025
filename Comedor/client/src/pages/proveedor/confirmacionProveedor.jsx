@@ -382,7 +382,7 @@ const ConfirmacionProveedor = () => {
       )}
 
       {/* Botón de Confirmar */}
-      <div className="footer-proveedor">
+      <div className="footer-proveedor mt-4">
         <button
           className="btn-confirmar"
           onClick={guardarConfirmaciones}

@@ -5,6 +5,8 @@ import { auditoriaMiddleware } from "./middlewares/auditoria.js";
 import { authRequired } from "./middlewares/auth.js";
 import { verificarPermiso, verificarAlgunoPermiso } from "./middlewares/verificarPermiso.js";
 import { createAuthRouter } from "./routes/auth.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Importar todas las rutas
 import { createAsistenciaRouter } from "./routes/asistencias.js";
@@ -17,6 +19,7 @@ import { createLineaPedidoRouter } from "./routes/lineaspedidos.js";
 import { createMovimientoInventarioRouter } from "./routes/movimientosinventarios.js";
 import { createParametroSistemaRouter } from "./routes/parametrossistemas.js";
 import { createPedidoRouter } from "./routes/pedidos.js";
+import { createPedidoPublicoRouter } from "./routes/pedidos.js";
 import { createPermisoRouter } from "./routes/permisos.js";
 import { createPersonaRouter } from "./routes/personas.js";
 import { createPlanificacionMenuRouter } from "./routes/planificacionmenus.js";
@@ -72,18 +75,35 @@ export const createApp = ({
 }) => {
   const app = express();
 
-  // Middlewares
+  // Configurar rutas para servir frontend compilado
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const distPath = path.resolve(__dirname, "../client/dist");
+
+  // Middlewares básicos
   app.use(express.json());
   app.use(corsMiddleware());
   app.use(cookieMiddleware());
   app.disable("x-powered-by");
 
+  // Servir archivos estáticos (CSS, JS, imágenes) del frontend compilado
+  app.use(express.static(distPath));
+
   // Rutas públicas (no requieren autenticación ni auditoría)
   app.use("/api/auth", createAuthRouter({ usuarioModel }));
   app.use("/api/asistencias", createAsistenciaRouter({ asistenciaModel }));
+  app.use("/api/alertas-inventario", alertasInventarioRouter);
+  app.use("/api/pedidos", createPedidoPublicoRouter({ pedidoModel }));
 
-  // Middleware de autenticación - ACTIVADO
-  app.use(authRequired);
+  // Middleware de autenticación - SOLO PARA RUTAS /api
+  app.use((req, res, next) => {
+    // Solo aplicar autenticación a rutas que comiencen con /api
+    if (req.path.startsWith("/api")) {
+      authRequired(req, res, next);
+    } else {
+      next();
+    }
+  });
 
   // Middleware de auditoría para todas las rutas siguientes
   // SIN parámetros para que detecte automáticamente el módulo por ruta
@@ -140,7 +160,6 @@ export const createApp = ({
   app.use("/api/reemplazo-docentes", reemplazoDocenteRouter);
   app.use("/api/estado-pedidos", estadoPedidoRouter);
   app.use("/api/tipos-merma", tipoMermaRouter);
-  app.use("/api/alertas-inventario", alertasInventarioRouter);
   app.use("/api/generacion-automatica", generacionAutomaticaRouter);
   app.use("/api/escuela", escuelaRouter);
   app.use(
@@ -179,6 +198,21 @@ export const createApp = ({
         message: "Error interno del servidor",
         error: error.message,
       });
+    }
+  });
+
+  // SPA Fallback: servir index.html para rutas que no son API
+  app.use((req, res, next) => {
+    // Si no es una ruta de API y no es un archivo (no tiene extensión), servir index.html
+    if (!req.path.startsWith("/api") && !req.path.includes(".")) {
+      const indexPath = path.join(distPath, "index.html");
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          res.status(404).json({ message: "Página no encontrada" });
+        }
+      });
+    } else {
+      next();
     }
   });
 

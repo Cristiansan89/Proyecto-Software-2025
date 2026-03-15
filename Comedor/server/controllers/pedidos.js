@@ -342,8 +342,46 @@ export class PedidoController {
         id_usuario,
       });
 
+      // Enviar enlace de confirmación por Telegram al proveedor (el email se envía después de que el proveedor confirma)
+      for (const pedido of pedidosCreados) {
+        try {
+          const idPedido = pedido.id_pedido;
+          const idProveedor = pedido.id_proveedor;
+
+          // Generar token de confirmación
+          const token = await this.pedidoModel.generateTokenForProveedor({ idPedido, idProveedor });
+          const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+          const enlace = `${baseUrl}/proveedor/confirmacion/${token}`;
+
+          // Obtener Telegram chat ID del proveedor
+          const [configTelegram] = await connection.query(
+            `SELECT telegramChatId FROM ProveedorConfiguracionTelegram WHERE id_proveedor = UUID_TO_BIN(?) AND notificacionesTelegram = 'Activo' LIMIT 1`,
+            [idProveedor]
+          );
+          const chatIdProveedor = configTelegram?.[0]?.telegramChatId;
+
+          if (chatIdProveedor) {
+            const { default: telegramSvc } = await import("../services/telegramService.js");
+            const mensaje =
+              `🛒 *NUEVO PEDIDO DE INSUMOS*\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+              `Ha recibido un nuevo pedido del Sistema de Comedor Escolar.\n\n` +
+              `📋 Pedido: \`${idPedido.substring(0, 8).toUpperCase()}\`\n\n` +
+              `Por favor confirme la disponibilidad de los insumos en el siguiente enlace:\n\n` +
+              `[✅ Confirmar Pedido](${enlace})\n\n` +
+              `_Este enlace expira en 7 días._`;
+            await telegramSvc.sendMessage(chatIdProveedor, mensaje, "proveedor");
+            console.log(`✅ Enlace de confirmación enviado por Telegram al proveedor del pedido ${idPedido}`);
+          } else {
+            console.warn(`⚠️ El proveedor del pedido ${idPedido} no tiene Telegram configurado. No se pudo enviar notificación.`);
+          }
+        } catch (commErr) {
+          console.warn(`⚠️ Error en comunicaciones del pedido ${pedido.id_pedido}:`, commErr.message);
+        }
+      }
+
       res.status(201).json({
-        message: `Se crearon ${pedidosCreados.length} pedido(s) por proveedor`,
+        message: `Se crearon ${pedidosCreados.length} pedido(s) aprobados automáticamente`,
         pedidos: pedidosCreados,
       });
     } catch (error) {
@@ -510,14 +548,14 @@ export class PedidoController {
         tipo: typeof pedido.id_estadoPedido,
       });
 
-      // 2. Verificar que esté en estado "Pendiente" (ID: 1)
-      if (pedido.id_estadoPedido !== 1 && pedido.estadoPedido !== "Pendiente") {
+      // 2. Verificar que esté en estado "Aprobado" (ID: 2) — ya no existe Pendiente
+      if (pedido.id_estadoPedido !== 2 && pedido.estadoPedido !== "Aprobado") {
         console.error(
-          `❌ Pedido no en estado Pendiente. Estado actual: ${pedido.estadoPedido} (ID: ${pedido.id_estadoPedido})`,
+          `❌ Pedido no en estado Aprobado. Estado actual: ${pedido.estadoPedido} (ID: ${pedido.id_estadoPedido})`,
         );
         return res.status(400).json({
           success: false,
-          message: `Solo se pueden aprobar pedidos en estado Pendiente. Estado actual: ${pedido.estadoPedido}`,
+          message: `Solo se pueden procesar pedidos en estado Aprobado. Estado actual: ${pedido.estadoPedido}`,
           estadoActual: pedido.estadoPedido,
           id_estadoPedido: pedido.id_estadoPedido,
         });

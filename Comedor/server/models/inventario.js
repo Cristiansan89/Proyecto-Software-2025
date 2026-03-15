@@ -197,6 +197,12 @@ export class InventarioModel {
                  FROM Inventarios i
                  JOIN Insumos ins ON i.id_insumo = ins.id_insumo
                  WHERE i.estado IN ('Agotado', 'Critico')
+                   AND i.id_insumo NOT IN (
+                     SELECT dp.id_insumo
+                     FROM DetallePedido dp
+                     JOIN Pedidos p ON dp.id_pedido = p.id_pedido
+                     WHERE p.id_estadoPedido IN (1, 2, 3, 4, 5)
+                   )
                  ORDER BY i.estado DESC, ins.nombreInsumo;`
       );
       return inventarios;

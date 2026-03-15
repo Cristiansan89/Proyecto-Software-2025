@@ -7,6 +7,29 @@ const isValidUUID = (value) => {
   return uuidRegex.test(String(value));
 };
 
+// Función helper para convertir UUID binario (16 bytes) a string
+const convertBinaryUUIDToString = (buffer) => {
+  if (!Buffer.isBuffer(buffer)) return null;
+  if (buffer.length !== 16) return null; // UUID binario debe ser 16 bytes
+  
+  try {
+    // Convertir 16 bytes a hex y formatear como UUID
+    const hex = buffer.toString('hex');
+    // Formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuid = [
+      hex.substring(0, 8),
+      hex.substring(8, 12),
+      hex.substring(12, 16),
+      hex.substring(16, 20),
+      hex.substring(20, 32)
+    ].join('-');
+    
+    return uuid;
+  } catch (e) {
+    return null;
+  }
+};
+
 class AuditoriaLog {
   // Crear un nuevo registro de auditoría
   static async crear(datos) {
@@ -28,8 +51,48 @@ class AuditoriaLog {
         resultado_accion,
       } = datos;
 
-      // Validar si id_registro_afectado es un UUID válido
-      const isUUID = isValidUUID(id_registro_afectado);
+      // Convertir Buffer a string si es necesario para ambos IDs
+      let userIdToUse = id_usuario;
+      let registroAfectadoToUse = id_registro_afectado;
+
+      // Manejo especial para Buffers (UUIDs binarios desde la BD)
+      if (Buffer.isBuffer(userIdToUse)) {
+        const convertedUUID = convertBinaryUUIDToString(userIdToUse);
+        userIdToUse = convertedUUID || userIdToUse.toString('utf8');
+      }
+      if (userIdToUse && typeof userIdToUse !== 'string') {
+        userIdToUse = String(userIdToUse);
+      }
+
+      // Manejo especial para el ID del registro afectado
+      if (Buffer.isBuffer(registroAfectadoToUse)) {
+        const convertedUUID = convertBinaryUUIDToString(registroAfectadoToUse);
+        registroAfectadoToUse = convertedUUID || null;
+      }
+      if (registroAfectadoToUse && typeof registroAfectadoToUse !== 'string') {
+        registroAfectadoToUse = String(registroAfectadoToUse);
+      }
+
+      // Validar si id_usuario es un UUID válido
+      const isUserUUID = isValidUUID(userIdToUse);
+      const userIdValue = isUserUUID ? userIdToUse : "00000000-0000-0000-0000-000000000000";
+
+      // NUEVA LÓGICA: Determinar si id_registro_afectado es UUID o Integer
+      const isRegistroUUID = isValidUUID(registroAfectadoToUse);
+      const isRegistroInteger = registroAfectadoToUse && /^\d+$/.test(String(registroAfectadoToUse));
+      
+      let registroAfectadoUUIDValue = null;
+      let registroAfectadoIntValue = null;
+      let valuesToUse = [];
+
+      if (isRegistroUUID) {
+        // Es UUID - usar columna id_registro_afectado_uuid
+        registroAfectadoUUIDValue = registroAfectadoToUse;
+      } else if (isRegistroInteger) {
+        // Es Integer - usar columna id_registro_afectado
+        registroAfectadoIntValue = parseInt(registroAfectadoToUse, 10);
+      }
+      // Si no es ni UUID ni Integer válido, ambas columnas quedan NULL
 
       const query = `
         INSERT INTO Auditorias (
@@ -40,10 +103,11 @@ class AuditoriaLog {
           valor_anterior,
           valor_nuevo,
           id_registro_afectado,
+          id_registro_afectado_uuid,
           nivel_criticidad,
           resultado_accion,
           estado
-        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ${isUUID ? "UUID_TO_BIN(?)" : "?"}, ?, ?, ?)
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ${isRegistroUUID ? "UUID_TO_BIN(?)" : "?"}, ?, ?, ?)
       `;
 
       const tipoAccionMapeado =
@@ -65,13 +129,14 @@ class AuditoriaLog {
       else if (accion === "ACTUALIZAR") nivelCriticidad = "Medio";
 
       const values = [
-        id_usuario || "00000000-0000-0000-0000-000000000000",
+        userIdValue,
         modulo,
         tipoAccionMapeado,
         descripcion || "",
         valor_anterior ? JSON.stringify(valor_anterior) : null,
         valor_nuevo ? JSON.stringify(valor_nuevo) : null,
-        isUUID ? (id_registro_afectado || null) : null,
+        registroAfectadoIntValue,
+        isRegistroUUID ? registroAfectadoUUIDValue : null,
         nivelCriticidad,
         resultado_accion || "Éxito",
         "Exito",
@@ -100,11 +165,7 @@ class AuditoriaLog {
           a.descripcion,
           a.valor_anterior,
           a.valor_nuevo,
-          CASE 
-            WHEN a.id_registro_afectado IS NULL THEN NULL
-            WHEN LENGTH(a.id_registro_afectado) = 16 THEN BIN_TO_UUID(a.id_registro_afectado)
-            ELSE CAST(a.id_registro_afectado AS CHAR)
-          END as id_registro_afectado,
+          COALESCE(a.id_registro_afectado, CAST(BIN_TO_UUID(a.id_registro_afectado_uuid) AS CHAR)) as id_registro_afectado,
           a.nivel_criticidad,
           a.resultado_accion,
           a.fechaHora,

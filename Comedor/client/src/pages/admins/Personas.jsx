@@ -67,7 +67,7 @@ const Personas = () => {
         const bi = Number(b.idPersona ?? b.id_persona ?? b.id ?? 0);
         if (!Number.isNaN(ai) && !Number.isNaN(bi)) return ai - bi;
         return String(a.idPersona ?? a.id_persona ?? a.id ?? "").localeCompare(
-          String(b.idPersona ?? b.id_persona ?? b.id ?? "")
+          String(b.idPersona ?? b.id_persona ?? b.id ?? ""),
         );
       });
 
@@ -98,7 +98,8 @@ const Personas = () => {
       const searchLower = searchQuery.toLowerCase();
       filtered = filtered.filter((persona) => {
         try {
-          const nombreCompleto = `${persona.nombre || ""} ${persona.apellido || ""}`.toLowerCase();
+          const nombreCompleto =
+            `${persona.nombre || ""} ${persona.apellido || ""}`.toLowerCase();
           return (
             (persona.nombre &&
               persona.nombre.toLowerCase().includes(searchLower)) ||
@@ -137,7 +138,7 @@ const Personas = () => {
       const bi = Number(b.idPersona ?? b.id_persona ?? b.id ?? 0);
       if (!Number.isNaN(ai) && !Number.isNaN(bi)) return ai - bi;
       return String(a.idPersona ?? a.id_persona ?? a.id ?? "").localeCompare(
-        String(b.idPersona ?? b.id_persona ?? b.id ?? "")
+        String(b.idPersona ?? b.id_persona ?? b.id ?? ""),
       );
     });
 
@@ -193,12 +194,12 @@ const Personas = () => {
       if (usuarioData) {
         showSuccess(
           "Éxito",
-          `Persona creada exitosamente!\n\nPersona: ${personaData.nombre} ${personaData.apellido}\nUsuario: ${usuarioData.nombreUsuario}`
+          `Persona creada exitosamente!\n\nPersona: ${personaData.nombre} ${personaData.apellido}\nUsuario: ${usuarioData.nombreUsuario}`,
         );
       } else {
         showSuccess(
           "Éxito",
-          `Persona creada exitosamente!\n\n${personaData.nombre} ${personaData.apellido}`
+          `Persona creada exitosamente!\n\n${personaData.nombre} ${personaData.apellido}`,
         );
       }
     } else if (modalMode === "edit") {
@@ -216,7 +217,7 @@ const Personas = () => {
       "Eliminar Persona",
       `¿Está seguro de que desea eliminar a ${persona.nombre} ${persona.apellido}?`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     // 2. Proceder solo si el usuario confirmó
@@ -230,7 +231,7 @@ const Personas = () => {
         // 4. Feedback de éxito
         showSuccess(
           "Éxito",
-          `${persona.nombre} ${persona.apellido} eliminado(a) exitosamente!`
+          `${persona.nombre} ${persona.apellido} eliminado(a) exitosamente!`,
         );
       } catch (error) {
         // Manejo de errores sin logs de consola innecesarios
@@ -239,7 +240,7 @@ const Personas = () => {
         } else {
           showError(
             "Error",
-            "Error al eliminar la persona. Por favor, inténtelo de nuevo."
+            "Error al eliminar la persona. Por favor, inténtelo de nuevo.",
           );
         }
       }
@@ -364,8 +365,14 @@ const Personas = () => {
                   <tbody>
                     {currentPersonas.length === 0 ? (
                       <tr>
-                        <td colSpan="8" className="no-data">
-                          <p>No se encontraron personas</p>
+                        <td colSpan={12}>
+                          <div className="empty-state">
+                            <i className="fas fa-search empty-icon"></i>
+                            <h5>No se encontraron personas</h5>
+                            <p>
+                              No hay personas que coincidan con tu búsqueda.
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -400,7 +407,7 @@ const Personas = () => {
                           <td>
                             {persona.fechaNacimiento
                               ? new Date(
-                                  persona.fechaNacimiento
+                                  persona.fechaNacimiento,
                                 ).toLocaleDateString("es-ES")
                               : "No registrada"}
                           </td>

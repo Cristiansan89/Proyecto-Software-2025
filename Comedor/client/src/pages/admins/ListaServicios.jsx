@@ -40,7 +40,7 @@ const ListaServicios = () => {
       for (const servicio of data) {
         try {
           const turnos = await servicioTurnoService.getTurnosByServicio(
-            servicio.idServicio
+            servicio.idServicio,
           );
           turnosData[servicio.idServicio] = turnos;
         } catch (error) {
@@ -50,7 +50,7 @@ const ListaServicios = () => {
           );*/
           showError(
             "Error",
-            `Error al cargar los turnos para el servicio ${servicio.nombre}`
+            `Error al cargar los turnos para el servicio ${servicio.nombre}`,
           );
           turnosData[servicio.idServicio] = [];
         }
@@ -112,7 +112,7 @@ const ListaServicios = () => {
       "Eliminar Servicio",
       `¿Está seguro de eliminar el servicio "${servicio.nombre}"?`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     // 2. Si el usuario confirma, procedemos con la lógica de borrado
@@ -123,7 +123,7 @@ const ListaServicios = () => {
         // Notificación de éxito y actualización de la lista
         showSuccess(
           "Servicio Eliminado",
-          `El servicio "${servicio.nombre}" ha sido eliminado correctamente.`
+          `El servicio "${servicio.nombre}" ha sido eliminado correctamente.`,
         );
         loadServicios();
       } catch (error) {
@@ -148,13 +148,13 @@ const ListaServicios = () => {
         // Icono de Success (Verde) para activaciones
         showSuccess(
           "Servicio Activado",
-          `El servicio "${servicio.nombre}" ahora está activo.`
+          `El servicio "${servicio.nombre}" ahora está activo.`,
         );
       } else {
         // Icono de Info (Azul) para desactivaciones
         showInfo(
           "Servicio Desactivado",
-          `El servicio "${servicio.nombre}" ha sido desactivado.`
+          `El servicio "${servicio.nombre}" ha sido desactivado.`,
         );
       }
 
@@ -173,7 +173,7 @@ const ListaServicios = () => {
       "Éxito",
       `Servicio ${
         modalMode === "create" ? "creado" : "actualizado"
-      } correctamente`
+      } correctamente`,
     );
   };
 
@@ -237,8 +237,12 @@ const ListaServicios = () => {
         {/* Tabla de servicios */}
         <div className="table-container">
           {filteredServicios.length === 0 ? (
-            <div className="no-data">
-              <p>No se encontraron servicios</p>
+            <div colSpan={12}>
+              <div className="empty-state">
+                <i className="fas fa-search empty-icon"></i>
+                <h5>No se encontraron servicios</h5>
+                <p>No hay servicios que coincidan con tu búsqueda.</p>
+              </div>
             </div>
           ) : (
             <div className="scrollable-table">
@@ -286,7 +290,7 @@ const ListaServicios = () => {
                                     >
                                       {turno.nombreTurno}
                                     </span>
-                                  )
+                                  ),
                                 )}
                               </div>
                             ) : (
@@ -342,7 +346,7 @@ const ListaServicios = () => {
                                   servicio,
                                   servicio.estado === "Activo"
                                     ? "Inactivo"
-                                    : "Activo"
+                                    : "Activo",
                                 )
                               }
                               title={

@@ -1,6 +1,25 @@
 import { connection } from "../models/db.js";
 import { ParametroSistemaModel } from "../models/parametrosistema.js";
 import telegramService from "../services/telegramService.js";
+import { randomUUID } from "crypto";
+
+// Convierte una cantidad entre unidades del mismo sistema (masa o volumen)
+function convertirEntrUnidades(cantidad, origen, destino) {
+  if (!origen || !destino) return cantidad;
+  const o = origen.toLowerCase().replace(/s$/, ""); // gramos → gramo, kilogramos → kilogramo
+  const d = destino.toLowerCase().replace(/s$/, "");
+  if (o === d) return cantidad;
+  // Masa
+  if (o === "gramo" && d === "kilogramo") return cantidad / 1000;
+  if (o === "kilogramo" && d === "gramo") return cantidad * 1000;
+  // Volumen
+  if (o === "mililitro" && d === "litro") return cantidad / 1000;
+  if (o === "litro" && d === "mililitro") return cantidad * 1000;
+  // Sin conversión conocida → devuelve tal cual (evita errores silenciosos)
+  return cantidad;
+}
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Generar insumos semanales
 export const generarInsumosSemanales = async (req, res) => {
@@ -88,8 +107,13 @@ export const generarInsumosSemanales = async (req, res) => {
             };
           }
 
-          // Multiplicar por cantidad de comensales
-          insumosMap[key].cantidad += item.cantidadPorPorcion * comensales;
+          // Acumular en la unidadMedida del insumo (convirtiendo desde unidadPorPorcion si difieren)
+          const cantidadConvertida = convertirEntrUnidades(
+            item.cantidadPorPorcion * comensales,
+            item.unidadPorPorcion,
+            insumosMap[key].unidad,
+          );
+          insumosMap[key].cantidad += cantidadConvertida;
         }
       } catch (itemError) {
         console.warn(
@@ -104,6 +128,40 @@ export const generarInsumosSemanales = async (req, res) => {
 
     // Guardar resultado en tabla o log
     const insumos = Object.values(insumosMap);
+
+    // Enriquecer con datos de Inventario: cantidadActual, stockMaximo y flag enPedido
+    if (insumos.length > 0) {
+      const ids = insumos.map((i) => i.id_insumo);
+
+      const [inventarios] = await connection.query(
+        `SELECT id_insumo, cantidadActual, stockMaximo
+         FROM Inventarios WHERE id_insumo IN (?)`,
+        [ids]
+      );
+      const invMap = {};
+      for (const inv of inventarios) invMap[inv.id_insumo] = inv;
+
+      // Detectar insumos que ya tienen un pedido Aprobado/Pendiente esta semana
+      const [pedidosActivos] = await connection.query(
+        `SELECT DISTINCT dp.id_insumo
+         FROM DetallePedido dp
+         JOIN Pedidos p ON dp.id_pedido = p.id_pedido
+         JOIN EstadoPedido ep ON p.id_estadoPedido = ep.id_estadoPedido
+         WHERE dp.id_insumo IN (?)
+           AND ep.nombreEstado IN ('Aprobado', 'Pendiente')
+           AND p.fechaEmision >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)`,
+        [ids]
+      );
+      const enPedidoSet = new Set(pedidosActivos.map((r) => r.id_insumo));
+
+      for (const insumo of insumos) {
+        const inv = invMap[insumo.id_insumo] || {};
+        insumo.cantidad_disponible = inv.cantidadActual ?? 0;
+        insumo.unidad_inventario = insumo.unidad;
+        insumo.stockMaximo = inv.stockMaximo ?? 0;
+        insumo.enPedido = enPedidoSet.has(insumo.id_insumo);
+      }
+    }
 
     // Log de generación
     console.log(
@@ -137,7 +195,7 @@ export const generarInsumosSemanales = async (req, res) => {
 // Generar pedidos automáticos
 export const generarPedidosAutomaticos = async (req, res) => {
   try {
-    // Primero obtener insumos
+    // ── 1. Obtener insumos de la planificación activa ──────────────────────
     const insumosResponse = await new Promise((resolve, reject) => {
       const mockReq = req;
       const mockRes = {
@@ -146,86 +204,187 @@ export const generarPedidosAutomaticos = async (req, res) => {
           json: (data) => reject(new Error(data.mensaje)),
         }),
       };
-
       generarInsumosSemanales(mockReq, mockRes);
     });
 
     if (!insumosResponse.success) {
-      return res
-        .status(400)
-        .json({ success: false, mensaje: insumosResponse.mensaje });
+      return res.status(400).json({ success: false, mensaje: insumosResponse.mensaje });
     }
 
-    const insumos = insumosResponse.insumos;
+    const insumos = insumosResponse.insumos || [];
+    if (insumos.length === 0) {
+      return res.json({ success: true, mensaje: "No hay insumos en la planificación activa", pedidosCreados: [], total: 0 });
+    }
 
-    // Obtener proveedores por insumo
-    const [proveedoresInsumo] = await connection.query(
-      "SELECT DISTINCT BIN_TO_UUID(pi.id_proveedor) as id_proveedor, pi.id_insumo, pr.razonSocial as nombre FROM ProveedorInsumo pi INNER JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor"
+    // ── 2. Filtrar usando los mismos datos que muestra InsumosSemanal.jsx ──
+    // "generarInsumosSemanales" ya devuelve cantidad_disponible, stockMaximo y
+    // enPedido por insumo. La diferencia es exactamente la misma que muestra la
+    // tabla: stockFinal = cantidadActual - demanda (ambas en unidadMedida del insumo).
+    const insumosFaltantes = [];
+    for (const insumo of insumos) {
+      // Omitir si ya hay un pedido activo esta semana (flag del backend)
+      if (insumo.enPedido) {
+        console.log(`[Pedidos] Insumo "${insumo.nombre}" ya tiene pedido activo esta semana — omitido`);
+        continue;
+      }
+      // Omitir si no tiene datos de inventario
+      if (insumo.cantidad_disponible === undefined) {
+        console.warn(`[Pedidos] Sin inventario para insumo ${insumo.id_insumo} ("${insumo.nombre}") — omitido`);
+        continue;
+      }
+
+      // Misma fórmula que InsumosSemanal.jsx: diferencia = stock_actual - demanda_semanal
+      const stockFinal = (insumo.cantidad_disponible || 0) - insumo.cantidad;
+      if (stockFinal >= 0) continue; // Stock suficiente, no pedir
+
+      console.log(`[Pedidos] "${insumo.nombre}": stock=${insumo.cantidad_disponible} demanda=${insumo.cantidad.toFixed(2)} → déficit=${stockFinal.toFixed(2)} ${insumo.unidad}`);
+      insumosFaltantes.push({
+        id_insumo: insumo.id_insumo,
+        nombre: insumo.nombre,
+        cantidadPedido: insumo.stockMaximo || insumo.cantidad, // pedir stockMaximo
+        unidad: insumo.unidad,
+        stockFinal,
+      });
+    }
+
+    if (insumosFaltantes.length === 0) {
+      return res.json({
+        success: true,
+        mensaje: "No hay insumos con stock insuficiente — no se generaron pedidos",
+        pedidosCreados: [],
+        total: 0,
+      });
+    }
+
+    console.log(`[Pedidos] ${insumosFaltantes.length} insumo(s) con stock negativo detectados`);
+
+    // ── 4. Obtener proveedores activos con calificación ordenados por prioridad ──
+    const idsFaltantes = insumosFaltantes.map((i) => i.id_insumo);
+    const [proveedoresConCalif] = await connection.query(
+      `SELECT
+        BIN_TO_UUID(pi.id_proveedor) as id_proveedor,
+        pi.id_insumo,
+        pi.calificacion,
+        pr.razonSocial as nombre,
+        CASE pi.calificacion
+          WHEN 'Excelente' THEN 1
+          WHEN 'Bueno'     THEN 2
+          WHEN 'Regular'   THEN 3
+          WHEN 'Malo'      THEN 4
+          ELSE 5
+        END as prioridad
+       FROM ProveedorInsumo pi
+       INNER JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor
+       WHERE pi.estado = 'Activo' AND pi.id_insumo IN (?)
+       ORDER BY pi.id_insumo ASC, prioridad ASC`,
+      [idsFaltantes]
     );
 
-    // Agrupar insumos por proveedor
-    const pedidosPorProveedor = {};
-
-    for (const insumo of insumos) {
-      const proveedores = proveedoresInsumo.filter(
-        (p) => p.id_insumo === insumo.id_insumo
-      );
-
-      if (proveedores.length === 0) continue;
-
-      for (const proveedor of proveedores) {
-        if (!pedidosPorProveedor[proveedor.id_proveedor]) {
-          pedidosPorProveedor[proveedor.id_proveedor] = {
-            id_proveedor: proveedor.id_proveedor,
-            nombreProveedor: proveedor.nombre,
-            items: [],
-          };
-        }
-
-        pedidosPorProveedor[proveedor.id_proveedor].items.push({
-          id_insumo: insumo.id_insumo,
-          nombreInsumo: insumo.nombre,
-          cantidad: insumo.cantidad,
-          unidad: insumo.unidad,
-        });
+    // ── 5. Seleccionar el proveedor con mejor calificación por insumo ──────
+    const mejorProveedorPorInsumo = {};
+    for (const prov of proveedoresConCalif) {
+      if (!mejorProveedorPorInsumo[prov.id_insumo]) {
+        mejorProveedorPorInsumo[prov.id_insumo] = prov;
       }
+    }
+
+    // ── 6. Agrupar insumos faltantes por proveedor seleccionado ──────────
+    const pedidosPorProveedor = {};
+    for (const insumo of insumosFaltantes) {
+      const mejorProveedor = mejorProveedorPorInsumo[insumo.id_insumo];
+      if (!mejorProveedor) {
+        console.warn(`[Pedidos] Sin proveedor activo para insumo ${insumo.id_insumo} ("${insumo.nombre}")`);
+        continue;
+      }
+      if (!pedidosPorProveedor[mejorProveedor.id_proveedor]) {
+        pedidosPorProveedor[mejorProveedor.id_proveedor] = {
+          id_proveedor: mejorProveedor.id_proveedor,
+          nombreProveedor: mejorProveedor.nombre,
+          items: [],
+        };
+      }
+      pedidosPorProveedor[mejorProveedor.id_proveedor].items.push({
+        ...insumo,
+        calificacion: mejorProveedor.calificacion,
+      });
     }
 
     const pedidos = Object.values(pedidosPorProveedor);
 
-    // Log de pedidos generados
-    console.log(`[${new Date().toISOString()}] Pedidos generados:`, pedidos);
+    // ── 7. Resolver id_estadoPedido 'Aprobado' dinámicamente ─────────────
+    const [estadoAprobadoRows] = await connection.query(
+      "SELECT id_estadoPedido FROM EstadoPedido WHERE nombreEstado = 'Aprobado' LIMIT 1"
+    );
+    if (!estadoAprobadoRows || estadoAprobadoRows.length === 0) {
+      throw new Error("No se encontró el estado 'Aprobado' en la tabla EstadoPedido");
+    }
+    const idEstadoAprobado = estadoAprobadoRows[0].id_estadoPedido;
 
-    // Crear registros de pedidos en la base de datos
+    // ── 8. Crear pedidos en BD con fechaAprobacion y notificar por Telegram ──
     const pedidosCreados = [];
 
     for (const pedido of pedidos) {
       try {
-        // Generar UUID para el pedido
-        const [uuidResult] = await connection.query(
-          "SELECT UUID() as new_uuid"
-        );
-        const idPedidoUUID = uuidResult[0].new_uuid;
-
-        const [result] = await connection.query(
-          "INSERT INTO Pedidos (id_pedido, id_proveedor, id_estadoPedido, fechaEmision, id_usuario, id_planificacion) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, NOW(), ?, ?)",
-          [
-            idPedidoUUID,
-            pedido.id_proveedor,
-            idEstadoPendiente,
-            idUsuarioBin,
-            idPlanificacionBin,
-          ]
+        // UUID pre-generado para evitar ambigüedad en el SELECT posterior
+        const idPedido = randomUUID();
+        await connection.query(
+          `INSERT INTO Pedidos (id_pedido, id_usuario, id_estadoPedido, id_proveedor, fechaEmision, origen, fechaAprobacion)
+           VALUES (UUID_TO_BIN(?), NULL, ?, UUID_TO_BIN(?), CURDATE(), 'Generado', CURDATE())`,
+          [idPedido, idEstadoAprobado, pedido.id_proveedor]
         );
 
-        const idPedido = idPedidoUUID;
-
-        // Agregar líneas de pedido
+        // Insertar líneas de pedido con cantidad = stockMaximo
         for (const item of pedido.items) {
           await connection.query(
             "INSERT INTO DetallePedido (id_pedido, id_proveedor, id_insumo, cantidadSolicitada) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)",
-            [idPedido, pedido.id_proveedor, item.id_insumo, item.cantidad]
+            [idPedido, pedido.id_proveedor, item.id_insumo, item.cantidadPedido]
           );
+        }
+
+        // ── Notificar al proveedor por Telegram ──────────────────────────
+        try {
+          const tokenData = {
+            idPedido,
+            idProveedor: pedido.id_proveedor,
+            timestamp: Date.now(),
+            expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+          };
+          const token = Buffer.from(JSON.stringify(tokenData)).toString("base64url");
+          const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+          const enlace = `${baseUrl}/proveedor/confirmacion/${token}`;
+
+          const [configTelegram] = await connection.query(
+            `SELECT telegramChatId FROM ProveedorConfiguracionTelegram
+             WHERE id_proveedor = UUID_TO_BIN(?) AND notificacionesTelegram = 'Activo' LIMIT 1`,
+            [pedido.id_proveedor]
+          );
+          const chatIdProveedor = configTelegram?.[0]?.telegramChatId;
+
+          if (chatIdProveedor) {
+            const itemsDetalle = pedido.items
+              .map((item, i) => `${i + 1}. *${item.nombre}* — ${item.cantidadPedido} ${item.unidad}`)
+              .join("\n");
+
+            const mensajeProveedor =
+              `🛒 *PEDIDO AUTOMÁTICO DE INSUMOS*\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+              `Ha recibido un pedido automático del Sistema de Comedor Escolar.\n\n` +
+              `📋 Pedido: \`${idPedido.substring(0, 8).toUpperCase()}\`\n` +
+              `📅 Fecha: ${new Date().toLocaleDateString("es-ES")}\n\n` +
+              `*📦 Insumos solicitados:*\n${itemsDetalle}\n\n` +
+              `Confirme la disponibilidad de cada insumo en el enlace:\n\n` +
+              `[✅ Aceptar / Rechazar Pedido](${enlace})\n\n` +
+              `_Este enlace expira en 7 días._`;
+
+            await telegramService.initialize("proveedor");
+            await telegramService.sendMessage(chatIdProveedor, mensajeProveedor, "proveedor");
+            console.log(`✅ Telegram enviado al proveedor ${pedido.nombreProveedor} (${idPedido.substring(0, 8)})`);
+            await delay(5000); // Evitar rate-limit de Telegram entre mensajes consecutivos
+          } else {
+            console.warn(`⚠️ Proveedor "${pedido.nombreProveedor}" sin Telegram configurado — pedido creado sin notificación`);
+          }
+        } catch (telegramErr) {
+          console.warn(`⚠️ Error notificando a proveedor ${pedido.nombreProveedor}:`, telegramErr.message);
         }
 
         pedidosCreados.push({
@@ -234,37 +393,31 @@ export const generarPedidosAutomaticos = async (req, res) => {
           items: pedido.items.length,
         });
       } catch (error) {
-        console.error(
-          `Error creando pedido para proveedor ${pedido.id_proveedor}:`,
-          error
-        );
+        console.error(`Error creando pedido para proveedor ${pedido.id_proveedor}:`, error);
       }
     }
 
-    // Enviar notificación por Telegram
+    // ── 9. Notificar resumen a la cocinera ─────────────────────────────────
     try {
       const [parametros] = await connection.query(
         "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo'",
         ["TELEGRAM_COCINERA_CHAT_ID"]
       );
-
-      let chatId =
-        parametros?.[0]?.valor || process.env.TELEGRAM_COCINERA_CHAT_ID;
+      const chatId = parametros?.[0]?.valor || process.env.TELEGRAM_COCINERA_CHAT_ID;
 
       if (chatId && pedidosCreados.length > 0) {
-        const mensaje = construirMensajePedidosAutomaticos(pedidosCreados);
+        const [paramDia] = await connection.query(
+          "SELECT valor FROM Parametros WHERE nombreParametro = 'PEDIDOS_AUTOMATICOS_DIA' LIMIT 1"
+        ).catch(() => [[]]);
+        const diaSiguiente = paramDia?.[0]?.valor || "viernes";
+
+        const mensaje = construirMensajePedidosAutomaticos(pedidosCreados, diaSiguiente);
         await telegramService.initialize("sistema");
         await telegramService.sendMessage(chatId, mensaje, "sistema");
-        console.log(
-          "✅ Notificación de pedidos automáticos enviada a Telegram"
-        );
+        console.log("✅ Resumen de pedidos enviado a la cocinera por Telegram");
       }
     } catch (error) {
-      console.warn(
-        "⚠️ Error al enviar notificación de pedidos por Telegram:",
-        error.message
-      );
-      // No interrumpir el flujo principal
+      console.warn("⚠️ Error al enviar resumen a la cocinera:", error.message);
     }
 
     res.json({
@@ -344,61 +497,137 @@ export const finalizarPlanificacionesAutomaticas = async (req, res) => {
   try {
     console.log("[Finalización] Verificando planificaciones para finalizar...");
 
-    // Obtener la fecha de hoy
     const hoy = new Date().toISOString().split("T")[0];
+    // getDay(): 0=Domingo ... 5=Viernes
+    const esViernes = new Date().getDay() === 5;
 
-    // Buscar planificaciones activas cuya fecha final es hoy
-    const [planificaciones] = await connection.query(
-      `SELECT 
+    // ── PASO 1: Finalizar planificaciones Activas cuya fechaFin ya venció ──
+    const [planificacionesVencidas] = await connection.query(
+      `SELECT
         BIN_TO_UUID(id_planificacion) as id_planificacion,
         fechaInicio,
         fechaFin,
-        comensalesEstimados,
-        nombre
-       FROM PlanificacionMenus 
-       WHERE estado = 'Activo' 
-       AND DATE(fechaFin) = ?
+        comensalesEstimados
+       FROM PlanificacionMenus
+       WHERE estado = 'Activo'
+       AND DATE(fechaFin) <= ?
+       ORDER BY fechaFin DESC`,
+      [hoy]
+    );
+
+    let finalizadas = 0;
+    const planificacionesFinalizadas = [];
+
+    if (planificacionesVencidas && planificacionesVencidas.length > 0) {
+      for (const plan of planificacionesVencidas) {
+        const label = `${plan.fechaInicio} - ${plan.fechaFin}`;
+        console.log(`[Finalización] Finalizando planificación: ${label}`);
+
+        await connection.query(
+          `UPDATE PlanificacionMenus SET estado = 'Finalizado' WHERE id_planificacion = UUID_TO_BIN(?)`,
+          [plan.id_planificacion]
+        );
+
+        console.log(`[Finalización] ✓ Planificación finalizada: ${label}`);
+        finalizadas++;
+        planificacionesFinalizadas.push({ id: plan.id_planificacion, label, fechaFin: plan.fechaFin });
+      }
+    } else {
+      console.log("[Finalización] No hay planificaciones Activas vencidas");
+    }
+
+    // ── PASO 2: Activar la siguiente planificación Pendiente si no hay una Activa vigente ──
+    const [activasVigentes] = await connection.query(
+      `SELECT id_planificacion FROM PlanificacionMenus
+       WHERE estado = 'Activo' AND DATE(fechaFin) > ?
        LIMIT 1`,
       [hoy]
     );
 
-    if (!planificaciones || planificaciones.length === 0) {
-      console.log(
-        "[Finalización] No hay planificaciones activas con fecha final hoy"
+    let planificacionActivada = null;
+
+    if (!activasVigentes || activasVigentes.length === 0) {
+      // No existe ninguna planificación vigente → activar la más próxima en estado Pendiente
+      const [siguientes] = await connection.query(
+        `SELECT
+          BIN_TO_UUID(id_planificacion) as id_planificacion,
+          fechaInicio,
+          fechaFin,
+          comensalesEstimados
+         FROM PlanificacionMenus
+         WHERE estado = 'Pendiente'
+         ORDER BY fechaInicio ASC
+         LIMIT 1`
       );
-      return res.json({
-        success: true,
-        mensaje: "No hay planificaciones para finalizar",
-        finalizadas: 0,
-      });
+
+      if (siguientes && siguientes.length > 0) {
+        const siguiente = siguientes[0];
+        const labelSig = `${siguiente.fechaInicio} - ${siguiente.fechaFin}`;
+
+        await connection.query(
+          `UPDATE PlanificacionMenus SET estado = 'Activo' WHERE id_planificacion = UUID_TO_BIN(?)`,
+          [siguiente.id_planificacion]
+        );
+
+        console.log(`[Finalización] ✓ Planificación activada para semana entrante: ${labelSig}`);
+        planificacionActivada = {
+          id: siguiente.id_planificacion,
+          label: labelSig,
+          fechaInicio: siguiente.fechaInicio,
+          fechaFin: siguiente.fechaFin,
+        };
+      } else {
+        // ── PASO 3: Sin planificación siguiente → alerta de brecha ──
+        console.warn(
+          "[Finalización] ⚠️ No hay planificaciones Pendientes para activar"
+        );
+
+        if (esViernes) {
+          console.warn(
+            "[Finalización] ⚠️ ALERTA: No hay planificación configurada para la semana entrante"
+          );
+          try {
+            const [parametros] = await connection.query(
+              "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo'",
+              ["TELEGRAM_COCINERA_CHAT_ID"]
+            );
+            const chatId =
+              parametros?.[0]?.valor || process.env.TELEGRAM_COCINERA_CHAT_ID;
+
+            if (chatId) {
+              const mensajeAlerta =
+                `⚠️ *ALERTA: Falta de Planificación Semanal*\n\n` +
+                `No existe ninguna planificación de menú configurada para la semana entrante.\n\n` +
+                `📅 Fecha actual: ${hoy}\n\n` +
+                `Por favor, cree y configure la planificación lo antes posible para que el sistema pueda generar los pedidos automáticos.`;
+
+              await telegramService.initialize("sistema");
+              await telegramService.sendMessage(chatId, mensajeAlerta, "sistema");
+              console.log(
+                "[Finalización] ✓ Alerta de falta de planificación enviada por Telegram"
+              );
+            }
+          } catch (telegramError) {
+            console.warn(
+              "[Finalización] ⚠️ Error al enviar alerta por Telegram:",
+              telegramError.message
+            );
+          }
+        }
+      }
+    } else {
+      console.log("[Finalización] Ya existe una planificación Activa vigente, no se activa ninguna");
     }
 
-    const planificacion = planificaciones[0];
-    console.log(
-      `[Finalización] Finalizando planificación: ${planificacion.nombre}`
-    );
-
-    // Finalizar la planificación
-    await connection.query(
-      `UPDATE PlanificacionMenus 
-       SET estado = 'Finalizado' 
-       WHERE id_planificacion = UUID_TO_BIN(?)`,
-      [planificacion.id_planificacion]
-    );
-
-    console.log(
-      `[Finalización] ✓ Planificación finalizada: ${planificacion.nombre}`
-    );
-
-    res.json({
+    return res.json({
       success: true,
-      mensaje: "Planificación finalizada correctamente",
-      finalizadas: 1,
-      planificacion: {
-        id: planificacion.id_planificacion,
-        nombre: planificacion.nombre,
-        fechaFin: planificacion.fechaFin,
-      },
+      mensaje:
+        finalizadas > 0
+          ? `${finalizadas} planificación(es) finalizada(s) correctamente`
+          : "No había planificaciones vencidas para finalizar",
+      finalizadas,
+      planificacionesFinalizadas,
+      planificacionActivada,
     });
   } catch (error) {
     console.error("[Finalización] Error al finalizar planificaciones:", error);
@@ -1099,31 +1328,37 @@ export const generarPedidosPorInsumosFaltantes = async (req, res) => {
 };
 
 // Función auxiliar para construir el mensaje de pedidos automáticos
-function construirMensajePedidosAutomaticos(pedidosCreados) {
-  let mensaje = `📦 <b>PEDIDOS AUTOMÁTICOS GENERADOS</b>\n\n`;
-  mensaje += `📅 <b>Fecha:</b> ${new Date().toLocaleDateString("es-ES")}\n`;
-  mensaje += `⏰ <b>Hora:</b> ${new Date().toLocaleTimeString("es-ES")}\n\n`;
+function construirMensajePedidosAutomaticos(pedidosCreados, diaSiguiente = "viernes") {
+  const diasMap = {
+    lunes: "lunes", martes: "martes", miercoles: "miércoles",
+    jueves: "jueves", viernes: "viernes",
+  };
+  const diaLabel = diasMap[diaSiguiente] || diaSiguiente;
 
-  mensaje += `<b>Resumen de Pedidos:</b>\n`;
+  let mensaje = `📦 *PEDIDOS AUTOMÁTICOS GENERADOS*\n\n`;
+  mensaje += `📅 *Fecha:* ${new Date().toLocaleDateString("es-ES")}\n`;
+  mensaje += `⏰ *Hora:* ${new Date().toLocaleTimeString("es-ES")}\n\n`;
+
+  mensaje += `*Resumen de Pedidos:*\n`;
   mensaje += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
 
   if (pedidosCreados.length > 0) {
     pedidosCreados.forEach((pedido, index) => {
-      mensaje += `${index + 1}. <b>${pedido.proveedor}</b>\n`;
-      mensaje += `   📋 ${pedido.items} items\n\n`;
+      mensaje += `${index + 1}\. *${pedido.proveedor}*\n`;
+      mensaje += `   📋 ${pedido.items} item${pedido.items !== 1 ? "s" : ""}\n\n`;
     });
   } else {
     mensaje += `❌ No se generaron pedidos\n\n`;
   }
 
   mensaje += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-  mensaje += `📊 <b>Total de Pedidos:</b> ${pedidosCreados.length}\n\n`;
+  mensaje += `📊 *Total de Pedidos:* ${pedidosCreados.length}\n\n`;
 
-  mensaje += `ℹ️ <b>Información:</b>\n`;
+  mensaje += `ℹ️ *Información:*\n`;
   mensaje += `• Los pedidos se generaron automáticamente\n`;
   mensaje += `• Verifica el estado en el sistema\n`;
   mensaje += `• Coordina con los proveedores\n`;
-  mensaje += `• Próxima generación: próximo viernes\n\n`;
+  mensaje += `• Próxima generación: próximo ${diaLabel}\n\n`;
 
   mensaje += `✅ Sistema de generación automática activado`;
 

@@ -10,6 +10,31 @@ const isValidUUID = (value) => {
 };
 
 /**
+ * Función helper para convertir UUID binario (16 bytes) a string
+ */
+const convertBinaryUUIDToString = (buffer) => {
+  if (!Buffer.isBuffer(buffer)) return null;
+  if (buffer.length !== 16) return null; // UUID binario debe ser 16 bytes
+  
+  try {
+    // Convertir 16 bytes a hex y formatear como UUID
+    const hex = buffer.toString('hex');
+    // Formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuid = [
+      hex.substring(0, 8),
+      hex.substring(8, 12),
+      hex.substring(12, 16),
+      hex.substring(16, 20),
+      hex.substring(20, 32)
+    ].join('-');
+    
+    return uuid;
+  } catch (e) {
+    return null;
+  }
+};
+
+/**
  * Mapeo de rutas a módulos
  */
 const rutasModulos = {
@@ -148,11 +173,78 @@ const generarCambios = (valorAnterior, valorNuevo) => {
 };
 
 /**
- * Función para generar la descripción de auditoría en el formato estándar
+ * Función helper para extraer el ID del registro afectado de múltiples fuentes
  */
+const extraerIdRegistro = (req, data) => {
+  // Orden de prioridad para buscar el ID
+  const fuentes = [
+    // 1. Parámetros de ruta
+    () => req.params.id,
+    () => req.params.idRecurso,
+    () => req.params.idUsuario,
+    () => req.params.idInsumo,
+    () => req.params.idProveedor,
+    () => req.params.idPersona,
+    () => req.params.idReceta,
+    () => req.params.idTurno,
+    () => req.params.idServicio,
+    () => req.params.idGrado,
+    () => req.params.idRol,
+    
+    // 2. Body del request
+    () => req.body?.id,
+    () => req.body?.idRecurso,
+    () => req.body?.idUsuario,
+    
+    // 3. Data de respuesta (nested)
+    () => data?.data?.id,
+    () => data?.data?.idRecurso,
+    () => data?.data?.id_resource,
+    () => data?.data?.idInsumo,
+    () => data?.data?.idProveedor,
+    () => data?.data?.idPersona,
+    () => data?.data?.idReceta,
+    () => data?.data?.idTurno,
+    () => data?.data?.idServicio,
+    () => data?.data?.idGrado,
+    () => data?.data?.idRol,
+    
+    // 4. Data de respuesta (directo)
+    () => data?.id,
+    () => data?.idRecurso,
+
+    // 5. Pedidos: crearPedidoManual → { pedidos: [{id_pedido}] }
+    () => data?.pedidos?.[0]?.id_pedido,
+    // 6. Pedido individual → { id_pedido }
+    () => data?.id_pedido,
+    // 7. Líneas Pedidos → { id_detallePedido }
+    () => data?.id_detallePedido !== undefined ? String(data.id_detallePedido) : null,
+  ];
+
+  let idEncontrado = null;
+  for (const fuente of fuentes) {
+    try {
+      const valor = fuente();
+      if (valor && valor !== undefined && valor !== null) {
+        idEncontrado = valor;
+        break;
+      }
+    } catch (e) {
+      // Ignorar errores en acceso a propiedades
+    }
+  }
+
+  return idEncontrado || null;
+};
+
 const generarDescripcion = (accion, modulo, idRegistro, cambios) => {
   const tipoRegistro = tiposRegistro[modulo] || modulo;
   const maxLongitud = 500;
+  
+  // Log para depuración
+  if (!idRegistro) {
+    console.warn(`[Auditoria] generarDescripcion: idRegistro vacío para módulo ${modulo}, acción ${accion}`);
+  }
   
   let descripcion;
   
@@ -263,18 +355,27 @@ const auditoriaMiddleware = (moduloPersonalizado, accion) => {
           usuario.nombre ||
           "Sistema";
 
-        // Extraer ID del registro afectado - con validación
-        let idRegistroAfectado = req.params.id || 
-                                req.params.idRecurso || 
-                                req.params.idUsuario ||
-                                data.data?.id || 
-                                data.data?.id_resource || 
-                                null;
+        // Extraer ID del registro afectado - con validación mejorada
+        let idRegistroAfectado = extraerIdRegistro(req, data);
         
-        // Validar que el ID sea un UUID válido, si no descartar
+        // Manejo especial para Buffers (UUIDs binarios desde la BD)
+        if (Buffer.isBuffer(idRegistroAfectado)) {
+          const convertedUUID = convertBinaryUUIDToString(idRegistroAfectado);
+          idRegistroAfectado = convertedUUID || null;
+        }
+        
+        // Asegurar que es una cadena
+        if (idRegistroAfectado && typeof idRegistroAfectado !== 'string') {
+          idRegistroAfectado = String(idRegistroAfectado);
+        }
+        
+        // Validar que el ID sea un UUID válido o un número
         if (idRegistroAfectado && !isValidUUID(idRegistroAfectado)) {
-          console.warn(`[Auditoria] ID inválido descartado: ${idRegistroAfectado}`);
-          idRegistroAfectado = null;
+          // Si no es UUID pero es un número, es válido también
+          if (!/^\d+$/.test(idRegistroAfectado)) {
+            console.warn(`[Auditoria] ID inválido descartado: ${idRegistroAfectado}`);
+            idRegistroAfectado = null;
+          }
         }
 
         // Preparar valores anterior y nuevo según la acción
@@ -375,7 +476,28 @@ const registrarAuditoria = async (
       "";
     const userAgent = req.headers["user-agent"] || "";
 
-    const idRegistroAfectado = opciones.id_registro_afectado || null;
+    let idRegistroAfectado = opciones.id_registro_afectado || null;
+    
+    // Manejo especial para Buffers (UUIDs binarios desde la BD)
+    if (Buffer.isBuffer(idRegistroAfectado)) {
+      const convertedUUID = convertBinaryUUIDToString(idRegistroAfectado);
+      idRegistroAfectado = convertedUUID || null;
+    }
+    
+    // Asegurar que es una cadena
+    if (idRegistroAfectado && typeof idRegistroAfectado !== 'string') {
+      idRegistroAfectado = String(idRegistroAfectado);
+    }
+    
+    // Validar que el ID sea un UUID válido o un número
+    if (idRegistroAfectado && !isValidUUID(idRegistroAfectado)) {
+      // Si no es UUID pero es un número, es válido también
+      if (!/^\d+$/.test(idRegistroAfectado)) {
+        console.warn(`[Auditoria] ID inválido descartado en registrarAuditoria: ${idRegistroAfectado}`);
+        idRegistroAfectado = null;
+      }
+    }
+    
     const valorAnterior = opciones.valor_anterior || null;
     const valorNuevo = opciones.valor_nuevo || null;
     

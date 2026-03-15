@@ -273,10 +273,10 @@ const ListaReemplazosGrados = () => {
     if (modalMode === "create") {
       showSuccess(
         "Éxito",
-        `✅ Reemplazo creado correctamente!\n\nSuplente: ${result.nombreSuplente} ${result.apellidoSuplente}\nTitular: ${result.nombreTitular} ${result.apellidoTitular}\nGrado: ${result.nombreGrado}\nMotivo: ${motivoFormateado}`,
+        `✅ Reemplazo del docente creado correctamente!\n\nSuplente: ${result.nombreSuplente} ${result.apellidoSuplente}\nTitular: ${result.nombreTitular} ${result.apellidoTitular}\nGrado: ${result.nombreGrado}\nMotivo: ${motivoFormateado}`,
       );
     } else {
-      showSuccess("Éxito", "Reemplazo actualizado correctamente!");
+      showSuccess("Éxito", "Reemplazo del docente ha sido actualizado correctamente!");
     }
   };
 
@@ -437,9 +437,13 @@ const ListaReemplazosGrados = () => {
       {/* Tabla */}
       <div className="table-container">
         {paginatedReemplazos.length === 0 ? (
-          <div className="no-data">
-            <p>No se encontraron reemplazos de docentes</p>
-          </div>
+            <div colSpan={12}>
+              <div className="empty-state">
+                <i className="fas fa-search empty-icon"></i>
+                <h5>No se encontraron reemplazos de docentes</h5>
+                <p>No hay reemplazos de docentes que coincidan con tu búsqueda.</p>
+              </div>
+            </div>
         ) : (
           <div className="scrollable-table">
             <div className="table-body-scroll">

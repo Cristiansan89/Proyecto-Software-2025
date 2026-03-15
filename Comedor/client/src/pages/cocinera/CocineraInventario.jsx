@@ -351,20 +351,16 @@ const CocineraInventario = () => {
                   {alertasInventario.map((alerta, index) => (
                     <div key={index} className="col-md-6 col-lg-4 mb-2">
                       <div
-                        className={`alert alert-${
+                        className={`alerta-inventario alerta-inventario-${
                           alerta.tipo === "critico"
                             ? "danger"
                             : alerta.tipo === "agotado"
                               ? "dark"
                               : "warning"
-                        } mb-0`}
+                        }`}
                       >
                         <strong>{alerta.insumo}</strong>
-                        <br />
-                        <small>
-                          {alerta.cantidad} {alerta.unidad} (
-                          {alerta.porcentaje.toFixed(1)}% del stock máximo)
-                        </small>
+                        <small>{alerta.cantidad} {alerta.unidad} ({alerta.porcentaje.toFixed(1)}% del stock máximo)</small>
                       </div>
                     </div>
                   ))}
@@ -476,9 +472,13 @@ const CocineraInventario = () => {
               {inventariosFiltrados.length === 0 ? (
                 <div className="text-center py-4">
                   <i className="fas fa-search fa-2x text-muted mb-3"></i>
-                  <p className="text-muted">
-                    No se encontraron insumos con los filtros aplicados
-                  </p>
+                  <div colSpan={12}>
+                    <div className="empty-state">
+                      <i className="fas fa-search empty-icon"></i>
+                      <h5>No se encontraron insumos</h5>
+                      <p>No hay insumos que coincidan con tu búsqueda.</p>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="table-container">

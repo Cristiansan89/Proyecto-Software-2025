@@ -105,7 +105,7 @@ const Usuarios = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentUsuarios = filteredUsuarios.slice(
     indexOfFirstItem,
-    indexOfLastItem
+    indexOfLastItem,
   );
   const totalPages = Math.ceil(filteredUsuarios.length / itemsPerPage);
 
@@ -148,7 +148,7 @@ const Usuarios = () => {
       isActive ? "Deshabilitar Usuario" : "Activar Usuario",
       `¿Está seguro de que desea ${action} al usuario "<b>${usuario.nombreUsuario}</b>"?`,
       isActive ? "Sí, deshabilitar" : "Sí, activar",
-      "Cancelar"
+      "Cancelar",
     );
 
     if (confirmed) {
@@ -160,12 +160,12 @@ const Usuarios = () => {
         if (newState === "Activo") {
           showSuccess(
             "Usuario Activado",
-            `El usuario "<b>${usuario.nombreUsuario}</b>" ahora tiene acceso al sistema.`
+            `El usuario "<b>${usuario.nombreUsuario}</b>" ahora tiene acceso al sistema.`,
           );
         } else {
           showInfo(
             "Usuario Deshabilitado",
-            `El usuario "<b>${usuario.nombreUsuario}</b>" ha sido inactivado correctamente.`
+            `El usuario "<b>${usuario.nombreUsuario}</b>" ha sido inactivado correctamente.`,
           );
         }
 
@@ -272,8 +272,12 @@ const Usuarios = () => {
                 <tbody>
                   {currentUsuarios.length === 0 ? (
                     <tr>
-                      <td colSpan="8" className="no-data">
-                        <p>No se encontraron usuarios.</p>
+                      <td colSpan={12}>
+                        <div className="empty-state">
+                          <i className="fas fa-search empty-icon"></i>
+                          <h5>No se encontraron usuarios</h5>
+                          <p>No hay usuarios que coincidan con tu búsqueda.</p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -308,14 +312,14 @@ const Usuarios = () => {
                         <td>
                           {usuario.fechaAlta
                             ? new Date(usuario.fechaAlta).toLocaleDateString(
-                                "es-ES"
+                                "es-ES",
                               )
                             : "N/A"}
                         </td>
                         <td>
                           {(() => {
                             const activity = formatLastActivity(
-                              usuario.fechaUltimaActividad
+                              usuario.fechaUltimaActividad,
                             );
                             if (activity.isNever) {
                               return (

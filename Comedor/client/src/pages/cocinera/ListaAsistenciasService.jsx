@@ -4,6 +4,8 @@ import asistenciasService from "../../services/asistenciasService";
 import servicioService from "../../services/servicioService";
 import { gradoService } from "../../services/gradoService";
 import auditoriaService from "../../services/auditoriaService";
+import planificacionMenuService from "../../services/planificacionMenuService";
+import recetaService from "../../services/recetaService";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import {
@@ -31,6 +33,9 @@ const ListaAsistenciasService = () => {
     totalPresentes: 0,
     porcentajeAsistencia: 0,
   });
+  const [asistenciaPorServicio, setAsistenciaPorServicio] = useState({});
+  const [serviciosCompletados, setServiciosCompletados] = useState({});
+  const [procesandoAutomatico, setProcesandoAutomatico] = useState(false);
 
   useEffect(() => {
     cargarDatosIniciales();
@@ -41,6 +46,15 @@ const ListaAsistenciasService = () => {
       cargarAsistencias();
     }
   }, [filtros]);
+
+  // useEffect para monitorear asistencias completadas al 100%
+  useEffect(() => {
+    const intervalo = setInterval(() => {
+      verificarAsistenciasCompletas();
+    }, 5000); // Verificar cada 5 segundos
+
+    return () => clearInterval(intervalo);
+  }, [filtros.fecha, filtros.idServicio]);
 
   const cargarDatosIniciales = async () => {
     try {
@@ -128,6 +142,112 @@ const ListaAsistenciasService = () => {
       totalPresentes,
       porcentajeAsistencia,
     });
+
+    // Agrupar asistencias por servicio para verificar si alguno está al 100%
+    const asistenciasAgrupadas = {};
+    asistenciasData.forEach((registro) => {
+      const clave = `${registro.fecha}_${registro.id_servicio || registro.idServicio}`;
+      if (!asistenciasAgrupadas[clave]) {
+        asistenciasAgrupadas[clave] = {
+          fecha: registro.fecha,
+          servicio: registro.nombreServicio,
+          idServicio: registro.id_servicio || registro.idServicio,
+          registros: [],
+        };
+      }
+      asistenciasAgrupadas[clave].registros.push(registro);
+    });
+
+    setAsistenciaPorServicio(asistenciasAgrupadas);
+  };
+
+  const verificarAsistenciasCompletas = async () => {
+    try {
+      // Solo verificar si la fecha actual coincide
+      const hoy = new Date().toISOString().split("T")[0];
+      if (filtros.fecha !== hoy) return;
+
+      const serviciosCompletos = {};
+      let hayServiciosAlcien = false;
+
+      // Analizar cada servicio
+      for (const [clave, datos] of Object.entries(asistenciaPorServicio)) {
+        // Verificar si el servicio está completo
+        const totalGrados = grados.length;
+        const asistenciasRegistradas = datos.registros.length;
+
+        if (asistenciasRegistradas >= totalGrados) {
+          serviciosCompletos[datos.idServicio] = true;
+          hayServiciosAlcien = true;
+
+          // Si aún no ha sido procesado, procesar automáticamente
+          if (!serviciosCompletados[datos.idServicio]) {
+            await procesarAsistenciaAutomaticamente(
+              datos.fecha,
+              datos.idServicio,
+              datos.servicio
+            );
+          }
+        }
+      }
+
+      setServiciosCompletados(serviciosCompletos);
+    } catch (error) {
+      // No mostrar errores silenciosos continuamente
+      // console.error("Error al verificar asistencias:", error);
+    }
+  };
+
+  const procesarAsistenciaAutomaticamente = async (
+    fecha,
+    idServicio,
+    nombreServicio
+  ) => {
+    if (procesandoAutomatico) return;
+
+    setProcesandoAutomatico(true);
+    try {
+      // Obtener detalles del menú del día para este servicio
+      const menuDelDia = await planificacionMenuService.getMenusSemana(
+        fecha,
+        fecha
+      );
+      const menu = menuDelDia?.find((m) => m.id_servicio === idServicio);
+
+      // Crear notificación con opción de descargar PDF
+      const notificacionElement = document.createElement("div");
+      notificacionElement.id = `notif-${idServicio}`;
+
+      showSuccess(
+        "¡Asistencia Completada!",
+        `La asistencia para ${nombreServicio} del día ${new Date(fecha).toLocaleDateString(
+          "es-ES"
+        )} ha sido completada al 100%.
+
+Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
+      );
+
+      // Ofrecer descargar PDF inmediatamente
+      setTimeout(() => {
+        const confirmar = confirm(
+          `¿Desea descargar el PDF con las instrucciones e ingredientes para ${nombreServicio}?`
+        );
+        if (confirmar && menu) {
+          exportarMenuAPDF(fecha, idServicio, nombreServicio, menu);
+        }
+      }, 500);
+
+      // Registrar en auditoría
+      await auditoriaService.registrarReportePDF({
+        nombreReporte: `Asistencia completada - ${nombreServicio}`,
+        tipoReporte: "Asistencia",
+        descripcion: `Procesamiento automático de asistencia para ${nombreServicio} en fecha ${fecha}`,
+      });
+    } catch (error) {
+      // console.error("Error al procesar asistencia automáticamente:", error);
+    } finally {
+      setProcesandoAutomatico(false);
+    }
   };
 
   const handleFiltroChange = (e) => {
@@ -156,6 +276,101 @@ const ListaAsistenciasService = () => {
       month: "long",
       day: "numeric",
     });
+  };
+
+  const formatearFechaCorta = (fecha) => {
+    // Convierte YYYY-MM-DD a DD-MM-YYYY
+    if (!fecha) return "Sin fecha";
+    const [year, month, day] = fecha.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
+  const formatearFechaHora = (fechaHora) => {
+    // Convierte YYYY-MM-DD HH:MM:SS a DD-MM-YYYY HH:MM:SS
+    if (!fechaHora) return "N/A";
+    const [fechaParte, horaParte] = fechaHora.split(" ");
+    const [year, month, day] = fechaParte.split("-");
+    return `${day}-${month}-${year} ${horaParte}`;
+  };
+
+  const exportarMenuAPDF = async (fecha, idServicio, nombreServicio, menu) => {
+    try {
+      const doc = new jsPDF();
+
+      // Configuración inicial
+      doc.setFontSize(16);
+      doc.text(`Menú del Día - ${nombreServicio}`, 14, 20);
+
+      // Información del menú
+      doc.setFontSize(11);
+      doc.text(`Fecha: ${formatearFecha(fecha)}`, 14, 32);
+      doc.text(`Servicio: ${nombreServicio}`, 14, 40);
+      doc.text(`Plato: ${menu.nombreReceta || "Sin especificar"}`, 14, 48);
+
+      // Obtener detalles de la receta usando recetaService
+      let recetaDetalles = null;
+      try {
+        const respuesta = await recetaService.getById(menu.id_receta);
+        recetaDetalles = respuesta;
+      } catch (error) {
+        // console.warn("No se pudieron obtener detalles de la receta");
+      }
+
+      // Instrucciones
+      let yPosition = 58;
+      if (recetaDetalles?.instrucciones) {
+        doc.setFontSize(12);
+        doc.text("Instrucciones:", 14, yPosition);
+        doc.setFontSize(10);
+        const instruccionesTexto = doc.splitTextToSize(
+          recetaDetalles.instrucciones,
+          180
+        );
+        doc.text(instruccionesTexto, 14, yPosition + 8);
+        yPosition = yPosition + 8 + instruccionesTexto.length * 5 + 10;
+      }
+
+      // Tabla de ingredientes
+      if (recetaDetalles?.insumos && recetaDetalles.insumos.length > 0) {
+        doc.setFontSize(12);
+        doc.text("Ingredientes Requeridos:", 14, yPosition);
+
+        const ingredientesData = recetaDetalles.insumos.map((insumo) => [
+          insumo.nombreInsumo || insumo.nombre || "Sin nombre",
+          `${insumo.cantidad} ${insumo.unidad || "unidad"}`,
+        ]);
+
+        autoTable(doc, {
+          startY: yPosition + 8,
+          head: [["Ingrediente", "Cantidad"]],
+          body: ingredientesData,
+          styles: { fontSize: 10, cellPadding: 3 },
+          headStyles: { fillColor: [70, 130, 180], textColor: 255 },
+          alternateRowStyles: { fillColor: [245, 245, 245] },
+        });
+      }
+
+      // Pie de página
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(
+          `Página ${i} de ${pageCount}`,
+          doc.internal.pageSize.width - 30,
+          doc.internal.pageSize.height - 10
+        );
+      }
+
+      doc.save(
+        `menu_${nombreServicio}_${fecha.replace(/-/g, "")}_${Date.now()}.pdf`
+      );
+
+      showSuccess("Éxito", "PDF del menú descargado correctamente");
+    } catch (error) {
+      // console.error("Error al exportar menú a PDF:", error);
+      showError("Error", "Error al generar el PDF del menú");
+    }
   };
 
   const verDetalle = (registro) => {
@@ -523,7 +738,7 @@ const ListaAsistenciasService = () => {
                       </td>
                       <td>
                         <strong className="text-dark">
-                          {registro.fecha || "Sin fecha"}
+                          {formatearFechaCorta(registro.fecha)}
                         </strong>
                       </td>
 
@@ -549,7 +764,7 @@ const ListaAsistenciasService = () => {
                       </td>
 
                       <td>
-                        <strong>{registro.fechaCreacion || "N/A"}</strong>
+                        <strong>{formatearFechaHora(registro.fechaCreacion)}</strong>
                       </td>
                     </tr>
                   ))}

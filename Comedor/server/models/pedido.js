@@ -1,5 +1,6 @@
 import { connection } from "./db.js";
 import telegramService from "../services/telegramService.js";
+import { randomUUID } from "crypto";
 
 export class PedidoModel {
   static async getAll() {
@@ -73,11 +74,11 @@ export class PedidoModel {
   static async create({ input }) {
     const {
       id_usuario,
-      id_estadoPedido = 1, // Por defecto "Pendiente" (ID = 1)
+      id_estadoPedido = 2, // Por defecto "Aprobado" (ID = 2)
       id_proveedor,
       fechaEmision = new Date().toISOString().split("T")[0],
       origen = "Manual",
-      fechaAprobacion = null,
+      fechaAprobacion = new Date().toISOString().split("T")[0],
       motivoCancelacion = null,
     } = input;
 
@@ -349,7 +350,7 @@ export class PedidoModel {
     observaciones,
     id_usuario,
   }) {
-    const connection_ref = connection;
+    const connection_ref = await connection.getConnection();
     try {
       // Comenzar transacción
       await connection_ref.beginTransaction();
@@ -364,35 +365,29 @@ export class PedidoModel {
       });
 
       const pedidosCreados = [];
+      const pedidoIdsCreados = []; // IDs recolectados dentro de la transacción
       const fechaEmision = new Date().toISOString().split("T")[0];
 
       // Crear un pedido por cada proveedor
       for (const [idProveedor, insumosProveedor] of Object.entries(
         insumosPorProveedor,
       )) {
-        // Crear el pedido principal
-        const [resultPedido] = await connection_ref.query(
+        // Crear el pedido principal con UUID pre-generado para evitar ambigüedad en el SELECT posterior
+        const idPedido = randomUUID();
+        const fechaAprobacionManual = new Date().toISOString().split("T")[0];
+        await connection_ref.query(
           `INSERT INTO Pedidos (
+                        id_pedido,
                         id_usuario, 
                         id_estadoPedido,
                         id_proveedor, 
                         fechaEmision, 
                         origen,
+                        fechaAprobacion,
                         motivoCancelacion
-                    ) VALUES (UUID_TO_BIN(?), 15, UUID_TO_BIN(?), ?, 'Manual', ?);`,
-          [id_usuario, idProveedor, fechaEmision, observaciones],
+                    ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), 2, UUID_TO_BIN(?), ?, 'Manual', ?, ?);`,
+          [idPedido, id_usuario, idProveedor, fechaEmision, fechaAprobacionManual, observaciones],
         );
-
-        // Obtener el ID del pedido recién creado
-        const [pedidoCreado] = await connection_ref.query(
-          `SELECT BIN_TO_UUID(id_pedido) as id_pedido 
-                     FROM Pedidos 
-                     WHERE id_proveedor = UUID_TO_BIN(?) AND id_usuario = UUID_TO_BIN(?) AND fechaEmision = ?
-                     ORDER BY fechaEmision DESC LIMIT 1;`,
-          [idProveedor, id_usuario, fechaEmision],
-        );
-
-        const idPedido = pedidoCreado[0].id_pedido;
 
         // Agregar las líneas de pedido (detalles)
         for (const insumo of insumosProveedor) {
@@ -407,17 +402,24 @@ export class PedidoModel {
           );
         }
 
-        // Obtener el pedido completo creado
+        pedidoIdsCreados.push(idPedido);
+      }
+
+      // Confirmar transacción antes de consultar (getById usa el pool, no ve datos sin commit)
+      await connection_ref.commit();
+      connection_ref.release();
+
+      // Recuperar pedidos completos tras el commit (ya visibles al pool)
+      for (const idPedido of pedidoIdsCreados) {
         const pedidoCompleto = await this.getById({ id: idPedido });
         pedidosCreados.push(pedidoCompleto);
       }
 
-      // Confirmar transacción
-      await connection_ref.commit();
       return pedidosCreados;
     } catch (error) {
       // Revertir transacción en caso de error
       await connection_ref.rollback();
+      connection_ref.release();
       console.error("Error al crear pedido manual:", error);
       throw new Error("Error al crear el pedido manual: " + error.message);
     }
@@ -878,8 +880,8 @@ export class PedidoModel {
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 días
       };
 
-      // En un entorno real, esto se encriptaría con JWT
-      const token = Buffer.from(JSON.stringify(tokenData)).toString("base64");
+      // Usamos base64url (URL-safe) para evitar que '/', '+', '=' rompan los segmentos de URL
+      const token = Buffer.from(JSON.stringify(tokenData)).toString("base64url");
       return token;
     } catch (error) {
       console.error("Error al generar token para proveedor:", error);
@@ -890,7 +892,18 @@ export class PedidoModel {
   // Validar token de proveedor
   static async validateTokenProveedor(token) {
     try {
-      const tokenData = JSON.parse(Buffer.from(token, "base64").toString());
+      // Intentar decodificar como base64url primero (tokens nuevos, URL-safe)
+      // Si falla el parse JSON, intentar base64 estándar (retrocompatibilidad)
+      let tokenData;
+      try {
+        tokenData = JSON.parse(Buffer.from(token, "base64url").toString());
+      } catch {
+        tokenData = JSON.parse(Buffer.from(token, "base64").toString());
+      }
+
+      if (!tokenData?.idPedido || !tokenData?.idProveedor) {
+        throw new Error("Estructura de token inválida");
+      }
 
       // Verificar si el token no ha expirado
       if (Date.now() > tokenData.expires) {
@@ -899,6 +912,7 @@ export class PedidoModel {
 
       return tokenData;
     } catch (error) {
+      if (error.message === "Token expirado") throw error;
       throw new Error("Token inválido");
     }
   }
@@ -1173,7 +1187,7 @@ export class PedidoModel {
       const fechaEntrega = new Date();
       fechaEntrega.setDate(fechaEntrega.getDate() + 3); // 3 días para entrega
 
-      const nuevoPedido = await this.crearPedidoManual({
+      const nuevosPedidos = await this.crearPedidoManual({
         insumos: datosProveedor.insumos.map((insumo) => ({
           id_proveedor: primerProveedorId,
           id_insumo: insumo.id_insumo,
@@ -1185,10 +1199,10 @@ export class PedidoModel {
       });
 
       console.log(
-        `✅ Nuevo pedido creado: ${nuevoPedido.pedidosCreados[0]?.id_pedido}`,
+        `✅ Nuevo pedido creado: ${nuevosPedidos[0]?.id_pedido}`,
       );
 
-      return nuevoPedido.pedidosCreados[0]?.id_pedido;
+      return nuevosPedidos[0]?.id_pedido;
     } catch (error) {
       console.error("❌ Error al redistribuir insumos:", error);
       throw error;

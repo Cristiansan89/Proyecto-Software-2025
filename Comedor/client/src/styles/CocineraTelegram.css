@@ -1,0 +1,686 @@
+/* ========================================
+   ESTILOS PARA ALERTA DE INSUMOS EN MÓVIL
+   ======================================== */
+
+.cocinera-telegram-container {
+  height: 100vh;
+  background: #f0f2f5;
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* === HEADER === */
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px 16px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header h1 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.header p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.95;
+  font-weight: 500;
+}
+
+/* === MENSAJES === */
+.mensaje {
+  margin: 12px 16px;
+  padding: 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  animation: slideDown 0.3s ease-out;
+}
+
+.mensaje.error {
+  background: #fee;
+  color: #c33;
+  border: 2px solid #faa;
+}
+
+.mensaje.exito {
+  background: #efe;
+  color: #3c3;
+  border: 2px solid #afa;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* === CARGANDO === */
+.cargando {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  gap: 16px;
+  padding: 40px 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(102, 126, 234, 0.3);
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.cargando p {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* === LISTA DE INSUMOS === */
+.insumos-lista {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.insumos-lista h2 {
+  margin: 0 0 12px 0;
+  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* === TARJETA DE INSUMO === */
+.insumo-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-left: 6px solid #ffc107;
+  animation: slideUp 0.4s ease-out;
+}
+
+.insumo-card.agotado {
+  border-left-color: #dc3545;
+}
+
+.insumo-card.critico {
+  border-left-color: #ffc107;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.insumo-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
+.numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.nombre {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  flex: 1;
+  word-break: break-word;
+}
+
+.estado-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.estado-badge.agotado {
+  background: #ffebee;
+  color: #c33;
+}
+
+.estado-badge.critico {
+  background: #fffde7;
+  color: #f57c00;
+}
+
+.insumo-detalles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.valor {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+.valor.necesario {
+  color: #e67e22;
+}
+
+.valor.faltante {
+  color: #e74c3c;
+}
+
+/* === BANNER DE DEMANDA === */
+.info-demanda {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #444;
+  margin-bottom: 14px;
+}
+
+/* === CAJA DE INFORMACIÓN === */
+.info-box {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 4px solid #667eea;
+  margin: 12px 0;
+}
+
+.info-box p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.info-box p strong {
+  color: #667eea;
+  font-weight: 700;
+}
+
+.info-box .nota {
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+  margin: 12px 0 0 0;
+}
+
+.info-box .nota.info-dias {
+  background: #f0f4ff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 12px 0 0 0;
+  font-style: normal;
+  border-left: 3px solid #667eea;
+}
+
+/* === BOTÓN REALIZAR PEDIDO === */
+.btn-realizar-pedido {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-realizar-pedido:active {
+  transform: scale(0.98);
+}
+
+.btn-realizar-pedido:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner-btn {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* === SIN INSUMOS === */
+.sin-insumos {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.sin-insumos .icono {
+  font-size: 80px;
+  margin-bottom: 16px;
+}
+
+.sin-insumos h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.sin-insumos p {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.95;
+}
+
+/* === FOOTER === */
+.footer {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.timestamp {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+
+
+/* ===================================
+   RESPONSIVE - Optimizado para móvil
+   =================================== */
+
+@media (max-width: 768px) {
+  .cocinera-telegram-container {
+    min-height: 100vh;
+    height: 100vh;
+    padding: 0;
+    margin: 0;
+  }
+
+  .header {
+    padding: 20px 12px;
+  }
+
+  .header h1 {
+    font-size: 20px;
+  }
+
+  .header p {
+    font-size: 13px;
+  }
+
+  .insumos-lista {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .insumo-card {
+    padding: 14px;
+  }
+
+  .nombre {
+    font-size: 16px;
+  }
+
+  .insumo-detalles {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .btn-realizar-pedido {
+    padding: 14px;
+    font-size: 16px;
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cocinera-telegram-container {
+    min-height: 100vh;
+    height: 100vh;
+  }
+
+  .header h1 {
+    font-size: 18px;
+  }
+
+  .insumo-card {
+    padding: 12px;
+  }
+
+  .insumo-header {
+    gap: 10px;
+  }
+
+  .nombre {
+    font-size: 16px;
+  }
+
+  .detalle {
+    gap: 3px;
+  }
+
+  .label {
+    font-size: 11px;
+  }
+
+  .valor {
+    font-size: 14px;
+  }
+
+  .info-box {
+    padding: 12px;
+  }
+
+  .info-box p {
+    font-size: 13px;
+  }
+}
+
+
+
+/* ========================================
+   ESTILOS PARA INTERFAZ DE ÉXITO
+   ======================================== */
+
+.success-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.success-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 24px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.success-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  display: block;
+  animation: bounce 0.8s ease-out;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.success-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.5px;
+}
+
+.success-message {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 28px 0;
+  line-height: 1.6;
+}
+
+.success-details {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border-left: 4px solid #667eea;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.detail-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+.warning-messsage {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #856404;
+  font-size: 14px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.btn-salir {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  margin-bottom: 16px;
+}
+
+.btn-salir:active {
+  transform: scale(0.98);
+}
+
+.btn-salir:hover {
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.footer-text {
+  font-size: 13px;
+  color: #999;
+  margin: 0;
+  font-style: italic;
+}
+
+.cocinera-telegram-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* === RESPONSIVE PARA ÉXITO === */
+
+@media (max-width: 480px) {
+  .success-card {
+    padding: 30px 20px;
+    border-radius: 16px;
+  }
+
+  .success-icon {
+    font-size: 60px;
+    margin-bottom: 16px;
+  }
+
+  .success-title {
+    font-size: 22px;
+    margin: 0 0 10px 0;
+  }
+
+  .success-message {
+    font-size: 14px;
+    margin: 0 0 20px 0;
+  }
+
+  .success-details {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .detail-item {
+    padding: 10px 0;
+  }
+
+  .detail-label {
+    font-size: 12px;
+  }
+
+  .detail-value {
+    font-size: 14px;
+  }
+
+  .btn-salir {
+    padding: 14px;
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+
+  .footer-text {
+    font-size: 12px;
+  }
+}

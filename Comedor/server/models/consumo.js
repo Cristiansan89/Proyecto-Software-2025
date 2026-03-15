@@ -80,8 +80,9 @@ export function convertirUnidad(cantidad, unidadOrigen, unidadDestino) {
   if (esSolidoOrigen && esSolidoDestino) {
     const cantidadEnGramos = cantidad * factoresGramos[unidadOrigen];
     const cantidadFinal = cantidadEnGramos / factoresGramos[unidadDestino];
+    // Redondear normalmente sin mínimo artificial
     return {
-      cantidad: Math.round(cantidadFinal * 100) / 100,
+      cantidad: Math.round(cantidadFinal),
       unidad: unidadDestino,
     };
   }
@@ -91,8 +92,9 @@ export function convertirUnidad(cantidad, unidadOrigen, unidadDestino) {
     const cantidadEnMililitros = cantidad * factoresMililitros[unidadOrigen];
     const cantidadFinal =
       cantidadEnMililitros / factoresMililitros[unidadDestino];
+    // Redondear normalmente sin mínimo artificial
     return {
-      cantidad: Math.round(cantidadFinal * 100) / 100,
+      cantidad: Math.round(cantidadFinal),
       unidad: unidadDestino,
     };
   }
@@ -168,7 +170,9 @@ export class ConsumoModel {
                     c.fechaHoraGeneracion,
                     COALESCE(s.nombre, 'Servicio no especificado') as nombreServicio,
                     COALESCE(CONCAT(p.nombre, ' ', p.apellido), u.nombreUsuario, 'Usuario no especificado') as nombreUsuario,
+                    dc.id_insumo,
                     i.nombreInsumo,
+                    COALESCE(i.unidadMedida, 'Unidades') as unidadMedida,
                     dc.cantidadUtilizada,
                     dc.cantidadCalculada,
                     dc.id_itemReceta
@@ -178,7 +182,7 @@ export class ConsumoModel {
                  LEFT JOIN Personas p ON u.id_persona = p.id_persona
                  LEFT JOIN DetalleConsumo dc ON c.id_consumo = dc.id_consumo
                  LEFT JOIN Insumos i ON dc.id_insumo = i.id_insumo
-                 ORDER BY c.fechaHoraGeneracion DESC, dc.id_detalleConsumo ASC;`
+                 ORDER BY c.fechaHoraGeneracion DESC, COALESCE(dc.id_detalleConsumo, 0) ASC;`
       );
 
       console.log(
@@ -187,6 +191,7 @@ export class ConsumoModel {
       return consumos;
     } catch (error) {
       console.error("❌ Error al obtener consumos:", error);
+      console.error("❌ SQL Error:", error.sqlMessage || error.code);
       console.error("❌ Stack trace:", error.stack);
       throw new Error("Error al obtener consumos");
     }
@@ -278,10 +283,19 @@ export class ConsumoModel {
         }
       }
 
+      // Obtener id_turno asociado al id_servicio
+      const [turnoResult] = await connection.query(
+        `SELECT id_turno FROM ServicioTurno WHERE id_servicio = ? LIMIT 1;`,
+        [id_servicio]
+      );
+
+      const id_turno = turnoResult.length > 0 ? turnoResult[0].id_turno : 1; // Default a 1 si no se encuentra
+      console.log(`🔍 id_turno obtenido para servicio ${id_servicio}: ${id_turno}`);
+
       const [result] = await connection.query(
-        `INSERT INTO Consumos (id_jornada, id_servicio, id_usuario, fecha, origenCalculo)
-                 VALUES (UUID_TO_BIN(?), ?, UUID_TO_BIN(?), ?, ?);`,
-        [finalIdJornada, id_servicio, id_usuario, fecha, origenCalculo]
+        `INSERT INTO Consumos (id_jornada, id_servicio, id_turno, id_usuario, fecha, origenCalculo)
+                 VALUES (UUID_TO_BIN(?), ?, ?, UUID_TO_BIN(?), ?, ?);`,
+        [finalIdJornada, id_servicio, id_turno, id_usuario, fecha, origenCalculo]
       );
 
       const [newConsumo] = await connection.query(
@@ -319,6 +333,10 @@ export class ConsumoModel {
           detalle.unidad_medida || "Unidades"
         );
 
+        console.log(
+          `📦 Procesando detalle - ID Insumo: ${detalle.id_insumo}, Cantidad: ${detalle.cantidad_utilizada}, Unidad recibida: "${detalle.unidad_medida}", Unidad normalizada: "${unidadMedida}"`
+        );
+
         try {
           const [items] = await connection.query(
             `SELECT ir.id_itemReceta, ir.cantidadPorPorcion, ir.unidadPorPorcion
@@ -342,66 +360,38 @@ export class ConsumoModel {
           );
         }
 
-        // Insertar el detalle de consumo
-        await connection.query(
-          `INSERT INTO DetalleConsumo (id_consumo, id_insumo, id_itemReceta, cantidadUtilizada, unidadMedida, cantidadCalculada)
-                   VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?);`,
-          [
-            id_consumo,
-            detalle.id_insumo,
-            id_itemReceta,
-            detalle.cantidad_utilizada,
-            unidadMedida,
-            cantidadCalculada,
-          ]
-        );
+        // Insertar el detalle de consumo CON la unidad de medida
+        try {
+          await connection.query(
+            `INSERT INTO DetalleConsumo (id_consumo, id_insumo, id_itemReceta, cantidadUtilizada, cantidadCalculada)
+                     VALUES (UUID_TO_BIN(?), ?, ?, ?, ?);`,
+            [
+              id_consumo,
+              detalle.id_insumo,
+              id_itemReceta,
+              detalle.cantidad_utilizada,
+              cantidadCalculada,
+            ]
+          );
+
+          console.log(
+            `✅ Detalle de consumo insertado: insumo ${detalle.id_insumo}, cantidad ${detalle.cantidad_utilizada} ${unidadMedida}`
+          );
+        } catch (insertError) {
+          console.error(
+            `❌ Error al insertar detalle: ${insertError.message}`,
+            insertError
+          );
+          throw insertError;
+        }
 
         // Registrar movimiento de inventario (resta de stock)
         if (id_usuario) {
           try {
-            // Obtener la unidad estándar del insumo (tabla Insumos.unidadMedida)
-            const [insumoData] = await connection.query(
-              `SELECT unidadMedida FROM Insumos WHERE id_insumo = ?;`,
-              [detalle.id_insumo]
-            );
-
-            let unidadEstandar = normalizarUnidad("Gramos"); // Default
-            if (insumoData.length > 0 && insumoData[0].unidadMedida) {
-              unidadEstandar = normalizarUnidad(insumoData[0].unidadMedida);
-            }
-
-            // Convertir cantidad de la unidad de la receta a la unidad estándar del insumo
-            let cantidadEnInventario = detalle.cantidad_utilizada;
-
-            try {
-              // Intentar convertir si las unidades son diferentes
-              if (unidadMedida !== unidadEstandar) {
-                // Validar compatibilidad
-                if (!sonUnidadesCompatibles(unidadMedida, unidadEstandar)) {
-                  console.warn(
-                    `⚠️ Incompatibilidad de unidades: ${unidadMedida} en receta vs ${unidadEstandar} estándar para insumo ${detalle.id_insumo}`
-                  );
-                  // Usar cantidad original si no son compatibles
-                } else {
-                  const conversion = convertirAUnidadInventario(
-                    detalle.cantidad_utilizada,
-                    unidadMedida,
-                    unidadEstandar
-                  );
-                  cantidadEnInventario = conversion.cantidad;
-                  console.log(
-                    `📊 Conversión: ${detalle.cantidad_utilizada} ${unidadMedida} → ${cantidadEnInventario} ${unidadEstandar}`
-                  );
-                }
-              }
-            } catch (conversionError) {
-              console.warn(
-                `⚠️ Error en conversión de unidades: ${conversionError.message}`
-              );
-              // Continuar con la cantidad original
-            }
-
-            const cantidadMovimiento = -cantidadEnInventario; // Negativa para restar
+            // USAR DIRECTAMENTE la cantidad enviadapor el frontend
+            // El frontend ya ha optimizado la cantidad y unidad
+            // Guardar la cantidad como POSITIVA, el tipo "Salida" indica que debe restarse
+            const cantidadMovimiento = detalle.cantidad_utilizada;
 
             // 1. Insertar en MovimientosInventarios
             await connection.query(
@@ -421,14 +411,14 @@ export class ConsumoModel {
             // 2. Actualizar tabla Inventarios (restar del stock actual)
             await connection.query(
               `UPDATE Inventarios 
-               SET cantidadActual = cantidadActual + ?, 
+               SET cantidadActual = cantidadActual - ?, 
                    fechaUltimaActualizacion = CURDATE()
                WHERE id_insumo = ?;`,
               [cantidadMovimiento, detalle.id_insumo]
             );
 
             console.log(
-              `📦 Movimiento de inventario registrado para insumo ${detalle.id_insumo}: ${cantidadMovimiento} (convertido de ${detalle.cantidad_utilizada} ${unidadMedida})`
+              `📦 Movimiento de inventario registrado para insumo ${detalle.id_insumo}: ${cantidadMovimiento} ${unidadMedida}`
             );
             console.log(
               `💾 Stock actualizado en tabla Inventarios para insumo ${detalle.id_insumo}`

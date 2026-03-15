@@ -202,9 +202,13 @@ const ListaTurnos = () => {
       {/* Tabla de turnos */}
       <div className="table-container">
         {filteredTurnos.length === 0 ? (
-          <div className="no-data">
-            <p>No se encontraron turnos</p>
-          </div>
+            <div colSpan={12}>
+              <div className="empty-state">
+                <i className="fas fa-search empty-icon"></i>
+                <h5>No se encontraron turnos</h5>
+                <p>No hay turnos que coincidan con tu búsqueda.</p>
+              </div>
+            </div>
         ) : (
           <table className="table table-striped data-table">
             <thead>

@@ -19,6 +19,8 @@ const ListaAsistencia = () => {
   const [asistencias, setAsistencias] = useState([]);
   const [servicios, setServicios] = useState([]);
   const [grados, setGrados] = useState([]);
+  const [gradosFiltrados, setGradosFiltrados] = useState([]);
+  const [serviciosFiltrados, setServiciosFiltrados] = useState([]);
   const [filtros, setFiltros] = useState({
     fecha: new Date().toISOString().split("T")[0],
     idServicio: "",
@@ -42,6 +44,118 @@ const ListaAsistencia = () => {
     }
   }, [filtros]);
 
+  // useEffect para inicializar grados y servicios filtrados
+  useEffect(() => {
+    setGradosFiltrados(grados);
+    setServiciosFiltrados(servicios);
+  }, [grados, servicios]);
+
+  const obtenerGradosPorServicio = (idServicio) => {
+    if (!idServicio) {
+      return grados; // Si no hay servicio seleccionado, mostrar todos los grados
+    }
+
+    // Obtener los grados que tienen asistencias para este servicio
+    const gradosConServicio = new Set();
+    asistencias.forEach((asistencia) => {
+      if (
+        (asistencia.id_servicio || asistencia.idServicio) === parseInt(idServicio)
+      ) {
+        const gradoId = asistencia.id_grado || asistencia.idGrado;
+        gradosConServicio.add(gradoId);
+      }
+    });
+
+    // Si encontramos grados con este servicio, retornarlos
+    if (gradosConServicio.size > 0) {
+      return grados.filter((g) => 
+        gradosConServicio.has(g.id_grado || g.idGrado)
+      );
+    }
+
+    // Si no encontramos grados (asistencias aún cargando), retornar todos los grados
+    // Esto evita que el dropdown esté vacío mientras se cargan datos
+    return grados;
+  };
+
+  const obtenerServiciosPorGrado = (idGrado) => {
+    if (!idGrado) {
+      return servicios; // Si no hay grado seleccionado, mostrar todos los servicios
+    }
+
+    // Obtener los servicios que tienen asistencias para este grado
+    const serviciosConGrado = new Set();
+    asistencias.forEach((asistencia) => {
+      if ((asistencia.id_grado || asistencia.idGrado) === parseInt(idGrado)) {
+        const servicioId = asistencia.id_servicio || asistencia.idServicio;
+        serviciosConGrado.add(servicioId);
+      }
+    });
+
+    // Si encontramos servicios con este grado, retornarlos
+    if (serviciosConGrado.size > 0) {
+      return servicios.filter((s) =>
+        serviciosConGrado.has(s.idServicio || s.id_servicio)
+      );
+    }
+
+    // Si no encontramos servicios (asistencias aún cargando), retornar todos los servicios
+    // Esto evita que el dropdown esté vacío mientras se cargan datos
+    return servicios;
+  };
+
+  const actualizarFiltrosAuto = (nombre, valor) => {
+    if (nombre === "idServicio") {
+      // Cuando se selecciona un servicio, actualizar grados disponibles
+      const gradosDisponibles = obtenerGradosPorServicio(valor);
+      setGradosFiltrados(gradosDisponibles);
+      
+      // Limpiar el filtro de grado si el grado actual no está disponible en los datos
+      const gradoActualDisponible = gradosDisponibles.some(
+        (g) => (g.id_grado || g.idGrado) === parseInt(filtros.idGrado)
+      );
+      if (!gradoActualDisponible && filtros.idGrado) {
+        setFiltros((prev) => ({
+          ...prev,
+          idServicio: valor,
+          idGrado: "",
+        }));
+      } else {
+        setFiltros((prev) => ({
+          ...prev,
+          idServicio: valor,
+        }));
+      }
+    } else if (nombre === "idGrado") {
+      // Cuando se selecciona un grado, actualizar servicios disponibles
+      const serviciosDisponibles = obtenerServiciosPorGrado(valor);
+      setServiciosFiltrados(serviciosDisponibles);
+      
+      // Limpiar el filtro de servicio si el servicio actual no está disponible en los datos
+      const servicioActualDisponible = serviciosDisponibles.some(
+        (s) => (s.idServicio || s.id_servicio) === parseInt(filtros.idServicio)
+      );
+      if (!servicioActualDisponible && filtros.idServicio) {
+        setFiltros((prev) => ({
+          ...prev,
+          idGrado: valor,
+          idServicio: "",
+        }));
+      } else {
+        setFiltros((prev) => ({
+          ...prev,
+          idGrado: valor,
+        }));
+      }
+    } else {
+      // Para otros filtros, solo actualizar normalmente
+      setFiltros((prev) => ({
+        ...prev,
+        [nombre]: valor,
+      }));
+    }
+  };
+
   const cargarDatosIniciales = async () => {
     try {
       setLoading(true);
@@ -56,7 +170,7 @@ const ListaAsistencia = () => {
       //console.error("Error al cargar datos iniciales:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde.",
       );
     } finally {
       setLoading(false);
@@ -73,9 +187,8 @@ const ListaAsistencia = () => {
       if (filtros.idGrado) params.append("idGrado", filtros.idGrado);
 
       const queryString = params.toString();
-      const response = await asistenciasService.obtenerRegistrosAsistencias(
-        queryString
-      );
+      const response =
+        await asistenciasService.obtenerRegistrosAsistencias(queryString);
 
       //console.log("🔍 Respuesta del servicio:", response);
 
@@ -87,7 +200,7 @@ const ListaAsistencia = () => {
         //console.error("❌ Error en respuesta:", response.message);
         showError(
           "Error",
-          "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+          "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde.",
         );
         setAsistencias([]);
         setEstadisticas({
@@ -101,7 +214,7 @@ const ListaAsistencia = () => {
       //console.error("Error al cargar asistencias:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde.",
       );
       setAsistencias([]);
       setEstadisticas({
@@ -118,13 +231,13 @@ const ListaAsistencia = () => {
   const calcularEstadisticas = (asistenciasData) => {
     const totalRegistros = asistenciasData.length;
     const pendientes = asistenciasData.filter(
-      (a) => a.estado === "Pendiente"
+      (a) => a.estado === "Pendiente",
     ).length;
     const completados = asistenciasData.filter(
-      (a) => a.estado === "Completado"
+      (a) => a.estado === "Completado",
     ).length;
     const cancelados = asistenciasData.filter(
-      (a) => a.estado === "Cancelado"
+      (a) => a.estado === "Cancelado",
     ).length;
 
     setEstadisticas({
@@ -137,10 +250,7 @@ const ListaAsistencia = () => {
 
   const handleFiltroChange = (e) => {
     const { name, value } = e.target;
-    setFiltros((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    actualizarFiltrosAuto(name, value);
   };
 
   const limpiarFiltros = () => {
@@ -150,6 +260,8 @@ const ListaAsistencia = () => {
       idGrado: "",
       estado: "",
     });
+    setGradosFiltrados(grados);
+    setServiciosFiltrados(servicios);
   };
 
   const formatearFecha = (fecha) => {
@@ -164,10 +276,16 @@ const ListaAsistencia = () => {
     });
   };
 
+  const formatearFechaNumerica = (fechaStr) => {
+  if (!fechaStr) return "Sin fecha";
+  const [year, month, day] = fechaStr.split('-');
+  return `${day}-${month}-${year}`;
+};
+
   const obtenerNombreServicio = (idServicio, nombreServicio) => {
     if (nombreServicio) return nombreServicio;
     const servicio = servicios.find(
-      (s) => (s.idServicio || s.id_servicio) === idServicio
+      (s) => (s.idServicio || s.id_servicio) === idServicio,
     );
     return servicio ? servicio.nombre : "Servicio no encontrado";
   };
@@ -201,21 +319,21 @@ const ListaAsistencia = () => {
       asistencia.tipoAsistencia === "Si"
         ? "Presente"
         : asistencia.tipoAsistencia === "No"
-        ? "No Confirmado"
-        : "Ausente";
+          ? "No Confirmado"
+          : "Ausente";
 
     showInfo(
       "Detalle de Asistencia",
       `📋 DETALLE DE ASISTENCIA\n\n👤 Alumno: ${
         asistencia.nombreAlumno || "Sin especificar"
       }\n📅 Fecha: ${formatearFecha(
-        asistencia.fecha
+        asistencia.fecha,
       )}\n🍽️ Servicio: ${obtenerNombreServicio(
         asistencia.id_servicio,
-        asistencia.nombreServicio
+        asistencia.nombreServicio,
       )}\n🎓 Grado: ${obtenerNombreGrado(
         asistencia.id_grado,
-        asistencia.nombreGrado
+        asistencia.nombreGrado,
       )}\n✅ Tipo de Asistencia: ${tipoTexto}\n📊 Estado: ${
         asistencia.estado
       }\n🆔 ID de Registro: ${asistencia.id_asistencia}\n\n${
@@ -230,14 +348,14 @@ const ListaAsistencia = () => {
         asistencia.estado === "Cancelado"
           ? "❌ Este registro ha sido cancelado"
           : ""
-      }`
+      }`,
     );
   };
 
   const cambiarEstado = async (asistencia) => {
     const nuevoEstado = prompt(
       `Cambiar estado de asistencia para ${asistencia.nombreAlumno}\n\nEstado actual: ${asistencia.estado}\n\nIngrese el nuevo estado:\n- Pendiente\n- Completado\n- Cancelado`,
-      asistencia.estado
+      asistencia.estado,
     );
 
     if (
@@ -253,7 +371,7 @@ const ListaAsistencia = () => {
         setLoading(true);
         const response = await asistenciasService.actualizarEstadoAsistencia(
           asistencia.id_asistencia,
-          nuevoEstado
+          nuevoEstado,
         );
 
         if (response.success) {
@@ -264,18 +382,18 @@ const ListaAsistencia = () => {
                 await asistenciasService.procesarAsistenciaCompletada(
                   asistencia.fecha,
                   asistencia.id_servicio,
-                  asistencia.id_grado
+                  asistencia.id_grado,
                 );
 
               if (procesarResponse.success) {
                 showSuccess(
                   "Éxito",
-                  `Estado cambiado a "${nuevoEstado}" y registro de asistencia procesado automáticamente.\n\n📊 Resultado: ${procesarResponse.message}`
+                  `Estado cambiado a "${nuevoEstado}" y registro de asistencia procesado automáticamente.\n\n📊 Resultado: ${procesarResponse.message}`,
                 );
               } else {
                 showWarning(
                   "Advertencia",
-                  `Estado cambiado exitosamente a "${nuevoEstado}".\n\n⚠️ Advertencia: No se pudo procesar el registro automático: ${procesarResponse.message}`
+                  `Estado cambiado exitosamente a "${nuevoEstado}".\n\n⚠️ Advertencia: No se pudo procesar el registro automático: ${procesarResponse.message}`,
                 );
               }
             } catch (processingError) {
@@ -286,13 +404,13 @@ const ListaAsistencia = () => {
 
               showWarning(
                 "Advertencia",
-                `Estado cambiado exitosamente a "${nuevoEstado}".\n\n⚠️ Advertencia: Error al procesar el registro automático de asistencias.`
+                `Estado cambiado exitosamente a "${nuevoEstado}".\n\n⚠️ Advertencia: Error al procesar el registro automático de asistencias.`,
               );
             }
           } else {
             showSuccess(
               "Éxito",
-              `Estado cambiado exitosamente de "${asistencia.estado}" a "${nuevoEstado}"`
+              `Estado cambiado exitosamente de "${asistencia.estado}" a "${nuevoEstado}"`,
             );
           }
 
@@ -310,7 +428,7 @@ const ListaAsistencia = () => {
     } else if (nuevoEstado !== null) {
       showInfoError(
         "Estado inválido. Debe ser: Pendiente, Completado o Cancelado",
-        4000
+        4000,
       );
     }
   };
@@ -322,19 +440,19 @@ const ListaAsistencia = () => {
       asistencia.tipoAsistencia === "Si"
         ? "Presente"
         : asistencia.tipoAsistencia === "No"
-        ? "No Confirmado"
-        : "Ausente";
+          ? "No Confirmado"
+          : "Ausente";
 
     const nuevoTipo = prompt(
       `Cambiar tipo de asistencia para ${asistencia.nombreAlumno}\n\nTipo actual: ${tipoActual}\n\nSeleccione:\n${opciones}`,
-      asistencia.tipoAsistencia
+      asistencia.tipoAsistencia,
     );
 
     if (nuevoTipo && ["Si", "No", "Ausente"].includes(nuevoTipo)) {
       if (nuevoTipo === asistencia.tipoAsistencia) {
         showWarning(
           "Advertencia",
-          "El tipo de asistencia seleccionado es el mismo que el actual."
+          "El tipo de asistencia seleccionado es el mismo que el actual.",
         );
         return;
       }
@@ -344,7 +462,7 @@ const ListaAsistencia = () => {
         // Actualizar el tipo de asistencia
         const response = await asistenciasService.actualizarAsistencia(
           asistencia.id_asistencia,
-          nuevoTipo
+          nuevoTipo,
         );
 
         if (response && response.success) {
@@ -352,15 +470,15 @@ const ListaAsistencia = () => {
             nuevoTipo === "Si"
               ? "Presente"
               : nuevoTipo === "No"
-              ? "No Confirmado"
-              : "Ausente";
+                ? "No Confirmado"
+                : "Ausente";
           showSuccess("Éxito", `Tipo de asistencia cambiado a "${tipoTexto}"`);
           // Recargar los datos
           await cargarAsistencias();
         } else {
           showError(
             "Error",
-            `Error al actualizar: ${response?.message || "Error desconocido"}`
+            `Error al actualizar: ${response?.message || "Error desconocido"}`,
           );
         }
       } catch (error) {
@@ -420,7 +538,7 @@ const ListaAsistencia = () => {
 
     // Verificar si hay asistencias para esa fecha
     const asistenciasFecha = asistencias.filter(
-      (a) => a.fecha === filtros.fecha
+      (a) => a.fecha === filtros.fecha,
     );
 
     if (asistenciasFecha.length === 0) {
@@ -430,10 +548,10 @@ const ListaAsistencia = () => {
 
     const confirmar = confirm(
       `¿Está seguro que desea procesar automáticamente TODAS las asistencias del ${formatearFecha(
-        filtros.fecha
+        filtros.fecha,
       )}?\n\n` +
         `Esto creará/actualizará los registros de asistencia en base a los datos actuales.\n\n` +
-        `Asistencias encontradas: ${asistenciasFecha.length} registros`
+        `Asistencias encontradas: ${asistenciasFecha.length} registros`,
     );
 
     if (!confirmar) return;
@@ -441,7 +559,7 @@ const ListaAsistencia = () => {
     try {
       setLoading(true);
       const response = await asistenciasService.procesarTodasAsistenciasFecha(
-        filtros.fecha
+        filtros.fecha,
       );
 
       if (response.success && response.data?.data) {
@@ -454,7 +572,7 @@ const ListaAsistencia = () => {
                 r.cantidadPresentes
               } presentes (${
                 r.action === "created" ? "creado" : "actualizado"
-              })`
+              })`,
           )
           .join("\n");
 
@@ -471,7 +589,7 @@ const ListaAsistencia = () => {
             estadisticas.errores
           }\n\n📋 Detalles:\n${detalles}${
             erroresTexto ? `\n\n❌ Errores:\n${erroresTexto}` : ""
-          }`
+          }`,
         );
 
         // Recargar asistencias
@@ -479,7 +597,7 @@ const ListaAsistencia = () => {
       } else {
         showError(
           "Error",
-          `Error al procesar asistencias: ${response.message}`
+          `Error al procesar asistencias: ${response.message}`,
         );
       }
     } catch (error) {
@@ -588,7 +706,7 @@ const ListaAsistencia = () => {
                 onChange={handleFiltroChange}
               >
                 <option value="">Todos los servicios</option>
-                {servicios.map((servicio) => (
+                {serviciosFiltrados.map((servicio) => (
                   <option
                     key={servicio.idServicio || servicio.id_servicio}
                     value={servicio.idServicio || servicio.id_servicio}
@@ -597,6 +715,12 @@ const ListaAsistencia = () => {
                   </option>
                 ))}
               </select>
+              {filtros.idGrado && serviciosFiltrados.length === 0 && (
+                <small className="text-danger d-block mt-1">
+                  <i className="fas fa-info-circle me-1"></i>
+                  No hay servicios para este grado
+                </small>
+              )}
             </div>
 
             <div className="col-md-3">
@@ -612,7 +736,7 @@ const ListaAsistencia = () => {
                 onChange={handleFiltroChange}
               >
                 <option value="">Todos los grados</option>
-                {grados.map((grado) => (
+                {gradosFiltrados.map((grado) => (
                   <option
                     key={grado.idGrado || grado.id_grado}
                     value={grado.idGrado || grado.id_grado}
@@ -621,6 +745,12 @@ const ListaAsistencia = () => {
                   </option>
                 ))}
               </select>
+              {filtros.idServicio && gradosFiltrados.length === 0 && (
+                <small className="text-danger d-block mt-1">
+                  <i className="fas fa-info-circle me-1"></i>
+                  No hay grados para este servicio
+                </small>
+              )}
             </div>
 
             <div className="col-md-3">
@@ -652,7 +782,7 @@ const ListaAsistencia = () => {
               <i className="fas fa-broom me-2"></i>
               Limpiar Filtros
             </button>
-
+            {/*
             <button
               type="button"
               className="btn btn-success"
@@ -672,7 +802,7 @@ const ListaAsistencia = () => {
             >
               <i className="fas fa-cogs me-2"></i>
               {loading ? "Procesando..." : "Procesar Todas"}
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -711,7 +841,7 @@ const ListaAsistencia = () => {
               <p className="text-muted">
                 {filtros.fecha
                   ? `No se encontraron registros para ${formatearFecha(
-                      filtros.fecha
+                      filtros.fecha,
                     )}`
                   : "No hay registros con los filtros seleccionados"}
               </p>
@@ -728,7 +858,7 @@ const ListaAsistencia = () => {
                     <th width="20%">Alumno</th>
                     <th width="12%">Asistencia</th>
                     <th width="12%">Estado</th>
-                    <th width="8%">Acciones</th>
+                    {/*<th width="8%">Acciones</th>*/}
                   </tr>
                 </thead>
                 <tbody>
@@ -740,7 +870,7 @@ const ListaAsistencia = () => {
                       <td>
                         <div className="d-flex flex-column">
                           <span className="fw-semibold">
-                            {asistencia.fecha || "Sin fecha"}
+                            {formatearFechaNumerica(asistencia.fecha) || "Sin fecha"}
                           </span>
                         </div>
                       </td>
@@ -749,7 +879,7 @@ const ListaAsistencia = () => {
                         <div className="d-flex align-items-center">
                           {obtenerNombreServicio(
                             asistencia.id_servicio,
-                            asistencia.nombreServicio
+                            asistencia.nombreServicio,
                           )}
                         </div>
                       </td>
@@ -758,7 +888,7 @@ const ListaAsistencia = () => {
                         <div className="d-flex align-items-center">
                           {obtenerNombreGrado(
                             asistencia.id_grado,
-                            asistencia.nombreGrado
+                            asistencia.nombreGrado,
                           )}
                         </div>
                       </td>
@@ -774,7 +904,7 @@ const ListaAsistencia = () => {
                       <td>
                         <span
                           className={`badge ${getBadgeTipo(
-                            asistencia.tipoAsistencia
+                            asistencia.tipoAsistencia,
                           )}`}
                         >
                           {asistencia.tipoAsistencia}
@@ -784,16 +914,15 @@ const ListaAsistencia = () => {
                       <td>
                         <span
                           className={`badge ${getBadgeEstado(
-                            asistencia.estado
+                            asistencia.estado,
                           )}`}
                         >
                           {asistencia.estado}
                         </span>
                       </td>
-
-                      <td>
+                      {/* <td>
                         <div className="btn-group btn-group-sm" role="group">
-                          {/* 🔧 NUEVO: Botón para cambiar tipo de asistencia */}
+                           🔧 NUEVO: Botón para cambiar tipo de asistencia
                           <button
                             type="button"
                             className="btn btn-outline-info"
@@ -814,7 +943,7 @@ const ListaAsistencia = () => {
                             </button>
                           )}
                         </div>
-                      </td>
+                      </td>*/}
                     </tr>
                   ))}
                 </tbody>

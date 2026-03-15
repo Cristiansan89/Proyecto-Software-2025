@@ -41,6 +41,8 @@ const GeneracionAutomatica = () => {
     { valor: "miercoles", label: "Miércoles" },
     { valor: "jueves", label: "Jueves" },
     { valor: "viernes", label: "Viernes" },
+    { valor: "sabado", label: "Sábado" },
+    { valor: "domingo", label: "Domingo" },
   ];
 
   useEffect(() => {
@@ -267,7 +269,7 @@ const GeneracionAutomatica = () => {
 
   const obtenerHorasDisponibles = () => {
     const horas = [];
-    for (let i = 8; i <= 18; i++) {
+    for (let i = 8; i <= 22; i++) {
       horas.push({
         valor: String(i).padStart(2, "0"),
         label: String(i).padStart(2, "0"),
@@ -288,12 +290,12 @@ const GeneracionAutomatica = () => {
   };
 
   const obtenerMinutosDisponibles = () => {
-    return [
-      { valor: "00", label: "00" },
-      { valor: "15", label: "15" },
-      { valor: "30", label: "30" },
-      { valor: "45", label: "45" },
-    ];
+    const minutos = [];
+    for (let i = 0; i < 60; i += 5) {
+      const valor = String(i).padStart(2, "0");
+      minutos.push({ valor, label: valor });
+    }
+    return minutos;
   };
 
   if (loading) {

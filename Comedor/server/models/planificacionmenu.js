@@ -656,7 +656,7 @@ export class PlanificacionMenuModel {
                  LEFT JOIN RecetaJornada psr ON jp.id_jornada = psr.id_jornada
                  LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
                  WHERE pm.fechaInicio <= ? AND pm.fechaFin >= ? 
-                   AND pm.estado IN ('Pendiente', 'Activo')
+                   AND pm.estado IN ('Pendiente', 'Activo', 'Finalizado')
                  ORDER BY pm.fechaInicio, jp.id_servicio, jp.diaSemana;`,
         [fechaFin, fechaInicio]
       );

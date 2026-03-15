@@ -130,9 +130,8 @@ export class TelegramController {
       const enlacesConURLCorrecta = gradosData.map((grado) => ({
         ...grado,
         // Si el enlace es un token base64, reconstruirlo con FRONTEND_URL
-        // Cambiar a /asistencias/login para requerir autenticación primero
         enlace: grado.token
-          ? `${process.env.FRONTEND_URL}/asistencias/login/${grado.token}`
+          ? `${process.env.FRONTEND_URL}/asistencias/registro/${grado.token}`
           : grado.enlace,
       }));
 
@@ -681,6 +680,74 @@ export class TelegramController {
       res.status(500).json({
         success: false,
         message: error.message || "Error interno del servidor",
+      });
+    }
+  }
+
+  // Manejar callbacks de botones (Dar visto / Realizar Pedido)
+  static async handleAlertaCallback(req, res) {
+    try {
+      const { callback_query_id, callback_data, chat_id, message_id } = req.body;
+
+      if (!callback_data) {
+        return res.status(400).json({
+          success: false,
+          message: "callback_data es requerido",
+        });
+      }
+
+      const alertasService = (await import("../services/alertasInventarioService.js")).default;
+      const telegramService = (await import("../services/telegramService.js")).default;
+
+      let respuesta = "";
+      let exito = false;
+
+      if (callback_data.startsWith("dar_visto_")) {
+        // Acción: Dar visto
+        const idsInsumos = callback_data.replace("dar_visto_", "");
+        const resultado = await alertasService.darVisto(idsInsumos);
+
+        if (resultado.success) {
+          respuesta = "✅ Alerta marcada como visto";
+          exito = true;
+        } else {
+          respuesta = "❌ Error al marcar alerta como visto";
+        }
+      } else if (callback_data.startsWith("realizar_pedido_")) {
+        // Acción: Realizar Pedido
+        const idsInsumos = callback_data.replace("realizar_pedido_", "");
+        const resultado = await alertasService.realizarPedidoAutomatico(idsInsumos);
+
+        if (resultado.success) {
+          respuesta = `✅ ${resultado.message}`;
+          exito = true;
+        } else {
+          respuesta = `❌ ${resultado.error || "Error creando pedido"}`;
+        }
+      }
+
+      // Responder al callback (eliminar botones del mensaje original)
+      if (exito) {
+        await telegramService.editMessage(chat_id, message_id, respuesta, "sistema");
+      }
+
+      // Notificar al usuario con popup
+      const notificacion = await telegramService.answerCallbackQuery(
+        callback_query_id,
+        respuesta,
+        exito
+      );
+
+      res.json({
+        success: exito,
+        message: respuesta,
+      });
+    } catch (error) {
+      console.error("❌ Error manejando callback:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error procesando acción",
+        error: error.message,
       });
     }
   }

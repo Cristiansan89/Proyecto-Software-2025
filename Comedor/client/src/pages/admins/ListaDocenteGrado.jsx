@@ -23,7 +23,7 @@ const ListaDocentesGrados = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [gradoFilter, setGradoFilter] = useState("");
   const [cicloFilter, setCicloFilter] = useState(
-    new Date().getFullYear().toString()
+    new Date().getFullYear().toString(),
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -75,24 +75,23 @@ const ListaDocentesGrados = () => {
     // Filtro por búsqueda de texto
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (docente) => {
-          const nombreCompleto = `${docente.nombre} ${docente.apellido}`.toLowerCase();
-          return (
-            docente.nombre.toLowerCase().includes(searchLower) ||
-            docente.apellido.toLowerCase().includes(searchLower) ||
-            nombreCompleto.includes(searchLower) ||
-            docente.dni.includes(searchTerm) ||
-            docente.nombreGrado.toLowerCase().includes(searchLower)
-          );
-        }
-      );
+      filtered = filtered.filter((docente) => {
+        const nombreCompleto =
+          `${docente.nombre} ${docente.apellido}`.toLowerCase();
+        return (
+          docente.nombre.toLowerCase().includes(searchLower) ||
+          docente.apellido.toLowerCase().includes(searchLower) ||
+          nombreCompleto.includes(searchLower) ||
+          docente.dni.includes(searchTerm) ||
+          docente.nombreGrado.toLowerCase().includes(searchLower)
+        );
+      });
     }
 
     // Filtro por grado
     if (gradoFilter) {
       filtered = filtered.filter(
-        (docente) => docente.nombreGrado === gradoFilter
+        (docente) => docente.nombreGrado === gradoFilter,
       );
     }
 
@@ -118,7 +117,7 @@ const ListaDocentesGrados = () => {
   const sortedDocentes = filteredDocentes.slice().sort((a, b) => {
     // Comparar por grado primero
     const gradoComparison = (a.nombreGrado || "").localeCompare(
-      b.nombreGrado || ""
+      b.nombreGrado || "",
     );
     if (gradoComparison !== 0) return gradoComparison;
 
@@ -130,7 +129,7 @@ const ListaDocentesGrados = () => {
 
   const paginatedDocentes = sortedDocentes.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
 
   // Operaciones CRUD
@@ -159,7 +158,7 @@ const ListaDocentesGrados = () => {
       "Eliminar Asignación",
       `¿Está seguro de eliminar la asignación del docente "${docente.nombre} ${docente.apellido}" para el grado "${docente.nombreGrado}"?`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     if (confirmed) {
@@ -168,7 +167,7 @@ const ListaDocentesGrados = () => {
         await docenteGradoService.delete(
           docente.idDocenteTitular,
           docente.idPersona,
-          docente.nombreGrado
+          docente.nombreGrado,
         );
 
         // 3. Recarga de datos y feedback
@@ -177,7 +176,7 @@ const ListaDocentesGrados = () => {
         // Cambiamos showInfo por showSuccess para dar un feedback positivo claro
         showSuccess(
           "Éxito",
-          `La asignación del docente "${docente.nombre} ${docente.apellido}" se eliminó correctamente`
+          `La asignación del docente "${docente.nombre} ${docente.apellido}" se eliminó correctamente`,
         );
       } catch (error) {
         // 4. Manejo de errores sin logs de consola
@@ -202,10 +201,13 @@ const ListaDocentesGrados = () => {
     if (modalMode === "create") {
       showSuccess(
         "Éxito",
-        `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${new Date(result.cicloLectivo).getFullYear()}`
+        `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${new Date(result.cicloLectivo).getFullYear()}`,
       );
     } else {
-      showSuccess("Éxito", "Asignación actualizada correctamente!");
+      showSuccess(
+        "Éxito",
+        "Asignación del docente ha sido actualizada correctamente!",
+      );
     }
   };
 
@@ -343,8 +345,14 @@ const ListaDocentesGrados = () => {
       {/* Tabla */}
       <div className="table-container">
         {filteredDocentes.length === 0 ? (
-          <div className="no-data">
-            <p>No se encontraron asignaciones de docentes</p>
+          <div colSpan={12}>
+            <div className="empty-state">
+              <i className="fas fa-search empty-icon"></i>
+              <h5>No se encontraron asignaciones de docentes</h5>
+              <p>
+                No hay asignaciones de docentes que coincidan con tu búsqueda.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="scrollable-table">
@@ -367,8 +375,12 @@ const ListaDocentesGrados = () => {
                 <tbody>
                   {paginatedDocentes.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="no-data">
-                        No se encontraron docentes
+                      <td colspan={12}>
+                        <div className="empty-state">
+                          <i className="fas fa-search empty-icon"></i>
+                          <h5>No se encontraron docentes</h5>
+                          <p>No hay docentes que coincidan con tu búsqueda.</p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -398,7 +410,7 @@ const ListaDocentesGrados = () => {
                                 {docente.genero} -{" "}
                                 {docente.fechaNacimiento
                                   ? new Date(
-                                      docente.fechaNacimiento
+                                      docente.fechaNacimiento,
                                     ).toLocaleDateString()
                                   : "Sin fecha"}
                               </small>
@@ -413,7 +425,7 @@ const ListaDocentesGrados = () => {
                         <td>
                           {docente.fechaAsignado
                             ? new Date(
-                                docente.fechaAsignado
+                                docente.fechaAsignado,
                               ).toLocaleDateString()
                             : "No registrada"}
                         </td>

@@ -178,23 +178,23 @@ export class ServicioModel {
         // Actualizar registro existente
         await connection.query(
           `UPDATE ServiciosCompletados 
-                     SET completado = ?, comensales_total = ?, fechaActualizacion = NOW()
+                     SET completado = ?, fechaActualizacion = NOW()
                      WHERE fecha = ? AND id_servicio = ?`,
-          [completado ? 1 : 0, comensales_total, fecha, id_servicio],
+          [completado ? 1 : 0, fecha, id_servicio],
         );
       } else {
         // Crear nuevo registro
         await connection.query(
-          `INSERT INTO ServiciosCompletados (fecha, id_servicio, completado, comensales_total, fechaCreacion)
-                     VALUES (?, ?, ?, ?, NOW())`,
-          [fecha, id_servicio, completado ? 1 : 0, comensales_total],
+          `INSERT INTO ServiciosCompletados (fecha, id_servicio, completado, fechaCreacion)
+                     VALUES (?, ?, ?, NOW())`,
+          [fecha, id_servicio, completado ? 1 : 0],
         );
       }
 
       console.log(
         `✅ Servicio ${id_servicio} marcado como ${
           completado ? "completado" : "pendiente"
-        } en ${fecha} con ${comensales_total} comensales`,
+        } en ${fecha}`
       );
 
       return {
@@ -205,7 +205,6 @@ export class ServicioModel {
         fecha,
         id_servicio,
         completado,
-        comensales_total,
       };
     } catch (error) {
       console.error("Error al marcar servicio como completado:", error);

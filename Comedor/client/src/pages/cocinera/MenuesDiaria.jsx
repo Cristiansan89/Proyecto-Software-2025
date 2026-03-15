@@ -6,7 +6,7 @@ import asistenciaService from "../../services/asistenciaService";
 import asistenciasService from "../../services/asistenciasService";
 import API from "../../services/api.js";
 import "../../styles/MenuesDiaria.css";
-import { showError } from "../../utils/alertService.js";
+import { showError, showWarning } from "../../utils/alertService.js";
 
 const MenuesDiaria = () => {
   const { user } = useAuth();
@@ -63,12 +63,12 @@ const MenuesDiaria = () => {
       // 1. Verificar asistencias registradas
       await verificarAsistenciasRegistradas(fechaStr);
 
-      // 2. Obtener menús de la semana (rango completo de planificación activa o pendiente)
-      // Obtener primero la planificación activa o pendiente para saber el rango de fechas
+      // 2. Obtener menús de la semana (rango completo de planificación)
+      // Obtener primero la planificación activa, luego pendiente, finalmente completado
       let menusResponse = [];
       try {
-        // Intentar primero con Activo, si no hay resultados, usar Pendiente
-        //console.log("🔍 Buscando planificaciones con estado Activo...");
+        // Intentar primero con Activo
+        console.log("🔍 Buscando planificaciones con estado Activo...");
         let planificacionesResponse = await API.get(
           "/planificacion-menus/estado/Activo",
         );
@@ -77,22 +77,9 @@ const MenuesDiaria = () => {
           planificacionesResponse.data ||
           [];
 
-        /*console.log(
-          `📊 Planificaciones Activas encontradas: ${
-            Array.isArray(planificacionesActivas)
-              ? planificacionesActivas.length
-              : 0
-          }`
-        );*/
-
-        // Si no hay planificaciones activas, buscar pendientes
-        if (
-          !Array.isArray(planificacionesActivas) ||
-          planificacionesActivas.length === 0
-        ) {
-          /*console.log(
-            "⚠️ No hay planificaciones Activas, buscando Pendientes..."
-          );*/
+        // Si no hay Activo, intentar con Pendiente
+        if (!Array.isArray(planificacionesActivas) || !planificacionesActivas.length) {
+          console.log("⚠️ No hay planificaciones Activas, buscando Pendientes...");
           planificacionesResponse = await API.get(
             "/planificacion-menus/estado/Pendiente",
           );
@@ -100,16 +87,40 @@ const MenuesDiaria = () => {
             planificacionesResponse.data?.data ||
             planificacionesResponse.data ||
             [];
-          /*console.log(
-            `📊 Planificaciones Pendientes encontradas: ${
+        }
+
+        console.log(
+          `📊 Planificaciones encontradas (Activo/Pendiente): ${
+            Array.isArray(planificacionesActivas)
+              ? planificacionesActivas.length
+              : 0
+          }`
+        );
+
+        // Si no hay Activo ni Pendiente, intentar con Completado (para planificaciones ya cerradas)
+        if (
+          !Array.isArray(planificacionesActivas) ||
+          planificacionesActivas.length === 0
+        ) {
+          console.log(
+            "⚠️ No hay planificaciones Activas ni Pendientes, buscando Completadas..."
+          );
+          planificacionesResponse = await API.get(
+            "/planificacion-menus/estado/Completado",
+          );
+          planificacionesActivas =
+            planificacionesResponse.data?.data ||
+            planificacionesResponse.data ||
+            [];
+          console.log(
+            `📊 Planificaciones Completadas encontradas: ${
               Array.isArray(planificacionesActivas)
                 ? planificacionesActivas.length
                 : 0
             }`
-          );*/
+          );
         }
-
-        /*console.log(
+        console.log(
           `📊 Total Planificaciones encontradas: ${
             Array.isArray(planificacionesActivas)
               ? planificacionesActivas.length
@@ -118,7 +129,7 @@ const MenuesDiaria = () => {
         );
         console.log("📋 Estructura de respuesta:", {
           data: planificacionesActivas,
-        });*/
+        });
 
         if (
           Array.isArray(planificacionesActivas) &&
@@ -126,13 +137,13 @@ const MenuesDiaria = () => {
         ) {
           // Usar la primera planificación (más reciente)
           const planificacion = planificacionesActivas[0];
-          /* console.log(`✅ Planificación encontrada:`, {
+          console.log(`✅ Planificación encontrada:`, {
             id: planificacion.id,
             fechaInicio: planificacion.fechaInicio,
             fechaFin: planificacion.fechaFin,
             estado: planificacion.estado,
             comensalesEstimados: planificacion.comensalesEstimados,
-          });*/
+          });
 
           // Buscar menús dentro del rango de la planificación
           menusResponse = await planificacionMenuService.getMenusSemana(
@@ -140,20 +151,20 @@ const MenuesDiaria = () => {
             planificacion.fechaFin,
           );
         } else {
-          /*console.warn(
-            "⚠️ No hay planificaciones disponibles (ni Activas ni Pendientes)"
-          );*/
+          console.warn(
+            "⚠️ No hay planificaciones disponibles (ni Activas, ni Pendientes, ni Completadas)"
+          );
           showWarning(
             "No hay planificaciones disponibles. Por favor, cree una planificación para continuar.",
           );
           setHayPlanificacion(false);
         }
 
-        /*console.log(
+        console.log(
           "📋 Menús encontrados:",
           menusResponse.length,
           menusResponse
-        );*/
+        );
       } catch (error) {
         /*console.error(
           "❌ Error al obtener menús:",
@@ -168,53 +179,59 @@ const MenuesDiaria = () => {
 
       const menusMap = {};
       if (menusResponse && Array.isArray(menusResponse)) {
-        //console.log(`🔍 Buscando menús para fecha: "${fechaStr}"`);
-        //console.log(`📊 Total de menús en respuesta: ${menusResponse.length}`);
+        console.log(`🔍 Buscando menús para fecha: "${fechaStr}"`);
+        console.log(`📊 Total de menús en respuesta: ${menusResponse.length}`);
 
         // Log de todas las fechas disponibles
         const fechasDisponibles = [
           ...new Set(menusResponse.map((m) => m.fecha)),
         ];
-        /*console.log(
+        console.log(
           `📅 Fechas disponibles en la respuesta:`,
           fechasDisponibles
-        );*/
+        );
 
         for (const menu of menusResponse) {
-          const fechaMenuNormalizada = menu.fecha ? menu.fecha.trim() : null;
-          const coincideFecha = fechaMenuNormalizada === fechaStr;
+          // Comparar usando substring(0, 10) para evitar problemas con horas o espacios
+          const fechaMenuNormalizada = menu.fecha
+            ? menu.fecha.substring(0, 10)
+            : null;
+          const fechaBuscadaNormalizada = fechaStr.substring(0, 10);
+          const coincideFecha = fechaMenuNormalizada === fechaBuscadaNormalizada;
 
-          /*  console.log(`   Menú encontrado:`, {
+          console.log(`Comparando fecha menú: "${menu.fecha}" | Normalizada: "${fechaMenuNormalizada}" | Buscada: "${fechaBuscadaNormalizada}" | Coincide: ${coincideFecha}`);
+
+          console.log(`   Menú encontrado:`, {
             fecha: menu.fecha,
             fechaNormalizada: fechaMenuNormalizada,
-            buscando: fechaStr,
+            buscando: fechaBuscadaNormalizada,
             id_servicio: menu.id_servicio,
             nombreServicio: menu.nombreServicio,
             id_receta: menu.id_receta,
             nombreReceta: menu.nombreReceta,
             coincideFecha: coincideFecha,
             tieneReceta: !!menu.id_receta,
-          });*/
+          });
 
-          // Filtrar solo los menús del día actual
+          // Filtrar solo los menús del día actual con receta válida
           if (coincideFecha && menu.id_receta) {
-            /*console.log(
-              `   ✅ Agregando menú a menusMap para servicio ${menu.id_servicio}`
-            );*/
+            console.log(
+              `   ✅ Agregando menú a menusMap para servicio ${menu.id_servicio} - ${menu.nombreServicio}`
+            );
             menusMap[menu.id_servicio] = menu;
             // Cargar detalles de la receta
             await cargarDetallesReceta(menu.id_receta, menu.id_servicio);
           }
         }
       }
-      /* console.log(`📋 Menús activados para hoy:`, menusMap);
-      setMenuDia(menusMap);*/
+      console.log(`📋 Menús activados para hoy:`, menusMap);
+      setMenuDia(menusMap);
 
       // 3. Obtener asistencia real del día
       try {
         const asistenciaResponse =
           await asistenciaService.getTotalAsistenciasPorServicio(fechaStr);
-        /*console.log(
+        console.log(
           "👥 Asistencia real del día (respuesta completa):",
           asistenciaResponse
         );
@@ -222,7 +239,7 @@ const MenuesDiaria = () => {
         console.log(
           "👥 Keys encontradas:",
           Object.keys(asistenciaResponse || {})
-        );*/
+        );
 
         // Asegurarse de que es un objeto
         const asistenciaReal =
@@ -230,16 +247,16 @@ const MenuesDiaria = () => {
             ? asistenciaResponse
             : {};
 
-        /*console.log("👥 Asistencia Real a guardar:", asistenciaReal);
+        console.log("👥 Asistencia Real a guardar:", asistenciaReal);
         console.log("👥 Verificación individual:", {
           servicio1: asistenciaReal[1],
           servicio2: asistenciaReal[2],
           servicio3: asistenciaReal[3],
-        });*/
+        });
 
         setAsistenciaReal(asistenciaReal);
       } catch (error) {
-        //console.error("❌ Error al cargar asistencia real:", error);
+        console.error("❌ Error al cargar asistencia real:", error);
         showError(
           "Error",
           "❌ Ocurrió un error al cargar la asistencia real. Por favor, intente nuevamente más tarde.",
@@ -247,6 +264,13 @@ const MenuesDiaria = () => {
         // Continuar con los comensales estimados si la asistencia no está disponible
         setAsistenciaReal({});
       }
+
+      // Usar SOLO asistencia real para mostrar información del servicio - Prioridad máxima si existe asistencia > 0
+      console.log("🔍 Verificando prioridad de asistencia real para mostrar menús:", {
+        asistenciaReal,
+        menusMap,
+        hayMenusDisponibles: Object.keys(menusMap).length > 0,
+      });
 
       // 3. Obtener comensales estimados (respaldo)
       const comensalesResponse =
@@ -327,10 +351,10 @@ const MenuesDiaria = () => {
       }
     } catch (error) {
       //console.warn("No se pudo cargar el estado de servicios:", error);
-      showWarning(
+      {/*showWarning(
         "Advertencia",
         "⚠️ No se pudo cargar el estado de servicios. Por favor, intente nuevamente más tarde.",
-      );
+      );*/}
     }
   };
 
@@ -345,10 +369,10 @@ const MenuesDiaria = () => {
       }
     } catch (error) {
       //console.warn("No se pudo cargar comensales por servicio:", error);
-      showWarning(
+      {/*showWarning(
         "Advertencia",
         "⚠️ No se pudo cargar comensales por servicio. Por favor, intente nuevamente más tarde.",
-      );
+      );*/}
     }
   };
 
@@ -360,25 +384,32 @@ const MenuesDiaria = () => {
     if (unidad.includes("gramos")) {
       if (cantidad >= 1000) {
         return {
-          cantidad: cantidad / 1000,
+          cantidad: Math.round(cantidad / 1000 * 100) / 100, // Redondear a 2 decimales
           unidad: "Kilogramos",
         };
       }
-      return { cantidad, unidad: "Gramos" };
+      return { cantidad: Math.round(cantidad), unidad: "Gramos" };
     }
 
     // Para mililitros: si es >= 1000, convertir a litros
+    // Pero SOLO si la cantidad en litros sería >= 1 (para evitar 0.005 Litros)
     if (unidad.includes("mililitros")) {
-      if (cantidad >= 1000) {
+      const cantidadEnLitros = cantidad / 1000;
+      if (cantidadEnLitros >= 1) {
         return {
-          cantidad: cantidad / 1000,
+          cantidad: Math.round(cantidadEnLitros * 100) / 100, // Redondear a 2 decimales
           unidad: "Litros",
         };
       }
-      return { cantidad, unidad: "Mililitros" };
+      return { cantidad: Math.round(cantidad), unidad: "Mililitros" };
     }
 
-    return { cantidad, unidad: unidadOriginal };
+    // Para litros: mantener en litros
+    if (unidad.includes("litros")) {
+      return { cantidad: Math.round(cantidad * 1000), unidad: "Mililitros" };
+    }
+
+    return { cantidad: Math.round(cantidad), unidad: unidadOriginal };
   };
 
   const calcularIngredientesParaServicio = (idServicio) => {
@@ -395,10 +426,10 @@ const MenuesDiaria = () => {
       /*console.warn(
         `⚠️ No hay asistencia real registrada para servicio ${idServicio}`
       );*/
-      showWarning(
+      {/*showWarning(
         "Advertencia",
         `⚠️ No hay asistencia real registrada para servicio ${idServicio}. Por favor, verifique la información.`,
-      );
+      );*/}
       return []; // No mostrar ingredientes si no hay asistencia
     }
 
@@ -408,8 +439,8 @@ const MenuesDiaria = () => {
 
     // Calcular cantidad total de cada ingrediente basándose en asistencia real
     return receta.insumos.map((ingrediente) => {
-      // Parsear cantidad como entero (ya que cantidadPorPorcion es INT en BD)
-      const cantidadPorPorcion = parseInt(
+      // Parsear cantidad como número decimal (puede ser 0.005 litros, 5 gramos, etc)
+      const cantidadPorPorcion = parseFloat(
         String(ingrediente.cantidadPorPorcion),
       );
       const cantidadTotal =
@@ -436,6 +467,8 @@ const MenuesDiaria = () => {
         ...ingrediente,
         cantidadTotal,
         cantidadOptimizada: `${cantidadFormateada} ${mejorUnidad.unidad}`,
+        cantidadOptimizadaNumero: Math.round(mejorUnidad.cantidad * 100) / 100, // Asegurar número redondeado
+        unidadOptimizada: mejorUnidad.unidad,
       };
     });
   };
@@ -482,8 +515,8 @@ const MenuesDiaria = () => {
             fecha: fechaStr,
             detalles: ingredientes.map((ingrediente) => ({
               id_insumo: ingrediente.id_insumo || ingrediente.idInsumo,
-              cantidad_utilizada: ingrediente.cantidadTotal,
-              unidad_medida: ingrediente.unidadPorPorcion,
+              cantidad_utilizada: ingrediente.cantidadOptimizadaNumero,
+              unidad_medida: ingrediente.unidadOptimizada,
             })),
           };
 

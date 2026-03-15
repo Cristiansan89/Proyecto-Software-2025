@@ -228,10 +228,21 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
               Comensales Estimados
             </label>
             <div className="d-flex align-items-center gap-2">
-              {!isViewMode && (
+              <input
+                type="number"
+                className="form-control"
+                id="comensalesEstimados"
+                name="comensalesEstimados"
+                value={formData.comensalesEstimados}
+                onChange={handleInputChange}
+                placeholder="Ingrese cantidad de comensales"
+                readOnly={mode !== "create"}
+                min="0"
+              />
+              {mode === "create" && (
                 <button
                   type="button"
-                  className="btn btn-success d-flex align-items-center gap-2" // 'btn-primary' para que resalte más
+                  className="btn btn-success d-flex align-items-center gap-2"
                   onClick={calculateDinersAutomatically}
                   disabled={calculatingDiners || !formData.fechaInicio}
                   title="Calcular automáticamente según matrícula actual"
@@ -248,7 +259,7 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
                   ) : (
                     <>
                       <i className="fas fa-calculator"></i>
-                      <span>Calcular Comensales</span>
+                      <span>Calcular</span>
                     </>
                   )}
                 </button>

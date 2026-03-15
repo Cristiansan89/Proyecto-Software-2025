@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import "./RegistroAsistenciasMovil.css"; // Reutilizamos estilos
+import "../../styles/RegistroAsistenciasMovil.css"; // Reutilizamos estilos
 
 const RegistroExitoso = () => {
   const location = useLocation();

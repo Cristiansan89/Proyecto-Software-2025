@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api.js";
-import "./LoginAsistencia.css";
+import "../../styles/LoginAsistencia.css";
 
 const LoginAsistencia = () => {
   const { token } = useParams();

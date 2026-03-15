@@ -1,6 +1,17 @@
 import { Router } from "express";
 import { PedidoController } from "../controllers/pedidos.js";
 
+// Router público: solo rutas de confirmación de proveedor (sin autenticación)
+export const createPedidoPublicoRouter = ({ pedidoModel }) => {
+  const router = Router();
+  const pedidoController = new PedidoController({ pedidoModel });
+
+  router.get("/confirmacion/:token", pedidoController.getByTokenProveedor);
+  router.post("/confirmacion/:token", pedidoController.confirmarInsumosProveedor);
+
+  return router;
+};
+
 export const createPedidoRouter = ({ pedidoModel }) => {
   const pedidosRouter = Router();
   const pedidoController = new PedidoController({ pedidoModel });

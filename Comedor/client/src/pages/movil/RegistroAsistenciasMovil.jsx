@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api.js";
-import "./RegistroAsistenciasMovil.css";
+import "../../styles/RegistroAsistenciasMovil.css";
 
 const RegistroAsistenciasMovil = () => {
   const { token } = useParams();
@@ -18,36 +18,27 @@ const RegistroAsistenciasMovil = () => {
   });
 
   const [asistencias, setAsistencias] = useState({});
+  const [datosExito, setDatosExito] = useState({ registradas: 0, servicio: "" });
 
   useEffect(() => {
-    verificarSesionYCargarDatos();
-  }, [token, navigate]);
+    cargarDatosRegistro();
+  }, [token]);
 
-  const verificarSesionYCargarDatos = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      // Verificar si hay sesión activa
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      const asistenciaToken = localStorage.getItem("asistenciaToken");
-
-      // Si no hay sesión o el token almacenado no coincide, redirigir a login
-      if (!userData.idPersona || asistenciaToken !== token) {
-        console.log(
-          "⚠️ Sin sesión activa o token mismatch. Redirigiendo a login..."
-        );
-        navigate(`/asistencias/login/${token}`, { replace: true });
-        return;
-      }
-
-      console.log("✅ Sesión válida. Cargando datos...");
-      await cargarDatosRegistro();
-    } catch (error) {
-      console.error("Error en verificación de sesión:", error);
-      setError("Error al verificar sesión");
-    }
-  };
+  // Navegar automáticamente si el registro fue completado
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => {
+      navigate("/registro-exitoso", {
+        replace: true,
+        state: {
+          mensaje: success,
+          registradas: datosExito.registradas,
+          servicio: datosExito.servicio,
+        },
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [success, datosExito, navigate]);
 
   const cargarDatosRegistro = async () => {
     try {
@@ -92,7 +83,7 @@ const RegistroAsistenciasMovil = () => {
         // Validar que sea un valor válido
         if (!["Si", "No", "Ausente"].includes(tipoAsistenciaActual)) {
           console.warn(
-            `⚠️ Valor inválido de tipoAsistencia para alumno ${alumno.nombre}: ${tipoAsistenciaActual}, usando 'No'`
+            `⚠️ Valor inválido de tipoAsistencia para alumno ${alumno.nombre}: ${tipoAsistenciaActual}, usando 'No'`,
           );
           tipoAsistenciaActual = "No";
         }
@@ -100,6 +91,19 @@ const RegistroAsistenciasMovil = () => {
         asistenciasIniciales[alumno.id_alumnoGrado] = tipoAsistenciaActual;
       });
       setAsistencias(asistenciasIniciales);
+
+      // ✅ Validación de estado: Si ya fue completado, mostrar pantalla de éxito
+      if (tokenData?.estado === "Completado") {
+        console.log("📋 Registro ya completado previamente");
+        setSuccess("¡Asistencias ya fueron registradas!");
+        setDatosExito({
+          registradas: alumnos.length,
+          servicio:
+            servicio?.nombre ||
+            servicio?.nombre_servicio ||
+            "Servicio escolar",
+        });
+      }
 
       console.log("✅ Datos cargados exitosamente");
       console.log("📊 Debug - Asistencias iniciales:", asistenciasIniciales);
@@ -112,7 +116,7 @@ const RegistroAsistenciasMovil = () => {
           tipoAsistenciaType: typeof a.tipoAsistencia,
           id_asistencia: a.id_asistencia,
           estado: a.estado,
-        }))
+        })),
       );
       console.log("📊 Debug - Total alumnos:", alumnos.length);
       console.log("📊 Debug - Distribución inicial:", {
@@ -121,7 +125,7 @@ const RegistroAsistenciasMovil = () => {
         No: Object.values(asistenciasIniciales).filter((v) => v === "No")
           .length,
         Ausente: Object.values(asistenciasIniciales).filter(
-          (v) => v === "Ausente"
+          (v) => v === "Ausente",
         ).length,
       });
     } catch (error) {
@@ -134,11 +138,11 @@ const RegistroAsistenciasMovil = () => {
 
       if (error.response?.status === 401) {
         setError(
-          "El enlace ha expirado o es inválido. Contacte al administrador."
+          "El enlace ha expirado o es inválido. Contacte al administrador.",
         );
       } else {
         setError(
-          `Error al cargar los datos: ${error.message}. Intente nuevamente.`
+          `Error al cargar los datos: ${error.message}. Intente nuevamente.`,
         );
       }
     } finally {
@@ -159,40 +163,41 @@ const RegistroAsistenciasMovil = () => {
     try {
       setGuardando(true);
       setError("");
-      setSuccess("");
-
-      if (Object.keys(asistencias).length === 0) {
-        setError("No hay asistencias para guardar.");
-        return;
-      }
 
       const asistenciasArray = Object.entries(asistencias).map(
         ([idAlumnoGrado, tipoAsistencia]) => ({
           idAlumnoGrado: parseInt(idAlumnoGrado),
           tipoAsistencia,
-        })
+        }),
       );
 
-      const response = await API.post(`/asistencias/registro/${token}`, {
-        asistencias: asistenciasArray,
-      });
+      const response = await API.post(
+        `/asistencias/registro/${token}`,
+        { asistencias: asistenciasArray },
+        { headers: { "Cache-Control": "no-cache" } },
+      );
 
-      // 1. Redirigir inmediatamente a la pantalla de éxito
-      navigate("/registro-exitoso", {
-        state: {
-          mensaje: "Asistencias guardadas correctamente.",
-          registradas: response.data.registradas,
-          servicio: datosRegistro.servicio?.nombre || "",
-        },
-      });
-    } catch (error) {
-      console.error("❌ Error al guardar asistencias:", error);
+      console.log("Respuesta recibida de ngrok", response.data);
 
-      if (error.response?.status === 401) {
-        setError("El enlace ha expirado. Contacte al administrador.");
-      } else {
-        setError(`Error al guardar: ${error.message}`);
-      }
+      const registradas = response.data.registradas ?? asistenciasArray.length;
+      const nombreServicio =
+        datosRegistro.servicio?.nombre ||
+        datosRegistro.servicio?.nombre_servicio ||
+        "Servicio escolar";
+
+      setDatosExito({ registradas, servicio: nombreServicio });
+
+      // Actualizar estado local para marcar como completado
+      setDatosRegistro((prev) => ({
+        ...prev,
+        tokenData: { ...prev.tokenData, estado: "Completado" },
+      }));
+
+      // El useEffect([success]) manejará la navegación automáticamente
+      setSuccess("¡Asistencias registradas con éxito!");
+    } catch (err) {
+      console.error("❌ Error al guardar asistencias:", err);
+      setError(err.response?.data?.message || "Error al conectar con el servidor.");
     } finally {
       setGuardando(false);
     }
@@ -241,135 +246,156 @@ const RegistroAsistenciasMovil = () => {
           year: "numeric",
           month: "long",
           day: "numeric",
-        }
+        },
       )
     : "Fecha no disponible";
 
-  // Debug logs para renderizado
-  console.log("🎨 Renderizando componente:", {
-    loading,
-    error,
-    datosRegistroKeys: Object.keys(datosRegistro),
-    alumnosLength: datosRegistro.alumnos?.length || 0,
-    servicioNombre: datosRegistro.servicio?.nombre,
-    tokenDataGrado: datosRegistro.tokenData?.nombreGrado,
-  });
-
   return (
     <div className="movil-container">
-      {/* Header */}
-      <div className="header-movil">
-        <div className="header-content">
-          <h1>📋 Registro de Asistencia</h1>
-          <div className="info-header">
-            <div className="info-item">
-              <strong>🍽️ {datosRegistro.servicio?.nombre}</strong>
-            </div>
-            <div className="info-item">
-              <strong>📚 {datosRegistro.tokenData?.nombreGrado}</strong>
-            </div>
-            <div className="info-item">
-              <strong>📅 {fechaFormateada}</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      <div className="stats-movil">
-        <div className="stat-item stat-si">
-          <span className="stat-number">{conteos.Si}</span>
-          <span className="stat-label">Asisten</span>
-        </div>
-        <div className="stat-item stat-no">
-          <span className="stat-number">{conteos.No}</span>
-          <span className="stat-label">No Desean</span>
-        </div>
-        <div className="stat-item stat-ausente">
-          <span className="stat-number">{conteos.Ausente}</span>
-          <span className="stat-label">Ausentes</span>
-        </div>
-      </div>
-
-      {/* Lista de Alumnos */}
-      <div className="alumnos-lista">
-        {datosRegistro.alumnos.map((alumno) => (
-          <div key={alumno.id_alumnoGrado} className="alumno-card">
-            <div className="alumno-info">
-              <h3>
-                {alumno.apellido}, {alumno.nombre}
-              </h3>
-              <p className="alumno-dni">DNI: {alumno.dni}</p>
-            </div>
-
-            <div className="opciones-asistencia">
-              <button
-                className={`opcion-btn opcion-si ${
-                  asistencias[alumno.id_alumnoGrado] === "Si" ? "active" : ""
-                }`}
-                onClick={() =>
-                  handleAsistenciaChange(alumno.id_alumnoGrado, "Si")
-                }
-              >
-                ✅ Sí
-              </button>
-              <button
-                className={`opcion-btn opcion-no ${
-                  asistencias[alumno.id_alumnoGrado] === "No" ? "active" : ""
-                }`}
-                onClick={() =>
-                  handleAsistenciaChange(alumno.id_alumnoGrado, "No")
-                }
-              >
-                ❌ No
-              </button>
-              <button
-                className={`opcion-btn opcion-ausente ${
-                  asistencias[alumno.id_alumnoGrado] === "Ausente"
-                    ? "active"
-                    : ""
-                }`}
-                onClick={() =>
-                  handleAsistenciaChange(alumno.id_alumnoGrado, "Ausente")
-                }
-              >
-                🚫 Ausente
-              </button>
+      {!success ? (
+        /* ── INTERFAZ DE FORMULARIO ── */
+        <>
+          {/* Header */}
+          <div className="header-movil">
+            <div className="header-content">
+              <h1>📋 Registro de Asistencia</h1>
+              <div className="info-header">
+                <div className="info-item">
+                  <strong>🍽️ {datosRegistro.servicio?.nombre}</strong>
+                </div>
+                <div className="info-item">
+                  <strong>📚 {datosRegistro.tokenData?.nombreGrado}</strong>
+                </div>
+                <div className="info-item">
+                  <strong>📅 {fechaFormateada}</strong>
+                </div>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Mensajes */}
-      {error && (
-        <div className="mensaje-error">
-          <p>{error}</p>
-        </div>
-      )}
-
-      {success && (
-        <div className="mensaje-success">
-          <p>{success}</p>
-        </div>
-      )}
-
-      {/* Botón de Guardar */}
-      <div className="footer-movil">
-        <button
-          className="btn-guardar"
-          onClick={guardarAsistencias}
-          disabled={guardando}
-        >
-          {guardando ? (
-            <>
-              <div className="spinner-btn"></div>
-              Guardando...
-            </>
-          ) : (
-            <>💾 Guardar Asistencias</>
+          {/* Error */}
+          {error && (
+            <div className="mensaje-error">
+              <p>{error}</p>
+            </div>
           )}
-        </button>
-      </div>
+
+          {/* Estadísticas */}
+          <div className="stats-movil">
+            <div className="stat-item stat-si">
+              <span className="stat-number">{conteos.Si}</span>
+              <span className="stat-label">Asisten</span>
+            </div>
+            <div className="stat-item stat-no">
+              <span className="stat-number">{conteos.No}</span>
+              <span className="stat-label">No Desean</span>
+            </div>
+            <div className="stat-item stat-ausente">
+              <span className="stat-number">{conteos.Ausente}</span>
+              <span className="stat-label">Ausentes</span>
+            </div>
+          </div>
+
+          {/* Lista de Alumnos */}
+          <div className="alumnos-lista">
+            {datosRegistro.alumnos.map((alumno) => (
+              <div key={alumno.id_alumnoGrado} className="alumno-card">
+                <div className="alumno-info">
+                  <h3>
+                    {alumno.apellido}, {alumno.nombre}
+                  </h3>
+                  <p className="alumno-dni">DNI: {alumno.dni}</p>
+                </div>
+
+                <div className="opciones-asistencia">
+                  <button
+                    className={`opcion-btn opcion-si ${
+                      asistencias[alumno.id_alumnoGrado] === "Si" ? "active" : ""
+                    }`}
+                    onClick={() =>
+                      handleAsistenciaChange(alumno.id_alumnoGrado, "Si")
+                    }
+                  >
+                    ✅ Sí
+                  </button>
+                  <button
+                    className={`opcion-btn opcion-no ${
+                      asistencias[alumno.id_alumnoGrado] === "No" ? "active" : ""
+                    }`}
+                    onClick={() =>
+                      handleAsistenciaChange(alumno.id_alumnoGrado, "No")
+                    }
+                  >
+                    ❌ No
+                  </button>
+                  <button
+                    className={`opcion-btn opcion-ausente ${
+                      asistencias[alumno.id_alumnoGrado] === "Ausente"
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handleAsistenciaChange(alumno.id_alumnoGrado, "Ausente")
+                    }
+                  >
+                    🚫 Ausente
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Botón de Guardar */}
+          <div className="footer-movil">
+            <button
+              className="btn-guardar"
+              onClick={guardarAsistencias}
+              disabled={guardando}
+            >
+              {guardando ? (
+                <>
+                  <div className="spinner-btn"></div>
+                  Guardando...
+                </>
+              ) : (
+                <>💾 Guardar Asistencias</>
+              )}
+            </button>
+          </div>
+        </>
+      ) : (
+        /* ── INTERFAZ DE ÉXITO ── */
+        <div className="error-movil">
+          <div style={{ fontSize: "5rem", marginBottom: "1rem" }}>✅</div>
+          <h2>¡Registro Completado!</h2>
+          <p style={{ margin: "1rem 0" }}>{success}</p>
+          <p>
+            Se actualizaron <strong>{datosExito.registradas}</strong> registros
+            para <strong>{datosExito.servicio}</strong>.
+          </p>
+          <div style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+            <div className="spinner-movil"></div>
+            <p style={{ fontSize: "0.85rem", color: "#888" }}>
+              Redirigiendo en 1.5 segundos...
+            </p>
+          </div>
+          <br />
+          <button
+            className="btn-guardar"
+            onClick={() =>
+              navigate("/registro-exitoso", {
+                state: {
+                  mensaje: success,
+                  registradas: datosExito.registradas,
+                  servicio: datosExito.servicio,
+                },
+              })
+            }
+          >
+            Finalizar ahora
+          </button>
+        </div>
+      )}
     </div>
   );
 };

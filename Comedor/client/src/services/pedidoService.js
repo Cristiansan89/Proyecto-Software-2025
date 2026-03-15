@@ -130,56 +130,10 @@ const pedidoService = {
   // Crear pedido manual con múltiples insumos y proveedores
   crearPedidoManual: async (datosPedido) => {
     try {
-      const {
-        insumos, // Array de { id_insumo, id_proveedor, cantidad }
-        fechaEntregaEsperada,
-        observaciones,
-        id_usuario,
-      } = datosPedido;
-
-      // Agrupar insumos por proveedor
-      const pedidosPorProveedor = {};
-
-      insumos.forEach((item) => {
-        if (!pedidosPorProveedor[item.id_proveedor]) {
-          pedidosPorProveedor[item.id_proveedor] = [];
-        }
-        pedidosPorProveedor[item.id_proveedor].push(item);
-      });
-
-      const pedidosCreados = [];
-
-      // Crear un pedido por cada proveedor
-      for (const [idProveedor, insumosProveedor] of Object.entries(
-        pedidosPorProveedor
-      )) {
-        const pedido = {
-          id_proveedor: idProveedor,
-          id_usuario,
-          fechaPedido: new Date().toISOString().split("T")[0],
-          fechaEntregaEsperada,
-          observaciones,
-          estado: "Pendiente",
-          origen: "Manual",
-        };
-
-        // Crear el pedido principal
-        const pedidoCreado = await pedidoService.create(pedido);
-
-        // Agregar los detalles del pedido (líneas)
-        for (const insumo of insumosProveedor) {
-          await axiosInstance.post("/lineaspedidos", {
-            id_pedido: pedidoCreado.id_pedido,
-            id_proveedor: idProveedor,
-            id_insumo: insumo.id_insumo,
-            cantidadSolicitada: insumo.cantidad,
-          });
-        }
-
-        pedidosCreados.push(pedidoCreado);
-      }
-
-      return pedidosCreados;
+      // Delega al endpoint /pedidos/manual que agrupa por proveedor,
+      // crea las líneas de pedido y envía la notificación Telegram al proveedor.
+      const response = await axiosInstance.post("/pedidos/manual", datosPedido);
+      return response.data.pedidos;
     } catch (error) {
       throw error;
     }

@@ -50,7 +50,7 @@ const ListaInsumos = () => {
       insumo.unidadMedida.toLowerCase().includes(searchTerm.toLowerCase()) ||
       insumo.categoria.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "todos" 
+      statusFilter === "todos"
         ? insumo.estado === "Activo"
         : insumo.estado === statusFilter;
     return matchesSearch && matchesStatus;
@@ -64,7 +64,7 @@ const ListaInsumos = () => {
   const totalPages = Math.max(1, Math.ceil(filteredInsumos.length / pageSize));
   const paginatedInsumos = filteredInsumos.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
 
   const handleCreate = () => {
@@ -91,7 +91,7 @@ const ListaInsumos = () => {
       "Eliminar Insumo",
       `¿Está seguro de eliminar el insumo "${insumo.nombreInsumo}"? Esta acción podría afectar los registros de inventario actuales.`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     if (confirmed) {
@@ -113,32 +113,36 @@ const ListaInsumos = () => {
         // Si el error es por relaciones activas
         if (error.response?.status === 409) {
           let detailsMsg = msg;
-          
+
           // Si tenemos detalles de las relaciones, construir mensaje más claro
           if (relationsData) {
             let relationsList = [];
-            
+
             if (relationsData.recetas && relationsData.recetas.length > 0) {
-              const recetasNames = relationsData.recetas.map(r => r.nombreReceta).join(", ");
+              const recetasNames = relationsData.recetas
+                .map((r) => r.nombreReceta)
+                .join(", ");
               relationsList.push(`📋 Recetas: ${recetasNames}`);
             }
-            
-            if (relationsData.proveedores && relationsData.proveedores.length > 0) {
-              const proveedoresNames = relationsData.proveedores.map(p => p.razonSocial).join(", ");
+
+            if (
+              relationsData.proveedores &&
+              relationsData.proveedores.length > 0
+            ) {
+              const proveedoresNames = relationsData.proveedores
+                .map((p) => p.razonSocial)
+                .join(", ");
               relationsList.push(`🏪 Proveedores: ${proveedoresNames}`);
             }
-            
+
             if (relationsList.length > 0) {
-              detailsMsg = `No se puede eliminar porque está asociado a:\n\n${relationsList.join("\n")}\n\nAlternativa: Usa el botón de desactivar (✗) para marcarlo como inactivo sin perder el historial.`;
+              detailsMsg = `No se puede eliminar porque está asociado a:\n\n${relationsList.join(".\n")}\n\n Alternativa: Usa el botón de desactivar (✗) para marcarlo como inactivo sin perder el historial.`;
             }
           } else {
-            detailsMsg = `${msg}\n\nAlternativa: Usa el botón de desactivar (✗) para marcarlo como inactivo sin perder el historial.`;
+            detailsMsg = `${msg}\n\n Alternativa: Usa el botón de desactivar (✗) para marcarlo como inactivo sin perder el historial.`;
           }
-          
-          showWarning(
-            "No se puede eliminar",
-            detailsMsg
-          );
+
+          showWarning("No se puede eliminar", detailsMsg);
         } else if (error.response?.data?.message) {
           showInfo("Información", `Error: ${msg}`);
         } else {
@@ -152,9 +156,9 @@ const ListaInsumos = () => {
     try {
       const updated = { ...insumo, estado: nuevoEstado };
       await insumoService.update(insumo.idInsumo, updated);
-      showInfo(
-        "Información",
-        `Estado del Insumo ${insumo.nombreInsumo} actualizado a ${nuevoEstado}`
+      showSuccess(
+        "Éxito",
+        `Estado del Insumo ${insumo.nombreInsumo} actualizado a ${nuevoEstado}`,
       );
       loadInsumos();
     } catch (error) {
@@ -171,11 +175,11 @@ const ListaInsumos = () => {
   const handleSave = async (savedInsumo) => {
     try {
       // Si llegamos aquí sin errores, significa que el guardado fue exitoso
-      showInfo(
-        "Información",
+      showSuccess(
+        "Éxito",
         `Insumo ${
           modalMode === "create" ? "creado" : "actualizado"
-        } correctamente`
+        } correctamente`,
       );
       setShowModal(false);
       setSelectedInsumo(null);
@@ -338,8 +342,12 @@ const ListaInsumos = () => {
                 <tbody>
                   {paginatedInsumos.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="no-data">
-                        No se encontraron insumos
+                      <td colSpan={12}>
+                        <div className="empty-state">
+                          <i className="fas fa-search empty-icon"></i>
+                          <h5>No se encontraron insumos</h5>
+                          <p>No hay insumos que coincidan con tu búsqueda.</p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -386,7 +394,7 @@ const ListaInsumos = () => {
                           <td style={{ fontSize: "0.75rem" }}>
                             <span
                               className={`status-badge-insumo ${String(
-                                insumo.estado || ""
+                                insumo.estado || "",
                               ).toLowerCase()}`}
                             >
                               {insumo.estado || ""}
@@ -441,7 +449,7 @@ const ListaInsumos = () => {
                                     insumo,
                                     insumo.estado === "Activo"
                                       ? "Inactivo"
-                                      : "Activo"
+                                      : "Activo",
                                   )
                                 }
                                 title={
@@ -511,8 +519,8 @@ const ListaInsumos = () => {
                 {modalMode === "create"
                   ? "Nuevo Insumo"
                   : modalMode === "edit"
-                  ? "Editar Insumo"
-                  : "Detalles del Insumo"}
+                    ? "Editar Insumo"
+                    : "Detalles del Insumo"}
               </h3>
               <button
                 type="button"

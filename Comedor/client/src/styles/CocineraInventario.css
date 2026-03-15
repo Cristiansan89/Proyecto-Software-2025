@@ -413,3 +413,48 @@
     align-items: flex-start;
   }
 }
+
+
+.alerta-inventario {
+  border: none;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  animation: slideIn 0.3s ease;
+  margin-top: 20px;
+  border: 1px solid transparent;
+}
+
+.alerta-inventario-danger {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.alerta-inventario-dark {
+  background-color: #e2e3e5;
+  border-color: #d6d8db;
+  color: #383d41;
+}
+
+.alerta-inventario-warning {
+  background-color: #fff3cd;
+  border-color: #ffeeba;
+  color: #856404;
+}
+
+.alerta-inventario b {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.alerta-inventario small {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}

@@ -123,14 +123,36 @@ export class AsistenciaController {
         descripcion: "",
       };
 
+      // Verificar si todas las asistencias están completadas
+      const [completadasResult] = await connection.query(
+        `SELECT COUNT(*) as total, 
+                SUM(CASE WHEN estado = 'Completado' THEN 1 ELSE 0 END) as completados
+         FROM Asistencias 
+         WHERE id_servicio = ? AND id_alumnoGrado IN (
+           SELECT id_alumnoGrado FROM AlumnoGrado WHERE nombreGrado = ?
+         ) AND fecha = ?`,
+        [tokenData.idServicio, tokenData.nombreGrado, tokenData.fecha]
+      );
+
+      const allCompleted = alumnos.length > 0 && 
+                          completadasResult[0]?.completados === alumnos.length;
+
+      // Agregar estado de completitud al tokenData
+      const tokenDataConEstado = {
+        ...tokenData,
+        estado: allCompleted ? "Completado" : "Pendiente"
+      };
+
       console.log("✅ Acceso permitido. Datos cargados:", {
         grado: tokenData.nombreGrado,
         alumnos: alumnos.length,
+        registrosCompletados: completadasResult[0]?.completados || 0,
+        estado: tokenDataConEstado.estado,
       });
 
       res.json({
         success: true,
-        tokenData,
+        tokenData: tokenDataConEstado,
         alumnos,
         servicio,
       });
@@ -321,8 +343,7 @@ export class AsistenciaController {
       // Usar URL base de variable de entorno (debe ser HTTPS para Telegram)
       const baseUrl =
         process.env.FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
-      // Cambiar a /asistencias/login para requerir autenticación primero
-      const link = `${baseUrl}/asistencias/login/${token}`;
+      const link = `${baseUrl}/asistencias/registro/${token}`;
 
       res.json({
         message: "Token generado correctamente",

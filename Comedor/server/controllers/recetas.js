@@ -59,7 +59,7 @@ export class RecetaController {
       res.status(201).json(newReceta);
     } catch (error) {
       console.error("Error al crear receta:", error);
-      if (error.message.includes("ya existe")) {
+      if (error.message.toLowerCase().includes("ya existe")) {
         return res.status(409).json({ message: error.message });
       }
       res.status(500).json({ message: "Error interno del servidor" });
@@ -78,7 +78,8 @@ export class RecetaController {
       if (hasActiveRelations) {
         return res.status(409).json({
           message:
-            "No se puede eliminar la receta porque está vinculada a registros activos",
+            "No se puede eliminar esta receta porque está siendo utilizada en planificaciones activas. Desactiva la receta o elimina sus referencias antes de intentar eliminarla.",
+          code: "RECIPE_IN_USE",
         });
       }
 

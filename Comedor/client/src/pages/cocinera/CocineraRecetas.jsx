@@ -219,9 +219,21 @@ const CocineraRecetas = () => {
         showSuccess("Éxito", "Receta eliminada exitosamente");
       } catch (error) {
         // 4. Manejo de errores estandarizado
-        const msg =
-          error.response?.data?.message || "Error al eliminar la receta";
-        showError("Error", msg);
+        const statusCode = error.response?.status;
+        const errorData = error.response?.data;
+        const errorCode = errorData?.code;
+
+        // Manejo específico cuando la receta está en uso
+        if (statusCode === 409 && errorCode === "RECIPE_IN_USE") {
+          showError(
+            "Receta en Uso",
+            `${errorData.message || "Esta receta no puede ser eliminada porque está siendo utilizada en planificaciones activas."}`
+          );
+        } else {
+          const msg =
+            errorData?.message || "Error al eliminar la receta";
+          showError("Error", msg);
+        }
       } finally {
         setLoading(false);
       }

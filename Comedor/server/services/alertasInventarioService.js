@@ -64,7 +64,7 @@ class AlertasInventarioService {
     }
   }
 
-  // Verificar y enviar alertas
+  // Verificar y enviar alertas (AGRUPADAS EN UN SOLO MENSAJE)
   async verificarYEnviarAlertas() {
     try {
       // Verificar si las alertas están habilitadas
@@ -89,19 +89,113 @@ class AlertasInventarioService {
         `🔔 Se detectaron ${insumosConStockBajo.length} insumos con stock bajo`
       );
 
-      // Diagnosticar cada insumo antes de procesar
-      for (const insumo of insumosConStockBajo) {
+      // Filtrar por déficit real contra la planificación semanal antes de alertar
+      const insumosConDeficit = await this._filtrarPorDemandaSemanal(insumosConStockBajo);
+
+      if (insumosConDeficit.length === 0) {
+        console.log("\u2705 Stock suficiente para cubrir la demanda semanal planificada. No se envían alertas.");
+        return;
+      }
+
+      console.log(`📊 Insumos con déficit real respecto a la planificación: ${insumosConDeficit.length}`);
+
+      // Validar y agrupar insumos con alertas válidas
+      const insumosValidos = [];
+      for (const insumo of insumosConDeficit) {
         const esAlertaValida = await this.validarAlerta(insumo);
         if (esAlertaValida) {
-          await this.procesarAlerta(insumo);
+          insumosValidos.push(insumo);
         } else {
           console.log(
             `⚠️ Alerta inválida ignorada para: ${insumo.nombreInsumo}`
           );
         }
       }
+
+      // Si hay insumos válidos, procesar y enviar un ÚNICO mensaje con todos
+      if (insumosValidos.length > 0) {
+        await this.procesarYEnviarAlertasAgrupadas(insumosValidos);
+      }
     } catch (error) {
       console.error("❌ Error en verificación de alertas:", error);
+    }
+  }
+
+  // Filtrar insumos por déficit real contra la demanda semanal planificada
+  // Retorna solo los insumos cuyo stock no cubre la demanda de los días de servicio restantes
+  async _filtrarPorDemandaSemanal(insumos) {
+    try {
+      const { connection } = await import("../models/db.js");
+      const mapJStoEnum = { 1: 'Lunes', 2: 'Martes', 3: 'Miercoles', 4: 'Jueves' };
+      const hoy = new Date();
+      const diaSemanaJS = hoy.getDay();
+
+      // Fuera del rango de servicio (vie, sáb, dom) → usar criterio de stock mínimo
+      if (diaSemanaJS === 0 || diaSemanaJS === 5 || diaSemanaJS === 6) {
+        return insumos;
+      }
+
+      const diasRestantes = [];
+      for (let d = Math.max(diaSemanaJS, 1); d <= 4; d++) {
+        diasRestantes.push(mapJStoEnum[d]);
+      }
+
+      if (diasRestantes.length === 0) return insumos;
+
+      // Buscar planificación activa para la semana actual
+      const [planificaciones] = await connection.query(
+        `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, comensalesEstimados
+         FROM PlanificacionMenus
+         WHERE estado = 'Activo'
+           AND fechaInicio <= CURDATE()
+           AND fechaFin >= CURDATE()
+         ORDER BY fechaInicio DESC LIMIT 1`
+      );
+
+      if (!planificaciones || planificaciones.length === 0) {
+        console.log("ℹ️ Sin planificación activa. Se usa criterio de stock mínimo para alertas.");
+        return insumos; // Fallback: alertar por stock mínimo
+      }
+
+      const plan = planificaciones[0];
+      const comensales = plan.comensalesEstimados || 120;
+      console.log(`📋 Planificación activa: ${plan.id_planificacion} | Comensales: ${comensales} | Días restantes: [${diasRestantes.join(', ')}]`);
+
+      const placeholders = diasRestantes.map(() => '?').join(', ');
+      const [itemsReceta] = await connection.query(
+        `SELECT ir.id_insumo, SUM(ir.cantidadPorPorcion) AS cantidadTotal
+         FROM JornadaPlanificada jp
+         JOIN RecetaJornada rj ON jp.id_jornada = rj.id_jornada
+         JOIN ItemsRecetas ir ON rj.id_receta = ir.id_receta
+         WHERE jp.id_planificacion = UUID_TO_BIN(?)
+           AND jp.diaSemana IN (${placeholders})
+           AND ir.id_insumo IS NOT NULL
+         GROUP BY ir.id_insumo`,
+        [plan.id_planificacion, ...diasRestantes]
+      );
+
+      const demandaMap = {};
+      for (const item of itemsReceta) {
+        demandaMap[item.id_insumo] = parseFloat(item.cantidadTotal) * comensales;
+      }
+
+      return insumos.filter(insumo => {
+        const demanda = demandaMap[insumo.id_insumo];
+        if (demanda === undefined) {
+          console.log(`✅ ${insumo.nombreInsumo}: no se usa en recetas esta semana. Sin alerta.`);
+          return false;
+        }
+        const stock = parseFloat(insumo.cantidadActual || 0);
+        if (stock >= demanda) {
+          console.log(`✅ ${insumo.nombreInsumo}: stock (${stock}) cubre demanda semanal (${demanda}). Sin alerta.`);
+          return false;
+        }
+        console.log(`🔔 ${insumo.nombreInsumo}: stock (${stock}) < demanda (${demanda}). Se envía alerta.`);
+        return true;
+      });
+    } catch (error) {
+      console.error("⚠️ Error en filtro de demanda semanal, fallback a criterio de stock mínimo:", error.message);
+      return insumos; // Fallback seguro: no silenciar alertas
     }
   }
 
@@ -171,55 +265,56 @@ class AlertasInventarioService {
     }
   }
 
-  // Procesar alerta individual
-  async procesarAlerta(insumo) {
+  // Procesar y enviar alertas agrupadas en UN SOLO MENSAJE
+  async procesarYEnviarAlertasAgrupadas(insumosValidos) {
     try {
-      // Obtener alertas previas
-      const alertasPrevias = await AlertaInventarioModel.getAlertas({
-        id_insumo: insumo.id_insumo,
-      });
+      // Obtener alertas existentes
+      const { connection } = await import("../models/db.js");
+      
+      // Crear/actualizar alertas para cada insumo
+      for (const insumo of insumosValidos) {
+        const alertasPrevias = await AlertaInventarioModel.getAlertas({
+          id_insumo: insumo.id_insumo,
+        });
 
-      // Si existe una alerta activa
-      let alerta = alertasPrevias.find((a) => a.estado === "activa");
+        let alerta = alertasPrevias.find((a) => a.estado === "activa");
 
-      if (alerta) {
-        // Verificar si ya se han enviado 3 alertas
-        if (alerta.contadorEnvios >= 3) {
-          console.log(
-            `⚠️ Límite de alertas alcanzado para: ${insumo.nombreInsumo} (${alerta.contadorEnvios}/3)`
-          );
-          return;
+        if (alerta) {
+          // Si existe alerta activa, no crear duplicada
+          continue;
+        } else {
+          // Crear nueva alerta
+          await AlertaInventarioModel.create({
+            id_insumo: insumo.id_insumo,
+            tipoAlerta: insumo.estado,
+            contadorEnvios: 1,
+          });
         }
-
-        // Incrementar contador y enviar
-        const nuevoContador = alerta.contadorEnvios + 1;
-        await this.enviarAlerta(insumo, nuevoContador);
-
-        // Actualizar contador en la BD
-        await AlertaInventarioModel.actualizarContador({
-          id_insumo: insumo.id_insumo,
-          contadorEnvios: nuevoContador,
-        });
-      } else {
-        // Crear nueva alerta y enviar
-        await AlertaInventarioModel.create({
-          id_insumo: insumo.id_insumo,
-          tipoAlerta: insumo.estado,
-          contadorEnvios: 1,
-        });
-        await this.enviarAlerta(insumo, 1);
       }
+
+      // Enviar UN SOLO MENSAJE con todos los insumos
+      await this.enviarAlertasAgrupadasTelegram(insumosValidos);
     } catch (error) {
       console.error(
-        `❌ Error procesando alerta para insumo ${insumo.id_insumo}:`,
+        `❌ Error procesando alertas agrupadas:`,
         error
       );
     }
   }
 
-  // Enviar alerta por Telegram
-  async enviarAlerta(insumo, numeroEnvio) {
+  // Enviar alertas agrupadas por Telegram
+  async enviarAlertasAgrupadasTelegram(insumos) {
     try {
+      // VALIDACIÓN: Solo enviar de lunes a jueves
+      const hoy = new Date();
+      const diaSemana = hoy.getDay(); // 0=domingo, 5=viernes, 6=sábado
+      
+      if (diaSemana === 5 || diaSemana === 0 || diaSemana === 6) {
+        const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+        console.log(`⏰ Es ${dias[diaSemana]}. No se envían alertas (solo lunes-jueves)`);
+        return;
+      }
+
       // Obtener Chat ID de la cocinera desde la BD
       const { connection } = await import("../models/db.js");
       const [parametros] = await connection.query(
@@ -251,77 +346,83 @@ class AlertasInventarioService {
         return;
       }
 
-      // Construir mensaje
-      const mensaje = this.construirMensajeAlerta(insumo, numeroEnvio);
+      // Obtener URL base para el enlace
+      const urlBase = process.env.FRONTEND_URL || "http://localhost:5173";
+      const enlacePedidos = `${urlBase}/cocinera/alertas-insumos`;
 
-      // Crear botones de confirmación
-      const opciones = {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "✅ Confirmado - He recibido la alerta",
-                callback_data: `confirmado_${insumo.id_insumo}_${numeroEnvio}`,
-              },
-            ],
-          ],
-        },
-      };
+      // Construir mensaje con enlace
+      const mensaje = this.construirMensajeAlertasConEnlace(insumos, enlacePedidos);
 
       // Enviar por Telegram usando el bot del sistema
       const resultado = await telegramService.sendMessage(
         chatId,
         mensaje,
-        "sistema",
-        opciones
+        "sistema"
       );
 
       if (resultado.success) {
         console.log(
-          `✅ Alerta enviada a Telegram - ${insumo.nombreInsumo} (Envío ${numeroEnvio}/3)`
+          `✅ Alerta agrupada enviada a Telegram - ${insumos.length} insumo(s)`
         );
       } else {
         console.error(
-          `❌ Error enviando alerta por Telegram:`,
+          `❌ Error enviando alerta agrupada por Telegram:`,
           resultado.error
         );
       }
     } catch (error) {
-      console.error("❌ Error enviando alerta:", error);
+      console.error("❌ Error enviando alertas agrupadas:", error);
     }
   }
 
-  // Construir mensaje de alerta
-  construirMensajeAlerta(insumo, numeroEnvio) {
-    const emoji = insumo.estado === "Agotado" ? "🚨" : "⚠️";
-    const estadoTexto = insumo.estado === "Agotado" ? "AGOTADO" : "CRÍTICO";
+  // Construir mensaje con enlace (sin botones)
+  construirMensajeAlertasConEnlace(insumos, enlace) {
+    const tieneAgotados = insumos.some(i => i.estado === "Agotado");
+    const emoji = tieneAgotados ? "🚨" : "⚠️";
+    
+    let mensaje = `${emoji} *ALERTA DE INSUMOS FALTANTES*\n`;
+    mensaje += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    
+    mensaje += `Se detectaron *${insumos.length} insumo(s)* con stock crítico.\n\n`;
 
-    let mensaje = `${emoji} ALERTA DE INVENTARIO\n\n`;
-    mensaje += `Estado: ${estadoTexto}\n`;
-    mensaje += `Insumo: ${insumo.nombreInsumo}\n`;
-    mensaje += `Categoría: ${insumo.categoria || "No especificada"}\n`;
-    mensaje += `Stock Actual: ${Math.round(
-      parseFloat(insumo.cantidadActual)
-    )} ${insumo.unidadMedida}\n`;
-    mensaje += `Nivel Mínimo: ${Math.round(
-      parseFloat(insumo.nivelMinimoAlerta)
-    )} ${insumo.unidadMedida}\n\n`;
+    // Mostrar los insumos brevemente
+    insumos.forEach((insumo, index) => {
+      const estadoEmoji = insumo.estado === "Agotado" ? "🔴" : "🟡";
+      mensaje += `${index + 1}. ${estadoEmoji} ${insumo.nombreInsumo}\n`;
+    });
 
-    // Mostrar el contador de notificaciones de forma clara
-    const barra = this.crearBarra(numeroEnvio, 3);
-    mensaje += `📊 Notificación: ${numeroEnvio}/3\n`;
-    mensaje += `${barra}\n\n`;
+    mensaje += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    mensaje += `📲 Para revisar y realizar el pedido, acceda al siguiente enlace:\n\n`;
+    mensaje += `[Ver insumos faltantes](${enlace})\n\n`;
+    mensaje += `⚡ El enlace abre directamente desde tu teléfono.`;
 
-    mensaje += `🔔 Acciones sugeridas:\n`;
-    mensaje += `• Revisa el inventario del sistema\n`;
-    mensaje += `• Verifica los proveedores disponibles\n`;
-    mensaje += `• Realiza un pedido manual si es necesario\n\n`;
+    return mensaje;
+  }
 
-    mensaje += `📋 Por favor, haz clic en el botón de confirmación\n`;
-    mensaje += `para indicar que has recibido esta alerta.\n\n`;
+  // Construir mensaje agrupado de alertas
+  construirMensajeAlertasAgrupadas(insumos) {
+    const tieneAgotados = insumos.some(i => i.estado === "Agotado");
+    const emoji = tieneAgotados ? "🚨" : "⚠️";
+    
+    let mensaje = `${emoji} ALERTA DE INSUMOS FALTANTES\n`;
+    mensaje += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    
+    mensaje += `Se detectaron ${insumos.length} insumo(s) con stock crítico:\n\n`;
 
-    mensaje += `⏰ Si no confirmas, recibirás más notificaciones\n`;
-    mensaje += `hasta ${3 - numeroEnvio} vez(ces) más.`;
+    // Listar cada insumo con su información
+    insumos.forEach((insumo, index) => {
+      const estadoEmoji = insumo.estado === "Agotado" ? "🔴" : "🟡";
+      mensaje += `${index + 1}. ${estadoEmoji} ${insumo.nombreInsumo}\n`;
+      mensaje += `   📊 Stock: ${Math.round(parseFloat(insumo.cantidadActual))} ${insumo.unidadMedida}\n`;
+      mensaje += `   📈 Mínimo: ${Math.round(parseFloat(insumo.nivelMinimoAlerta))} ${insumo.unidadMedida}\n`;
+      mensaje += `   ⚡ Estado: ${insumo.estado}\n\n`;
+    });
+
+    mensaje += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    mensaje += `Acciones disponibles:\n`;
+    mensaje += `• 👁️ Dar visto: Reconocer esta alerta\n`;
+    mensaje += `• 📦 Realizar Pedido: Crear pedido automático a proveedores\n\n`;
+    mensaje += `Selecciona una de las opciones para continuar.`;
 
     return mensaje;
   }
@@ -419,6 +520,373 @@ class AlertasInventarioService {
     } catch (error) {
       console.error("Error al obtener estadísticas:", error);
       return { success: false, error: error.message };
+    }
+  }
+
+  // Resolver alerta - Dar visto
+  async darVisto(idsInsumos) {
+    try {
+      console.log(`\n👁️ === INICIANDO: Dar Visto ===`);
+      console.log(`📥 Entrada: ${typeof idsInsumos} = "${idsInsumos}"`);
+      
+      if (!idsInsumos) {
+        throw new Error("idsInsumos es requerido");
+      }
+
+      const idsArray = idsInsumos.split(",").map(id => id.trim()).filter(id => id);
+      console.log(`📊 IDs a procesar: [${idsArray.join(", ")}]`);
+      console.log(`📈 Total: ${idsArray.length} insumo(s)`);
+
+      if (idsArray.length === 0) {
+        throw new Error("No hay IDs válidos para procesar");
+      }
+
+      let exitosos = 0;
+      let errores = [];
+
+      for (const id_insumo of idsArray) {
+        try {
+          console.log(`  ⏳ Procesando ID ${id_insumo}...`);
+          
+          // Marcar alerta como resuelta
+          const resultado = await AlertaInventarioModel.actualizarEstado({
+            id_insumo,
+            estado: "resuelta",
+          });
+
+          console.log(`  ✅ Alerta #${id_insumo} marcada como resuelta`);
+          exitosos++;
+        } catch (idError) {
+          console.error(`  ❌ Error con ID ${id_insumo}: ${idError.message}`);
+          errores.push(`ID ${id_insumo}: ${idError.message}`);
+        }
+      }
+
+      const mensaje = `Se marcaron ${exitosos}/${idsArray.length} alerta(s) como visto`;
+      console.log(`\n✅ Resultado: ${mensaje}`);
+      if (errores.length > 0) {
+        console.warn(`⚠️ Errores: ${errores.join("\n")}`);
+      }
+
+      return {
+        success: exitosos > 0,
+        message: mensaje,
+        exitosos,
+        errores: errores.length > 0 ? errores : null,
+      };
+    } catch (error) {
+      console.error(`\n❌ ERROR EN darVisto: ${error.message}`);
+      console.error(`Stack: ${error.stack}`);
+      return { 
+        success: false, 
+        error: error.message,
+        message: `Error: ${error.message}`
+      };
+    }
+  }
+
+  // Realizar pedido automático
+  async realizarPedidoAutomatico(idsInsumos, enviarConfirmacion = true, origen = 'Automático') {
+    try {
+      console.log(`\n📦 === INICIANDO: Realizar Pedido Automático ===`);
+      console.log(`📥 Entrada: ${typeof idsInsumos} = "${idsInsumos}"`);
+      
+      if (!idsInsumos) {
+        throw new Error("idsInsumos es requerido");
+      }
+
+      const { connection } = await import("../models/db.js");
+      const { PedidoModel } = await import("../models/pedido.js");
+      const { LineaPedidoModel } = await import("../models/lineapedido.js");
+
+      const idsArray = idsInsumos.split(",").map(id => id.trim()).filter(id => id);
+      console.log(`📊 IDs a procesar: [${idsArray.join(", ")}]`);
+
+      if (idsArray.length === 0) {
+        throw new Error("No hay IDs válidos para procesar");
+      }
+
+      console.log(`📦 Creando pedido automático para ${idsArray.length} insumo(s)...`);
+
+      // Obtener información de los insumos
+      let insumosInfo = [];
+      for (const id_insumo of idsArray) {
+        try {
+          console.log(`  ⏳ Obteniendo info del insumo ID ${id_insumo}...`);
+          const [insumos] = await connection.query(
+            `SELECT i.id_insumo, i.nombreInsumo, COALESCE(inv.cantidadActual, 0) as cantidadActual, 
+                     inv.nivelMinimoAlerta, BIN_TO_UUID(ip.id_proveedor) as id_proveedor
+              FROM Insumos i
+              LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
+              LEFT JOIN ProveedorInsumo ip ON i.id_insumo = ip.id_insumo
+              WHERE i.id_insumo = ?`,
+            [id_insumo]
+          );
+
+          if (insumos.length > 0) {
+            console.log(`  ✅ ID ${id_insumo}: ${insumos[0].nombreInsumo} (Proveedor: ${insumos[0].id_proveedor})`);
+            insumosInfo.push(insumos[0]);
+          } else {
+            console.warn(`  ⚠️ ID ${id_insumo}: No encontrado en BD`);
+          }
+        } catch (queryError) {
+          console.error(`  ❌ Error consultando ID ${id_insumo}: ${queryError.message}`);
+        }
+      }
+
+      if (insumosInfo.length === 0) {
+        throw new Error("No se encontró información de los insumos solicitados");
+      }
+
+      console.log(`\n📋 Insumos válidos encontrados: ${insumosInfo.length}`);
+
+      // Si el origen es Automático, re-validar demanda semanal antes de crear pedidos
+      if (origen === 'Automático') {
+        console.log(`\n🔍 Origen Automático: validando demanda semanal...`);
+        const mapJStoEnum = { 1: 'Lunes', 2: 'Martes', 3: 'Miercoles', 4: 'Jueves' };
+        const hoy = new Date();
+        const diaSemanaJS = hoy.getDay();
+        const diasRestantes = [];
+        for (let d = Math.max(diaSemanaJS, 1); d <= 4; d++) {
+          diasRestantes.push(mapJStoEnum[d]);
+        }
+
+        if (diasRestantes.length > 0) {
+          const [planificaciones] = await connection.query(
+            `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, comensalesEstimados
+             FROM PlanificacionMenus
+             WHERE estado = 'Activo'
+               AND fechaInicio <= CURDATE()
+               AND fechaFin >= CURDATE()
+             ORDER BY fechaInicio DESC LIMIT 1`
+          );
+
+          if (planificaciones && planificaciones.length > 0) {
+            const plan = planificaciones[0];
+            const comensales = plan.comensalesEstimados || 120;
+            const placeholders = diasRestantes.map(() => '?').join(', ');
+            const [itemsReceta] = await connection.query(
+              `SELECT ir.id_insumo, SUM(ir.cantidadPorPorcion) AS cantidadTotal
+               FROM JornadaPlanificada jp
+               JOIN RecetaJornada rj ON jp.id_jornada = rj.id_jornada
+               JOIN ItemsRecetas ir ON rj.id_receta = ir.id_receta
+               WHERE jp.id_planificacion = UUID_TO_BIN(?)
+                 AND jp.diaSemana IN (${placeholders})
+                 AND ir.id_insumo IS NOT NULL
+               GROUP BY ir.id_insumo`,
+              [plan.id_planificacion, ...diasRestantes]
+            );
+
+            const demandaMap = {};
+            for (const item of itemsReceta) {
+              demandaMap[item.id_insumo] = parseFloat(item.cantidadTotal) * comensales;
+            }
+
+            const antesCount = insumosInfo.length;
+            insumosInfo = insumosInfo.filter(insumo => {
+              const demanda = demandaMap[insumo.id_insumo];
+              if (demanda === undefined) {
+                console.log(`  ✅ ${insumo.nombreInsumo}: no se usa en recetas esta semana. Omitido.`);
+                return false;
+              }
+              if (parseFloat(insumo.cantidadActual) >= demanda) {
+                console.log(`  ✅ ${insumo.nombreInsumo}: stock (${insumo.cantidadActual}) cubre demanda semanal (${demanda}). Omitido.`);
+                return false;
+              }
+              return true;
+            });
+
+            console.log(`📊 Post-validación demanda: ${antesCount} → ${insumosInfo.length} insumo(s) requieren pedido`);
+          } else {
+            console.log(`ℹ️ Sin planificación activa. Se procesan todos los insumos solicitados.`);
+          }
+        }
+
+        if (insumosInfo.length === 0) {
+          return {
+            success: true,
+            message: 'El stock actual cubre la demanda semanal. No se generaron pedidos.',
+            pedidos: [],
+          };
+        }
+      } else {
+        console.log(`\n⚡ Origen Manual: omitiendo validación de demanda. Procesando ${insumosInfo.length} insumo(s) directamente.`);
+      }
+
+      // Agrupar por proveedor
+      const pedidosPorProveedor = {};
+      insumosInfo.forEach((insumo) => {
+        if (insumo.id_proveedor) {
+          if (!pedidosPorProveedor[insumo.id_proveedor]) {
+            pedidosPorProveedor[insumo.id_proveedor] = [];
+          }
+          pedidosPorProveedor[insumo.id_proveedor].push(insumo);
+        } else {
+          console.warn(`⚠️ ${insumo.nombreInsumo} no tiene proveedor asignado`);
+        }
+      });
+
+      console.log(`\n🏪 Proveedores identificados: ${Object.keys(pedidosPorProveedor).length}`);
+
+      // Crear pedidos para cada proveedor
+      const pedidosCreados = [];
+      for (const [id_proveedor, insumos] of Object.entries(pedidosPorProveedor)) {
+        try {
+          console.log(`\n  🏭 Creando pedido para proveedor ${id_proveedor} (${insumos.length} insumo(s))...`);
+          
+          // Crear pedido
+          const origenDB = origen === 'Manual' ? 'Manual' : 'Generado';
+          const nuevoPedido = await PedidoModel.create({
+            input: {
+              id_usuario: null, // Sistema automático
+              id_estadoPedido: 2, // Aprobado directamente
+              id_proveedor,
+              origen: origenDB,
+              fechaAprobacion: new Date().toISOString().split("T")[0],
+            },
+          });
+
+          console.log(`     ✅ Pedido creado: ${nuevoPedido.id_pedido}`);
+
+          // Agregar líneas de pedido
+          for (const insumo of insumos) {
+            const cantidadAComprar = Math.max(
+              insumo.nivelMinimoAlerta * 2 - insumo.cantidadActual,
+              insumo.nivelMinimoAlerta
+            );
+
+            console.log(`     ⏳ Agregando ${insumo.nombreInsumo} x${cantidadAComprar}...`);
+
+            await LineaPedidoModel.create({
+              input: {
+                id_pedido: nuevoPedido.id_pedido,
+                id_proveedor: id_proveedor,
+                id_insumo: insumo.id_insumo,
+                cantidadSolicitada: cantidadAComprar,
+              },
+            });
+
+            console.log(`     ✅ Línea agregada`);
+          }
+
+          // Enviar enlace de confirmación por Telegram al proveedor (el email se envía después de que el proveedor confirma)
+          try {
+            const { PedidoModel } = await import("../models/pedido.js");
+            const { connection: conn } = await import("../models/db.js");
+            const token = await PedidoModel.generateTokenForProveedor({ idPedido: nuevoPedido.id_pedido, idProveedor: id_proveedor });
+            const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+            const enlace = `${baseUrl}/proveedor/confirmacion/${token}`;
+
+            const [configTelegram] = await conn.query(
+              `SELECT telegramChatId FROM ProveedorConfiguracionTelegram WHERE id_proveedor = UUID_TO_BIN(?) AND notificacionesTelegram = 'Activo' LIMIT 1`,
+              [id_proveedor]
+            );
+            const chatIdProveedor = configTelegram?.[0]?.telegramChatId;
+
+            if (chatIdProveedor) {
+              const mensaje =
+                `🛒 *NUEVO PEDIDO DE INSUMOS*\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+                `Ha recibido un nuevo pedido del Sistema de Comedor Escolar.\n\n` +
+                `📋 Pedido: \`${nuevoPedido.id_pedido.substring(0, 8).toUpperCase()}\`\n\n` +
+                `Por favor confirme la disponibilidad de los insumos en el siguiente enlace:\n\n` +
+                `[✅ Confirmar Pedido](${enlace})\n\n` +
+                `_Este enlace expira en 7 días._`;
+              await telegramService.sendMessage(chatIdProveedor, mensaje, "proveedor");
+              console.log(`     ✅ Enlace de confirmación enviado por Telegram al proveedor del pedido ${nuevoPedido.id_pedido}`);
+            } else {
+              console.warn(`     ⚠️ El proveedor ${id_proveedor} no tiene Telegram configurado`);
+            }
+          } catch (tgErr) {
+            console.warn(`     ⚠️ No se pudo enviar Telegram para pedido ${nuevoPedido.id_pedido}:`, tgErr.message);
+          }
+
+          pedidosCreados.push({
+            id_pedido: nuevoPedido.id_pedido,
+            id_proveedor,
+            insumos: insumos.length,
+          });
+
+          console.log(`  ✅ Pedido completado para proveedor ${id_proveedor}`);
+        } catch (pedidoError) {
+          console.error(`  ❌ Error creando pedido para proveedor ${id_proveedor}: ${pedidoError.message}`);
+        }
+      }
+
+      console.log(`\n✅ Pedidos creados: ${pedidosCreados.length}`);
+
+      // Marcar alertas como resueltas
+      console.log(`\n👁️ Marcando alertas como resueltas...`);
+      await this.darVisto(idsInsumos);
+
+      // Enviar mensaje de confirmación solo si se indica
+      if (enviarConfirmacion) {
+        console.log(`📢 Enviando confirmación por Telegram...`);
+        await this.enviarConfirmacionPedidos(pedidosCreados);
+      } else {
+        console.log(`⏭️ Confirmación de Telegram desactivada`);
+      }
+
+      const mensaje = `Se crearon ${pedidosCreados.length} pedido(s) automático(s)`;
+      console.log(`\n✅ COMPLETADO: ${mensaje}\n`);
+
+      return {
+        success: true,
+        message: mensaje,
+        pedidos: pedidosCreados,
+      };
+    } catch (error) {
+      console.error(`\n❌ ERROR EN realizarPedidoAutomatico: ${error.message}`);
+      console.error(`Stack: ${error.stack}`);
+      return { 
+        success: false, 
+        error: error.message,
+        message: `Error: ${error.message}`
+      };
+    }
+  }
+
+  // Enviar confirmación de pedidos creados
+  async enviarConfirmacionPedidos(pedidos) {
+    try {
+      if (pedidos.length === 0) return;
+
+      const { connection } = await import("../models/db.js");
+      const [parametros] = await connection.query(
+        "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo'",
+        ["TELEGRAM_COCINERA_CHAT_ID"]
+      );
+
+      let chatId =
+        parametros?.[0]?.valor || process.env.TELEGRAM_COCINERA_CHAT_ID;
+
+      if (!chatId) {
+        console.warn("⚠️ TELEGRAM_COCINERA_CHAT_ID no configurado");
+        return;
+      }
+
+      let mensaje = `✅ PEDIDOS ENVIADOS A PROVEEDORES\n`;
+      mensaje += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      mensaje += `Se crearon ${pedidos.length} pedido(s) automático(s):\n\n`;
+
+      pedidos.forEach((pedido, index) => {
+        mensaje += `${index + 1}. Pedido: ${pedido.id_pedido.substring(0, 8)}...\n`;
+        mensaje += `   Insumos: ${pedido.insumos}\n\n`;
+      });
+
+      mensaje += `✅ Pedidos enviados exitosamente`;
+
+      const resultado = await telegramService.sendMessage(
+        chatId,
+        mensaje,
+        "sistema"
+      );
+
+      if (resultado.success) {
+        console.log(`✅ Confirmación de pedidos enviada a Telegram`);
+      }
+    } catch (error) {
+      console.error("❌ Error enviando confirmación de pedidos:", error);
     }
   }
 

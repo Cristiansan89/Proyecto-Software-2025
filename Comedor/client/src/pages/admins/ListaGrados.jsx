@@ -49,7 +49,7 @@ const ListaGrados = () => {
     // Filtro por búsqueda de texto
     if (searchQuery.trim()) {
       filtered = filtered.filter((grado) =>
-        grado.nombreGrado.toLowerCase().includes(searchQuery.toLowerCase())
+        grado.nombreGrado.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -100,7 +100,7 @@ const ListaGrados = () => {
         "Éxito",
         `Grado ${
           modalMode === "create" ? "creado" : "actualizado"
-        } correctamente`
+        } correctamente`,
       );
       loadGrados(); // Recargar la lista
     } catch (error) {
@@ -115,20 +115,22 @@ const ListaGrados = () => {
       "Eliminar Grado",
       `¿Está seguro de eliminar el grado "${grado.nombreGrado}"?`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     // 2. Si el usuario acepta (true), procedemos con la eliminación
     if (confirmed) {
       try {
         await gradoService.delete(grado.idGrado);
-        
+
         // Remover de forma inmediata de la tabla
-        setGrados(grados.filter(g => g.idGrado !== grado.idGrado));
-        setFilteredGrados(filteredGrados.filter(g => g.idGrado !== grado.idGrado));
-        
+        setGrados(grados.filter((g) => g.idGrado !== grado.idGrado));
+        setFilteredGrados(
+          filteredGrados.filter((g) => g.idGrado !== grado.idGrado),
+        );
+
         showSuccess("Grado eliminado correctamente");
-        
+
         // Recargar para sincronizar con backend (importante para datos de auditoría, etc)
         setTimeout(() => loadGrados(), 500);
       } catch (error) {
@@ -234,8 +236,12 @@ const ListaGrados = () => {
                   <tbody>
                     {currentGrados.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="no-data">
-                          <p>No se encontraron grados</p>
+                        <td colSpan={12}>
+                          <div className="empty-state">
+                            <i className="fas fa-search empty-icon"></i>
+                            <h5>No se encontraron grados</h5>
+                            <p>No hay grados que coincidan con tu búsqueda.</p>
+                          </div>
                         </td>
                       </tr>
                     ) : (

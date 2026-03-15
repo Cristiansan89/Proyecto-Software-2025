@@ -189,6 +189,8 @@ const InsumosSemanal = () => {
           unidad: insumo.unidad,
           cantidad_disponible: insumo.cantidad_disponible || 0,
           unidad_inventario: insumo.unidad_inventario || insumo.unidad,
+          stockMaximo: insumo.stockMaximo || 0,
+          enPedido: insumo.enPedido || false,
         };
       }
 
@@ -578,10 +580,16 @@ const InsumosSemanal = () => {
                               <tr key={nombreInsumo} className={classRow}>
                                 <td width="30%">
                                   <strong>{nombreInsumo}</strong>
-                                  {esFaltante && (
+                                  {esFaltante && !datos.enPedido && (
                                     <div className="small text-danger">
                                       <i className="fas fa-exclamation-triangle me-1"></i>
                                       Faltante
+                                    </div>
+                                  )}
+                                  {datos.enPedido && (
+                                    <div className="small text-info">
+                                      <i className="fas fa-clock me-1"></i>
+                                      En Pedido
                                     </div>
                                   )}
                                 </td>
@@ -638,6 +646,7 @@ const InsumosSemanal = () => {
                     <i className="fas fa-download me-1"></i>
                     Descargar CSV
                   </button>
+                  {/* Botón para generar pedidos por faltantes 
                   <button
                     className="btn btn-outline-danger"
                     onClick={generarPedidosPorFaltantes}
@@ -648,6 +657,7 @@ const InsumosSemanal = () => {
                       ? "Sistema generando pedidos..."
                       : "Generar Pedidos por Faltantes"}
                   </button>
+                  */}
                 </div>
               </>
             )}

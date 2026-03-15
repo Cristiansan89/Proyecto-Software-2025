@@ -725,8 +725,12 @@ const GestionRolesPermisos = () => {
         {/* Tabla de permisos */}
         <div className="table-container">
           {currentPermisos.length === 0 ? (
-            <div className="no-data">
-              <p>No se encontraron permisos</p>
+             <div colSpan={12}>
+              <div className="empty-state">
+                <i className="fas fa-search empty-icon"></i>
+                <h5>No se encontraron permisos</h5>
+                <p>No hay permisos que coincidan con tu búsqueda.</p>
+              </div>
             </div>
           ) : (
             <table className="table table-striped data-table">
@@ -1057,8 +1061,12 @@ const GestionRolesPermisos = () => {
         {/* Tabla de roles */}
         <div className="table-container">
           {currentRoles.length === 0 ? (
-            <div className="no-data">
-              <p>No se encontraron roles</p>
+             <div colSpan={12}>
+              <div className="empty-state">
+                <i className="fas fa-search empty-icon"></i>
+                <h5>No se encontraron roles</h5>
+                <p>No hay roles que coincidan con tu búsqueda.</p>
+              </div>
             </div>
           ) : (
             <table className="table table-striped data-table">
@@ -1191,9 +1199,13 @@ const GestionRolesPermisos = () => {
 
       <div className="table-container">
         {asignacionesIndividuales.length === 0 ? (
-          <div className="no-data">
-            <p>No se encontraron asignaciones de roles y permisos</p>
-          </div>
+           <div colSpan={12}>
+              <div className="empty-state">
+                <i className="fas fa-search empty-icon"></i>
+                <h5>No se encontraron permisos asignados</h5>
+                <p>No hay permisos asignados que coincidan con tu búsqueda.</p>
+              </div>
+            </div>
         ) : (
           <table className="table table-striped data-table">
             <thead>
