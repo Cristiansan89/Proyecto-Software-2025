@@ -9,6 +9,8 @@ import {
   enviarPDFConfirmacionMail,
 } from "../services/pdfService.js";
 import { connection } from "../models/db.js";
+import { construirMensajePedidoTelegram, construirBotonesPedidoTelegram } from "../utils/mensajesTelegram.js";
+import { formatearFechaLocal } from "../utils/formatoFechas.js";
 
 // Controlador para manejar las operaciones relacionadas con los ParametrosSistemas
 export class ParametroSistemaController {
@@ -251,6 +253,10 @@ export class PedidoController {
       }
 
       const { id } = req.params;
+      
+      // Obtener la información del pedido antes de actualizar
+      const pedidoAnterior = await this.pedidoModel.getById({ id });
+      
       const updatedPedido = await this.pedidoModel.update({
         id,
         input: result.data,
@@ -258,6 +264,34 @@ export class PedidoController {
 
       if (!updatedPedido) {
         return res.status(404).json({ message: "Pedido no encontrado" });
+      }
+
+      // Si se actualizaron los insumos (hay detalles), enviar notificación al proveedor
+      if (result.data.insumos && Array.isArray(result.data.insumos) && result.data.insumos.length > 0) {
+        try {
+          const id_proveedor = result.data.insumos[0]?.id_proveedor || pedidoAnterior?.id_proveedor;
+          
+          if (id_proveedor) {
+            // Generar nuevo token de confirmación
+            const tokenPedido = await this.pedidoModel.generateTokenForProveedor({
+              idPedido: id,
+              idProveedor: id_proveedor,
+            });
+
+            const enlaceConfirmacion = `${process.env.FRONTEND_URL}/proveedor/confirmacion/${tokenPedido}`;
+
+            // Enviar notificación por Telegram
+            await this.pedidoModel.enviarNotificacionTelegramProveedor({
+              idPedido: id,
+              idProveedor: id_proveedor,
+              enlaceConfirmacion,
+              esActualizacion: true,
+            });
+          }
+        } catch (telegramError) {
+          console.warn("⚠️ Error al enviar notificación por Telegram al actualizar pedido:", telegramError.message);
+          // No bloquear la respuesta por error en Telegram
+        }
       }
 
       return res.json(updatedPedido);
@@ -353,6 +387,16 @@ export class PedidoController {
           const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
           const enlace = `${baseUrl}/proveedor/confirmacion/${token}`;
 
+          // Obtener insumos del pedido para contar
+          const [insumosPedido] = await connection.query(
+            `SELECT COUNT(*) as cantidad FROM DetallePedido WHERE id_pedido = UUID_TO_BIN(?)`,
+            [idPedido]
+          );
+          const cantidadInsumos = insumosPedido[0]?.cantidad || 0;
+
+          // Formatear fecha sin conversión UTC
+          const fecha = formatearFechaLocal(pedido.fechaEmision);
+
           // Obtener Telegram chat ID del proveedor
           const [configTelegram] = await connection.query(
             `SELECT telegramChatId FROM ProveedorConfiguracionTelegram WHERE id_proveedor = UUID_TO_BIN(?) AND notificacionesTelegram = 'Activo' LIMIT 1`,
@@ -362,15 +406,14 @@ export class PedidoController {
 
           if (chatIdProveedor) {
             const { default: telegramSvc } = await import("../services/telegramService.js");
-            const mensaje =
-              `🛒 *NUEVO PEDIDO DE INSUMOS*\n` +
-              `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-              `Ha recibido un nuevo pedido del Sistema de Comedor Escolar.\n\n` +
-              `📋 Pedido: \`${idPedido.substring(0, 8).toUpperCase()}\`\n\n` +
-              `Por favor confirme la disponibilidad de los insumos en el siguiente enlace:\n\n` +
-              `[✅ Confirmar Pedido](${enlace})\n\n` +
-              `_Este enlace expira en 7 días._`;
-            await telegramSvc.sendMessage(chatIdProveedor, mensaje, "proveedor");
+            const mensaje = construirMensajePedidoTelegram({
+              idPedido,
+              fecha,
+              cantidadInsumos,
+              enlace
+            });
+            const botones = construirBotonesPedidoTelegram(enlace);
+            await telegramSvc.sendMessageWithButtons(chatIdProveedor, mensaje, botones, "proveedor");
             console.log(`✅ Enlace de confirmación enviado por Telegram al proveedor del pedido ${idPedido}`);
           } else {
             console.warn(`⚠️ El proveedor del pedido ${idPedido} no tiene Telegram configurado. No se pudo enviar notificación.`);
@@ -747,6 +790,38 @@ export class PedidoController {
         // No rechazar la respuesta, solo avisar
       }
 
+      // Si se creó un nuevo pedido por redistribución, enviar notificación por Telegram
+      if (resultado.nuevoPedidoCreado && resultado.nuevoPedidoData) {
+        try {
+          const { id_pedido, id_proveedor, proveedorRazonSocial } = resultado.nuevoPedidoData;
+          
+          // Generar token de confirmación para el nuevo pedido
+          const tokenNuevoPedido = await this.pedidoModel.generateTokenForProveedor({
+            idPedido: id_pedido,
+            idProveedor: id_proveedor,
+          });
+
+          const enlaceConfirmacion = `${process.env.FRONTEND_URL}/proveedor/confirmacion/${tokenNuevoPedido}`;
+
+          // Enviar notificación por Telegram
+          await this.pedidoModel.enviarNotificacionTelegramProveedor({
+            idPedido: id_pedido,
+            idProveedor: id_proveedor,
+            enlaceConfirmacion,
+          });
+
+          console.log(
+            `✅ Notificación por Telegram enviada para el nuevo pedido ${id_pedido} a ${proveedorRazonSocial}`,
+          );
+        } catch (telegramError) {
+          console.warn(
+            "⚠️ Error al enviar notificación por Telegram para nuevo pedido:",
+            telegramError.message,
+          );
+          // No rechazar la respuesta si falla Telegram
+        }
+      }
+
       res.json({
         message: "Confirmación procesada correctamente",
         ...resultado,
@@ -868,18 +943,27 @@ export class PedidoController {
           insumosConfirmados,
         });
 
-        // Enviar correo con PDF solo de insumos confirmados
-        await enviarPDFConfirmacionMail(
-          pedido.mail,
-          pedido.razonSocial,
-          pdfBuffer,
-          idPedido.substring(0, 8).toUpperCase(),
-          insumosRechazados.length > 0,  // Indicar que hay rechazados
-        );
+        // Intentar enviar correo con PDF, pero no fallar si el email no se puede enviar
+        try {
+          await enviarPDFConfirmacionMail(
+            pedido.mail,
+            pedido.razonSocial,
+            pdfBuffer,
+            idPedido.substring(0, 8).toUpperCase(),
+            insumosRechazados.length > 0,  // Indicar que hay rechazados
+          );
 
-        console.log(
-          `✅ PDF de confirmación enviado a ${pedido.mail} con ${insumosConfirmados.length} insumos confirmados`,
-        );
+          console.log(
+            `✅ PDF de confirmación enviado a ${pedido.mail} con ${insumosConfirmados.length} insumos confirmados`,
+          );
+        } catch (emailError) {
+          console.warn(
+            `⚠️ No se pudo enviar el PDF por email a ${pedido.mail}, pero el pedido fue confirmado correctamente.`,
+            emailError.message,
+          );
+          // No re-lanzar el error - permitir que la confirmación del pedido continúe
+          // El PDF se puede enviar manualmente posteriormente si es necesario
+        }
       }
 
       // CASO 2: Hay insumos rechazados y fueron redistribuidos

@@ -89,12 +89,24 @@ const ProveedorPedidos = () => {
               {pedidosFiltrados.map((pedido) => (
                 <tr key={pedido.id_pedido}>
                   <td className="id-pedido">#{pedido.id_pedido}</td>
-                  <td>{new Date(pedido.fechaPedido).toLocaleDateString()}</td>
+                  <td>{(() => {
+                    const fecha = pedido.fechaPedido;
+                    if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+                      const [año, mes, día] = fecha.split('-').map(Number);
+                      return new Date(año, mes - 1, día).toLocaleDateString();
+                    }
+                    return new Date(fecha).toLocaleDateString();
+                  })()}</td>
                   <td>
                     {pedido.fechaEntregaEsperada
-                      ? new Date(
-                          pedido.fechaEntregaEsperada,
-                        ).toLocaleDateString()
+                      ? (() => {
+                        const fecha = pedido.fechaEntregaEsperada;
+                        if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+                          const [año, mes, día] = fecha.split('-').map(Number);
+                          return new Date(año, mes - 1, día).toLocaleDateString();
+                        }
+                        return new Date(fecha).toLocaleDateString();
+                      })()
                       : "N/A"}
                   </td>
                   <td>

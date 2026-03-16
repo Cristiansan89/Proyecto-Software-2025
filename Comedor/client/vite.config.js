@@ -13,12 +13,28 @@ export default defineConfig({
       "127.0.0.1",
       "spleeny-slouchily-brenda.ngrok-free.dev",
     ],
+    // Headers para evitar caché a través de ngrok
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      "Pragma": "no-cache",
+      "Expires": "0",
+    },
     // Proxy para las solicitudes de API
     proxy: {
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
         rewrite: (path) => path,
+      },
+    },
+  },
+  // Build optimizations para evitar problemas de caché en producción
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: "index-[hash].js",
+        chunkFileNames: "chunk-[hash].js",
+        assetFileNames: "asset-[hash][extname]",
       },
     },
   },

@@ -1,6 +1,8 @@
 import { connection } from "./db.js";
 import telegramService from "../services/telegramService.js";
 import { randomUUID } from "crypto";
+import { construirMensajePedidoTelegram, construirBotonesPedidoTelegram } from "../utils/mensajesTelegram.js";
+import { formatearFechaLocal } from "../utils/formatoFechas.js";
 
 export class PedidoModel {
   static async getAll() {
@@ -143,41 +145,90 @@ export class PedidoModel {
   }
 
   static async update({ id, input }) {
-    const { id_estadoPedido, fechaAprobacion, motivoCancelacion } = input;
+    const { id_estadoPedido, fechaAprobacion, motivoCancelacion, insumos, fechaEntregaEsperada, observaciones, id_usuario, id_proveedor } = input;
 
+    const conn = await connection.getConnection();
     try {
-      const updates = [];
-      const values = [];
+      await conn.beginTransaction();
 
-      if (id_estadoPedido !== undefined) {
-        updates.push("id_estadoPedido = ?");
-        values.push(id_estadoPedido);
+      // Si hay insumos, es una actualización completa de detalles
+      if (insumos && Array.isArray(insumos) && insumos.length > 0) {
+        // Eliminar detalles anteriores
+        await conn.query(
+          `DELETE FROM DetallePedido WHERE id_pedido = UUID_TO_BIN(?);`,
+          [id]
+        );
+
+        // Insertar nuevos detalles
+        for (const insumo of insumos) {
+          await conn.query(
+            `INSERT INTO DetallePedido (id_pedido, id_proveedor, id_insumo, cantidadSolicitada)
+             VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?);`,
+            [id, insumo.id_proveedor, insumo.id_insumo, insumo.cantidad]
+          );
+        }
+
+        // Cambiar estado a "Pendiente" (id_estadoPedido = 1) porque se actualizó
+        const updates = ["id_estadoPedido = 1"];
+        const values = [];
+
+        if (fechaEntregaEsperada !== undefined) {
+          updates.push("fechaEntregaEsperada = ?");
+          values.push(fechaEntregaEsperada);
+        }
+
+        values.push(id);
+        await conn.query(
+          `UPDATE Pedidos
+           SET ${updates.join(", ")}
+           WHERE id_pedido = UUID_TO_BIN(?);`,
+          values
+        );
+      } else {
+        // Actualización simple de campos
+        const updates = [];
+        const values = [];
+
+        if (id_estadoPedido !== undefined) {
+          updates.push("id_estadoPedido = ?");
+          values.push(id_estadoPedido);
+        }
+        if (fechaAprobacion !== undefined) {
+          updates.push("fechaAprobacion = ?");
+          values.push(fechaAprobacion);
+        }
+        if (motivoCancelacion !== undefined) {
+          updates.push("motivoCancelacion = ?");
+          values.push(motivoCancelacion);
+        }
+        if (fechaEntregaEsperada !== undefined) {
+          updates.push("fechaEntregaEsperada = ?");
+          values.push(fechaEntregaEsperada);
+        }
+
+        if (updates.length === 0) {
+          await conn.commit();
+          return this.getById({ id });
+        }
+
+        values.push(id);
+        await conn.query(
+          `UPDATE Pedidos
+           SET ${updates.join(", ")}
+           WHERE id_pedido = UUID_TO_BIN(?);`,
+          values
+        );
       }
-      if (fechaAprobacion !== undefined) {
-        updates.push("fechaAprobacion = ?");
-        values.push(fechaAprobacion);
-      }
-      if (motivoCancelacion !== undefined) {
-        updates.push("motivoCancelacion = ?");
-        values.push(motivoCancelacion);
-      }
 
-      if (updates.length === 0) return this.getById({ id });
-
-      values.push(id);
-      console.log("🔄 Ejecutando UPDATE con valores:", { updates, values, id });
-      await connection.query(
-        `UPDATE Pedidos
-                 SET ${updates.join(", ")}
-                 WHERE id_pedido = UUID_TO_BIN(?);`,
-        values,
-      );
-
+      await conn.commit();
       return this.getById({ id });
     } catch (error) {
+      await conn.rollback();
       console.error("❌ Error al actualizar el pedido:", error);
       console.error("❌ Stack trace:", error.stack);
       throw new Error(`Error al actualizar el pedido: ${error.message}`);
+    } finally {
+      conn.release();
     }
   }
 
@@ -877,7 +928,7 @@ export class PedidoModel {
         idPedido,
         idProveedor,
         timestamp: Date.now(),
-        expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 días
+        expires: Date.now() + 3 * 60 * 60 * 1000, // 3 horas
       };
 
       // Usamos base64url (URL-safe) para evitar que '/', '+', '=' rompan los segmentos de URL
@@ -955,7 +1006,7 @@ export class PedidoModel {
       }
 
       // Obtener insumos del pedido para este proveedor
-      const [insumos] = await connection.query(
+      const [insumosRaw] = await connection.query(
         `SELECT 
           dp.id_detallePedido,
           dp.id_insumo,
@@ -970,6 +1021,30 @@ export class PedidoModel {
          ORDER BY i.nombreInsumo`,
         [idPedido, idProveedor],
       );
+
+      // Función para normalizar cantidades (fix para pedidos antiguos que se guardaron incorrectamente)
+      const normalizarCantidad = (cantidad, unidad) => {
+        if (!unidad) return cantidad;
+        
+        const unidadNorm = unidad.toLowerCase().trim();
+        
+        // Si la cantidad es pequeña (<100) pero la unidad es MASA/VOLUMEN,
+        // probablemente fue dividida por error entre 1000 cuando debería estar multiplicada
+        // Esta es una heurística para detectar el bug de conversión
+        if ((unidadNorm === 'gramo' || unidadNorm === 'mililitro') && cantidad > 0 && cantidad < 100) {
+          // Asumimos que fue dividida por 1000 erróneamente
+          console.log(`⚠️ Detectada cantidad posiblemente incorrecta: ${cantidad} ${unidad} -> convertiendo a ${cantidad * 1000}`);
+          return cantidad * 1000;
+        }
+        
+        return cantidad;
+      };
+
+      // Aplicar normalización a los datos
+      const insumos = insumosRaw.map(insumo => ({
+        ...insumo,
+        cantidadSolicitada: normalizarCantidad(insumo.cantidadSolicitada, insumo.unidadMedida)
+      }));
 
       // VALIDACIÓN CRÍTICA DE SEGURIDAD:
       // Si este proveedor no tiene insumos en este pedido,
@@ -1087,10 +1162,10 @@ export class PedidoModel {
       await connection_ref.commit();
 
       // Si hay insumos no disponibles, crear nuevo pedido automáticamente
-      let nuevoPedidoId = null;
+      let nuevoPedidoData = null;
       if (insumosNoDisponibles.length > 0) {
         try {
-          nuevoPedidoId = await this.redistribuirInsumosNoDisponibles({
+          nuevoPedidoData = await this.redistribuirInsumosNoDisponibles({
             insumosNoDisponibles,
             pedidoOriginal: idPedido,
             proveedorOriginal: idProveedor,
@@ -1103,8 +1178,8 @@ export class PedidoModel {
       return {
         confirmadas,
         rechazadas,
-        nuevoPedidoCreado: nuevoPedidoId !== null,
-        nuevoPedidoId,
+        nuevoPedidoCreado: nuevoPedidoData !== null,
+        nuevoPedidoData,
         insumosRedistribuidos: insumosNoDisponibles.length,
       };
     } catch (error) {
@@ -1202,7 +1277,14 @@ export class PedidoModel {
         `✅ Nuevo pedido creado: ${nuevosPedidos[0]?.id_pedido}`,
       );
 
-      return nuevosPedidos[0]?.id_pedido;
+      // Retornar información completa del nuevo pedido para notificaciones
+      return {
+        id_pedido: nuevosPedidos[0]?.id_pedido,
+        id_proveedor: primerProveedorId,
+        proveedorRazonSocial: datosProveedor.proveedor.razonSocial,
+        proveedorMail: datosProveedor.proveedor.mail,
+        insumosRedistribuidos: datosProveedor.insumos,
+      };
     } catch (error) {
       console.error("❌ Error al redistribuir insumos:", error);
       throw error;
@@ -1340,7 +1422,7 @@ export class PedidoModel {
                 </ul>
               </div>
 
-              <p><strong>Nota importante:</strong> Este enlace es válido por 7 días y es específico para este pedido.</p>
+              <p><strong>Nota importante:</strong> Este enlace es válido por 3 horas y es específico para este pedido.</p>
               
               <p>Si tiene alguna consulta, no dude en contactarnos.</p>
               
@@ -1493,34 +1575,17 @@ export class PedidoModel {
 
       const pedido = pedidoData[0];
 
-      // Construir mensaje de Telegram
-      const mensaje = `🍽️ *Nuevo Pedido para Confirmar*
-
-📦 *Detalles:*
-• Pedido: \`${pedido.id_pedido.slice(0, 8)}...\`
-• Fecha: ${new Date(pedido.fechaEmision).toLocaleDateString("es-ES")}
-• Insumos: ${pedido.totalInsumos} item(s)
-
-⏰ *Acción Requerida:*
-Confirme la disponibilidad de los insumos en los próximos 7 días.
-
-📝 *Instrucciones:*
-1. Haga clic en el botón abajo
-2. Revise cada insumo
-3. Marque como Disponible o No Disponible
-4. Envíe su confirmación
-
-¡Gracias por su colaboración!`;
+      // Construir mensaje de Telegram usando función centralizada
+      const fecha = formatearFechaLocal(pedido.fechaEmision);
+      const mensaje = construirMensajePedidoTelegram({
+        idPedido: pedido.id_pedido,
+        fecha,
+        cantidadInsumos: pedido.totalInsumos,
+        enlace: enlaceConfirmacion
+      });
 
       // Crear botones inline para acceso directo
-      const buttons = [
-        [
-          {
-            text: "✅ Confirmar Insumos",
-            url: enlaceConfirmacion,
-          },
-        ],
-      ];
+      const buttons = construirBotonesPedidoTelegram(enlaceConfirmacion);
 
       // Enviar mensaje con botones usando el bot de proveedores
       const result = await telegramService.sendMessageWithButtons(

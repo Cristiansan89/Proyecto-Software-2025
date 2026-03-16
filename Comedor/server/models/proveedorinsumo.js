@@ -135,9 +135,11 @@ export class ProveedorInsumoModel {
                     pi.estado,
                     i.nombreInsumo as nombreInsumo,
                     i.unidadMedida,
-                    i.categoria
+                    i.categoria,
+                    COALESCE(inv.stockMaximo, 999999) as stockMaximo
                  FROM ProveedorInsumo pi
                  JOIN Insumos i ON pi.id_insumo = i.id_insumo
+                 LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
                  WHERE pi.id_proveedor = UUID_TO_BIN(?)
                  ORDER BY i.nombreInsumo;`,
         [id_proveedor]

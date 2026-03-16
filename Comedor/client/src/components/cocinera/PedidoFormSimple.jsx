@@ -63,7 +63,7 @@ const customSelectStyles = {
 };
 
 const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const isEditMode = !!pedidoEditando;
 
@@ -72,7 +72,13 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
 
   const formatearFecha = (fechaString) => {
     if (!fechaString) return "";
-    return new Date(fechaString + "T12:00:00").toLocaleDateString("es-ES");
+    // Si es solo fecha (YYYY-MM-DD), parsear directamente sin conversión UTC
+    if (typeof fechaString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaString)) {
+      const [año, mes, día] = fechaString.split('-').map(Number);
+      // Crear fecha local directamente
+      return new Date(año, mes - 1, día).toLocaleDateString("es-ES");
+    }
+    return new Date(fechaString).toLocaleDateString("es-ES");
   };
 
   const formatearFechaInput = (fechaString) => {
@@ -97,8 +103,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   const [insumosProveedor, setInsumosProveedor] = useState([]);
 
   useEffect(() => {
-    if (isEditMode) cargarProveedores();
-  }, []);
+    if (isEditMode && !authLoading && isAuthenticated) cargarProveedores();
+  }, [isEditMode, authLoading, isAuthenticated]);
 
   useEffect(() => {
     if (isEditMode && editFormData.id_proveedor)
@@ -172,6 +178,16 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
     const insumoData = insumosProveedor.find(
       (i) => i.id_insumo === nuevoInsumoEdit.id_insumo
     );
+    
+    // Validar que no exceda el stock máximo
+    if (insumoData?.stockMaximo && nuevoInsumoEdit.cantidad > insumoData.stockMaximo) {
+      showWarning(
+        "Cantidad excedida",
+        `La cantidad máxima permitida para este insumo es ${insumoData.stockMaximo} ${insumoData.unidadMedida || 'unidades'}`
+      );
+      return;
+    }
+    
     setEditFormData((prev) => ({
       ...prev,
       insumos: [
@@ -235,8 +251,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   const [procesando, setProcesando] = useState(false);
 
   useEffect(() => {
-    if (!isEditMode) cargarTodosInsumos();
-  }, []);
+    if (!isEditMode && !authLoading && isAuthenticated) cargarTodosInsumos();
+  }, [isEditMode, authLoading, isAuthenticated]);
 
   const cargarTodosInsumos = async () => {
     try {
@@ -277,6 +293,16 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
     const insumoData = todosInsumos.find(
       (i) => (i.idInsumo ?? i.id_insumo) === nuevaNecesidad.id_insumo
     );
+    
+    // Validar que no exceda el stock máximo
+    if (insumoData?.stockMaximo && nuevaNecesidad.cantidad > insumoData.stockMaximo) {
+      showWarning(
+        "Cantidad excedida",
+        `La cantidad máxima permitida para este insumo es ${insumoData.stockMaximo} ${insumoData.unidadMedida || 'unidades'}`
+      );
+      return;
+    }
+    
     setNecesidades((prev) => [
       ...prev,
       {
@@ -789,7 +815,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
               </div>
               <div className="card-body">
                 <div className="row g-3 align-items-end">
-                  <div className="col-md-6">
+                  <div className="col-md-5">
                     <label className="form-label fw-bold">Insumo *</label>
                     <Select
                       options={insumosNecesidadOptions}
@@ -812,7 +838,21 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                       menuPortalTarget={document.body}
                     />
                   </div>
-                  <div className="col-md-3">
+                  <div className="col-md-2">
+                    <label className="form-label fw-bold">Unidad de Medida</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={todosInsumos.find(
+                        (i) =>
+                          (i.idInsumo ?? i.id_insumo) === nuevaNecesidad.id_insumo
+                      )?.unidadMedida || ""}
+                      disabled={true}
+                    />
+
+                  </div>
+
+                  <div className="col-md-2">
                     <label className="form-label fw-bold">Cantidad *</label>
                     <input
                       type="number"

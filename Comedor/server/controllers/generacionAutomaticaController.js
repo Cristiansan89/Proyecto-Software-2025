@@ -1,7 +1,10 @@
 import { connection } from "../models/db.js";
 import { ParametroSistemaModel } from "../models/parametrosistema.js";
+import { PedidoModel } from "../models/pedido.js";
 import telegramService from "../services/telegramService.js";
 import { randomUUID } from "crypto";
+import { construirMensajePedidoTelegram, construirBotonesPedidoTelegram } from "../utils/mensajesTelegram.js";
+import { formatearFechaLocal, obtenerFechaActualLocal } from "../utils/formatoFechas.js";
 
 // Convierte una cantidad entre unidades del mismo sistema (masa o volumen)
 function convertirEntrUnidades(cantidad, origen, destino) {
@@ -343,13 +346,12 @@ export const generarPedidosAutomaticos = async (req, res) => {
 
         // ── Notificar al proveedor por Telegram ──────────────────────────
         try {
-          const tokenData = {
+          // Usar método centralizado del modelo para generar token
+          const token = await PedidoModel.generateTokenForProveedor({
             idPedido,
             idProveedor: pedido.id_proveedor,
-            timestamp: Date.now(),
-            expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
-          };
-          const token = Buffer.from(JSON.stringify(tokenData)).toString("base64url");
+          });
+          
           const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
           const enlace = `${baseUrl}/proveedor/confirmacion/${token}`;
 
@@ -361,23 +363,21 @@ export const generarPedidosAutomaticos = async (req, res) => {
           const chatIdProveedor = configTelegram?.[0]?.telegramChatId;
 
           if (chatIdProveedor) {
-            const itemsDetalle = pedido.items
-              .map((item, i) => `${i + 1}. *${item.nombre}* — ${item.cantidadPedido} ${item.unidad}`)
-              .join("\n");
+            // Usar función centralizada para construir el mensaje
+            const fecha = formatearFechaLocal(obtenerFechaActualLocal());
+            const cantidadInsumos = pedido.items.length;
+            
+            const mensajeProveedor = construirMensajePedidoTelegram({
+              idPedido,
+              fecha,
+              cantidadInsumos,
+              enlace
+            });
 
-            const mensajeProveedor =
-              `🛒 *PEDIDO AUTOMÁTICO DE INSUMOS*\n` +
-              `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-              `Ha recibido un pedido automático del Sistema de Comedor Escolar.\n\n` +
-              `📋 Pedido: \`${idPedido.substring(0, 8).toUpperCase()}\`\n` +
-              `📅 Fecha: ${new Date().toLocaleDateString("es-ES")}\n\n` +
-              `*📦 Insumos solicitados:*\n${itemsDetalle}\n\n` +
-              `Confirme la disponibilidad de cada insumo en el enlace:\n\n` +
-              `[✅ Aceptar / Rechazar Pedido](${enlace})\n\n` +
-              `_Este enlace expira en 7 días._`;
+            const buttons = construirBotonesPedidoTelegram(enlace);
 
             await telegramService.initialize("proveedor");
-            await telegramService.sendMessage(chatIdProveedor, mensajeProveedor, "proveedor");
+            await telegramService.sendMessageWithButtons(chatIdProveedor, mensajeProveedor, buttons, "proveedor");
             console.log(`✅ Telegram enviado al proveedor ${pedido.nombreProveedor} (${idPedido.substring(0, 8)})`);
             await delay(5000); // Evitar rate-limit de Telegram entre mensajes consecutivos
           } else {
@@ -868,64 +868,97 @@ export const obtenerInsumosSemanales = async (req, res) => {
 export const generarPedidosPorInsumosFaltantes = async (req, res) => {
   // Función auxiliar para conversión de unidades (igual que en frontend)
   const obtenerMejorUnidad = (cantidad, unidadOriginal) => {
+    // Normalizar la unidad de entrada
+    const uNormalizada = normalizarUnidad(unidadOriginal);
+    
     // Para gramos: si es >= 1000, convertir a kilogramos
-    if (
-      unidadOriginal === "Gramo" ||
-      unidadOriginal === "Gramos" ||
-      unidadOriginal === "gramo" ||
-      unidadOriginal === "gramos"
-    ) {
+    if (uNormalizada === "Gramo") {
       if (cantidad >= 1000) {
         return {
           cantidad: cantidad / 1000,
-          unidad: "Kilogramos",
+          unidad: "Kilogramo", // Devolver normalizado
         };
       }
-      return { cantidad, unidad: "Gramos" };
+      return { cantidad, unidad: "Gramo" };
     }
 
     // Para mililitros: si es >= 1000, convertir a litros
-    if (
-      unidadOriginal === "Mililitro" ||
-      unidadOriginal === "Mililitros" ||
-      unidadOriginal === "mililitro" ||
-      unidadOriginal === "mililitros"
-    ) {
+    if (uNormalizada === "Mililitro") {
       if (cantidad >= 1000) {
         return {
           cantidad: cantidad / 1000,
-          unidad: "Litros",
+          unidad: "Litro", // Devolver normalizado
         };
       }
-      return { cantidad, unidad: "Mililitros" };
+      return { cantidad, unidad: "Mililitro" };
     }
 
-    return { cantidad, unidad: unidadOriginal };
+    return { cantidad, unidad: uNormalizada };
   };
 
-  // Función para convertir cantidad entre unidades
-  const convertirCantidadEntre = (cantidad, unidadOrigen, unidadDestino) => {
-    if (unidadOrigen === unidadDestino) return cantidad;
-
-    const CONVERSIONES = {
-      Gramo: { Kilogramo: 0.001, Kilogramos: 0.001, Gramo: 1, Gramos: 1 },
-      Gramos: { Kilogramo: 0.001, Kilogramos: 0.001, Gramo: 1, Gramos: 1 },
-      Kilogramo: { Gramo: 1000, Gramos: 1000, Kilogramo: 1, Kilogramos: 1 },
-      Kilogramos: { Gramo: 1000, Gramos: 1000, Kilogramo: 1, Kilogramos: 1 },
-      Mililitro: { Litro: 0.001, Litros: 0.001, Mililitro: 1, Mililitros: 1 },
-      Mililitros: { Litro: 0.001, Litros: 0.001, Mililitro: 1, Mililitros: 1 },
-      Litro: { Mililitro: 1000, Mililitros: 1000, Litro: 1, Litros: 1 },
-      Litros: { Mililitro: 1000, Mililitros: 1000, Litro: 1, Litros: 1 },
-      Unidad: { Unidad: 1, Unidades: 1 },
-      Unidades: { Unidad: 1, Unidades: 1 },
+  // Función para normalizar nombres de unidades
+  const normalizarUnidad = (unidad) => {
+    if (!unidad) return null;
+    
+    // Normalizar a minúsculas y eliminar espacios
+    const normalizado = unidad.trim().toLowerCase();
+    
+    // Mapear todas las variantes a la forma canónica singular en mayúscula
+    const mapas = {
+      'gramo': 'Gramo',
+      'gramos': 'Gramo',
+      'kilogramo': 'Kilogramo',
+      'kilogramos': 'Kilogramo',
+      'kg': 'Kilogramo',
+      'mililitro': 'Mililitro',
+      'mililitros': 'Mililitro',
+      'ml': 'Mililitro',
+      'litro': 'Litro',
+      'litros': 'Litro',
+      'l': 'Litro',
+      'unidad': 'Unidad',
+      'unidades': 'Unidad',
     };
 
-    const conversiones = CONVERSIONES[unidadOrigen];
-    if (!conversiones || !conversiones[unidadDestino]) {
-      return cantidad; // No se puede convertir
+    return mapas[normalizado] || unidad; // Si no se encuentra en el mapa, retorna la original
+  };
+
+  // Función para convertir cantidad entre unidades (con normalización)
+  const convertirCantidadEntre = (cantidad, unidadOrigen, unidadDestino) => {
+    // Normalizar ambas unidades
+    const uOrigen = normalizarUnidad(unidadOrigen);
+    const uDestino = normalizarUnidad(unidadDestino);
+    
+    if (uOrigen === uDestino) return cantidad;
+
+    const CONVERSIONES = {
+      Gramo: { Kilogramo: 0.001, Gramo: 1, Litro: null, Mililitro: null, Unidad: null },
+      Kilogramo: { Gramo: 1000, Kilogramo: 1, Litro: null, Mililitro: null, Unidad: null },
+      Mililitro: { Litro: 0.001, Mililitro: 1, Gramo: null, Kilogramo: null, Unidad: null },
+      Litro: { Mililitro: 1000, Litro: 1, Gramo: null, Kilogramo: null, Unidad: null },
+      Unidad: { Unidad: 1 },
+    };
+
+    const conversiones = CONVERSIONES[uOrigen];
+    if (!conversiones) {
+      console.warn(`⚠️ Unidad desconocida para origen: ${uOrigen} (original: ${unidadOrigen})`);
+      return cantidad;
     }
 
-    return cantidad * conversiones[unidadDestino];
+    const factor = conversiones[uDestino];
+    if (factor === null) {
+      console.warn(`⚠️ No se puede convertir entre ${uOrigen} y ${uDestino}`);
+      return cantidad;
+    }
+
+    if (factor === undefined) {
+      console.warn(`⚠️ No se encontró conversión para ${uOrigen} -> ${uDestino}`);
+      return cantidad;
+    }
+
+    const resultado = cantidad * factor;
+    console.log(`📏 Conversión: ${cantidad} ${unidadOrigen} (${uOrigen}) -> ${resultado.toFixed(2)} ${unidadDestino} (${uDestino})`);
+    return resultado;
   };
 
   try {

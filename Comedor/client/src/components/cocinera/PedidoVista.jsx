@@ -1,13 +1,8 @@
 const PedidoVista = ({ detallesPedido, onClose }) => {
   const convertirCantidad = (cantidad, unidad) => {
     const cantidadNum = Number(cantidad) || 0;
-    if (
-      (unidad.includes("Gramo") || unidad.includes("Mililitro")) &&
-      cantidadNum > 1000
-    ) {
-      return Math.round((cantidadNum / 1000) * 100) / 100;
-    }
-    return cantidadNum;
+    // Mostrar la cantidad tal cual está almacenada
+    return Math.round(cantidadNum * 100) / 100;
   };
 
   return (

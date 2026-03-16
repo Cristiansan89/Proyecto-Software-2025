@@ -593,7 +593,13 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                   <div className="info-row">
                     <span className="info-label">Fecha de Registro:</span>
                     <span className="info-value">
-                      {new Date(proveedor.fechaAlta).toLocaleDateString()}
+                      {(() => {
+                        const fecha = proveedor.fechaAlta;
+                        const fechaConZona = typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha) 
+                          ? fecha + "T00:00:00Z" 
+                          : fecha;
+                        return new Date(fechaConZona).toLocaleDateString();
+                      })()}
                     </span>
                   </div>
                 )}
@@ -601,9 +607,13 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
                   <div className="info-row">
                     <span className="info-label">Última Modificación:</span>
                     <span className="info-value">
-                      {new Date(
-                        proveedor.fechaModificacion
-                      ).toLocaleDateString()}
+                      {(() => {
+                        const fecha = proveedor.fechaModificacion;
+                        const fechaConZona = typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha) 
+                          ? fecha + "T00:00:00Z" 
+                          : fecha;
+                        return new Date(fechaConZona).toLocaleDateString();
+                      })()}
                     </span>
                   </div>
                 )}

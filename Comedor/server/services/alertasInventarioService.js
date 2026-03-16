@@ -1,6 +1,8 @@
 import { InventarioModel } from "../models/inventario.js";
 import { AlertaInventarioModel } from "../models/alertaInventario.js";
 import telegramService from "./telegramService.js";
+import { construirMensajePedidoTelegram, construirBotonesPedidoTelegram } from "../utils/mensajesTelegram.js";
+import { formatearFechaLocal } from "../utils/formatoFechas.js";
 
 class AlertasInventarioService {
   constructor() {
@@ -784,15 +786,16 @@ class AlertasInventarioService {
             const chatIdProveedor = configTelegram?.[0]?.telegramChatId;
 
             if (chatIdProveedor) {
-              const mensaje =
-                `🛒 *NUEVO PEDIDO DE INSUMOS*\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-                `Ha recibido un nuevo pedido del Sistema de Comedor Escolar.\n\n` +
-                `📋 Pedido: \`${nuevoPedido.id_pedido.substring(0, 8).toUpperCase()}\`\n\n` +
-                `Por favor confirme la disponibilidad de los insumos en el siguiente enlace:\n\n` +
-                `[✅ Confirmar Pedido](${enlace})\n\n` +
-                `_Este enlace expira en 7 días._`;
-              await telegramService.sendMessage(chatIdProveedor, mensaje, "proveedor");
+              const fecha = formatearFechaLocal(new Date().toISOString().split("T")[0]);
+              const mensaje = construirMensajePedidoTelegram({
+                idPedido: nuevoPedido.id_pedido,
+                fecha,
+                cantidadInsumos: insumos.length,
+                enlace
+              });
+              
+              const buttons = construirBotonesPedidoTelegram(enlace);
+              await telegramService.sendMessageWithButtons(chatIdProveedor, mensaje, buttons, "proveedor");
               console.log(`     ✅ Enlace de confirmación enviado por Telegram al proveedor del pedido ${nuevoPedido.id_pedido}`);
             } else {
               console.warn(`     ⚠️ El proveedor ${id_proveedor} no tiene Telegram configurado`);

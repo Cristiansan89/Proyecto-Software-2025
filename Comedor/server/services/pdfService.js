@@ -5,17 +5,11 @@ import nodemailer from "nodemailer";
 
 /**
  * Convertir cantidad según la unidad de medida
- * Si la unidad contiene "Gramo" o "Mililitro" y cantidad > 1000, divide por 1000
+ * Mostrar la cantidad tal cual está almacenada sin conversiones automáticas
  */
 const convertirCantidad = (cantidad, unidad) => {
   const cantidadNum = Number(cantidad) || 0;
-  if (
-    (unidad.includes("Gramo") || unidad.includes("Mililitro")) &&
-    cantidadNum > 1000
-  ) {
-    return Math.round((cantidadNum / 1000) * 100) / 100;
-  }
-  return cantidadNum;
+  return Math.round(cantidadNum * 100) / 100;
 };
 
 /**
@@ -426,14 +420,29 @@ export const enviarPDFConfirmacionMail = async (
   hayInsumosRechazados = false,
 ) => {
   try {
-    // Configurar transporte de correo
+    // Validar que las credenciales de correo estén configuradas
+    if (!process.env.MAIL_HOST || !process.env.MAIL_USERNAME || !process.env.MAIL_PASSWORD) {
+      console.warn(
+        "⚠️ Advertencia: Credenciales de correo no configuradas en .env. El PDF no será enviado por email.",
+        {
+          MAIL_HOST: !!process.env.MAIL_HOST,
+          MAIL_USERNAME: !!process.env.MAIL_USERNAME,
+          MAIL_PASSWORD: !!process.env.MAIL_PASSWORD,
+        }
+      );
+      throw new Error(
+        "Credenciales de correo SMTP no configuradas. Revise las variables MAIL_HOST, MAIL_USERNAME y MAIL_PASSWORD en el archivo .env"
+      );
+    }
+
+    // Configurar transporte de correo usando Mailtrap (o similar SMTP)
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: process.env.SMTP_PORT || 587,
-      secure: process.env.SMTP_SECURE === "true",
+      host: process.env.MAIL_HOST,
+      port: process.env.MAIL_PORT || 587,
+      secure: process.env.MAIL_SECURE === "true" || false, // false para puerto 587 (TLS), true para 465 (SSL)
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
+        user: process.env.MAIL_USERNAME,
+        pass: process.env.MAIL_PASSWORD,
       },
     });
 
@@ -444,7 +453,7 @@ export const enviarPDFConfirmacionMail = async (
 
     // Enviar correo con PDF
     await transporter.sendMail({
-      from: process.env.SMTP_USER || "comedor@escuela.edu",
+      from: process.env.MAIL_FROM || process.env.MAIL_USERNAME || "comedor@escuela.edu",
       to: email,
       subject: `Confirmación de Pedido - ${nombreProveedor}`,
       html: `

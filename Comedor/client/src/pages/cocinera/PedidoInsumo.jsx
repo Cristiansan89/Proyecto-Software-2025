@@ -8,7 +8,7 @@ import estadoPedidoService from "../../services/estadoPedidoService";
 import insumoService from "../../services/insumoService";
 import auditoriaService from "../../services/auditoriaService";
 import { jsPDF } from "jspdf";
-import { autoTable } from "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import {
   showSuccess,
   showError,
@@ -18,7 +18,7 @@ import {
 } from "../../utils/alertService";
 
 const PedidoInsumo = ({ onModoEdicion }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [vistaActual, setVistaActual] = useState("lista"); // 'lista', 'crear', 'automatico'
   const [pedidos, setPedidos] = useState([]);
   const [estadosPedido, setEstadosPedido] = useState([]);
@@ -50,8 +50,10 @@ const PedidoInsumo = ({ onModoEdicion }) => {
       if (fechaString.includes("T") || fechaString.includes(":")) {
         fecha = new Date(fechaString);
       } else {
-        // Si es solo fecha (YYYY-MM-DD), agregar hora para evitar problemas de zona horaria
-        fecha = new Date(fechaString + "T12:00:00");
+        // Si es solo fecha (YYYY-MM-DD), parsear directamente sin conversión UTC
+        const [año, mes, día] = fechaString.split('-').map(Number);
+        // Crear fecha local directamente
+        fecha = new Date(año, mes - 1, día);
       }
 
       // Verificar si la fecha es válida
@@ -130,9 +132,12 @@ const PedidoInsumo = ({ onModoEdicion }) => {
   };
 
   useEffect(() => {
-    cargarDatos();
-    cargarInsumosBajoStock();
-  }, []);
+    // Solo cargar datos si el usuario está autenticado y la verificación de autenticación está completa
+    if (!authLoading && isAuthenticated) {
+      cargarDatos();
+      cargarInsumosBajoStock();
+    }
+  }, [isAuthenticated, authLoading]);
 
   useEffect(() => {
     aplicarFiltros();
@@ -409,7 +414,7 @@ const PedidoInsumo = ({ onModoEdicion }) => {
     );
 
     if (pedidosAprobados.length === 0) {
-      showInfo("No hay pedidos aprobados para exportar");
+      showInfo("Información", "No hay pedidos aprobados para exportar");
       return;
     }
 
@@ -447,7 +452,8 @@ const PedidoInsumo = ({ onModoEdicion }) => {
       ]);
 
       // Tabla
-      autoTable(doc, {
+      autoTable({
+        doc,
         startY: 60,
         head: [
           [
@@ -833,7 +839,7 @@ const PedidoInsumo = ({ onModoEdicion }) => {
                               Entrega:{" "}
                               {calcularFechaEntrega(
                                 pedido.fechaAprobacion,
-                              ).toLocaleDateString("es-ES")}
+                              )?.toLocaleDateString("es-ES") || "-"}
                             </span>
                           </div>
                         ) : (
@@ -1014,22 +1020,8 @@ const PedidoInsumo = ({ onModoEdicion }) => {
                                     detalle.cantidad ||
                                       detalle.cantidadSolicitada,
                                   );
-                                  const unidad = detalle.unidadMedida || "";
-
-                                  // Si es en Gramos o Mililitros Y la cantidad es mayor a 1000,
-                                  // entonces está en unidades menores (dividir por 1000)
-                                  if (
-                                    (unidad.includes("Gramo") ||
-                                      unidad.includes("Mililitro")) &&
-                                    cantidad > 1000
-                                  ) {
-                                    const cantidadConvertida = cantidad / 1000;
-                                    // Remover decimales innecesarios
-                                    return (
-                                      Math.round(cantidadConvertida * 100) / 100
-                                    );
-                                  }
-
+                                  // Mostrar la cantidad tal cual está guardada en la BD
+                                  // Sin hacer divisiones automáticas
                                   return Math.round(cantidad * 100) / 100;
                                 })()}
                               </td>

@@ -115,7 +115,8 @@ CREATE TABLE DetalleConsumo(
     id_consumo            BINARY(16)        NOT NULL,
     id_insumo             INT               NOT NULL,
     id_itemReceta         INT,
-    cantidadUtilizada     INT      NOT NULL,
+    cantidadUtilizada     INT     NOT NULL,
+    unidadMedida          VARCHAR(50)       DEFAULT 'Gramos',
     cantidadCalculada     INT,
     PRIMARY KEY (id_detalleConsumo),
     CONSTRAINT RefItemsRecetas FOREIGN KEY (id_itemReceta) 
@@ -206,9 +207,9 @@ CREATE TABLE Insumos(
 
 CREATE TABLE Inventarios(
     id_insumo                   INT                        NOT NULL,
-    cantidadActual              INT             DEFAULT 0,
-    nivelMinimoAlerta           INT             DEFAULT 0,
-    stockMaximo                 INT             DEFAULT 999,
+    cantidadActual              INT   DEFAULT 0,
+    nivelMinimoAlerta           INT   DEFAULT 0,
+    stockMaximo                 INT   DEFAULT 999,
     fechaUltimaActualizacion    DATE                       DEFAULT '2025-01-01',
     estado                      ENUM('Agotado', 'Critico', 'Normal')    NOT NULL DEFAULT 'Normal',
     PRIMARY KEY (id_insumo)
@@ -224,7 +225,7 @@ CREATE TABLE ItemsRecetas(
     id_itemReceta         INT               AUTO_INCREMENT,
     id_receta             BINARY(16)        NOT NULL,
     id_insumo             INT               NOT NULL,
-    cantidadPorPorcion    INT               NOT NULL DEFAULT 0,
+    cantidadPorPorcion    INT     NOT NULL DEFAULT 0,
     unidadPorPorcion ENUM('gramo','gramos','kilogramo','kilogramos','mililitro','mililitros','litro','litros','unidad','unidades') NOT NULL DEFAULT 'unidad',
     PRIMARY KEY (id_itemReceta)
 )ENGINE=INNODB;
@@ -256,7 +257,7 @@ CREATE TABLE MovimientosInventarios(
     id_consumo              BINARY(16),
     id_tipoMerma            INT,
     tipoMovimiento          VARCHAR(100)       NOT NULL,
-    cantidadMovimiento      INT    NOT NULL,
+    cantidadMovimiento      INT NOT NULL,
     fechaHora               DATETIME          DEFAULT CURRENT_TIMESTAMP,
     comentarioMovimiento    TEXT,
     PRIMARY KEY (id_movimiento)

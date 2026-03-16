@@ -432,4 +432,28 @@ export class InsumoModel {
     );
     return insumos;
   }
+
+  static async getInsumosActivos() {
+    const [insumos] = await connection.query(
+      `SELECT 
+                i.id_insumo as idInsumo,
+                i.nombreInsumo,
+                i.descripcion,
+                i.unidadMedida,
+                i.categoria,
+                i.stockMinimo,
+                i.fecha,
+                i.estado,
+                COALESCE(inv.cantidadActual, 0) as stockActual,
+                inv.nivelMinimoAlerta,
+                inv.stockMaximo,
+                inv.fechaUltimaActualizacion,
+                inv.estado as estadoInventario
+             FROM Insumos i
+             LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
+             WHERE i.estado = 'Activo'
+             ORDER BY i.nombreInsumo;`
+    );
+    return insumos;
+  }
 }

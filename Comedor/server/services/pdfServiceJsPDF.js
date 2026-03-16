@@ -5,17 +5,11 @@ import { EscuelaService } from "./escuelaService.js";
 
 /**
  * Convertir cantidad según la unidad de medida
- * Si la unidad contiene "Gramo" o "Mililitro" y cantidad > 1000, divide por 1000
+ * Mostrar la cantidad tal cual está almacenada sin conversiones automáticas
  */
 const convertirCantidad = (cantidad, unidad) => {
   const cantidadNum = Number(cantidad) || 0;
-  if (
-    (unidad.includes("Gramo") || unidad.includes("Mililitro")) &&
-    cantidadNum > 1000
-  ) {
-    return Math.round((cantidadNum / 1000) * 100) / 100;
-  }
-  return cantidadNum;
+  return Math.round(cantidadNum * 100) / 100;
 };
 
 /**

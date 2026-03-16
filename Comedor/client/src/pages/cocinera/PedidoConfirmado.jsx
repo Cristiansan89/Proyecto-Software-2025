@@ -117,13 +117,8 @@ const PedidoConfirmado = () => {
 
   const convertirCantidad = (cantidad, unidad) => {
     const cantidadNum = Number(cantidad) || 0;
-    if (
-      (unidad.includes("Gramo") || unidad.includes("Mililitro")) &&
-      cantidadNum > 1000
-    ) {
-      return Math.round((cantidadNum / 1000) * 100) / 100;
-    }
-    return cantidadNum;
+    // Mostrar la cantidad tal cual está almacenada
+    return Math.round(cantidadNum * 100) / 100;
   };
 
   const pedidosFiltrados = filtrarPedidos();
@@ -192,9 +187,13 @@ const PedidoConfirmado = () => {
       {/* Tabla de Pedidos Confirmados */}
       <div className="table-container">
         {pedidosFiltrados.length === 0 ? (
-          <div className="tabla-vacia">
-            <p>No hay pedidos confirmados que mostrar</p>
-          </div>
+          <div colSpan={12}>
+              <div className="empty-state">
+                <i className="fas fa-search empty-icon"></i>
+                <h5>No se encontraron pedidos confirmados</h5>
+                <p>No hay pedidos que coincidan con tu búsqueda.</p>
+              </div>
+            </div>
         ) : (
           <div className="scrollable-table">
             <div className="">

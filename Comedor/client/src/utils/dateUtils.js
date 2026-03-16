@@ -23,14 +23,24 @@ export const formatCicloLectivo = (fecha) => {
 
 /**
  * Formatea una fecha para mostrar en formato local
+ * Maneja correctamente fechas sin información de hora (YYYY-MM-DD)
+ * para evitar problemas de zona horaria
  * @param {string|Date} fecha - La fecha a formatear
+ * @param {string} locale - Locale para el formato (default: 'es-ES')
  * @returns {string} - Fecha formateada o 'N/A' si no es válida
  */
-export const formatDate = (fecha) => {
+export const formatDate = (fecha, locale = 'es-ES') => {
     if (!fecha) return 'N/A';
 
     try {
-        return new Date(fecha).toLocaleDateString();
+        // Si es solo una fecha sin hora (YYYY-MM-DD), parsear directamente
+        // Esto evita completamente problemas de zona horaria
+        if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+            const [año, mes, día] = fecha.split('-').map(Number);
+            // Crear fecha local directamente sin conversión UTC
+            return new Date(año, mes - 1, día).toLocaleDateString(locale);
+        }
+        return new Date(fecha).toLocaleDateString(locale);
     } catch {
         return 'N/A';
     }

@@ -233,12 +233,29 @@ const ConfirmacionProveedor = () => {
 
   const conteos = contarConfirmaciones();
   const fechaFormateada = datosPedido.pedido?.fechaEmision
-    ? new Date(datosPedido.pedido.fechaEmision).toLocaleDateString("es-ES", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+    ? (() => {
+        const fecha = datosPedido.pedido.fechaEmision;
+        // Parsear YYYY-MM-DD evitando problemas de zona horaria
+        // Usar números en lugar de strings para evitar ambigüedad
+        if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+          const [año, mes, día] = fecha.split('-').map(Number);
+          // Crear fecha local directamente sin conversión UTC
+          const fechaLocal = new Date(año, mes - 1, día);
+          return fechaLocal.toLocaleDateString("es-ES", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+        }
+        // Si es una fecha con hora, usar toLocaleDateString normalmente
+        return new Date(fecha).toLocaleDateString("es-ES", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      })()
     : "Fecha no disponible";
 
   // Debug logs para renderizado
@@ -305,19 +322,7 @@ const ConfirmacionProveedor = () => {
                 <strong>
                   {(() => {
                     const cantidad = Number(insumo.cantidadSolicitada);
-                    const unidad = insumo.unidadMedida || "";
-
-                    // Si es en Gramos o Mililitros Y la cantidad es mayor a 1000,
-                    // entonces está en unidades menores (dividir por 1000)
-                    if (
-                      (unidad.includes("Gramo") ||
-                        unidad.includes("Mililitro")) &&
-                      cantidad > 1000
-                    ) {
-                      const cantidadConvertida = cantidad / 1000;
-                      return Math.round(cantidadConvertida * 100) / 100;
-                    }
-
+                    // Mostrar la cantidad tal cual está almacenada
                     return Math.round(cantidad * 100) / 100;
                   })()}{" "}
                   {insumo.unidadMedida}
