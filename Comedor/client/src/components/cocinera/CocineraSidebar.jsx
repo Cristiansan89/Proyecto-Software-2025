@@ -53,6 +53,12 @@ const CocineraSidebar = ({ collapsed }) => {
       path: "/cocinera/pedidos",
     },
     {
+      id: "reportes",
+      label: "Reportes",
+      icon: "fas fa-file-alt",
+      path: "/cocinera/reportes",
+    },
+    {
       id: "estadisticas",
       label: "Estadísticas",
       icon: "fas fa-chart-bar",

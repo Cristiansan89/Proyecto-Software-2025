@@ -40,14 +40,19 @@ export const proveedorInsumoService = {
   },
 
   // Actualizar relación proveedor-insumo
-  update: async (id, data) => {
-    const response = await axiosInstance.patch(`${API_BASE_URL}/${id}`, data);
+  update: async (id_proveedor, id_insumo, data) => {
+    const response = await axiosInstance.patch(
+      `${API_BASE_URL}/${id_proveedor}/${id_insumo}`,
+      data
+    );
     return response.data;
   },
 
   // Eliminar relación proveedor-insumo
-  delete: async (id) => {
-    const response = await axiosInstance.delete(`${API_BASE_URL}/${id}`);
+  delete: async (id_proveedor, id_insumo) => {
+    const response = await axiosInstance.delete(
+      `${API_BASE_URL}/${id_proveedor}/${id_insumo}`
+    );
     return response.data;
   },
 };

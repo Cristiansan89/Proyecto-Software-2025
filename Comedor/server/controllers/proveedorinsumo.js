@@ -20,8 +20,8 @@ export class ProveedorInsumoController {
 
   getById = async (req, res) => {
     try {
-      const { id } = req.params;
-      const proveedorInsumo = await this.proveedorInsumoModel.getById({ id });
+      const { id_proveedor, id_insumo } = req.params;
+      const proveedorInsumo = await this.proveedorInsumoModel.getById({ id_proveedor, id_insumo });
 
       if (proveedorInsumo) return res.json(proveedorInsumo);
       res
@@ -61,8 +61,8 @@ export class ProveedorInsumoController {
 
   delete = async (req, res) => {
     try {
-      const { id } = req.params;
-      const deleted = await this.proveedorInsumoModel.delete({ id });
+      const { id_proveedor, id_insumo } = req.params;
+      const deleted = await this.proveedorInsumoModel.delete({ id_proveedor, id_insumo });
 
       if (!deleted) {
         return res
@@ -93,9 +93,10 @@ export class ProveedorInsumoController {
         });
       }
 
-      const { id } = req.params;
+      const { id_proveedor, id_insumo } = req.params;
       const updatedProveedorInsumo = await this.proveedorInsumoModel.update({
-        id,
+        id_proveedor,
+        id_insumo,
         input: result.data,
       });
 

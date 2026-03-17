@@ -191,6 +191,14 @@ const extraerIdRegistro = (req, data) => {
     () => req.params.idGrado,
     () => req.params.idRol,
     
+    // 1.5 Para claves compuestas (proveedor-insumo)
+    () => {
+      if (req.params.id_proveedor && req.params.id_insumo) {
+        return `${req.params.id_proveedor}:${req.params.id_insumo}`;
+      }
+      return null;
+    },
+    
     // 2. Body del request
     () => req.body?.id,
     () => req.body?.idRecurso,
@@ -212,6 +220,17 @@ const extraerIdRegistro = (req, data) => {
     // 4. Data de respuesta (directo)
     () => data?.id,
     () => data?.idRecurso,
+
+    // 4.5 Movimientos inventarios → { id_movimiento }
+    () => data?.id_movimiento,
+    
+    // 4.6 ProveedorInsumo compuesto → { id_proveedor, id_insumo }
+    () => {
+      if (data?.id_proveedor && data?.id_insumo) {
+        return `${data.id_proveedor}:${data.id_insumo}`;
+      }
+      return null;
+    },
 
     // 5. Pedidos: crearPedidoManual → { pedidos: [{id_pedido}] }
     () => data?.pedidos?.[0]?.id_pedido,

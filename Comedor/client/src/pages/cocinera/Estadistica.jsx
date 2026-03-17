@@ -44,6 +44,7 @@ ChartJS.register(
 const Estadistica = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [usarDatosSimulados, setUsarDatosSimulados] = useState(false);
   const [filtros, setFiltros] = useState({
     fechaInicio: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
       .toISOString()
@@ -57,6 +58,7 @@ const Estadistica = () => {
   const [datosInventario, setDatosInventario] = useState(null);
   const [datosServicios, setDatosServicios] = useState(null);
   const [estadisticasGenerales, setEstadisticasGenerales] = useState(null);
+  const [datosRealesBackup, setDatosRealesBackup] = useState(null);
 
   const graficoRef = useRef(null);
 
@@ -64,7 +66,135 @@ const Estadistica = () => {
     cargarDatos();
   }, [filtros]);
 
+  /**
+   * Genera datos simulados realistas para demostración
+   */
+  const generarDatosSimulados = () => {
+    // Simular consumos
+    const consumosPorDia = {};
+    const consumosPorServicio = {
+      Desayuno: 45,
+      Almuerzo: 87,
+      Merienda: 56,
+      "Almuerzo Especial": 23,
+    };
+    const topInsumos = [
+      ["Harina", 125],
+      ["Arroz", 98],
+      ["Frijoles", 87],
+      ["Azúcar", 64],
+      ["Aceite", 52],
+    ];
+
+    // Generar consumos por día
+    for (let i = 0; i < 30; i++) {
+      const fecha = new Date(filtros.fechaInicio);
+      fecha.setDate(fecha.getDate() + i);
+      const fechaStr = fecha.toLocaleDateString("es-ES");
+      consumosPorDia[fechaStr] = Math.floor(Math.random() * 50) + 20;
+    }
+
+    const datosConsumosSimulados = {
+      porDia: consumosPorDia,
+      porServicio: consumosPorServicio,
+      topInsumos: topInsumos,
+      total: Object.values(consumosPorDia).reduce((a, b) => a + b, 0),
+    };
+
+    // Simular asistencias
+    const datosAsistenciasSimulados = {
+      totalPresentes: 542,
+      totalAusentes: 47,
+      totalRegistros: 20,
+      porcentajeAsistencia: 92,
+      porServicio: {
+        Desayuno: 189,
+        Almuerzo: 245,
+        Merienda: 156,
+        "Almuerzo Especial": 108,
+      },
+    };
+
+    // Simular inventario
+    const datosInventarioSimulados = {
+      porCategoria: {
+        Granos: 24,
+        Verduras: 18,
+        Carnes: 15,
+        Lácteos: 12,
+        Condimentos: 31,
+      },
+      estado: {
+        Activo: 95,
+        Inactivo: 8,
+        "Stock Crítico": 2,
+      },
+      total: 105,
+      activos: 95,
+    };
+
+    // Simular servicios
+    const datosServiciosSimulados = {
+      total: 8,
+      activos: 7,
+      porTipo: {
+        Desayuno: 2,
+        Almuerzo: 3,
+        Merienda: 2,
+        "Almuerzo Especial": 1,
+      },
+    };
+
+    return {
+      datosConsumos: datosConsumosSimulados,
+      datosAsistencias: datosAsistenciasSimulados,
+      datosInventario: datosInventarioSimulados,
+      datosServicios: datosServiciosSimulados,
+    };
+  };
+
+  /**
+   * Alterna entre datos reales y simulados
+   */
+  const alternarDatosSimulados = async () => {
+    if (usarDatosSimulados) {
+      // Volver a datos reales
+      setUsarDatosSimulados(false);
+      setDatosConsumos(datosRealesBackup?.datosConsumos || null);
+      setDatosAsistencias(datosRealesBackup?.datosAsistencias || null);
+      setDatosInventario(datosRealesBackup?.datosInventario || null);
+      setDatosServicios(datosRealesBackup?.datosServicios || null);
+      showInfo("Información", "✅ Mostrando datos reales del sistema");
+    } else {
+      // Cambiar a datos simulados
+      // Primero respaldar datos reales
+      setDatosRealesBackup({
+        datosConsumos,
+        datosAsistencias,
+        datosInventario,
+        datosServicios,
+      });
+
+      // Cargar datos simulados
+      const datosSimulados = generarDatosSimulados();
+      setDatosConsumos(datosSimulados.datosConsumos);
+      setDatosAsistencias(datosSimulados.datosAsistencias);
+      setDatosInventario(datosSimulados.datosInventario);
+      setDatosServicios(datosSimulados.datosServicios);
+      setUsarDatosSimulados(true);
+      showInfo(
+        "Información",
+        "ℹ️ Mostrando datos de prueba simulados (datos reales no se modifican)",
+      );
+    }
+  };
+
   const cargarDatos = async () => {
+    // Si está en modo simulado, no cargar datos reales
+    if (usarDatosSimulados) {
+      return;
+    }
+
     try {
       setLoading(true);
       await Promise.all([
@@ -431,12 +561,21 @@ const Estadistica = () => {
         </div>
         <div className="header-actions">
           <button
-            className="btn btn-warning me-2"
-            onClick={generarDatosPrueba}
+            className={`btn me-2 ${
+              usarDatosSimulados ? "btn-success" : "btn-outline-success"
+            }`}
+            onClick={alternarDatosSimulados}
             disabled={loading}
+            title={
+              usarDatosSimulados
+                ? "Volver a datos reales"
+                : "Usar datos de prueba simulados"
+            }
           >
-            <i className="fas fa-database me-2"></i>
-            {loading ? "Generando..." : "Generar Datos de Prueba"}
+            <i className="fas fa-flask me-2"></i>
+            {usarDatosSimulados
+              ? "Datos Simulados (Activo)"
+              : "Simular Datos de Prueba"}
           </button>
           <button
             className="btn btn-primary"
@@ -462,6 +601,7 @@ const Estadistica = () => {
                 onChange={(e) =>
                   setFiltros({ ...filtros, fechaInicio: e.target.value })
                 }
+                disabled={usarDatosSimulados}
               />
             </div>
             <div className="col-md-5">
@@ -473,13 +613,14 @@ const Estadistica = () => {
                 onChange={(e) =>
                   setFiltros({ ...filtros, fechaFin: e.target.value })
                 }
+                disabled={usarDatosSimulados}
               />
             </div>
             <div className="col-md-2 d-flex align-items-end">
               <button
                 className="btn btn-info w-100"
                 onClick={cargarDatos}
-                disabled={loading}
+                disabled={loading || usarDatosSimulados}
               >
                 <i className="fas fa-sync me-1"></i>
                 Actualizar
@@ -488,6 +629,20 @@ const Estadistica = () => {
           </div>
         </div>
       </div>
+
+      {/* Alerta de datos simulados */}
+      {usarDatosSimulados && (
+        <div className="alert alert-info mb-4" role="alert">
+          <i className="fas fa-flask me-2"></i>
+          <strong>Modo de Datos de Prueba Activo</strong>
+          <p className="mb-0 mt-2">
+            Estás viendo gráficos con datos simulados realistas. Los datos
+            reales del sistema no han sido modificados. Haz clic en{" "}
+            <strong>"Datos Simulados (Activo)"</strong> para volver a los datos
+            reales.
+          </p>
+        </div>
+      )}
 
       {/* Tarjetas de Resumen */}
       <div className="row mb-4">

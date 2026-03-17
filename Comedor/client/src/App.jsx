@@ -47,6 +47,7 @@ import InsumosSemanal from "./pages/cocinera/InsumosSemanal";
 import Estadistica from "./pages/cocinera/Estadistica";
 import CocineraTelegram from "./pages/cocinera/CocineraTelegram";
 import CocineraTelegramExitoso from "./pages/cocinera/CocineraTelegramExitoso";
+import Reportes from "./pages/cocinera/Reportes";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/App.css";
 
@@ -226,6 +227,7 @@ function App() {
                         element={<InsumosSemanal />}
                       />
                       <Route path="/estadisticas" element={<Estadistica />} />
+                      <Route path="/reportes" element={<Reportes />} />
                     </Routes>
                   </CocineraLayout>
                 </ProtectedRoute>
