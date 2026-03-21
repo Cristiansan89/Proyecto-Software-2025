@@ -649,6 +649,7 @@
 .btn-cerrar {
   background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
   color: white;
+  width: 180px;
   box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
 }
 
@@ -755,9 +756,6 @@
     grid-template-columns: 1fr;
   }
 
-  .botones-accion {
-    flex-direction: column;
-  }
 
   .btn-cerrar,
   .btn-volver {
@@ -798,5 +796,14 @@
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .timestamp {
+    color: rgba(255, 255, 255, 0.95);
+  } 
+
+  .textcolor {
+    color: rgba(255, 255, 255, 0.95);
+    margin-left: 1.2em;
   }
 }

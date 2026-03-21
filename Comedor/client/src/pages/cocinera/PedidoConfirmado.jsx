@@ -121,6 +121,38 @@ const PedidoConfirmado = () => {
     return Math.round(cantidadNum * 100) / 100;
   };
 
+  // Función para formatear fechas con hora
+  const formatearFechaConHora = (fechaString) => {
+    if (!fechaString) return "-";
+
+    try {
+      let fecha;
+
+      // Si ya tiene formato de fecha completa (con hora)
+      if (fechaString.includes("T") || fechaString.includes(":")) {
+        fecha = new Date(fechaString);
+      } else {
+        // Si es solo fecha (YYYY-MM-DD), crear fecha local
+        const [año, mes, día] = fechaString.split('-').map(Number);
+        fecha = new Date(año, mes - 1, día);
+      }
+
+      if (isNaN(fecha.getTime())) {
+        return "-";
+      }
+
+      const fechaFormato = fecha.toLocaleDateString("es-ES");
+      const horaFormato = fecha.toLocaleTimeString("es-ES", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return `${fechaFormato} ${horaFormato}`;
+    } catch (error) {
+      console.error("Error al formatear fecha con hora:", fechaString, error);
+      return "-";
+    }
+  };
+
   const pedidosFiltrados = filtrarPedidos();
 
   if (loading) {
@@ -219,7 +251,7 @@ const PedidoConfirmado = () => {
                       <th>#</th>
                       <th>Proveedor</th>
                       <th>Nº Pedido</th>
-                      <th>Fecha</th>
+                      <th>Fecha y Hora</th>
                       <th>Confirmados</th>
                       <th>Rechazados</th>
                       <th>Pendientes</th>
@@ -244,9 +276,20 @@ const PedidoConfirmado = () => {
                           </span>
                         </td>
                         <td>
-                          {new Date(pedido.fechaEmision).toLocaleDateString(
-                            "es-ES",
-                          )}
+                          <div className="d-flex flex-column">
+                            <small className="text-muted">
+                              Emit.:{" "}
+                              {formatearFechaConHora(pedido.fechaEmision)}
+                            </small>
+                            {pedido.fechaConfirmacion && (
+                              <span className="text-success">
+                                Conf.:{" "}
+                                {formatearFechaConHora(
+                                  pedido.fechaConfirmacion,
+                                )}
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td className="numero-confirmados">

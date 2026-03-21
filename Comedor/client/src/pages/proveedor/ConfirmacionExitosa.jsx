@@ -120,7 +120,7 @@ const ConfirmacionExitosa = () => {
 
       {/* Footer */}
       <div className="footer-exitosa">
-        <p>Gracias por su colaboración en el Sistema de Gestión de Comedor</p>
+        <p className="textcolor">Gracias por su colaboración en el Sistema de Gestión de Comedor</p>
         <p className="timestamp">
           Confirmación procesada: {new Date().toLocaleString("es-ES")}
         </p>
@@ -128,8 +128,8 @@ const ConfirmacionExitosa = () => {
 
       {/* Footer con información de contacto */}
       <div className="footer-contacto">
-        <p>
-          Si tiene alguna consulta, puede contactarnos al{" "}
+        <p className="textcolor">
+          Si tiene alguna consulta, puede contactarnos al <br />
           <a href="tel:+543764239133">+54 (376) 4239133</a> o{" "}
           <a href="mailto:crisanz89@gmail.com">crisanz89@gmail.com</a>
         </p>

@@ -85,6 +85,38 @@ const PedidoInsumo = ({ onModoEdicion }) => {
     }
   };
 
+  // Función para formatear fechas con hora
+  const formatearFechaConHora = (fechaString) => {
+    if (!fechaString) return "-";
+
+    try {
+      let fecha;
+
+      // Si ya tiene formato de fecha completa (con hora)
+      if (fechaString.includes("T") || fechaString.includes(":")) {
+        fecha = new Date(fechaString);
+      } else {
+        // Si es solo fecha (YYYY-MM-DD), crear fecha local
+        const [año, mes, día] = fechaString.split('-').map(Number);
+        fecha = new Date(año, mes - 1, día);
+      }
+
+      if (isNaN(fecha.getTime())) {
+        return "-";
+      }
+
+      const fechaFormato = fecha.toLocaleDateString("es-ES");
+      const horaFormato = fecha.toLocaleTimeString("es-ES", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return `${fechaFormato} ${horaFormato}`;
+    } catch (error) {
+      console.error("Error al formatear fecha con hora:", fechaString, error);
+      return "-";
+    }
+  };
+
   // Función para calcular fecha de entrega desde fecha de aprobación
   const calcularFechaEntrega = (fechaAprobacion) => {
     if (!fechaAprobacion) return null;
@@ -796,7 +828,7 @@ const PedidoInsumo = ({ onModoEdicion }) => {
                       <td>
                         <strong>{index + 1}</strong>
                       </td>
-                      <td>{formatearFecha(pedido.fechaEmision)}</td>
+                      <td>{formatearFechaConHora(pedido.fechaEmision)}</td>
                       <td>
                         <strong>{pedido.nombreProveedor}</strong>
                       </td>
@@ -833,7 +865,7 @@ const PedidoInsumo = ({ onModoEdicion }) => {
                           <div className="d-flex flex-column">
                             <small className="text-muted">
                               (Aprobado:{" "}
-                              {formatearFecha(pedido.fechaAprobacion)})
+                              {formatearFechaConHora(pedido.fechaAprobacion)})
                             </small>
                             <span className="text-success">
                               Entrega:{" "}
@@ -856,51 +888,51 @@ const PedidoInsumo = ({ onModoEdicion }) => {
                             <i className="fas fa-eye"></i>
                           </button>
 
-                          {pedido.estadoPedido === "Aprobado" && (
-                            <button
-                              className="btn btn-outline-warning btn-sm me-1"
-                              onClick={async () => {
-                                try {
-                                  setLoading(true);
-                                  const pedidoCompleto =
-                                    await pedidoService.getPedidoCompleto(
-                                      pedido.id_pedido,
+                          {pedido.estadoPedido === "Pendiente" && (
+                            <>
+                              <button
+                                className="btn btn-outline-warning btn-sm me-1"
+                                onClick={async () => {
+                                  try {
+                                    setLoading(true);
+                                    const pedidoCompleto =
+                                      await pedidoService.getPedidoCompleto(
+                                        pedido.id_pedido,
+                                      );
+                                    setPedidoEditando(pedidoCompleto);
+                                    setVistaActual("crear");
+                                  } catch (error) {
+                                    showError(
+                                      "Error",
+                                      "Error al cargar el pedido: " +
+                                        error.message,
                                     );
-                                  setPedidoEditando(pedidoCompleto);
-                                  setVistaActual("crear");
-                                } catch (error) {
-                                  showError(
-                                    "Error",
-                                    "Error al cargar el pedido: " +
-                                      error.message,
-                                  );
-                                } finally {
-                                  setLoading(false);
-                                }
-                              }}
-                              title="Editar pedido"
-                            >
-                              <i className="fas fa-edit"></i>
-                            </button>
-                          )}
+                                  } finally {
+                                    setLoading(false);
+                                  }
+                                }}
+                                title="Editar pedido"
+                              >
+                                <i className="fas fa-edit"></i>
+                              </button>
 
-                          {pedido.estadoPedido !== "Cancelado" && (
-                            <button
-                              className="btn btn-outline-danger btn-sm me-1"
-                              onClick={() => cancelarPedido(pedido.id_pedido)}
-                              title="Cancelar pedido"
-                            >
-                              <i className="fas fa-ban"></i>
-                            </button>
-                          )}
+                              <button
+                                className="btn btn-outline-danger btn-sm me-1"
+                                onClick={() => cancelarPedido(pedido.id_pedido)}
+                                title="Cancelar pedido"
+                              >
+                                <i className="fas fa-ban"></i>
+                              </button>
 
-                          <button
-                            className="btn btn-outline-danger btn-sm"
-                            onClick={() => eliminarPedido(pedido.id_pedido)}
-                            title="Eliminar pedido"
-                          >
-                            <i className="fas fa-trash"></i>
-                          </button>
+                              <button
+                                className="btn btn-outline-danger btn-sm"
+                                onClick={() => eliminarPedido(pedido.id_pedido)}
+                                title="Eliminar pedido"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

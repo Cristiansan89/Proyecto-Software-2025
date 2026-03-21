@@ -1,1593 +1,1080 @@
---
--- ER/Studio Data Architect SQL Code Generation
--- Company :      Cristian
--- Project :      ModeloFisico.DM1
--- Author :       Cristian
---
--- Date Created : Friday, October 31, 2025 03:00:20
--- Target DBMS : MySQL 8.x
---
-
--- -----------------------------------------------------
--- Esquema de Gestión de Comedor - Con UUIDs
--- -----------------------------------------------------
-DROP DATABASE if exists Comedor; 
-CREATE DATABASE Comedor;
-USE Comedor;
-
--- -----------------------------------------------------
--- TABLE: AlumnoGrado 
--- -----------------------------------------------------
-
-CREATE TABLE AlumnoGrado(
-    id_alumnoGrado    INT            AUTO_INCREMENT,
-    id_persona        INT            NOT NULL,
-    nombreGrado       VARCHAR(100)   NOT NULL,
-    cicloLectivo      DATE           DEFAULT '2025-01-01',
-    PRIMARY KEY (id_alumnoGrado)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Asistencias 
--- -----------------------------------------------------
-
-CREATE TABLE Asistencias(
-    id_asistencia     INT                        AUTO_INCREMENT,
-    id_servicio       INT                        NOT NULL,
-    id_alumnoGrado    INT                        NOT NULL,
-    fecha             DATE                       DEFAULT '2025-01-01',
-    tipoAsistencia    ENUM('Si', 'No', 'Ausente')    NOT NULL DEFAULT 'No',
-    estado            ENUM('Pendiente', 'Completado', 'Cancelado')    NOT NULL DEFAULT 'Pendiente',
-    PRIMARY KEY (id_asistencia)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: RegistrosAsistencias 
--- Tabla agregada para registros por servicio/grado
--- -----------------------------------------------------
-
-CREATE TABLE RegistrosAsistencias(
-    id_asistencia       BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_servicio         INT                        NOT NULL,
-    id_grado            INT                        NOT NULL,
-    fecha               DATE                       DEFAULT '2025-01-01',
-    cantidadPresentes   INT                        DEFAULT 0,
-    fechaCreacion       DATETIME                   DEFAULT CURRENT_TIMESTAMP,
-    fechaActualizacion  DATETIME                   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_asistencia)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Auditorias 
--- -----------------------------------------------------
-
-CREATE TABLE Auditorias(
-    id_registro    BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_usuario     BINARY(16)                 NOT NULL,
-    fechaHora      DATETIME                   DEFAULT CURRENT_TIMESTAMP,
-    modulo         VARCHAR(100)               NOT NULL,
-    tipoAccion     ENUM('---', 'Registrar', 'Modificar', 'Eliminar', 'Buscar', 'Consultar', 'Exportar', 'Login', 'Logout')    NOT NULL DEFAULT '---',
-    descripcion    VARCHAR(500)               NOT NULL,
-    valor_anterior LONGTEXT,
-    valor_nuevo    LONGTEXT,
-    id_registro_afectado VARCHAR(50),
-    nivel_criticidad VARCHAR(20),
-    resultado_accion VARCHAR(100),
-    estado         ENUM('---', 'Exito', 'Error', 'Advertencia')    NOT NULL DEFAULT '---',
-    nombreReporte  VARCHAR(255),
-    tipoReporte    VARCHAR(50),
-    detallesReporte VARCHAR(500),
-    PRIMARY KEY (id_registro)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Consumos 
--- -----------------------------------------------------
-
-CREATE TABLE Consumos(
-    id_consumo             BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_jornada             BINARY(16)                 NOT NULL,
-    id_servicio            INT                        NOT NULL,
-    id_turno               INT                        NOT NULL,
-    id_usuario             BINARY(16)                 NOT NULL,
-    fecha                  DATE                       DEFAULT '2025-01-01',
-    origenCalculo          ENUM('Calculado', 'Manual', 'Validado') DEFAULT 'Calculado',
-    fechaHoraGeneracion    DATETIME                   DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_consumo)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: DetalleConsumo 
--- -----------------------------------------------------
-
-CREATE TABLE DetalleConsumo(
-    id_detalleConsumo     INT               AUTO_INCREMENT,
-    id_consumo            BINARY(16)        NOT NULL,
-    id_insumo             INT               NOT NULL,
-    id_itemReceta         INT,
-    cantidadUtilizada     INT     NOT NULL,
-    unidadMedida          VARCHAR(50)       DEFAULT 'Gramos',
-    cantidadCalculada     INT,
-    PRIMARY KEY (id_detalleConsumo),
-    CONSTRAINT RefItemsRecetas FOREIGN KEY (id_itemReceta) 
-        REFERENCES ItemsRecetas(id_itemReceta)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: DetallePedido 
--- -----------------------------------------------------
-
-CREATE TABLE DetallePedido(
-    id_detallePedido           INT               AUTO_INCREMENT,
-    id_pedido                  BINARY(16)        NOT NULL,
-    id_proveedor               BINARY(16)        NOT NULL,
-    id_insumo                  INT               NOT NULL,
-    cantidadSolicitada         INT               NOT NULL,
-    estadoConfirmacion         ENUM('Pendiente', 'Disponible', 'No Disponible') DEFAULT 'Pendiente',
-    fechaConfirmacion          DATETIME,
-    PRIMARY KEY (id_detallePedido)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: DocenteGrado 
--- -----------------------------------------------------
-
-CREATE TABLE DocenteGrado(
-    id_docenteTitular    INT            NOT NULL,
-    id_persona           INT            NOT NULL,
-    nombreGrado          VARCHAR(100)    NOT NULL,
-    fechaAsignado        DATE           DEFAULT '2025-01-01',
-    cicloLectivo         DATE           DEFAULT '2025-01-01',
-    PRIMARY KEY (id_docenteTitular, id_persona, nombreGrado)
-)ENGINE=INNODB;
-
-
--- -----------------------------------------------------
--- TABLE: EstadoPedido 
--- -----------------------------------------------------
-
-CREATE TABLE EstadoPedido(
-    id_estadoPedido    INT                        AUTO_INCREMENT,
-    nombreEstado       ENUM('Pendiente', 'Aprobado', 'Cancelado', 'Entregado', 'Confirmado', 'Enviado', 'En espera', 'Recibido', 'Fallido')	NOT NULL DEFAULT 'Pendiente',
-    descripcion        VARCHAR(100),
-    PRIMARY KEY (id_estadoPedido)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Grados 
--- -----------------------------------------------------
-
-CREATE TABLE Grados(
-    id_grado       INT                        AUTO_INCREMENT,
-    id_turno       INT                        NOT NULL,
-    nombreGrado    VARCHAR(100)               NOT NULL,
-    estado         ENUM('Activo', 'Inactivo')    NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_grado)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Insumos 
--- -----------------------------------------------------
-
-CREATE TABLE Insumos(
-    id_insumo       INT            AUTO_INCREMENT,
-    nombreInsumo    VARCHAR(100)    NOT NULL,
-    descripcion     VARCHAR(100),
-    unidadMedida    VARCHAR(100)    NOT NULL,
-    categoria       ENUM('Carnes', 'Lacteos', 'Cereales', 'Verduras', 'Frutas', 'Legumbres', 'Condimentos', 'Bebidas', 'Enlatados', 'Conservas', 'Limpieza', 'Descartables', 'Otros') DEFAULT 'Otros',
-    stockMinimo     INT  DEFAULT 0,
-    fecha           DATE           DEFAULT '2025-01-01',
-    estado          ENUM('Activo', 'Inactivo') NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_insumo)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Inventarios 
--- -----------------------------------------------------
-
-CREATE TABLE Inventarios(
-    id_insumo                   INT                        NOT NULL,
-    cantidadActual              INT   DEFAULT 0,
-    nivelMinimoAlerta           INT   DEFAULT 0,
-    stockMaximo                 INT   DEFAULT 999,
-    fechaUltimaActualizacion    DATE                       DEFAULT '2025-01-01',
-    estado                      ENUM('Agotado', 'Critico', 'Normal')    NOT NULL DEFAULT 'Normal',
-    PRIMARY KEY (id_insumo)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: ItemsRecetas 
--- -----------------------------------------------------
-
-CREATE TABLE ItemsRecetas(
-    id_itemReceta         INT               AUTO_INCREMENT,
-    id_receta             BINARY(16)        NOT NULL,
-    id_insumo             INT               NOT NULL,
-    cantidadPorPorcion    INT     NOT NULL DEFAULT 0,
-    unidadPorPorcion ENUM('gramo','gramos','kilogramo','kilogramos','mililitro','mililitros','litro','litros','unidad','unidades') NOT NULL DEFAULT 'unidad',
-    PRIMARY KEY (id_itemReceta)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: JornadaPlanificada 
--- -----------------------------------------------------
-
-CREATE TABLE JornadaPlanificada(
-    id_jornada          BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_planificacion    BINARY(16)                 NOT NULL,
-    id_servicio         INT                        NOT NULL,
-    diaSemana           ENUM('Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo')	NOT NULL DEFAULT 'Lunes',
-    PRIMARY KEY (id_jornada)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: MovimientosInventarios 
--- -----------------------------------------------------
-
-CREATE TABLE MovimientosInventarios(
-    id_movimiento           BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_insumo               INT               NOT NULL,
-    id_usuario              BINARY(16)        NOT NULL,
-    id_consumo              BINARY(16),
-    id_tipoMerma            INT,
-    tipoMovimiento          VARCHAR(100)       NOT NULL,
-    cantidadMovimiento      INT NOT NULL,
-    fechaHora               DATETIME          DEFAULT CURRENT_TIMESTAMP,
-    comentarioMovimiento    TEXT,
-    PRIMARY KEY (id_movimiento)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Parametros 
--- -----------------------------------------------------
-
-CREATE TABLE Parametros(
-    id_parametro         INT                        AUTO_INCREMENT,
-    nombreParametro      VARCHAR(100)               NOT NULL,
-    valor                VARCHAR(100)               NOT NULL,
-    tipoParametro        CHAR(10)                   NOT NULL,
-    fechaAlta            DATETIME                   DEFAULT CURRENT_TIMESTAMP,
-    fechaModificacion    DATETIME,
-    estado               ENUM('Activo', 'Inactivo')    NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_parametro)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Pedidos 
--- -----------------------------------------------------
-
-CREATE TABLE Pedidos(
-    id_pedido            BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_planificacion     BINARY(16),
-    id_usuario           BINARY(16),
-    id_estadoPedido      INT                        NOT NULL,
-    id_proveedor         BINARY(16)                 NOT NULL,
-    fechaEmision         DATE                       DEFAULT '2025-01-01',
-    origen               ENUM('Editado', 'Generado', 'Manual')    NOT NULL DEFAULT 'Generado',
-    fechaAprobacion      DATE,
-    fechaConfirmacion    DATETIME,
-    motivoCancelacion    VARCHAR(100),
-    PRIMARY KEY (id_pedido)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Permisos 
--- -----------------------------------------------------
-
-CREATE TABLE Permisos(
-    id_permiso            INT                        AUTO_INCREMENT,
-    nombrePermiso         VARCHAR(100)               NOT NULL,
-    descripcionPermiso    VARCHAR(100)               NOT NULL,
-    modulo                ENUM('Sin Módulo', 'Asistencias','Auditoria','Consumos','Insumos','Inventarios','Parámetros','Pedidos',
-                            'Permisos', 'Personas','Planificación de Menús','Proveedores','Recetas','Reportes','Roles','Seguridad',
-                            'Turnos','Usuarios') NOT NULL DEFAULT 'Sin Módulo',
-    accion                ENUM('Sin Acción', 'Registrar', 'Modificar', 'Eliminar', 'Buscar', 'Consultar', 'Exportar')    NOT NULL DEFAULT 'Sin Acción',
-    fechaAlta             DATETIME                   DEFAULT CURRENT_TIMESTAMP,
-    fechaModificacion     DATETIME,
-    estado                ENUM('Activo', 'Inactivo')    NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_permiso)
-)ENGINE=INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-
-
--- -----------------------------------------------------
--- TABLE: Personas 
--- -----------------------------------------------------
-
-CREATE TABLE Personas(
-    id_persona           INT                        AUTO_INCREMENT,
-    nombreRol            VARCHAR(100)               NOT NULL,
-    nombre               VARCHAR(100)               NOT NULL,
-    apellido             VARCHAR(100)               NOT NULL,
-    dni                  VARCHAR(100)               NOT NULL,
-    fechaNacimiento      DATE                       DEFAULT '2000-01-01',
-    genero               ENUM('Masculino', 'Femenina', 'Otros') DEFAULT 'Otros',
-    fechaAlta            DATE                       DEFAULT '2025-01-01',
-    fechaModificacion    DATE,
-    estado               ENUM('Activo', 'Inactivo')	NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_persona)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: PlanificacionMenus 
--- -----------------------------------------------------
-
-CREATE TABLE PlanificacionMenus(
-    id_planificacion       BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_usuario             BINARY(16)     NOT NULL,
-    fechaInicio            DATE           NOT NULL,
-    fechaFin               DATE           NOT NULL,
-    comensalesEstimados    INT            DEFAULT 0,
-    estado                 ENUM('Activo', 'Pendiente', 'Finalizado', 'Cancelado') NOT NULL DEFAULT 'Pendiente',
-    PRIMARY KEY (id_planificacion)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: RecetaJornada 
--- -----------------------------------------------------
-
-CREATE TABLE RecetaJornada(
-    id_recetaAsignada    BINARY(16)    NOT NULL,
-    id_jornada           BINARY(16)    NOT NULL,
-    id_receta            BINARY(16)    NOT NULL,
-    PRIMARY KEY (id_recetaAsignada)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Proveedores 
--- -----------------------------------------------------
-
-CREATE TABLE Proveedores(
-    id_proveedor         BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    razonSocial          VARCHAR(100)     NOT NULL,
-    CUIT                 VARCHAR(13)      NOT NULL,
-    direccion            VARCHAR(100),
-    telefono             VARCHAR(20),
-    mail                 VARCHAR(100)     NOT NULL,
-    fechaAlta            DATE            DEFAULT '2025-01-01',
-    fechaModificacion    DATE,
-    estado               ENUM('Activo', 'Inactivo') NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_proveedor)
-)ENGINE=INNODB;
-
-
-
--- Tabla para configuración de Telegram de Proveedores
-CREATE TABLE IF NOT EXISTS ProveedorConfiguracionTelegram (
-    id_config INT AUTO_INCREMENT PRIMARY KEY,
-    id_proveedor BINARY(16) NOT NULL UNIQUE,
-    telegramChatId VARCHAR(100),
-    telegramUsuario VARCHAR(100),
-    notificacionesTelegram ENUM('Activo', 'Inactivo') DEFAULT 'Inactivo',
-    fechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fechaActualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_proveedor) REFERENCES Proveedores(id_proveedor) ON DELETE CASCADE
-)ENGINE=INNODB;
-
-CREATE TABLE IF NOT EXISTS DocenteConfiguracionTelegram (
-    id_config INT AUTO_INCREMENT PRIMARY KEY,
-    id_docenteTitular INT NOT NULL UNIQUE,
-    telegramChatId VARCHAR(100),
-    telegramUsuario VARCHAR(100),
-    notificacionesTelegram ENUM('Activo', 'Inactivo') DEFAULT 'Inactivo',
-    fechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fechaActualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_docenteTitular) REFERENCES DocenteGrado(id_docenteTitular) ON DELETE CASCADE
-)ENGINE=INNODB;
-
-
--- -----------------------------------------------------
--- TABLE: ProveedorInsumo 
--- -----------------------------------------------------
-
-CREATE TABLE ProveedorInsumo(
-    id_insumo       INT           NOT NULL,
-    id_proveedor    BINARY(16)    NOT NULL,
-    calificacion    ENUM('Excelente', 'Bueno', 'Regular', 'Malo') DEFAULT 'Bueno',
-    estado          ENUM('Activo', 'Inactivo') NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_insumo, id_proveedor)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Recetas 
--- -----------------------------------------------------
-
-CREATE TABLE Recetas(
-    id_receta        BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    nombreReceta     VARCHAR(100)               NOT NULL,
-    instrucciones    TEXT                       NOT NULL,
-    unidadSalida     ENUM('Bandeja', 'Gramo', 'Litro', 'Plato', 'Porcion', 'Racion', 'Unidad')    	NOT NULL DEFAULT 'Porcion',
-    fechaAlta        DATE                       DEFAULT '2025-01-01',
-    estado           ENUM('Activo', 'Inactivo') NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_receta)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: RecetaServicio
--- Tabla intermedia entre Recetas y Servicios
--- -----------------------------------------------------
-
-CREATE TABLE RecetaServicio(
-    id_receta       BINARY(16)  NOT NULL,
-    id_servicio     INT         NOT NULL,
-    fechaAsociacion DATE        DEFAULT '2025-01-01',
-    PRIMARY KEY (id_receta, id_servicio)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: ReemplazoDocente 
--- -----------------------------------------------------
-
-CREATE TABLE ReemplazoDocente(
-    id_reemplazoDocente    BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_persona             INT                        NOT NULL,
-    id_docenteTitular      INT                        NOT NULL,
-    nombreGrado            VARCHAR(100)               NOT NULL,
-    cicloLectivo           DATE                       NOT NULL,
-    fechaInicio            DATE                       NOT NULL,
-    fechaFin               DATE,
-    motivo                 ENUM('licencia_medica', 'licencia_maternidad', 'licencia_anual', 'cambio_funciones', 'renuncia', 'jubilacion', 'ausencia_prolongada')    NOT NULL,
-    estado                 ENUM('Activo', 'Finalizado', 'Programado')    NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_reemplazoDocente)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Roles 
--- -----------------------------------------------------
-
-CREATE TABLE Roles(
-    id_rol                   INT                        AUTO_INCREMENT,
-    nombreRol                VARCHAR(100)               NOT NULL,
-    descripcionRol           VARCHAR(255)               NOT NULL,
-    habilitaCuentaUsuario    ENUM('Si', 'No')    	NOT NULL DEFAULT 'No',
-    estado                   ENUM('Activo', 'Inactivo')	NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_rol)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: RolesPermisos 
--- -----------------------------------------------------
-
-CREATE TABLE RolesPermisos(
-    id_rolPermiso    INT    AUTO_INCREMENT,
-    id_permiso       INT    NOT NULL,
-    id_rol           INT    NOT NULL,
-    PRIMARY KEY (id_rolPermiso)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Servicios 
--- -----------------------------------------------------
-
-CREATE TABLE Servicios(
-    id_servicio           INT                        AUTO_INCREMENT,
-    nombre                VARCHAR(100)               NOT NULL,
-    descripcion           VARCHAR(100)               NOT NULL,
-    fechaAlta             DATE                       DEFAULT '2025-01-01',
-    fecha_modificacion    DATE,
-    estado                ENUM('Activo', 'Inactivo')	NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_servicio)
-)ENGINE=INNODB;
-
-
--- -----------------------------------------------------
--- TABLE: ServicioTurno 
--- -----------------------------------------------------
-
-CREATE TABLE ServicioTurno(
-    id_turno           INT     NOT NULL,
-    id_servicio        INT     NOT NULL,
-    fechaAsociacion    DATE    DEFAULT '2025-01-01',
-    PRIMARY KEY (id_turno, id_servicio)
-)ENGINE=INNODB;
-
-
--- -----------------------------------------------------
--- TABLE: TiposMermas 
--- -----------------------------------------------------
-
-CREATE TABLE TiposMermas(
-    id_tipoMerma    INT                        AUTO_INCREMENT,
-    nombre          VARCHAR(100)               NOT NULL,
-    descripcion	    VARCHAR(100)               NOT NULL,
-    estado          ENUM('Activo', 'Inactivo')	NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_tipoMerma)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Turnos 
--- -----------------------------------------------------
-
-CREATE TABLE Turnos(
-    id_turno             INT                        AUTO_INCREMENT,
-    nombre               VARCHAR(16)                NOT NULL,
-    horaInicio           TIME                       NOT NULL,
-    horaFin              TIME                       NOT NULL,
-    fechaAlta            DATE                       DEFAULT '2025-01-01',
-    fechaModificacion    DATE,
-    estado               ENUM('Activo', 'Inactivo')    NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_turno)
-)ENGINE=INNODB;
-
-
-
--- -----------------------------------------------------
--- TABLE: Usuarios 
--- Modificada para soportar usuarios de proveedores
--- -----------------------------------------------------
-
-CREATE TABLE Usuarios(
-    id_usuario              BINARY(16) DEFAULT(UUID_TO_BIN(UUID()))	NOT NULL,
-    id_persona              INT,
-    id_proveedor            BINARY(16),
-    nombreUsuario           VARCHAR(100)               NOT NULL,
-    contrasenia             VARCHAR(255)               NOT NULL,
-    mail                    VARCHAR(100),
-    telefono                VARCHAR(20),
-    fechaAlta               DATETIME                   DEFAULT CURRENT_TIMESTAMP,
-    fechaUltimaActividad    DATETIME,
-    estado                  ENUM('Activo', 'Inactivo')    NOT NULL DEFAULT 'Activo',
-    PRIMARY KEY (id_usuario),
-    CONSTRAINT chk_usuario_persona_or_proveedor CHECK (id_persona IS NOT NULL OR id_proveedor IS NOT NULL)
-)ENGINE=INNODB;
-
-
-
-
--- -----------------------------------------------------
--- Indentifiadores Únicos
--- -----------------------------------------------------
-
--- 
--- INDEX: Ref2145 
---
-
-CREATE INDEX Ref2145 ON AlumnoGrado(id_persona)
-;
--- 
--- INDEX: Ref646 
---
-
-CREATE INDEX Ref646 ON AlumnoGrado(nombreGrado)
-;
--- 
--- INDEX: uk_asistencias_unica 
---
-
-CREATE UNIQUE INDEX uk_asistencias_unica ON Asistencias(fecha, id_servicio, id_alumnoGrado)
-;
--- 
--- INDEX: Ref2688 
---
-
-CREATE INDEX Ref2688 ON Asistencias(id_servicio)
-;
--- 
--- INDEX: Ref2492 
---
-
-CREATE INDEX Ref2492 ON Asistencias(id_alumnoGrado)
-;
--- 
--- INDEX: Ref251 
---
-
-CREATE INDEX Ref251 ON Auditorias(id_usuario)
-;
--- 
--- INDEX: Ref2662 
---
-
-CREATE INDEX Ref2662 ON Consumos(id_servicio)
-;
--- 
--- INDEX: Ref2763 
---
-
-CREATE INDEX Ref2763 ON Consumos(id_turno)
-;
--- 
--- INDEX: Ref289 
---
-
-CREATE INDEX Ref289 ON Consumos(id_usuario)
-;
--- 
--- INDEX: Ref3190 
---
-
-CREATE INDEX Ref3190 ON Consumos(id_jornada)
-;
--- 
--- INDEX: uk_detalleconsumo_unico 
---
-
-CREATE UNIQUE INDEX uk_detalleconsumo_unico ON DetalleConsumo(id_consumo, id_insumo)
-;
--- 
--- INDEX: Ref1357 
---
-
-CREATE INDEX Ref1357 ON DetalleConsumo(id_insumo)
-;
--- 
--- INDEX: Ref1973 
---
-
-CREATE INDEX Ref1973 ON DetalleConsumo(id_consumo)
-;
--- 
--- INDEX: uk_detallePedido 
---
-
-CREATE UNIQUE INDEX uk_detallePedido ON DetallePedido(id_pedido, id_insumo)
-;
--- 
--- INDEX: Ref1619 
---
-
-CREATE INDEX Ref1619 ON DetallePedido(id_pedido)
-;
--- 
--- INDEX: Ref1332 
---
-
-CREATE INDEX Ref1332 ON DetallePedido(id_insumo)
-;
--- 
--- INDEX: Ref1581 
---
-
-CREATE INDEX Ref1581 ON DetallePedido(id_proveedor)
-;
--- 
--- INDEX: Ref2193 
---
-
-CREATE INDEX Ref2193 ON DocenteGrado(id_persona)
-;
--- 
--- INDEX: Ref694 
---
-
-CREATE INDEX Ref694 ON DocenteGrado(nombreGrado)
-;
--- 
--- INDEX: uk_estadoPedido 
---
-
-CREATE UNIQUE INDEX uk_estadoPedido ON EstadoPedido(nombreEstado)
-;
--- 
--- INDEX: uk_grados_nombre 
---
-
-CREATE UNIQUE INDEX uk_grados_nombre ON Grados(nombreGrado)
-;
--- 
--- INDEX: Ref2761 
---
-
-CREATE INDEX Ref2761 ON Grados(id_turno)
-;
--- 
--- INDEX: uk_insumos 
---
-
-CREATE UNIQUE INDEX uk_insumos ON Insumos(nombreInsumo)
-;
--- 
--- INDEX: uk_inventarios_insumo 
---
-
-CREATE UNIQUE INDEX uk_inventarios_insumo ON Inventarios(id_insumo)
-;
--- 
--- INDEX: Ref1334 
---
-
-CREATE INDEX Ref1334 ON Inventarios(id_insumo)
-;
--- 
--- INDEX: uk_itemsrecetas 
---
-
-CREATE UNIQUE INDEX uk_itemsrecetas ON ItemsRecetas(id_receta, id_insumo)
-;
--- 
--- INDEX: Ref1333 
---
-
-CREATE INDEX Ref1333 ON ItemsRecetas(id_insumo)
-;
--- 
--- INDEX: Ref513 
---
-
-CREATE INDEX Ref513 ON ItemsRecetas(id_receta)
-;
--- 
--- INDEX: uk_jornada 
---
-
-CREATE UNIQUE INDEX uk_jornada ON JornadaPlanificada(id_planificacion, id_servicio, diaSemana)
-;
--- 
--- INDEX: Ref1284 
---
-
-CREATE INDEX Ref1284 ON JornadaPlanificada(id_planificacion)
-;
--- 
--- INDEX: Ref2686 
---
-
-CREATE INDEX Ref2686 ON JornadaPlanificada(id_servicio)
-;
--- 
--- INDEX: Ref1944 
---
-
-CREATE INDEX Ref1944 ON MovimientosInventarios(id_consumo)
-;
--- 
--- INDEX: Ref871 
---
-
-CREATE INDEX Ref871 ON MovimientosInventarios(id_insumo)
-;
--- 
--- INDEX: Ref272 
---
-
-CREATE INDEX Ref272 ON MovimientosInventarios(id_usuario)
-;
--- 
--- INDEX: Ref2977 
---
-
-CREATE INDEX Ref2977 ON MovimientosInventarios(id_tipoMerma)
-;
--- 
--- INDEX: uk_parametro 
---
-
-CREATE UNIQUE INDEX uk_parametro ON Parametros(nombreParametro)
-;
--- 
--- INDEX: Ref1576 
---
-
-CREATE INDEX Ref1576 ON Pedidos(id_proveedor)
-;
--- 
--- INDEX: Ref3078 
---
-
-CREATE INDEX Ref3078 ON Pedidos(id_estadoPedido)
-;
--- 
--- INDEX: Ref279 
---
-
-CREATE INDEX Ref279 ON Pedidos(id_usuario)
-;
--- 
--- INDEX: Ref1280 
---
-
-CREATE INDEX Ref1280 ON Pedidos(id_planificacion)
-;
--- 
--- INDEX: uk_permiso 
---
-
-CREATE UNIQUE INDEX uk_permiso ON Permisos(nombrePermiso, modulo, accion)
-;
--- 
--- INDEX: uk_personas_dni 
---
-
-CREATE UNIQUE INDEX uk_personas_dni ON Personas(dni)
-;
--- 
--- INDEX: uk_persona_users 
---
-
-CREATE UNIQUE INDEX uk_persona_users ON Personas(id_persona)
-;
--- 
--- INDEX: Ref191 
---
-
-CREATE INDEX Ref191 ON Personas(nombreRol)
-;
--- 
--- INDEX: uk_planificacion 
---
-
-CREATE UNIQUE INDEX uk_planificacion ON PlanificacionMenus(fechaInicio, fechaFin)
-;
--- 
--- INDEX: Ref283 
---
-
-CREATE INDEX Ref283 ON PlanificacionMenus(id_usuario)
-;
--- 
--- INDEX: Ref542 
---
-
-CREATE INDEX Ref542 ON RecetaJornada(id_receta)
-;
--- 
--- INDEX: Ref3185 
---
-
-CREATE INDEX Ref3185 ON RecetaJornada(id_jornada)
-;
--- 
--- INDEX: uk_proveedores 
---
-
-CREATE UNIQUE INDEX uk_proveedores ON Proveedores(razonSocial, CUIT)
-;
--- 
--- INDEX: Ref1554 
---
-
-CREATE INDEX Ref1554 ON ProveedorInsumo(id_proveedor)
-;
--- 
--- INDEX: Ref1355 
---
-
-CREATE INDEX Ref1355 ON ProveedorInsumo(id_insumo)
-;
--- 
--- INDEX: uk_receta 
---
-
-CREATE UNIQUE INDEX uk_receta ON Recetas(nombreReceta)
-;
--- 
--- INDEX: Ref2682 
---
-
-CREATE INDEX Ref3295 ON ReemplazoDocente(nombreGrado, id_docenteTitular, id_persona)
-;
--- 
--- INDEX: Ref2196 
---
-
-CREATE INDEX Ref2196 ON ReemplazoDocente(id_persona)
-;
--- 
--- INDEX: uk_rol_nombre 
---
-
-CREATE UNIQUE INDEX uk_rol_nombre ON Roles(nombreRol)
-;
--- 
--- INDEX: uk_rolPermiso 
---
-
-CREATE UNIQUE INDEX uk_rolPermiso ON RolesPermisos(id_permiso, id_rol)
-;
--- 
--- INDEX: Ref1053 
---
-
-CREATE INDEX Ref1053 ON RolesPermisos(id_permiso)
-;
--- 
--- INDEX: Ref15 
---
-
-CREATE INDEX Ref15 ON RolesPermisos(id_rol)
-;
--- 
--- INDEX: uk_servicio 
---
-
-CREATE UNIQUE INDEX uk_servicio ON Servicios(nombre)
-;
--- 
--- INDEX: Ref2658 
---
-
-CREATE INDEX Ref2658 ON ServicioTurno(id_servicio)
-;
--- 
--- INDEX: Ref2759 
---
-
-CREATE INDEX Ref2759 ON ServicioTurno(id_turno)
-;
--- 
--- INDEX: uk_merma 
---
-
-CREATE UNIQUE INDEX uk_merma ON TiposMermas(nombre)
-;
--- 
--- INDEX: ul_turno 
---
-
-CREATE UNIQUE INDEX ul_turno ON Turnos(nombre)
-;
--- 
--- INDEX: uk_usuarios_nombre 
---
-
-CREATE UNIQUE INDEX uk_usuarios_nombre ON Usuarios(nombreUsuario)
-;
--- 
--- INDEX: uk_usuario_mail 
---
-
-CREATE UNIQUE INDEX uk_usuario_mail ON Usuarios(mail)
-;
--- 
--- INDEX: idx_usuario_proveedor
---
-
-CREATE INDEX idx_usuario_proveedor ON Usuarios(id_proveedor)
-;
--- 
--- INDEX: Ref2169 
---
-
-CREATE INDEX Ref2169 ON Usuarios(id_persona)
-;
--- 
--- 
--- TABLE: AlumnoGrado 
---
-
-ALTER TABLE AlumnoGrado ADD CONSTRAINT RefPersonas454 
-    FOREIGN KEY (id_persona)
-    REFERENCES Personas(id_persona)
-;
-
-ALTER TABLE AlumnoGrado ADD CONSTRAINT RefGrados464 
-    FOREIGN KEY (nombreGrado)
-    REFERENCES Grados(nombreGrado)
-;
-
-
--- 
--- TABLE: Asistencias 
---
-
-ALTER TABLE Asistencias ADD CONSTRAINT RefServicios884 
-    FOREIGN KEY (id_servicio)
-    REFERENCES Servicios(id_servicio)
-;
-
-ALTER TABLE Asistencias ADD CONSTRAINT RefAlumnoGrado924 
-    FOREIGN KEY (id_alumnoGrado)
-    REFERENCES AlumnoGrado(id_alumnoGrado)
-;
-
-
--- 
--- TABLE: RegistrosAsistencias 
---
-
-ALTER TABLE RegistrosAsistencias ADD CONSTRAINT RefServicios934 
-    FOREIGN KEY (id_servicio)
-    REFERENCES Servicios(id_servicio)
-;
-
-ALTER TABLE RegistrosAsistencias ADD CONSTRAINT RefGrados944 
-    FOREIGN KEY (id_grado)
-    REFERENCES Grados(id_grado)
-;
-
-
--- 
--- TABLE: Auditorias 
---
-
-ALTER TABLE Auditorias ADD CONSTRAINT RefUsuarios514 
-    FOREIGN KEY (id_usuario)
-    REFERENCES Usuarios(id_usuario)
-;
-
-
--- 
--- TABLE: Consumos 
---
-
-ALTER TABLE Consumos ADD CONSTRAINT RefServicios624 
-    FOREIGN KEY (id_servicio)
-    REFERENCES Servicios(id_servicio)
-;
-
-ALTER TABLE Consumos ADD CONSTRAINT RefTurnos634 
-    FOREIGN KEY (id_turno)
-    REFERENCES Turnos(id_turno)
-;
-
-ALTER TABLE Consumos ADD CONSTRAINT RefUsuarios894 
-    FOREIGN KEY (id_usuario)
-    REFERENCES Usuarios(id_usuario)
-;
-
-ALTER TABLE Consumos ADD CONSTRAINT RefJornadaPlanificada904 
-    FOREIGN KEY (id_jornada)
-    REFERENCES JornadaPlanificada(id_jornada)
-;
-
-
--- 
--- TABLE: DetalleConsumo 
---
-
-ALTER TABLE DetalleConsumo ADD CONSTRAINT RefInsumos574 
-    FOREIGN KEY (id_insumo)
-    REFERENCES Insumos(id_insumo)
-;
-
-ALTER TABLE DetalleConsumo ADD CONSTRAINT RefConsumos734 
-    FOREIGN KEY (id_consumo)
-    REFERENCES Consumos(id_consumo)
-;
-
-
--- 
--- TABLE: DetallePedido 
---
-
-ALTER TABLE DetallePedido ADD CONSTRAINT RefPedidos194 
-    FOREIGN KEY (id_pedido)
-    REFERENCES Pedidos(id_pedido)
-;
-
-ALTER TABLE DetallePedido ADD CONSTRAINT RefInsumos324 
-    FOREIGN KEY (id_insumo)
-    REFERENCES Insumos(id_insumo)
-;
-
-ALTER TABLE DetallePedido ADD CONSTRAINT RefProveedores814 
-    FOREIGN KEY (id_proveedor)
-    REFERENCES Proveedores(id_proveedor)
-;
-
-
--- 
--- TABLE: DocenteGrado 
---
-
-ALTER TABLE DocenteGrado ADD CONSTRAINT RefPersonas934 
-    FOREIGN KEY (id_persona)
-    REFERENCES Personas(id_persona)
-;
-
-ALTER TABLE DocenteGrado ADD CONSTRAINT RefGrados945 
-    FOREIGN KEY (nombreGrado)
-    REFERENCES Grados(nombreGrado)
-;
-
-
--- 
--- TABLE: Grados 
---
-
-ALTER TABLE Grados ADD CONSTRAINT RefTurnos614 
-    FOREIGN KEY (id_turno)
-    REFERENCES Turnos(id_turno)
-;
-
-
--- 
--- TABLE: Inventarios 
---
-
-ALTER TABLE Inventarios ADD CONSTRAINT RefInsumos344 
-    FOREIGN KEY (id_insumo)
-    REFERENCES Insumos(id_insumo)
-;
-
-
--- 
--- TABLE: ItemsRecetas 
---
-
-ALTER TABLE ItemsRecetas ADD CONSTRAINT RefInsumos334 
-    FOREIGN KEY (id_insumo)
-    REFERENCES Insumos(id_insumo)
-;
-
-ALTER TABLE ItemsRecetas ADD CONSTRAINT RefRecetas134 
-    FOREIGN KEY (id_receta)
-    REFERENCES Recetas(id_receta)
-;
-
-ALTER TABLE RecetaServicio ADD CONSTRAINT RefRecetasServicio 
-    FOREIGN KEY (id_receta)
-    REFERENCES Recetas(id_receta)
-;
-
-ALTER TABLE RecetaServicio ADD CONSTRAINT RefServiciosReceta 
-    FOREIGN KEY (id_servicio)
-    REFERENCES Servicios(id_servicio)
-;
-
-
--- 
--- TABLE: JornadaPlanificada 
---
-
-ALTER TABLE JornadaPlanificada ADD CONSTRAINT RefPlanificacionMenus844 
-    FOREIGN KEY (id_planificacion)
-    REFERENCES PlanificacionMenus(id_planificacion)
-;
-
-ALTER TABLE JornadaPlanificada ADD CONSTRAINT RefServicios864 
-    FOREIGN KEY (id_servicio)
-    REFERENCES Servicios(id_servicio)
-;
-
-
--- 
--- TABLE: MovimientosInventarios 
---
-
-ALTER TABLE MovimientosInventarios ADD CONSTRAINT RefConsumos444 
-    FOREIGN KEY (id_consumo)
-    REFERENCES Consumos(id_consumo)
-;
-
-ALTER TABLE MovimientosInventarios ADD CONSTRAINT RefInventarios714 
-    FOREIGN KEY (id_insumo)
-    REFERENCES Inventarios(id_insumo)
-;
-
-ALTER TABLE MovimientosInventarios ADD CONSTRAINT RefUsuarios724 
-    FOREIGN KEY (id_usuario)
-    REFERENCES Usuarios(id_usuario)
-;
-
-ALTER TABLE MovimientosInventarios ADD CONSTRAINT RefTiposMermas774 
-    FOREIGN KEY (id_tipoMerma)
-    REFERENCES TiposMermas(id_tipoMerma)
-;
-
-
--- 
--- TABLE: Pedidos 
---
-
-ALTER TABLE Pedidos ADD CONSTRAINT RefProveedores764 
-    FOREIGN KEY (id_proveedor)
-    REFERENCES Proveedores(id_proveedor)
-;
-
-ALTER TABLE Pedidos ADD CONSTRAINT RefEstadoPedido784 
-    FOREIGN KEY (id_estadoPedido)
-    REFERENCES EstadoPedido(id_estadoPedido)
-;
-
-ALTER TABLE Pedidos ADD CONSTRAINT RefUsuarios794 
-    FOREIGN KEY (id_usuario)
-    REFERENCES Usuarios(id_usuario)
-;
-
-ALTER TABLE Pedidos ADD CONSTRAINT RefPlanificacionMenus804 
-    FOREIGN KEY (id_planificacion)
-    REFERENCES PlanificacionMenus(id_planificacion)
-;
-
-
--- 
--- TABLE: Personas 
---
-
-ALTER TABLE Personas ADD CONSTRAINT RefRoles914 
-    FOREIGN KEY (nombreRol)
-    REFERENCES Roles(nombreRol)
-;
-
-
--- 
--- TABLE: PlanificacionMenus 
---
-
-ALTER TABLE PlanificacionMenus ADD CONSTRAINT RefUsuarios834 
-    FOREIGN KEY (id_usuario)
-    REFERENCES Usuarios(id_usuario)
-;
-
-
--- 
--- TABLE: RecetaJornada 
---
-
-ALTER TABLE RecetaJornada ADD CONSTRAINT RefRecetas424 
-    FOREIGN KEY (id_receta)
-    REFERENCES Recetas(id_receta)
-;
-
-ALTER TABLE RecetaJornada ADD CONSTRAINT RefJornadaPlanificada854 
-    FOREIGN KEY (id_jornada)
-    REFERENCES JornadaPlanificada(id_jornada)
-;
-
-
--- 
--- TABLE: ProveedorInsumo 
---
-
-ALTER TABLE ProveedorInsumo ADD CONSTRAINT RefProveedores544 
-    FOREIGN KEY (id_proveedor)
-    REFERENCES Proveedores(id_proveedor)
-;
-
-ALTER TABLE ProveedorInsumo ADD CONSTRAINT RefInsumos554 
-    FOREIGN KEY (id_insumo)
-    REFERENCES Insumos(id_insumo)
-;
-
-
--- 
--- TABLE: ReemplazoDocente 
---
-
-ALTER TABLE ReemplazoDocente ADD CONSTRAINT RefPersonas964 
-    FOREIGN KEY (id_persona)
-    REFERENCES Personas(id_persona)
-;
-
-
--- 
--- TABLE: RolesPermisos 
---
-
-ALTER TABLE RolesPermisos ADD CONSTRAINT RefPermisos534 
-    FOREIGN KEY (id_permiso)
-    REFERENCES Permisos(id_permiso)
-;
-
-ALTER TABLE RolesPermisos ADD CONSTRAINT RefRoles54 
-    FOREIGN KEY (id_rol)
-    REFERENCES Roles(id_rol)
-;
-
-
--- 
--- TABLE: ServicioTurno 
---
-
-ALTER TABLE ServicioTurno ADD CONSTRAINT RefServicios584 
-    FOREIGN KEY (id_servicio)
-    REFERENCES Servicios(id_servicio)
-;
-
-ALTER TABLE ServicioTurno ADD CONSTRAINT RefTurnos594 
-    FOREIGN KEY (id_turno)
-    REFERENCES Turnos(id_turno)
-;
-
-
--- 
--- TABLE: Usuarios 
---
-
-ALTER TABLE Usuarios ADD CONSTRAINT RefPersonas694 
-    FOREIGN KEY (id_persona)
-    REFERENCES Personas(id_persona)
-;
-
-ALTER TABLE Usuarios ADD CONSTRAINT RefProveedores895
-    FOREIGN KEY (id_proveedor)
-    REFERENCES Proveedores(id_proveedor)
-;
-
-
--- =====================================================
--- TABLAS ADICIONALES PARA FUNCIONALIDADES AVANZADAS
--- =====================================================
-
--- 
--- TABLE: AlertasInventario
--- Tabla para rastrear alertas de inventario
--- 
-CREATE TABLE IF NOT EXISTS AlertasInventario (
-    id_alerta INT AUTO_INCREMENT PRIMARY KEY,
-    id_insumo INT NOT NULL UNIQUE,
-    tipoAlerta ENUM('Critico', 'Agotado') NOT NULL DEFAULT 'Critico',
-    contadorEnvios INT NOT NULL DEFAULT 1,
-    estado ENUM('activa', 'resuelta', 'completada') NOT NULL DEFAULT 'activa',
-    fechaPrimeraAlerta DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fechaUltimaAlerta DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    fechaResolucion DATETIME NULL,
-    observaciones TEXT NULL,
-    visto BOOLEAN DEFAULT FALSE,
-    fechaVista DATETIME NULL,
-    
-    INDEX idx_id_insumo (id_insumo),
-    INDEX idx_estado (estado),
-    INDEX idx_fecha_ultima_alerta (fechaUltimaAlerta),
-    INDEX idx_visto (visto),
-    
-    CONSTRAINT fk_alerta_insumo FOREIGN KEY (id_insumo) 
-        REFERENCES Insumos(id_insumo) 
-        ON DELETE CASCADE 
-        ON UPDATE CASCADE
+CREATE DATABASE  IF NOT EXISTS `comedor` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `comedor`;
+-- MySQL dump 10.13  Distrib 8.0.45, for Win64 (x86_64)
+--
+-- Host: localhost    Database: comedor
+-- ------------------------------------------------------
+-- Server version	8.0.45
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `alertasinventario`
+--
+
+DROP TABLE IF EXISTS `alertasinventario`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `alertasinventario` (
+  `id_alerta` int NOT NULL AUTO_INCREMENT,
+  `id_insumo` int NOT NULL,
+  `tipoAlerta` enum('Critico','Agotado') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `contadorEnvios` int DEFAULT '0',
+  `contadorEnvio` int DEFAULT NULL,
+  `estado` enum('activa','resuelta','completada') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'activa',
+  `fechaPrimeraAlerta` datetime DEFAULT NULL,
+  `fechaUltimaAlerta` datetime DEFAULT NULL,
+  `fechaResolucion` datetime DEFAULT NULL,
+  `observaciones` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `visto` tinyint(1) DEFAULT '0',
+  `fechaVista` datetime DEFAULT NULL,
+  PRIMARY KEY (`id_alerta`),
+  UNIQUE KEY `id_insumo` (`id_insumo`),
+  KEY `idx_id_insumo` (`id_insumo`),
+  KEY `idx_estado` (`estado`),
+  KEY `idx_fecha_ultima_alerta` (`fechaUltimaAlerta`),
+  KEY `idx_visto` (`visto`),
+  CONSTRAINT `fk_alerta_insumo` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=180 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `alumnogrado`
+--
+
+DROP TABLE IF EXISTS `alumnogrado`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `alumnogrado` (
+  `id_alumnoGrado` int NOT NULL AUTO_INCREMENT,
+  `id_persona` int NOT NULL,
+  `nombreGrado` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cicloLectivo` date DEFAULT '2025-01-01',
+  PRIMARY KEY (`id_alumnoGrado`),
+  KEY `Ref2145` (`id_persona`),
+  KEY `Ref646` (`nombreGrado`),
+  CONSTRAINT `RefGrados464` FOREIGN KEY (`nombreGrado`) REFERENCES `grados` (`nombreGrado`),
+  CONSTRAINT `RefPersonas454` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`)
+) ENGINE=InnoDB AUTO_INCREMENT=233 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `asistencias`
+--
+
+DROP TABLE IF EXISTS `asistencias`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `asistencias` (
+  `id_asistencia` int NOT NULL AUTO_INCREMENT,
+  `id_servicio` int NOT NULL,
+  `id_alumnoGrado` int NOT NULL,
+  `fecha` date DEFAULT '2025-01-01',
+  `tipoAsistencia` enum('Si','No','Ausente') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'No',
+  `estado` enum('Pendiente','Completado','Cancelado') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Pendiente',
+  PRIMARY KEY (`id_asistencia`),
+  UNIQUE KEY `uk_asistencias_unica` (`fecha`,`id_servicio`,`id_alumnoGrado`),
+  KEY `Ref2688` (`id_servicio`),
+  KEY `Ref2492` (`id_alumnoGrado`),
+  CONSTRAINT `RefAlumnoGrado924` FOREIGN KEY (`id_alumnoGrado`) REFERENCES `alumnogrado` (`id_alumnoGrado`),
+  CONSTRAINT `RefServicios884` FOREIGN KEY (`id_servicio`) REFERENCES `servicios` (`id_servicio`)
+) ENGINE=InnoDB AUTO_INCREMENT=361 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `auditalertas`
+--
+
+DROP TABLE IF EXISTS `auditalertas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `auditalertas` (
+  `id_auditoria` int NOT NULL AUTO_INCREMENT,
+  `id_alerta` int NOT NULL,
+  `id_insumo` int NOT NULL,
+  `numeroEnvio` int DEFAULT NULL,
+  `canalEnvio` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `mensajeEnviado` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `estadoEnvio` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fechaEnvio` datetime DEFAULT NULL,
+  `respuestaSistema` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id_auditoria`),
+  KEY `idx_id_alerta` (`id_alerta`),
+  KEY `idx_id_insumo` (`id_insumo`),
+  KEY `idx_fecha_envio` (`fechaEnvio`),
+  CONSTRAINT `fk_auditoria_alerta` FOREIGN KEY (`id_alerta`) REFERENCES `alertasinventario` (`id_alerta`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `auditorias`
+--
 
--- 
--- TABLE: AuditAlertas
--- Tabla de auditoría para registrar envíos de alertas
--- 
-CREATE TABLE IF NOT EXISTS AuditAlertas (
-    id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
-    id_alerta INT NOT NULL,
-    id_insumo INT NOT NULL,
-    numeroEnvio INT NOT NULL,
-    canalEnvio VARCHAR(50) NOT NULL DEFAULT 'Telegram',
-    mensajeEnviado LONGTEXT NULL,
-    estadoEnvio VARCHAR(50) NOT NULL DEFAULT 'enviado',
-    fechaEnvio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    respuestaSistema VARCHAR(255) NULL,
-    
-    INDEX idx_id_alerta (id_alerta),
-    INDEX idx_id_insumo (id_insumo),
-    INDEX idx_fecha_envio (fechaEnvio),
-    
-    CONSTRAINT fk_auditoria_alerta FOREIGN KEY (id_alerta) 
-        REFERENCES AlertasInventario(id_alerta) 
-        ON DELETE CASCADE 
-        ON UPDATE CASCADE
+DROP TABLE IF EXISTS `auditorias`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `auditorias` (
+  `id_registro` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `id_usuario` binary(16) NOT NULL,
+  `fechaHora` datetime DEFAULT CURRENT_TIMESTAMP,
+  `modulo` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tipoAccion` enum('---','Registrar','Modificar','Eliminar','Buscar','Consultar','Exportar','Login','Logout') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '---',
+  `descripcion` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `estado` enum('---','Exito','Error','Advertencia') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '---',
+  `nombreReporte` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `tipoReporte` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `detallesReporte` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `valor_anterior` longtext COLLATE utf8mb4_unicode_ci,
+  `valor_nuevo` longtext COLLATE utf8mb4_unicode_ci,
+  `id_registro_afectado` int DEFAULT NULL COMMENT 'ID numérico del registro afectado (para integers)',
+  `id_registro_afectado_uuid` binary(16) DEFAULT NULL COMMENT 'UUID del registro afectado',
+  `nivel_criticidad` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `resultado_accion` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id_registro`),
+  KEY `Ref251` (`id_usuario`),
+  KEY `idx_id_registro_afectado_uuid` (`id_registro_afectado_uuid`),
+  KEY `idx_id_registro_afectado_int` (`id_registro_afectado`),
+  CONSTRAINT `RefUsuarios514` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
---
--- TABLE: ConfiguracionServiciosAutomaticos
--- Tabla para configurar servicios que se procesan automáticamente
---
-CREATE TABLE IF NOT EXISTS ConfiguracionServiciosAutomaticos (
-    id_configuracion INT AUTO_INCREMENT PRIMARY KEY,
-    id_servicio INT NOT NULL,
-    horaInicio TIME NOT NULL,
-    horaFin TIME NOT NULL,
-    procesarAutomaticamente BOOLEAN DEFAULT TRUE,
-    descripcion VARCHAR(255),
-    fechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fechaActualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_servicio) REFERENCES Servicios(id_servicio) ON DELETE CASCADE,
-    UNIQUE KEY unique_servicio (id_servicio)
-);
-
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- TABLE: ServiciosCompletados
--- Tabla para rastrear servicios completados
+-- Table structure for table `configuracionserviciosautomaticos`
 --
-CREATE TABLE IF NOT EXISTS ServiciosCompletados (
-    id_servicioCompletado INT AUTO_INCREMENT PRIMARY KEY,
-    fecha DATE NOT NULL,
-    id_servicio INT NOT NULL,
-    completado BOOLEAN DEFAULT FALSE,
-    fechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fechaActualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_servicio_fecha (fecha, id_servicio),
-    FOREIGN KEY (id_servicio) REFERENCES Servicios(id_servicio) ON DELETE CASCADE
+
+DROP TABLE IF EXISTS `configuracionserviciosautomaticos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `configuracionserviciosautomaticos` (
+  `id_configuracion` int NOT NULL AUTO_INCREMENT,
+  `id_servicio` int NOT NULL,
+  `horaInicio` time NOT NULL,
+  `horaFin` time NOT NULL,
+  `procesarAutomaticamente` tinyint(1) DEFAULT '1',
+  `descripcion` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fechaCreacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `fechaActualizacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_configuracion`),
+  UNIQUE KEY `unique_servicio` (`id_servicio`),
+  CONSTRAINT `ConfiguracionServiciosAutomaticos_ibfk_1` FOREIGN KEY (`id_servicio`) REFERENCES `servicios` (`id_servicio`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `consumos`
+--
+
+DROP TABLE IF EXISTS `consumos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `consumos` (
+  `id_consumo` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `id_jornada` binary(16) NOT NULL,
+  `id_servicio` int NOT NULL,
+  `id_turno` int NOT NULL,
+  `id_usuario` binary(16) NOT NULL,
+  `fecha` date DEFAULT '2025-01-01',
+  `origenCalculo` enum('Calculado','Manual','Validado') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Calculado',
+  `fechaHoraGeneracion` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_consumo`),
+  KEY `Ref2662` (`id_servicio`),
+  KEY `Ref2763` (`id_turno`),
+  KEY `Ref289` (`id_usuario`),
+  KEY `Ref3190` (`id_jornada`),
+  CONSTRAINT `RefJornadaPlanificada904` FOREIGN KEY (`id_jornada`) REFERENCES `jornadaplanificada` (`id_jornada`),
+  CONSTRAINT `RefServicios624` FOREIGN KEY (`id_servicio`) REFERENCES `servicios` (`id_servicio`),
+  CONSTRAINT `RefTurnos634` FOREIGN KEY (`id_turno`) REFERENCES `turnos` (`id_turno`),
+  CONSTRAINT `RefUsuarios894` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE INDEX idx_fecha ON ServiciosCompletados(fecha);
-
-
--- =====================================================
--- VISTAS PARA ALERTAS DE INVENTARIO
--- =====================================================
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- VIEW: v_alertas_activas
--- Vista para alertas activas con información completa
+-- Table structure for table `detalleconsumo`
 --
-CREATE OR REPLACE VIEW v_alertas_activas AS
-SELECT 
-    aa.id_alerta,
-    aa.id_insumo,
-    i.nombreInsumo,
-    i.categoria,
-    i.unidadMedida,
-    aa.tipoAlerta,
-    aa.contadorEnvios,
-    aa.estado,
-    inv.cantidadActual,
-    inv.nivelMinimoAlerta,
-    inv.estado as estado_stock,
-    aa.fechaPrimeraAlerta,
-    aa.fechaUltimaAlerta,
-    TIMESTAMPDIFF(MINUTE, aa.fechaUltimaAlerta, NOW()) as minutosDesdeUltimaAlerta,
-    CASE 
-        WHEN aa.contadorEnvios >= 3 THEN 'completada'
-        WHEN aa.contadorEnvios = 2 THEN 'penultima'
-        WHEN aa.contadorEnvios = 1 THEN 'primera'
-    END as estado_envios
-FROM AlertasInventario aa
-JOIN Insumos i ON aa.id_insumo = i.id_insumo
-JOIN Inventarios inv ON aa.id_insumo = inv.id_insumo
-WHERE aa.estado = 'activa'
-ORDER BY aa.fechaUltimaAlerta DESC;
 
-
---
--- VIEW: v_resumen_alertas
--- Vista para resumen de alertas
---
-CREATE OR REPLACE VIEW v_resumen_alertas AS
-SELECT 
-    COUNT(DISTINCT aa.id_insumo) as insumos_con_alerta,
-    SUM(CASE WHEN aa.estado = 'activa' THEN 1 ELSE 0 END) as alertas_activas,
-    SUM(CASE WHEN aa.contadorEnvios >= 3 THEN 1 ELSE 0 END) as alertas_maximas,
-    SUM(CASE WHEN aa.contadorEnvios < 3 AND aa.estado = 'activa' THEN 1 ELSE 0 END) as pendientes_envio,
-    AVG(CASE WHEN aa.estado = 'activa' THEN aa.contadorEnvios ELSE NULL END) as promedio_envios,
-    COUNT(DISTINCT aa.id_insumo) as total_insumos_criticos
-FROM AlertasInventario aa
-WHERE aa.estado IN ('activa', 'completada');
-
-
--- =====================================================
--- TABLE: UsuariosRoles 
--- Relación muchos-a-muchos entre Usuarios y Roles
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS UsuariosRoles (
-  id_usuarioRol INT AUTO_INCREMENT PRIMARY KEY,
-  id_usuario BINARY(16) NOT NULL,
-  id_rol INT NOT NULL,
-  fechaAsignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  estado ENUM('Activo', 'Inactivo') DEFAULT 'Activo',
-  
-  -- Índices
-  INDEX idx_usuario (id_usuario),
-  INDEX idx_rol (id_rol),
-  INDEX idx_estado (estado),
-  
-  -- Claves foráneas
-  CONSTRAINT fk_usuariorol_usuario FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario) ON DELETE CASCADE,
-  CONSTRAINT fk_usuariorol_rol FOREIGN KEY (id_rol) REFERENCES Roles(id_rol) ON DELETE CASCADE
+DROP TABLE IF EXISTS `detalleconsumo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `detalleconsumo` (
+  `id_detalleConsumo` int NOT NULL AUTO_INCREMENT,
+  `id_consumo` binary(16) NOT NULL,
+  `id_insumo` int NOT NULL,
+  `id_itemReceta` int DEFAULT NULL,
+  `cantidadUtilizada` int NOT NULL,
+  `cantidadCalculada` int NOT NULL,
+  PRIMARY KEY (`id_detalleConsumo`),
+  UNIQUE KEY `uk_detalleconsumo_unico` (`id_consumo`,`id_insumo`),
+  KEY `RefItemsRecetas` (`id_itemReceta`),
+  KEY `Ref1357` (`id_insumo`),
+  KEY `Ref1973` (`id_consumo`),
+  CONSTRAINT `RefConsumos734` FOREIGN KEY (`id_consumo`) REFERENCES `consumos` (`id_consumo`),
+  CONSTRAINT `RefInsumos574` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`),
+  CONSTRAINT `RefItemsRecetas` FOREIGN KEY (`id_itemReceta`) REFERENCES `itemsrecetas` (`id_itemReceta`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `detallepedido`
+--
 
--- =====================================================
--- TABLE: EmailsEnviados 
--- Auditoría de emails enviados
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS EmailsEnviados (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  id_pedido BINARY(16) NOT NULL,
-  id_proveedor BINARY(16) NOT NULL,
-  emailDestinatario VARCHAR(255) NOT NULL,
-  asunto VARCHAR(500) NOT NULL,
-  enlaceConfirmacion LONGTEXT,
-  fechaEnvio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  estado ENUM('Pendiente', 'Enviado', 'Fallido', 'Simulado') DEFAULT 'Pendiente',
-  fechaLectura TIMESTAMP NULL,
-  intentos INT DEFAULT 0,
-  ultimoIntento TIMESTAMP NULL,
-  errorMensaje LONGTEXT,
-  
-  -- Índices para mejor búsqueda
-  INDEX idx_id_pedido (id_pedido),
-  INDEX idx_id_proveedor (id_proveedor),
-  INDEX idx_email (emailDestinatario),
-  INDEX idx_fecha_envio (fechaEnvio),
-  INDEX idx_estado (estado),
-  
-  -- Claves foráneas
-  CONSTRAINT fk_email_pedido FOREIGN KEY (id_pedido) REFERENCES Pedidos(id_pedido) ON DELETE CASCADE,
-  CONSTRAINT fk_email_proveedor FOREIGN KEY (id_proveedor) REFERENCES Proveedores(id_proveedor) ON DELETE CASCADE
+DROP TABLE IF EXISTS `detallepedido`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `detallepedido` (
+  `id_detallePedido` int NOT NULL AUTO_INCREMENT,
+  `id_pedido` binary(16) NOT NULL,
+  `id_proveedor` binary(16) NOT NULL,
+  `id_insumo` int NOT NULL,
+  `cantidadSolicitada` int NOT NULL,
+  `estadoConfirmacion` enum('Pendiente','Disponible','No Disponible') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Pendiente',
+  `fechaConfirmacion` datetime DEFAULT NULL,
+  PRIMARY KEY (`id_detallePedido`),
+  UNIQUE KEY `uk_detallePedido` (`id_pedido`,`id_insumo`),
+  KEY `Ref1619` (`id_pedido`),
+  KEY `Ref1332` (`id_insumo`),
+  KEY `Ref1581` (`id_proveedor`),
+  CONSTRAINT `RefInsumos324` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`),
+  CONSTRAINT `RefPedidos194` FOREIGN KEY (`id_pedido`) REFERENCES `pedidos` (`id_pedido`),
+  CONSTRAINT `RefProveedores814` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- =====================================================
--- DATOS INICIALES
--- =====================================================
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Insertar Estados de Pedido
+-- Table structure for table `docenteconfiguraciontelegram`
 --
-INSERT INTO EstadoPedido (nombreEstado, descripcion)
-SELECT 'Pendiente', 'Pedido pendiente de aprobación'
-WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Pendiente');
 
-INSERT INTO EstadoPedido (nombreEstado, descripcion)
-SELECT 'Aprobado', 'Pedido aprobado'
-WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Aprobado');
-
-INSERT INTO EstadoPedido (nombreEstado, descripcion)
-SELECT 'Confirmado', 'Pedido confirmado por el proveedor'
-WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Confirmado');
-
-INSERT INTO EstadoPedido (nombreEstado, descripcion)
-SELECT 'Enviado', 'Pedido enviado por el proveedor'
-WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Enviado');
-
-INSERT INTO EstadoPedido (nombreEstado, descripcion)
-SELECT 'En espera', 'Pedido en espera'
-WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'En espera');
-
-INSERT INTO EstadoPedido (nombreEstado, descripcion)
-SELECT 'Recibido', 'Pedido recibido'
-WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Recibido');
-
-INSERT INTO EstadoPedido (nombreEstado, descripcion)
-SELECT 'Entregado', 'Pedido entregado'
-WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Entregado');
-
-INSERT INTO EstadoPedido (nombreEstado, descripcion)
-SELECT 'Cancelado', 'Pedido cancelado'
-WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Cancelado');
-
-INSERT INTO EstadoPedido (nombreEstado, descripcion)
-SELECT 'Fallido', 'Pedido fallido'
-WHERE NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE nombreEstado = 'Fallido');
+DROP TABLE IF EXISTS `docenteconfiguraciontelegram`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `docenteconfiguraciontelegram` (
+  `id_configDocente` int NOT NULL AUTO_INCREMENT,
+  `id_docenteTitular` int NOT NULL,
+  `telegramChatId` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `telegramUsuario` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notificacionesTelegram` enum('Activo','Inactivo') COLLATE utf8mb4_unicode_ci DEFAULT 'Inactivo',
+  `fechaCreacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `fechaActualizacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_configDocente`),
+  UNIQUE KEY `id_docenteTitular` (`id_docenteTitular`),
+  CONSTRAINT `docenteconfiguraciontelegram_ibfk_1` FOREIGN KEY (`id_docenteTitular`) REFERENCES `docentegrado` (`id_docenteTitular`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Insertar Rol "Proveedor"
+-- Table structure for table `docentegrado`
 --
-INSERT INTO Roles (nombreRol, descripcionRol, habilitaCuentaUsuario, estado)
-SELECT 'Proveedor', 'Rol para proveedores del sistema', 'Si', 'Activo'
-WHERE NOT EXISTS (SELECT 1 FROM Roles WHERE nombreRol = 'Proveedor');
 
+DROP TABLE IF EXISTS `docentegrado`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `docentegrado` (
+  `id_docenteTitular` int NOT NULL,
+  `id_persona` int NOT NULL,
+  `nombreGrado` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fechaAsignado` date DEFAULT '2025-01-01',
+  `cicloLectivo` date DEFAULT '2025-01-01',
+  PRIMARY KEY (`id_docenteTitular`,`id_persona`,`nombreGrado`),
+  KEY `Ref2193` (`id_persona`),
+  KEY `Ref694` (`nombreGrado`),
+  CONSTRAINT `RefGrados945` FOREIGN KEY (`nombreGrado`) REFERENCES `grados` (`nombreGrado`),
+  CONSTRAINT `RefPersonas934` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `emailsenviados`
+--
+
+DROP TABLE IF EXISTS `emailsenviados`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `emailsenviados` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_pedido` binary(16) NOT NULL,
+  `id_proveedor` binary(16) NOT NULL,
+  `emailDestinatario` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `asunto` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `enlaceConfirmacion` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `fechaEnvio` timestamp NULL DEFAULT NULL,
+  `estado` enum('Pendiente','Enviado','Fallido','Simulado') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Pendiente',
+  `fechaLectura` timestamp NULL DEFAULT NULL,
+  `intentos` int DEFAULT '0',
+  `ultimoIntento` timestamp NULL DEFAULT NULL,
+  `errorMensaje` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  PRIMARY KEY (`id`),
+  KEY `idx_id_pedido` (`id_pedido`),
+  KEY `idx_id_proveedor` (`id_proveedor`),
+  KEY `idx_email` (`emailDestinatario`),
+  KEY `idx_fecha_envio` (`fechaEnvio`),
+  KEY `idx_estado` (`estado`),
+  CONSTRAINT `fk_email_pedido` FOREIGN KEY (`id_pedido`) REFERENCES `pedidos` (`id_pedido`) ON DELETE CASCADE,
+  CONSTRAINT `fk_email_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `estadopedido`
+--
+
+DROP TABLE IF EXISTS `estadopedido`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `estadopedido` (
+  `id_estadoPedido` int NOT NULL AUTO_INCREMENT,
+  `nombreEstado` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `descripcion` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id_estadoPedido`),
+  UNIQUE KEY `uk_estadoPedido` (`nombreEstado`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `grados`
+--
+
+DROP TABLE IF EXISTS `grados`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `grados` (
+  `id_grado` int NOT NULL AUTO_INCREMENT,
+  `id_turno` int NOT NULL,
+  `nombreGrado` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_grado`),
+  UNIQUE KEY `uk_grados_nombre` (`nombreGrado`),
+  KEY `Ref2761` (`id_turno`),
+  CONSTRAINT `RefTurnos614` FOREIGN KEY (`id_turno`) REFERENCES `turnos` (`id_turno`)
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `insumos`
+--
+
+DROP TABLE IF EXISTS `insumos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `insumos` (
+  `id_insumo` int NOT NULL AUTO_INCREMENT,
+  `nombreInsumo` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcion` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `unidadMedida` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `categoria` enum('Carnes','Lacteos','Cereales','Verduras','Frutas','Legumbres','Condimentos','Bebidas','Enlatados','Conservas','Limpieza','Descartables','Otros') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Otros',
+  `stockMinimo` int NOT NULL DEFAULT '0',
+  `fecha` date DEFAULT '2025-01-01',
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_insumo`),
+  UNIQUE KEY `uk_insumos` (`nombreInsumo`)
+) ENGINE=InnoDB AUTO_INCREMENT=151 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `inventarios`
+--
+
+DROP TABLE IF EXISTS `inventarios`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `inventarios` (
+  `id_insumo` int NOT NULL,
+  `cantidadActual` int NOT NULL,
+  `nivelMinimoAlerta` int NOT NULL,
+  `stockMaximo` int NOT NULL,
+  `fechaUltimaActualizacion` date DEFAULT '2025-01-01',
+  `estado` enum('Agotado','Critico','Normal') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Normal',
+  PRIMARY KEY (`id_insumo`),
+  UNIQUE KEY `uk_inventarios_insumo` (`id_insumo`),
+  KEY `Ref1334` (`id_insumo`),
+  CONSTRAINT `RefInsumos344` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `itemsrecetas`
+--
+
+DROP TABLE IF EXISTS `itemsrecetas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `itemsrecetas` (
+  `id_itemReceta` int NOT NULL AUTO_INCREMENT,
+  `id_receta` binary(16) NOT NULL,
+  `id_insumo` int NOT NULL,
+  `cantidadPorPorcion` int NOT NULL DEFAULT '0',
+  `unidadPorPorcion` enum('gramo','gramos','kilogramo','kilogramos','mililitro','mililitros','litro','litros','unidad','unidades') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unidad',
+  PRIMARY KEY (`id_itemReceta`),
+  UNIQUE KEY `uk_itemsrecetas` (`id_receta`,`id_insumo`),
+  KEY `Ref1333` (`id_insumo`),
+  KEY `Ref513` (`id_receta`),
+  CONSTRAINT `RefInsumos334` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`),
+  CONSTRAINT `RefRecetas134` FOREIGN KEY (`id_receta`) REFERENCES `recetas` (`id_receta`)
+) ENGINE=InnoDB AUTO_INCREMENT=205 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `jornadaplanificada`
+--
+
+DROP TABLE IF EXISTS `jornadaplanificada`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `jornadaplanificada` (
+  `id_jornada` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `id_planificacion` binary(16) NOT NULL,
+  `id_servicio` int NOT NULL,
+  `diaSemana` enum('Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Lunes',
+  PRIMARY KEY (`id_jornada`),
+  UNIQUE KEY `uk_jornada` (`id_planificacion`,`id_servicio`,`diaSemana`),
+  KEY `Ref1284` (`id_planificacion`),
+  KEY `Ref2686` (`id_servicio`),
+  CONSTRAINT `RefPlanificacionMenus844` FOREIGN KEY (`id_planificacion`) REFERENCES `planificacionmenus` (`id_planificacion`),
+  CONSTRAINT `RefServicios864` FOREIGN KEY (`id_servicio`) REFERENCES `servicios` (`id_servicio`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `movimientosinventarios`
+--
+
+DROP TABLE IF EXISTS `movimientosinventarios`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `movimientosinventarios` (
+  `id_movimiento` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `id_insumo` int NOT NULL,
+  `id_usuario` binary(16) NOT NULL,
+  `id_consumo` binary(16) DEFAULT NULL,
+  `id_tipoMerma` int DEFAULT NULL,
+  `tipoMovimiento` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cantidadMovimiento` int NOT NULL,
+  `fechaHora` datetime DEFAULT CURRENT_TIMESTAMP,
+  `comentarioMovimiento` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  PRIMARY KEY (`id_movimiento`),
+  KEY `Ref1944` (`id_consumo`),
+  KEY `Ref871` (`id_insumo`),
+  KEY `Ref272` (`id_usuario`),
+  KEY `Ref2977` (`id_tipoMerma`),
+  CONSTRAINT `RefConsumos444` FOREIGN KEY (`id_consumo`) REFERENCES `consumos` (`id_consumo`),
+  CONSTRAINT `RefInventarios714` FOREIGN KEY (`id_insumo`) REFERENCES `inventarios` (`id_insumo`),
+  CONSTRAINT `RefTiposMermas774` FOREIGN KEY (`id_tipoMerma`) REFERENCES `tiposmermas` (`id_tipoMerma`),
+  CONSTRAINT `RefUsuarios724` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `parametros`
+--
+
+DROP TABLE IF EXISTS `parametros`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `parametros` (
+  `id_parametro` int NOT NULL AUTO_INCREMENT,
+  `nombreParametro` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `valor` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tipoParametro` char(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fechaAlta` datetime DEFAULT CURRENT_TIMESTAMP,
+  `fechaModificacion` datetime DEFAULT NULL,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_parametro`),
+  UNIQUE KEY `uk_parametro` (`nombreParametro`)
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `pedidos`
+--
+
+DROP TABLE IF EXISTS `pedidos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pedidos` (
+  `id_pedido` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `id_planificacion` binary(16) DEFAULT NULL,
+  `id_usuario` binary(16) DEFAULT NULL,
+  `id_estadoPedido` int NOT NULL,
+  `id_proveedor` binary(16) NOT NULL,
+  `fechaEmision` datetime NOT NULL,
+  `origen` enum('Editado','Generado','Manual') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Generado',
+  `fechaAprobacion` datetime DEFAULT NULL,
+  `fechaConfirmacion` datetime DEFAULT NULL,
+  `motivoCancelacion` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id_pedido`),
+  KEY `Ref1576` (`id_proveedor`),
+  KEY `Ref3078` (`id_estadoPedido`),
+  KEY `Ref279` (`id_usuario`),
+  KEY `Ref1280` (`id_planificacion`),
+  CONSTRAINT `RefEstadoPedido784` FOREIGN KEY (`id_estadoPedido`) REFERENCES `estadopedido` (`id_estadoPedido`),
+  CONSTRAINT `RefPlanificacionMenus804` FOREIGN KEY (`id_planificacion`) REFERENCES `planificacionmenus` (`id_planificacion`),
+  CONSTRAINT `RefProveedores764` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`),
+  CONSTRAINT `RefUsuarios794` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `permisos`
+--
+
+DROP TABLE IF EXISTS `permisos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `permisos` (
+  `id_permiso` int NOT NULL AUTO_INCREMENT,
+  `nombrePermiso` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcionPermiso` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `modulo` enum('Sin Módulo','Asistencias','Auditoria','Configuración del Sistema','Consumos','Estadística','Grados','PersonasGrados','Insumos','Inventarios','Menú del Día','Parámetros','Pedidos','Permisos','Personas','Planificación de Menús','Proveedores','Recetas','Reportes','Roles','Seguridad','Usuarios') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Sin Módulo',
+  `accion` enum('Sin AcciÃ³n','Registrar','Modificar','Eliminar','Buscar','Consultar','Exportar') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Sin AcciÃ³n',
+  `fechaAlta` datetime DEFAULT CURRENT_TIMESTAMP,
+  `fechaModificacion` datetime DEFAULT NULL,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_permiso`),
+  UNIQUE KEY `uk_permiso` (`nombrePermiso`,`modulo`,`accion`)
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `personas`
+--
+
+DROP TABLE IF EXISTS `personas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `personas` (
+  `id_persona` int NOT NULL AUTO_INCREMENT,
+  `nombreRol` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nombre` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `apellido` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `dni` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fechaNacimiento` date DEFAULT '2000-01-01',
+  `genero` enum('Masculino','Femenina','Otros') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Otros',
+  `fechaAlta` date DEFAULT '2025-01-01',
+  `fechaModificacion` date DEFAULT NULL,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_persona`),
+  UNIQUE KEY `uk_personas_dni` (`dni`),
+  UNIQUE KEY `uk_persona_users` (`id_persona`),
+  KEY `Ref191` (`nombreRol`),
+  CONSTRAINT `RefRoles914` FOREIGN KEY (`nombreRol`) REFERENCES `roles` (`nombreRol`)
+) ENGINE=InnoDB AUTO_INCREMENT=249 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `planificacionmenus`
+--
+
+DROP TABLE IF EXISTS `planificacionmenus`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `planificacionmenus` (
+  `id_planificacion` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `id_usuario` binary(16) NOT NULL,
+  `fechaInicio` date NOT NULL,
+  `fechaFin` date NOT NULL,
+  `comensalesEstimados` int DEFAULT '0',
+  `estado` enum('Pendiente','Programado','Activo','Finalizado','Cancelado') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Pendiente',
+  PRIMARY KEY (`id_planificacion`),
+  UNIQUE KEY `uk_planificacion` (`fechaInicio`,`fechaFin`),
+  KEY `Ref283` (`id_usuario`),
+  CONSTRAINT `RefUsuarios834` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `proveedorconfiguraciontelegram`
+--
+
+DROP TABLE IF EXISTS `proveedorconfiguraciontelegram`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `proveedorconfiguraciontelegram` (
+  `id_config` int NOT NULL AUTO_INCREMENT,
+  `id_proveedor` binary(16) NOT NULL,
+  `telegramChatId` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `telegramUsuario` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notificacionesTelegram` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Inactivo',
+  `fechaCreacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `fechaActualizacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_config`),
+  UNIQUE KEY `id_proveedor` (`id_proveedor`),
+  CONSTRAINT `ProveedorConfiguracionTelegram_ibfk_1` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `proveedores`
+--
+
+DROP TABLE IF EXISTS `proveedores`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `proveedores` (
+  `id_proveedor` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `razonSocial` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `CUIT` varchar(13) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `direccion` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `telefono` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `mail` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fechaAlta` date DEFAULT '2025-01-01',
+  `fechaModificacion` date DEFAULT NULL,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_proveedor`),
+  UNIQUE KEY `uk_proveedores` (`razonSocial`,`CUIT`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `proveedorinsumo`
+--
+
+DROP TABLE IF EXISTS `proveedorinsumo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `proveedorinsumo` (
+  `id_insumo` int NOT NULL,
+  `id_proveedor` binary(16) NOT NULL,
+  `calificacion` enum('Excelente','Bueno','Regular','Malo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Bueno',
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_insumo`,`id_proveedor`),
+  KEY `Ref1554` (`id_proveedor`),
+  KEY `Ref1355` (`id_insumo`),
+  CONSTRAINT `RefInsumos554` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`),
+  CONSTRAINT `RefProveedores544` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `recetajornada`
+--
+
+DROP TABLE IF EXISTS `recetajornada`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `recetajornada` (
+  `id_recetaAsignada` binary(16) NOT NULL,
+  `id_jornada` binary(16) NOT NULL,
+  `id_receta` binary(16) NOT NULL,
+  PRIMARY KEY (`id_recetaAsignada`),
+  KEY `Ref542` (`id_receta`),
+  KEY `Ref3185` (`id_jornada`),
+  CONSTRAINT `RefJornadaPlanificada854` FOREIGN KEY (`id_jornada`) REFERENCES `jornadaplanificada` (`id_jornada`),
+  CONSTRAINT `RefRecetas424` FOREIGN KEY (`id_receta`) REFERENCES `recetas` (`id_receta`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `recetas`
+--
+
+DROP TABLE IF EXISTS `recetas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `recetas` (
+  `id_receta` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `nombreReceta` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `instrucciones` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `unidadSalida` enum('Bandeja','Gramo','Litro','Plato','Porcion','Racion','Unidad') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Porcion',
+  `fechaAlta` date DEFAULT '2025-01-01',
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_receta`),
+  UNIQUE KEY `uk_receta` (`nombreReceta`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `recetaservicio`
+--
+
+DROP TABLE IF EXISTS `recetaservicio`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `recetaservicio` (
+  `id_receta` binary(16) NOT NULL,
+  `id_servicio` int NOT NULL,
+  `fechaAsociacion` date DEFAULT (curdate()),
+  PRIMARY KEY (`id_receta`,`id_servicio`),
+  KEY `idx_rs_receta` (`id_receta`),
+  KEY `idx_rs_servicio` (`id_servicio`),
+  CONSTRAINT `fk_rs_hacia_recetas` FOREIGN KEY (`id_receta`) REFERENCES `recetas` (`id_receta`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_rs_hacia_servicios` FOREIGN KEY (`id_servicio`) REFERENCES `servicios` (`id_servicio`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `reemplazodocente`
+--
+
+DROP TABLE IF EXISTS `reemplazodocente`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `reemplazodocente` (
+  `id_reemplazoDocente` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `id_persona` int NOT NULL,
+  `id_docenteTitular` int NOT NULL,
+  `nombreGrado` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cicloLectivo` date NOT NULL,
+  `fechaInicio` date NOT NULL,
+  `fechaFin` date DEFAULT NULL,
+  `estado` enum('Activo','Finalizado','Programado') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  `motivo` enum('licencia_medica','licencia_maternidad','licencia_anual','cambio_funciones','renuncia','jubilacion','ausencia_prolongada') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`id_reemplazoDocente`),
+  KEY `Ref3295` (`nombreGrado`,`id_docenteTitular`,`id_persona`),
+  KEY `Ref2196` (`id_persona`),
+  KEY `RefDocenteGrado954` (`id_docenteTitular`,`id_persona`,`nombreGrado`),
+  CONSTRAINT `RefPersonas964` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `registrosasistencias`
+--
+
+DROP TABLE IF EXISTS `registrosasistencias`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `registrosasistencias` (
+  `id_asistencia` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `id_servicio` int NOT NULL,
+  `id_grado` int NOT NULL,
+  `fecha` date DEFAULT '2025-01-01',
+  `cantidadPresentes` int DEFAULT '0',
+  `fechaCreacion` datetime DEFAULT NULL,
+  `fechaActualizacion` datetime DEFAULT NULL,
+  PRIMARY KEY (`id_asistencia`),
+  KEY `RefServicios934` (`id_servicio`),
+  KEY `RefGrados944` (`id_grado`),
+  CONSTRAINT `RefGrados944` FOREIGN KEY (`id_grado`) REFERENCES `grados` (`id_grado`),
+  CONSTRAINT `RefServicios934` FOREIGN KEY (`id_servicio`) REFERENCES `servicios` (`id_servicio`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `roles`
+--
+
+DROP TABLE IF EXISTS `roles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `roles` (
+  `id_rol` int NOT NULL AUTO_INCREMENT,
+  `nombreRol` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcionRol` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `habilitaCuentaUsuario` enum('Si','No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'No',
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_rol`),
+  UNIQUE KEY `uk_rol_nombre` (`nombreRol`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `rolespermisos`
+--
+
+DROP TABLE IF EXISTS `rolespermisos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `rolespermisos` (
+  `id_rolPermiso` int NOT NULL AUTO_INCREMENT,
+  `id_permiso` int NOT NULL,
+  `id_rol` int NOT NULL,
+  PRIMARY KEY (`id_rolPermiso`),
+  UNIQUE KEY `uk_rolPermiso` (`id_permiso`,`id_rol`),
+  KEY `Ref1053` (`id_permiso`),
+  KEY `Ref15` (`id_rol`),
+  CONSTRAINT `RefPermisos534` FOREIGN KEY (`id_permiso`) REFERENCES `permisos` (`id_permiso`),
+  CONSTRAINT `RefRoles54` FOREIGN KEY (`id_rol`) REFERENCES `roles` (`id_rol`)
+) ENGINE=InnoDB AUTO_INCREMENT=190 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `servicios`
+--
+
+DROP TABLE IF EXISTS `servicios`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `servicios` (
+  `id_servicio` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcion` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fechaAlta` date DEFAULT '2025-01-01',
+  `fechaModificacion` date DEFAULT NULL,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_servicio`),
+  UNIQUE KEY `uk_servicio` (`nombre`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `servicioscompletados`
+--
+
+DROP TABLE IF EXISTS `servicioscompletados`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `servicioscompletados` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `fecha` date NOT NULL,
+  `id_servicio` int NOT NULL,
+  `completado` tinyint(1) DEFAULT '0',
+  `fechaCreacion` timestamp NULL DEFAULT NULL,
+  `fechaActualizacion` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_servicio_fecha` (`fecha`,`id_servicio`),
+  KEY `id_servicio` (`id_servicio`),
+  KEY `idx_fecha` (`fecha`),
+  CONSTRAINT `ServiciosCompletados_ibfk_1` FOREIGN KEY (`id_servicio`) REFERENCES `servicios` (`id_servicio`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `servicioturno`
+--
+
+DROP TABLE IF EXISTS `servicioturno`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `servicioturno` (
+  `id_turno` int NOT NULL,
+  `id_servicio` int NOT NULL,
+  `fechaAsociacion` date DEFAULT '2025-01-01',
+  PRIMARY KEY (`id_turno`,`id_servicio`),
+  KEY `Ref2658` (`id_servicio`),
+  KEY `Ref2759` (`id_turno`),
+  CONSTRAINT `RefServicios584` FOREIGN KEY (`id_servicio`) REFERENCES `servicios` (`id_servicio`),
+  CONSTRAINT `RefTurnos594` FOREIGN KEY (`id_turno`) REFERENCES `turnos` (`id_turno`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tiposmermas`
+--
+
+DROP TABLE IF EXISTS `tiposmermas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tiposmermas` (
+  `id_tipoMerma` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `descripcion` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_tipoMerma`),
+  UNIQUE KEY `uk_merma` (`nombre`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `turnos`
+--
+
+DROP TABLE IF EXISTS `turnos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `turnos` (
+  `id_turno` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `horaInicio` time NOT NULL,
+  `horaFin` time NOT NULL,
+  `fechaAlta` date DEFAULT '2025-01-01',
+  `fechaModificacion` date DEFAULT NULL,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_turno`),
+  UNIQUE KEY `ul_turno` (`nombre`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ultimopedidoautomatico`
+--
+
+DROP TABLE IF EXISTS `ultimopedidoautomatico`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ultimopedidoautomatico` (
+  `id_ultimoPedido` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `fecha_ultimoPedido` datetime DEFAULT CURRENT_TIMESTAMP,
+  `proximaPermitidaEn` datetime DEFAULT CURRENT_TIMESTAMP,
+  `createdAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_ultimoPedido`),
+  KEY `idx_fecha_ultimoPedido` (`fecha_ultimoPedido`),
+  KEY `idx_proximaPermitidaEn` (`proximaPermitidaEn`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `usuarios`
+--
+
+DROP TABLE IF EXISTS `usuarios`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `usuarios` (
+  `id_usuario` binary(16) NOT NULL DEFAULT (uuid_to_bin(uuid())),
+  `id_persona` int DEFAULT NULL,
+  `id_proveedor` binary(16) DEFAULT NULL,
+  `nombreUsuario` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `contrasenia` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `mail` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `telefono` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fechaAlta` datetime DEFAULT CURRENT_TIMESTAMP,
+  `fechaUltimaActividad` datetime DEFAULT NULL,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Activo',
+  PRIMARY KEY (`id_usuario`),
+  UNIQUE KEY `uk_usuarios_nombre` (`nombreUsuario`),
+  UNIQUE KEY `uk_usuario_mail` (`mail`),
+  KEY `idx_usuario_proveedor` (`id_proveedor`),
+  KEY `Ref2169` (`id_persona`),
+  CONSTRAINT `RefPersonas694` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`),
+  CONSTRAINT `RefProveedores895` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`),
+  CONSTRAINT `chk_usuario_persona_or_proveedor` CHECK (((`id_persona` is not null) or (`id_proveedor` is not null)))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `usuariosroles`
+--
+
+DROP TABLE IF EXISTS `usuariosroles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `usuariosroles` (
+  `id_usuarioRol` int NOT NULL AUTO_INCREMENT,
+  `id_usuario` binary(16) NOT NULL,
+  `id_rol` int NOT NULL,
+  `fechaAsignacion` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `estado` enum('Activo','Inactivo') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Activo',
+  PRIMARY KEY (`id_usuarioRol`),
+  KEY `idx_usuario` (`id_usuario`),
+  KEY `idx_rol` (`id_rol`),
+  KEY `idx_estado` (`estado`),
+  CONSTRAINT `fk_usuariorol_rol` FOREIGN KEY (`id_rol`) REFERENCES `roles` (`id_rol`) ON DELETE CASCADE,
+  CONSTRAINT `fk_usuariorol_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Temporary view structure for view `v_alertas_activas`
+--
+
+DROP TABLE IF EXISTS `v_alertas_activas`;
+/*!50001 DROP VIEW IF EXISTS `v_alertas_activas`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_alertas_activas` AS SELECT 
+ 1 AS `id_alerta`,
+ 1 AS `id_insumo`,
+ 1 AS `nombreInsumo`,
+ 1 AS `categoria`,
+ 1 AS `unidadMedida`,
+ 1 AS `tipoAlerta`,
+ 1 AS `contadorEnvios`,
+ 1 AS `estado`,
+ 1 AS `cantidadActual`,
+ 1 AS `nivelMinimoAlerta`,
+ 1 AS `estadoStock`,
+ 1 AS `fechaPrimeraAlerta`,
+ 1 AS `fechaUltimaAlerta`,
+ 1 AS `minutosDesdeUltimaAlerta`,
+ 1 AS `estadoEnvios`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Temporary view structure for view `v_resumen_alertas`
+--
+
+DROP TABLE IF EXISTS `v_resumen_alertas`;
+/*!50001 DROP VIEW IF EXISTS `v_resumen_alertas`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_resumen_alertas` AS SELECT 
+ 1 AS `insumosConAlerta`,
+ 1 AS `alertasActivas`,
+ 1 AS `alertasMaximas`,
+ 1 AS `pendientesEnvio`,
+ 1 AS `promedioEnvios`,
+ 1 AS `totalInsumosCriticos`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Final view structure for view `v_alertas_activas`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_alertas_activas`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_alertas_activas` AS select `aa`.`id_alerta` AS `id_alerta`,`aa`.`id_insumo` AS `id_insumo`,`i`.`nombreInsumo` AS `nombreInsumo`,`i`.`categoria` AS `categoria`,`i`.`unidadMedida` AS `unidadMedida`,`aa`.`tipoAlerta` AS `tipoAlerta`,`aa`.`contadorEnvios` AS `contadorEnvios`,`aa`.`estado` AS `estado`,`inv`.`cantidadActual` AS `cantidadActual`,`inv`.`nivelMinimoAlerta` AS `nivelMinimoAlerta`,`inv`.`estado` AS `estadoStock`,`aa`.`fechaPrimeraAlerta` AS `fechaPrimeraAlerta`,`aa`.`fechaUltimaAlerta` AS `fechaUltimaAlerta`,timestampdiff(MINUTE,`aa`.`fechaUltimaAlerta`,now()) AS `minutosDesdeUltimaAlerta`,(case when (`aa`.`contadorEnvios` >= 3) then 'completada' when (`aa`.`contadorEnvios` = 2) then 'penultima' when (`aa`.`contadorEnvios` = 1) then 'primera' end) AS `estadoEnvios` from ((`alertasinventario` `aa` join `insumos` `i` on((`aa`.`id_insumo` = `i`.`id_insumo`))) join `inventarios` `inv` on((`aa`.`id_insumo` = `inv`.`id_insumo`))) where (`aa`.`estado` = 'activa') order by `aa`.`fechaUltimaAlerta` desc */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `v_resumen_alertas`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_resumen_alertas`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_resumen_alertas` AS select count(distinct `aa`.`id_insumo`) AS `insumosConAlerta`,sum((case when (`aa`.`estado` = 'activa') then 1 else 0 end)) AS `alertasActivas`,sum((case when (`aa`.`contadorEnvios` >= 3) then 1 else 0 end)) AS `alertasMaximas`,sum((case when ((`aa`.`contadorEnvios` < 3) and (`aa`.`estado` = 'activa')) then 1 else 0 end)) AS `pendientesEnvio`,avg((case when (`aa`.`estado` = 'activa') then `aa`.`contadorEnvios` else NULL end)) AS `promedioEnvios`,count(distinct `aa`.`id_insumo`) AS `totalInsumosCriticos` from `alertasinventario` `aa` where (`aa`.`estado` in ('activa','completada')) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Table structure for table `insumossemanales` (Histórico de insumos calculados)
+--
+
+DROP TABLE IF EXISTS `insumossemanales`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `insumossemanales` (
+  `id_insumo_semanal` int NOT NULL AUTO_INCREMENT,
+  `id_planificacion` binary(16) NOT NULL,
+  `id_insumo` int NOT NULL,
+  `cantidad` decimal(10,2) NOT NULL,
+  `unidad` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cantidad_disponible` decimal(10,2) DEFAULT '0',
+  `stock_final` decimal(10,2) DEFAULT '0',
+  `estado_generacion` enum('Calculado','Pedido_Generado','Finalizado') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Calculado',
+  `fecha_calculo` datetime DEFAULT CURRENT_TIMESTAMP,
+  `fecha_finalizacion` datetime DEFAULT NULL,
+  PRIMARY KEY (`id_insumo_semanal`),
+  KEY `idx_planificacion` (`id_planificacion`),
+  KEY `idx_insumo` (`id_insumo`),
+  KEY `idx_fecha_calculo` (`fecha_calculo`),
+  CONSTRAINT `fk_insumossemanales_planificacion` FOREIGN KEY (`id_planificacion`) REFERENCES `planificacionmenus` (`id_planificacion`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_insumossemanales_insumo` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-03-21  4:17:40

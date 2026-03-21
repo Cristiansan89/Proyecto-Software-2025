@@ -104,7 +104,7 @@ const GeneracionAutomatica = () => {
       const response = await API.get("/parametros-sistemas");
       const parametros = response.data || [];
       const existente = parametros.find(
-        (p) => p.nombreParametro === nombreParametro
+        (p) => p.nombreParametro === nombreParametro,
       );
 
       if (existente) {
@@ -135,57 +135,57 @@ const GeneracionAutomatica = () => {
       // Guardar parámetros de insumos semanales
       await crearOActualizarParametro(
         "INSUMOS_SEMANALES_HABILITADO",
-        String(configuracion.insumosSemanalesHabilitado)
+        String(configuracion.insumosSemanalesHabilitado),
       );
       await crearOActualizarParametro(
         "INSUMOS_SEMANALES_DIA",
-        configuracion.insumosSemanalesDia
+        configuracion.insumosSemanalesDia,
       );
       await crearOActualizarParametro(
         "INSUMOS_SEMANALES_HORA",
-        configuracion.insumosSemanalesHora
+        configuracion.insumosSemanalesHora,
       );
       await crearOActualizarParametro(
         "INSUMOS_SEMANALES_NOTIFICACION",
-        String(configuracion.insumosSemanalesNotificacion)
+        String(configuracion.insumosSemanalesNotificacion),
       );
 
       // Guardar parámetros de pedidos automáticos
       await crearOActualizarParametro(
         "PEDIDOS_AUTOMATICOS_HABILITADO",
-        String(configuracion.pedidosAutomaticosHabilitado)
+        String(configuracion.pedidosAutomaticosHabilitado),
       );
       await crearOActualizarParametro(
         "PEDIDOS_AUTOMATICOS_DIA",
-        configuracion.pedidosAutomaticosDia
+        configuracion.pedidosAutomaticosDia,
       );
       await crearOActualizarParametro(
         "PEDIDOS_AUTOMATICOS_HORA",
-        configuracion.pedidosAutomaticosHora
+        configuracion.pedidosAutomaticosHora,
       );
       await crearOActualizarParametro(
         "PEDIDOS_AUTOMATICOS_NOTIFICACION",
-        String(configuracion.pedidosAutomaticosNotificacion)
+        String(configuracion.pedidosAutomaticosNotificacion),
       );
 
       // Guardar parámetros de reintentos
       await crearOActualizarParametro(
         "CANTIDAD_REINTENTOS_PEDIDOS",
-        String(configuracion.cantidadReintentosPedidos)
+        String(configuracion.cantidadReintentosPedidos),
       );
       await crearOActualizarParametro(
         "INTERVALO_REINTENTOS_PEDIDOS",
-        String(configuracion.intervaloReintentosPedidos)
+        String(configuracion.intervaloReintentosPedidos),
       );
 
       // Guardar parámetros de finalización automática
       await crearOActualizarParametro(
         "FINALIZACION_AUTOMATICA_HABILITADO",
-        String(configuracion.finalizacionAutomaticaHabilitado)
+        String(configuracion.finalizacionAutomaticaHabilitado),
       );
       await crearOActualizarParametro(
         "FINALIZACION_AUTOMATICA_HORA",
-        configuracion.finalizacionAutomaticaHora
+        configuracion.finalizacionAutomaticaHora,
       );
 
       setMensaje({
@@ -226,7 +226,7 @@ const GeneracionAutomatica = () => {
     try {
       const response = await API.post(
         "/generacion-automatica/generar-insumos-semanales",
-        {}
+        {},
       );
       setMensaje({
         tipo: "success",
@@ -249,7 +249,7 @@ const GeneracionAutomatica = () => {
     try {
       const response = await API.post(
         "/generacion-automatica/generar-pedidos-automaticos",
-        {}
+        {},
       );
       setMensaje({
         tipo: "success",
@@ -298,6 +298,7 @@ const GeneracionAutomatica = () => {
     return minutos;
   };
 
+
   if (loading) {
     return (
       <div className="text-center my-4">
@@ -325,6 +326,121 @@ const GeneracionAutomatica = () => {
           </div>
         )}
 
+               {/* Sección: Finalización Automática */}
+        <div className="card mb-4">
+          <div className="card-header bg-light text-dark">
+            <h5 className="mb-0">
+              <i className="fas fa-calendar-check me-2"></i>
+              Finalización Automática de Planificaciones
+            </h5>
+          </div>
+          <div className="card-body">
+            <div className="mb-3">
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="finalizacionAutomatica"
+                  checked={configuracion.finalizacionAutomaticaHabilitado}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "finalizacionAutomaticaHabilitado",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <label
+                  className="form-check-label"
+                  htmlFor="finalizacionAutomatica"
+                >
+                  <strong>Habilitar finalización automática</strong> de
+                  planificaciones cuando alcancen su fecha final
+                </label>
+              </div>
+              <small className="text-muted d-block mt-2">
+                Cuando está habilitado, las planificaciones se finalizarán
+                automáticamente en la fecha final a la hora configurada
+              </small>
+            </div>
+
+            {configuracion.finalizacionAutomaticaHabilitado && (
+              <>
+                <div className="row mb-3">
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">
+                      <strong>Hora de Finalización</strong>
+                    </label>
+                    <div className="d-flex gap-2 align-items-center">
+                      <select
+                        className="form-select"
+                        style={{ maxWidth: "80px" }}
+                        value={
+                          configuracion.finalizacionAutomaticaHora?.split(
+                            ":",
+                          )[0] || "20"
+                        }
+                        onChange={(e) =>
+                          handleInputChange(
+                            "finalizacionAutomaticaHora",
+                            `${e.target.value}:${
+                              configuracion.finalizacionAutomaticaHora?.split(
+                                ":",
+                              )[1] || "00"
+                            }`,
+                          )
+                        }
+                      >
+                        {obtenerHorasFinalizacion().map((hora) => (
+                          <option key={hora.valor} value={hora.valor}>
+                            {hora.label}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="fw-bold">:</span>
+                      <select
+                        className="form-select"
+                        style={{ maxWidth: "80px" }}
+                        value={
+                          configuracion.finalizacionAutomaticaHora?.split(
+                            ":",
+                          )[1] || "00"
+                        }
+                        onChange={(e) =>
+                          handleInputChange(
+                            "finalizacionAutomaticaHora",
+                            `${
+                              configuracion.finalizacionAutomaticaHora?.split(
+                                ":",
+                              )[0] || "20"
+                            }:${e.target.value}`,
+                          )
+                        }
+                      >
+                        {obtenerMinutosDisponibles().map((minuto) => (
+                          <option key={minuto.valor} value={minuto.valor}>
+                            {minuto.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <small className="text-muted">
+                      Hora a la que se finalizarán las planificaciones
+                    </small>
+                  </div>
+                </div>
+
+                <div className="alert alert-warning">
+                  <i className="fas fa-exclamation-triangle me-2"></i>
+                  <strong>Nota:</strong> La finalización se ejecutará
+                  diariamente a la hora configurada. Si hay una planificación
+                  activa cuya fecha final coincide con el día actual, será
+                  finalizada automáticamente.
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Sección: Generación de Insumos Semanales */}
         <div className="card mb-4">
           <div className="card-header bg-light text-dark">
@@ -344,7 +460,7 @@ const GeneracionAutomatica = () => {
                   onChange={(e) =>
                     handleInputChange(
                       "insumosSemanalesHabilitado",
-                      e.target.checked
+                      e.target.checked,
                     )
                   }
                 />
@@ -404,9 +520,9 @@ const GeneracionAutomatica = () => {
                             "insumosSemanalesHora",
                             `${e.target.value}:${
                               configuracion.insumosSemanalesHora?.split(
-                                ":"
+                                ":",
                               )[1] || "00"
-                            }`
+                            }`,
                           )
                         }
                       >
@@ -431,9 +547,9 @@ const GeneracionAutomatica = () => {
                             "insumosSemanalesHora",
                             `${
                               configuracion.insumosSemanalesHora?.split(
-                                ":"
+                                ":",
                               )[0] || "08"
-                            }:${e.target.value}`
+                            }:${e.target.value}`,
                           )
                         }
                       >
@@ -461,7 +577,7 @@ const GeneracionAutomatica = () => {
                       onChange={(e) =>
                         handleInputChange(
                           "insumosSemanalesNotificacion",
-                          e.target.checked
+                          e.target.checked,
                         )
                       }
                     />
@@ -480,7 +596,7 @@ const GeneracionAutomatica = () => {
                   <strong>Próxima ejecución:</strong>{" "}
                   {
                     diasSemana.find(
-                      (d) => d.valor === configuracion.insumosSemanalesDia
+                      (d) => d.valor === configuracion.insumosSemanalesDia,
                     )?.label
                   }{" "}
                   a las {configuracion.insumosSemanalesHora}
@@ -509,7 +625,7 @@ const GeneracionAutomatica = () => {
                   onChange={(e) =>
                     handleInputChange(
                       "pedidosAutomaticosHabilitado",
-                      e.target.checked
+                      e.target.checked,
                     )
                   }
                 />
@@ -540,7 +656,7 @@ const GeneracionAutomatica = () => {
                       onChange={(e) =>
                         handleInputChange(
                           "pedidosAutomaticosDia",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                     >
@@ -572,9 +688,9 @@ const GeneracionAutomatica = () => {
                             "pedidosAutomaticosHora",
                             `${e.target.value}:${
                               configuracion.pedidosAutomaticosHora?.split(
-                                ":"
+                                ":",
                               )[1] || "00"
-                            }`
+                            }`,
                           )
                         }
                       >
@@ -597,9 +713,9 @@ const GeneracionAutomatica = () => {
                             "pedidosAutomaticosHora",
                             `${
                               configuracion.pedidosAutomaticosHora?.split(
-                                ":"
+                                ":",
                               )[0] || "09"
-                            }:${e.target.value}`
+                            }:${e.target.value}`,
                           )
                         }
                       >
@@ -631,7 +747,7 @@ const GeneracionAutomatica = () => {
                       onChange={(e) =>
                         handleInputChange(
                           "cantidadReintentosPedidos",
-                          parseInt(e.target.value)
+                          parseInt(e.target.value),
                         )
                       }
                     />
@@ -654,7 +770,7 @@ const GeneracionAutomatica = () => {
                       onChange={(e) =>
                         handleInputChange(
                           "intervaloReintentosPedidos",
-                          parseInt(e.target.value)
+                          parseInt(e.target.value),
                         )
                       }
                     />
@@ -674,7 +790,7 @@ const GeneracionAutomatica = () => {
                       onChange={(e) =>
                         handleInputChange(
                           "pedidosAutomaticosNotificacion",
-                          e.target.checked
+                          e.target.checked,
                         )
                       }
                     />
@@ -693,7 +809,7 @@ const GeneracionAutomatica = () => {
                   <strong>Próxima ejecución:</strong>{" "}
                   {
                     diasSemana.find(
-                      (d) => d.valor === configuracion.pedidosAutomaticosDia
+                      (d) => d.valor === configuracion.pedidosAutomaticosDia,
                     )?.label
                   }{" "}
                   a las {configuracion.pedidosAutomaticosHora}
@@ -703,169 +819,6 @@ const GeneracionAutomatica = () => {
           </div>
         </div>
 
-        {/* Sección: Finalización Automática */}
-        <div className="card mb-4">
-          <div className="card-header bg-light text-dark">
-            <h5 className="mb-0">
-              <i className="fas fa-calendar-check me-2"></i>
-              Finalización Automática de Planificaciones
-            </h5>
-          </div>
-          <div className="card-body">
-            <div className="mb-3">
-              <div className="form-check">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="finalizacionAutomatica"
-                  checked={configuracion.finalizacionAutomaticaHabilitado}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "finalizacionAutomaticaHabilitado",
-                      e.target.checked
-                    )
-                  }
-                />
-                <label
-                  className="form-check-label"
-                  htmlFor="finalizacionAutomatica"
-                >
-                  <strong>Habilitar finalización automática</strong> de
-                  planificaciones cuando alcancen su fecha final
-                </label>
-              </div>
-              <small className="text-muted d-block mt-2">
-                Cuando está habilitado, las planificaciones se finalizarán
-                automáticamente en la fecha final a la hora configurada
-              </small>
-            </div>
-
-            {configuracion.finalizacionAutomaticaHabilitado && (
-              <>
-                <div className="row mb-3">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      <strong>Hora de Finalización</strong>
-                    </label>
-                    <div className="d-flex gap-2 align-items-center">
-                      <select
-                        className="form-select"
-                        style={{ maxWidth: "80px" }}
-                        value={
-                          configuracion.finalizacionAutomaticaHora?.split(
-                            ":"
-                          )[0] || "20"
-                        }
-                        onChange={(e) =>
-                          handleInputChange(
-                            "finalizacionAutomaticaHora",
-                            `${e.target.value}:${
-                              configuracion.finalizacionAutomaticaHora?.split(
-                                ":"
-                              )[1] || "00"
-                            }`
-                          )
-                        }
-                      >
-                        {obtenerHorasFinalizacion().map((hora) => (
-                          <option key={hora.valor} value={hora.valor}>
-                            {hora.label}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="fw-bold">:</span>
-                      <select
-                        className="form-select"
-                        style={{ maxWidth: "80px" }}
-                        value={
-                          configuracion.finalizacionAutomaticaHora?.split(
-                            ":"
-                          )[1] || "00"
-                        }
-                        onChange={(e) =>
-                          handleInputChange(
-                            "finalizacionAutomaticaHora",
-                            `${
-                              configuracion.finalizacionAutomaticaHora?.split(
-                                ":"
-                              )[0] || "20"
-                            }:${e.target.value}`
-                          )
-                        }
-                      >
-                        {obtenerMinutosDisponibles().map((minuto) => (
-                          <option key={minuto.valor} value={minuto.valor}>
-                            {minuto.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <small className="text-muted">
-                      Hora a la que se finalizarán las planificaciones
-                    </small>
-                  </div>
-                </div>
-
-                <div className="alert alert-warning">
-                  <i className="fas fa-exclamation-triangle me-2"></i>
-                  <strong>Nota:</strong> La finalización se ejecutará
-                  diariamente a la hora configurada. Si hay una planificación
-                  activa cuya fecha final coincide con el día actual, será
-                  finalizada automáticamente.
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Sección: Pruebas Manuales */}
-        <div className="card mb-4">
-          <div className="card-header bg-light text-dark">
-            <h5 className="mb-0">
-              <i className="fas fa-flask me-2"></i>
-              Pruebas Manuales
-            </h5>
-          </div>
-          <div className="card-body">
-            <p className="text-muted">
-              Usa estos botones para ejecutar manualmente la generación de
-              insumos y pedidos, útil para probar antes de habilitar la
-              automación.
-            </p>
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <button
-                  type="button"
-                  className="btn btn-outline-primary w-100"
-                  onClick={ejecutarGeneracionInsumos}
-                  disabled={saving}
-                >
-                  <i className="fas fa-boxes me-2"></i>
-                  {saving ? "Generando..." : "Generar Insumos Ahora"}
-                </button>
-                <small className="text-muted d-block mt-2">
-                  Ejecuta inmediatamente la generación de insumos semanales
-                </small>
-              </div>
-              <div className="col-md-6 mb-3">
-                <button
-                  type="button"
-                  className="btn btn-outline-success w-100"
-                  onClick={ejecutarGeneracionPedidos}
-                  disabled={saving}
-                >
-                  <i className="fas fa-shopping-cart me-2"></i>
-                  {saving ? "Generando..." : "Generar Pedidos Ahora"}
-                </button>
-                <small className="text-muted d-block mt-2">
-                  Ejecuta inmediatamente la generación de pedidos automáticos
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Resumen */}
         <div className="card mb-4 bg-light">
           <div className="card-header bg-light">
             <h5 className="mb-0">
@@ -875,6 +828,33 @@ const GeneracionAutomatica = () => {
           </div>
           <div className="card-body">
             <div className="row">
+              <div className="col-md-4">
+                <div className="mb-2">
+                  <strong>Finalización Automática:</strong>
+                  <br />
+                  <span
+                    className={`badge ${
+                      configuracion.finalizacionAutomaticaHabilitado
+                        ? "bg-success"
+                        : "bg-danger"
+                    }`}
+                  >
+                    {configuracion.finalizacionAutomaticaHabilitado
+                      ? "Habilitado"
+                      : "Deshabilitado"}
+                  </span>
+                  {configuracion.finalizacionAutomaticaHabilitado && (
+                    <div className="small mt-2">
+                      🕐 {configuracion.finalizacionAutomaticaHora}
+                      <br />
+                      <span className="text-muted">
+                        Diariamente en la hora indicada
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="col-md-4">
                 <div className="mb-2">
                   <strong>Insumos Semanales:</strong>
@@ -895,7 +875,7 @@ const GeneracionAutomatica = () => {
                       📅{" "}
                       {
                         diasSemana.find(
-                          (d) => d.valor === configuracion.insumosSemanalesDia
+                          (d) => d.valor === configuracion.insumosSemanalesDia,
                         )?.label
                       }
                       <br />
@@ -925,7 +905,8 @@ const GeneracionAutomatica = () => {
                       📅{" "}
                       {
                         diasSemana.find(
-                          (d) => d.valor === configuracion.pedidosAutomaticosDia
+                          (d) =>
+                            d.valor === configuracion.pedidosAutomaticosDia,
                         )?.label
                       }
                       <br />
@@ -933,33 +914,6 @@ const GeneracionAutomatica = () => {
                       <br />
                       🔄 {configuracion.cantidadReintentosPedidos} reintentos
                       cada {configuracion.intervaloReintentosPedidos} min
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="mb-2">
-                  <strong>Finalización Automática:</strong>
-                  <br />
-                  <span
-                    className={`badge ${
-                      configuracion.finalizacionAutomaticaHabilitado
-                        ? "bg-success"
-                        : "bg-danger"
-                    }`}
-                  >
-                    {configuracion.finalizacionAutomaticaHabilitado
-                      ? "Habilitado"
-                      : "Deshabilitado"}
-                  </span>
-                  {configuracion.finalizacionAutomaticaHabilitado && (
-                    <div className="small mt-2">
-                      🕐 {configuracion.finalizacionAutomaticaHora}
-                      <br />
-                      <span className="text-muted">
-                        Diariamente en la hora indicada
-                      </span>
                     </div>
                   )}
                 </div>

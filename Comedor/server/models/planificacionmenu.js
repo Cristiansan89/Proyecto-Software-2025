@@ -325,6 +325,13 @@ export class PlanificacionMenuModel {
     const { id_jornada, id_receta } = input;
 
     try {
+      // FIX: Eliminar recetas anteriores para evitar múltiples recetas por jornada
+      // (igual a asignarRecetaPorFechaServicio)
+      await connection.query(
+        `DELETE FROM RecetaJornada WHERE id_jornada = UUID_TO_BIN(?);`,
+        [id_jornada]
+      );
+
       const [result] = await connection.query(
         `INSERT INTO RecetaJornada (
                     id_recetaAsignada,
@@ -656,7 +663,7 @@ export class PlanificacionMenuModel {
                  LEFT JOIN RecetaJornada psr ON jp.id_jornada = psr.id_jornada
                  LEFT JOIN Recetas r ON psr.id_receta = r.id_receta
                  WHERE pm.fechaInicio <= ? AND pm.fechaFin >= ? 
-                   AND pm.estado IN ('Pendiente', 'Activo', 'Finalizado')
+                   AND pm.estado IN ('Pendiente', 'Programado', 'Activo', 'Finalizado')
                  ORDER BY pm.fechaInicio, jp.id_servicio, jp.diaSemana;`,
         [fechaFin, fechaInicio]
       );
@@ -711,6 +718,7 @@ export class PlanificacionMenuModel {
                 id_recetaAsignada: menu.id_recetaAsignada,
                 id_jornada: menu.id_jornada,
                 id_planificacion: menu.id_planificacion,
+                estado: menu.estado,
               });
               console.log(
                 `    ✅ Agregado: ${fechaFormato} - ${menu.nombreServicio} - ${menu.nombreReceta}`

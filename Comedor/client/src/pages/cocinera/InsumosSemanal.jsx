@@ -47,17 +47,17 @@ const InsumosSemanal = () => {
 
   // Conversiones estándar de unidades
   const CONVERSIONES = {
-    Gramo: { Kilogramo: 1000, Kilogramos: 1000, Gramo: 1, Gramos: 1 },
-    Kilogramo: { Gramo: 0.001, Gramos: 0.001, Kilogramo: 1, Kilogramos: 1 },
+    Gramo: { Kilogramo: 0.001, Kilogramos: 0.001, Gramo: 1, Gramos: 1 },
+    Kilogramo: { Gramo: 1000, Gramos: 1000, Kilogramo: 1, Kilogramos: 1 },
     Mililitro: {
-      Litro: 1000,
-      Litros: 1000,
+      Litro: 0.001,
+      Litros: 0.001,
       Mililitro: 1,
       Mililitros: 1,
     },
     Litro: {
-      Mililitro: 0.001,
-      Mililitros: 0.001,
+      Mililitro: 1000,
+      Mililitros: 1000,
       Litro: 1,
       Litros: 1,
     },
@@ -138,7 +138,7 @@ const InsumosSemanal = () => {
       setMenusSemanales(response || []);
 
       // 4. Calcular insumos desde menús de la semana actual
-      await calcularInsumosSemanales(response || [], comensalesMap);
+      await calcularInsumosSemanales(response || [], comensalesMap, fechaInicio, fechaFin);
     } catch (error) {
       //console.error("❌ Error al cargar datos semanales:", error);
       showError(
@@ -152,12 +152,12 @@ const InsumosSemanal = () => {
     }
   };
 
-  const calcularInsumosSemanales = async (menus, comensalesMap) => {
+  const calcularInsumosSemanales = async (menus, comensalesMap, fechaInicio, fechaFin) => {
     try {
       // Llamar al endpoint backend que calcula insumos correctamente
-      // console.log("📡 Obteniendo insumos desde backend...");
+      // Enviar fechaInicio y fechaFin para que el backend sepa qué semana calcular
       const response =
-        await generacionAutomaticaService.obtenerInsumosSemanales();
+        await generacionAutomaticaService.obtenerInsumosSemanales(fechaInicio, fechaFin);
 
       if (!response || !response.insumos) {
         //console.warn("⚠️ No se obtuvieron insumos del backend");
@@ -518,7 +518,24 @@ const InsumosSemanal = () => {
                 </h6>
                 <p className="mb-2">
                   Para generar insumos semanales, necesita crear una
-                  planificación de menús primero.
+                  planificación de menús primero. 
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!loading && menusSemanales.length > 0 && Object.keys(insumosRequeridos).length === 0 && (
+            <div
+              className="alert alert-success d-flex align-items-center"
+              role="alert"
+            >
+              <i className="fas fa-calendar-check me-3 fs-4"></i>
+              <div>
+                <h6 className="alert-heading mb-2">
+                  La planificación de menús ya está programada para esta semana
+                </h6>
+                <p className="mb-2">
+                  Se debería esperar a que se termine la planificación de la semana anterior. Y se Active esta.
                 </p>
               </div>
             </div>
@@ -539,6 +556,7 @@ const InsumosSemanal = () => {
                     <table className="table table-striped data-table">
                       <thead className="table-light">
                         <tr>
+                          <th>ID</th>
                           <th width="30%">Insumo</th>
                           <th width="25%">Cantidad Insumo</th>
                           <th width="25%">Stock Inicial</th>
@@ -547,7 +565,7 @@ const InsumosSemanal = () => {
                       </thead>
                       <tbody>
                         {Object.entries(insumosRequeridos).map(
-                          ([nombreInsumo, datos]) => {
+                          ([nombreInsumo, datos], index) => {
                             const mejorUnidad = obtenerMejorUnidad(
                               datos.cantidad,
                               datos.unidad,
@@ -578,6 +596,7 @@ const InsumosSemanal = () => {
 
                             return (
                               <tr key={nombreInsumo} className={classRow}>
+                                <td className="text-center"><strong>{index+1}</strong></td>
                                 <td width="30%">
                                   <strong>{nombreInsumo}</strong>
                                   {esFaltante && !datos.enPedido && (

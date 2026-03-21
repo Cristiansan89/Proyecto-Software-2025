@@ -42,11 +42,16 @@ const generacionAutomaticaService = {
   },
 
   // Obtener insumos semanales calculados
-  obtenerInsumosSemanales: async () => {
+  obtenerInsumosSemanales: async (fechaInicio = null, fechaFin = null) => {
     try {
-      const response = await API.get(
-        "/generacion-automatica/obtener-insumos-semanales"
-      );
+      let url = "/generacion-automatica/obtener-insumos-semanales";
+      
+      // Agregar parámetros de semana si se proporcionan
+      if (fechaInicio && fechaFin) {
+        url += `?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`;
+      }
+      
+      const response = await API.get(url);
       return response.data;
     } catch (error) {
       handleError(error);

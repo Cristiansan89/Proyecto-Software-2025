@@ -44,6 +44,19 @@ const planificacionMenuService = {
     }
   },
 
+  // Cambiar solo el estado de una planificación
+  cambiarEstado: async (id, estado) => {
+    try {
+      const response = await api.patch(
+        `/planificacion-menus/${id}/estado`,
+        { estado }
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Eliminar planificación
   delete: async (id) => {
     try {

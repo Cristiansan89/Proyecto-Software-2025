@@ -103,10 +103,12 @@ export class PlanificacionMenuController {
   // Actualiza un PlanificacionMenu parcialmente después de validar los datos recibidos
   update = async (req, res) => {
     try {
+      console.log("📝 UPDATE planificación recibido:", req.body);
       const result = validatePartialPlanificacionMenu(req.body);
 
       // Si la validación falla, responde con error 400
       if (!result.success) {
+        console.error("❌ Error de validación:", result.error.issues);
         return res.status(400).json({
           message: "Datos de entrada inválidos",
           errors: result.error.issues.map((err) => ({
@@ -116,6 +118,7 @@ export class PlanificacionMenuController {
         });
       }
 
+      console.log("✅ Validación exitosa. Datos:", result.data);
       const { id } = req.params;
       // Actualiza el PlanificacionMenu y responde con el objeto actualizado
       const updatedPlanificacionMenu = await this.planificacionMenuModel.update(
@@ -321,6 +324,28 @@ export class PlanificacionMenuController {
       res.json(planificaciones);
     } catch (error) {
       console.error("Error al obtener planificaciones por estado:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  };
+
+  // Cambiar estado de planificación (endpoint dedicado sin validación completa)
+  cambiarEstado = async (req, res) => {
+    const estadosValidos = ["Pendiente", "Programado", "Activo", "Finalizado", "Cancelado"];
+    try {
+      const { id } = req.params;
+      const { estado } = req.body;
+      if (!estado || !estadosValidos.includes(estado)) {
+        return res.status(400).json({
+          message: `Estado inválido. Debe ser uno de: ${estadosValidos.join(", ")}`
+        });
+      }
+      const planificacion = await this.planificacionMenuModel.update({ id, input: { estado } });
+      if (!planificacion) {
+        return res.status(404).json({ message: "Planificación no encontrada" });
+      }
+      res.json(planificacion);
+    } catch (error) {
+      console.error("Error al cambiar estado de planificación:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   };

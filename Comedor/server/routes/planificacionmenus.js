@@ -78,6 +78,11 @@ export const createPlanificacionMenuRouter = ({ planificacionMenuModel }) => {
   );
   planificacionMenusRouter.get("/:id", planificacionMenuController.getById);
   planificacionMenusRouter.patch(
+    "/:id/estado",
+    authRequired,
+    planificacionMenuController.cambiarEstado
+  );
+  planificacionMenusRouter.patch(
     "/:id/finalizar",
     authRequired,
     planificacionMenuController.finalizar

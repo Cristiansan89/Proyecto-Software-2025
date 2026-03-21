@@ -43,7 +43,7 @@ export const generarInsumosSemanales = async (req, res) => {
 
     // Obtener todas las jornadas (días de la semana) con sus recetas asignadas
     const [jornadas] = await connection.query(
-      `SELECT 
+      `SELECT DISTINCT
         BIN_TO_UUID(jp.id_jornada) as id_jornada,
         jp.diaSemana,
         BIN_TO_UUID(psr.id_receta) as id_receta,
@@ -67,7 +67,6 @@ export const generarInsumosSemanales = async (req, res) => {
 
     // Obtener insumos agrupados
     const insumosMap = {};
-    const comensales = planificacion.comensalesEstimados || 100; // Valor por defecto
 
     for (const jornada of jornadas) {
       if (!jornada.id_receta) {
@@ -80,6 +79,58 @@ export const generarInsumosSemanales = async (req, res) => {
       }
 
       try {
+        // Calcular comensales REALES por jornada (basado en RegistrosAsistencias)
+        const fechaLunes = new Date(planificacion.fechaInicio);
+        const dia = fechaLunes.getDay();
+        const dif = fechaLunes.getDate() - dia + (dia === 0 ? -6 : 1);
+        fechaLunes.setDate(dif);
+
+        // Construir fecha para esta jornada (lunes + offset según día de semana)
+        const diasArray = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const diaIndex = diasArray.indexOf(jornada.diaSemana.toLowerCase());
+        const fechaJornada = new Date(fechaLunes);
+        fechaJornada.setDate(fechaLunes.getDate() + (diaIndex === 0 ? 6 : diaIndex - 1));
+        const fechaJornadaStr = fechaJornada.toISOString().split('T')[0];
+
+        // Obtener ID del servicio desde la jornada
+        const [servicios] = await connection.query(
+          "SELECT id_servicio FROM Servicios WHERE nombre = ?",
+          [jornada.nombreServicio]
+        );
+        const id_servicio = servicios[0]?.id_servicio;
+
+        let comensalesParaJornada = 0;
+
+        if (id_servicio) {
+          // Consultar comensales REALES de RegistrosAsistencias
+          const [asistencias] = await connection.query(
+            `SELECT COALESCE(SUM(cantidadPresentes), 0) as total
+             FROM RegistrosAsistencias
+             WHERE fecha = ? AND id_servicio = ?`,
+            [fechaJornadaStr, id_servicio]
+          );
+
+          comensalesParaJornada = asistencias[0]?.total || 0;
+
+          if (comensalesParaJornada === 0) {
+            // Fallback: usar comensales estimados si no hay datos de asistencia
+            comensalesParaJornada = planificacion.comensalesEstimados || 100;
+            console.log(
+              `[${new Date().toISOString()}] ℹ️ Sin asistencias para ${fechaJornadaStr} - ${jornada.nombreServicio}, usando estimados: ${comensalesParaJornada}`
+            );
+          } else {
+            console.log(
+              `[${new Date().toISOString()}] ✓ Comensales reales para ${fechaJornadaStr} - ${jornada.nombreServicio}: ${comensalesParaJornada}`
+            );
+          }
+        } else {
+          // Si no existe el servicio, usar estimados
+          comensalesParaJornada = planificacion.comensalesEstimados || 100;
+          console.log(
+            `[${new Date().toISOString()}] ⚠️ Servicio "${jornada.nombreServicio}" no encontrado, usando estimados: ${comensalesParaJornada}`
+          );
+        }
+
         const [items] = await connection.query(
           "SELECT id_insumo, cantidadPorPorcion, unidadPorPorcion FROM ItemsRecetas WHERE id_receta = UUID_TO_BIN(?)",
           [jornada.id_receta]
@@ -112,7 +163,7 @@ export const generarInsumosSemanales = async (req, res) => {
 
           // Acumular en la unidadMedida del insumo (convirtiendo desde unidadPorPorcion si difieren)
           const cantidadConvertida = convertirEntrUnidades(
-            item.cantidadPorPorcion * comensales,
+            item.cantidadPorPorcion * comensalesParaJornada,
             item.unidadPorPorcion,
             insumosMap[key].unidad,
           );
@@ -332,7 +383,7 @@ export const generarPedidosAutomaticos = async (req, res) => {
         const idPedido = randomUUID();
         await connection.query(
           `INSERT INTO Pedidos (id_pedido, id_usuario, id_estadoPedido, id_proveedor, fechaEmision, origen, fechaAprobacion)
-           VALUES (UUID_TO_BIN(?), NULL, ?, UUID_TO_BIN(?), CURDATE(), 'Generado', CURDATE())`,
+           VALUES (UUID_TO_BIN(?), NULL, ?, UUID_TO_BIN(?), NOW(), 'Generado', NOW())`,
           [idPedido, idEstadoAprobado, pedido.id_proveedor]
         );
 
@@ -547,71 +598,98 @@ export const finalizarPlanificacionesAutomaticas = async (req, res) => {
     let planificacionActivada = null;
 
     if (!activasVigentes || activasVigentes.length === 0) {
-      // No existe ninguna planificación vigente → activar la más próxima en estado Pendiente
-      const [siguientes] = await connection.query(
+      // No existe ninguna planificación Activa vigente
+      
+      // ── PASO 2B: Cambiar Programado → Activo (la siguiente en cola) ──
+      const [programados] = await connection.query(
         `SELECT
           BIN_TO_UUID(id_planificacion) as id_planificacion,
           fechaInicio,
           fechaFin,
           comensalesEstimados
          FROM PlanificacionMenus
-         WHERE estado = 'Pendiente'
+         WHERE estado = 'Programado'
          ORDER BY fechaInicio ASC
          LIMIT 1`
       );
 
-      if (siguientes && siguientes.length > 0) {
-        const siguiente = siguientes[0];
-        const labelSig = `${siguiente.fechaInicio} - ${siguiente.fechaFin}`;
+      if (programados && programados.length > 0) {
+        const programado = programados[0];
+        const labelProg = `${programado.fechaInicio} - ${programado.fechaFin}`;
 
         await connection.query(
           `UPDATE PlanificacionMenus SET estado = 'Activo' WHERE id_planificacion = UUID_TO_BIN(?)`,
-          [siguiente.id_planificacion]
+          [programado.id_planificacion]
         );
 
-        console.log(`[Finalización] ✓ Planificación activada para semana entrante: ${labelSig}`);
+        console.log(`[Finalización] ✓ Planificación activada desde Programado: ${labelProg}`);
         planificacionActivada = {
-          id: siguiente.id_planificacion,
-          label: labelSig,
-          fechaInicio: siguiente.fechaInicio,
-          fechaFin: siguiente.fechaFin,
+          id: programado.id_planificacion,
+          label: labelProg,
+          fechaInicio: programado.fechaInicio,
+          fechaFin: programado.fechaFin,
         };
       } else {
-        // ── PASO 3: Sin planificación siguiente → alerta de brecha ──
-        console.warn(
-          "[Finalización] ⚠️ No hay planificaciones Pendientes para activar"
+        // ── PASO 2C: Si no hay Programado, cambiar Pendiente → Programado ──
+        const [pendientes] = await connection.query(
+          `SELECT
+            BIN_TO_UUID(id_planificacion) as id_planificacion,
+            fechaInicio,
+            fechaFin,
+            comensalesEstimados
+           FROM PlanificacionMenus
+           WHERE estado = 'Pendiente'
+           ORDER BY fechaInicio ASC
+           LIMIT 1`
         );
 
-        if (esViernes) {
-          console.warn(
-            "[Finalización] ⚠️ ALERTA: No hay planificación configurada para la semana entrante"
-          );
-          try {
-            const [parametros] = await connection.query(
-              "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo'",
-              ["TELEGRAM_COCINERA_CHAT_ID"]
-            );
-            const chatId =
-              parametros?.[0]?.valor || process.env.TELEGRAM_COCINERA_CHAT_ID;
+        if (pendientes && pendientes.length > 0) {
+          const pendiente = pendientes[0];
+          const labelPend = `${pendiente.fechaInicio} - ${pendiente.fechaFin}`;
 
-            if (chatId) {
-              const mensajeAlerta =
-                `⚠️ *ALERTA: Falta de Planificación Semanal*\n\n` +
+          await connection.query(
+            `UPDATE PlanificacionMenus SET estado = 'Programado' WHERE id_planificacion = UUID_TO_BIN(?)`,
+            [pendiente.id_planificacion]
+          );
+
+          console.log(`[Finalización] ✓ Planificación preparada para espera: ${labelPend}`);
+        } else {
+          // ── PASO 3: Sin planificación siguiente → alerta de brecha ──
+          console.warn(
+            "[Finalización] ⚠️ No hay planificaciones Pendientes para programar"
+          );
+
+          if (esViernes) {
+            console.warn(
+              "[Finalización] ⚠️ ALERTA: No hay planificación configurada para la semana entrante"
+            );
+            try {
+              const [parametros] = await connection.query(
+                "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo'",
+                ["TELEGRAM_COCINERA_CHAT_ID"]
+              );
+              const chatId =
+                parametros?.[0]?.valor || process.env.TELEGRAM_COCINERA_CHAT_ID;
+
+              if (chatId) {
+                const mensajeAlerta =
+                  `⚠️ *ALERTA: Falta de Planificación Semanal*\n\n` +
                 `No existe ninguna planificación de menú configurada para la semana entrante.\n\n` +
                 `📅 Fecha actual: ${hoy}\n\n` +
                 `Por favor, cree y configure la planificación lo antes posible para que el sistema pueda generar los pedidos automáticos.`;
 
-              await telegramService.initialize("sistema");
-              await telegramService.sendMessage(chatId, mensajeAlerta, "sistema");
-              console.log(
-                "[Finalización] ✓ Alerta de falta de planificación enviada por Telegram"
+                await telegramService.initialize("sistema");
+                await telegramService.sendMessage(chatId, mensajeAlerta, "sistema");
+                console.log(
+                  "[Finalización] ✓ Alerta de falta de planificación enviada por Telegram"
+                );
+              }
+            } catch (telegramError) {
+              console.warn(
+                "[Finalización] ⚠️ Error al enviar alerta por Telegram:",
+                telegramError.message
               );
             }
-          } catch (telegramError) {
-            console.warn(
-              "[Finalización] ⚠️ Error al enviar alerta por Telegram:",
-              telegramError.message
-            );
           }
         }
       }
@@ -644,20 +722,56 @@ export const finalizarPlanificacionesAutomaticas = async (req, res) => {
 // Obtener insumos semanales generados
 export const obtenerInsumosSemanales = async (req, res) => {
   try {
-    // Obtener la planificación activa o pendiente
-    const [planificaciones] = await connection.query(
-      "SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados FROM PlanificacionMenus WHERE estado IN ('Activo', 'Pendiente') ORDER BY estado = 'Activo' DESC, fechaInicio DESC LIMIT 1"
-    );
+    // Obtener parámetros de semana del frontend
+    const { fechaInicio: fechaInicioParam, fechaFin: fechaFinParam } = req.query;
 
-    if (!planificaciones || planificaciones.length === 0) {
-      return res.status(400).json({
-        success: false,
-        mensaje:
-          "No hay planificación activa o pendiente. Por favor, cree una planificación semanal primero.",
-      });
+    let planificacion;
+
+    if (fechaInicioParam && fechaFinParam) {
+      // Si se proporciona semana específica, buscar esa planificación exacta
+      // ⚠️ SOLO ACTIVOS: Solo mostrar insumos de planificaciones en estado 'Activo'
+      const [planificaciones] = await connection.query(
+        `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados 
+         FROM PlanificacionMenus 
+         WHERE DATE(fechaInicio) = ? AND DATE(fechaFin) = ? AND estado = 'Activo'
+         LIMIT 1`,
+        [fechaInicioParam, fechaFinParam]
+      );
+
+      if (!planificaciones || planificaciones.length === 0) {
+        return res.status(400).json({
+          success: false,
+          mensaje: `No existe planificación ACTIVA para la semana ${fechaInicioParam} - ${fechaFinParam}. Solo se muestran insumos de semanas en estado Activo.`,
+        });
+      }
+
+      planificacion = planificaciones[0];
+      console.log(
+        `[Insumos] Usando planificación Activa específica: ${fechaInicioParam} - ${fechaFinParam}`
+      );
+    } else {
+      // Fallback: obtener SOLO la planificación Activa actual
+      const [planificaciones] = await connection.query(
+        `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados 
+         FROM PlanificacionMenus 
+         WHERE estado = 'Activo' AND DATE(fechaFin) >= CURDATE()
+         ORDER BY fechaInicio ASC 
+         LIMIT 1`
+      );
+
+      if (!planificaciones || planificaciones.length === 0) {
+        return res.status(400).json({
+          success: false,
+          mensaje:
+            "No hay planificación ACTIVA en este momento. El cálculo de insumos solo se realiza para semanas en estado Activo.",
+        });
+      }
+
+      planificacion = planificaciones[0];
+      console.log(
+        `[Insumos] Usando planificación Activa vigente: ${planificacion.fechaInicio} - ${planificacion.fechaFin}`
+      );
     }
-
-    const planificacion = planificaciones[0];
 
     // Convertir fechaInicio a Date
     const fechaInicio = new Date(planificacion.fechaInicio);
@@ -678,8 +792,9 @@ export const obtenerInsumosSemanales = async (req, res) => {
     };
 
     // Obtener todas las jornadas (días de la semana) con sus recetas asignadas
+    // FIX: Usar DISTINCT para evitar duplicados si hay múltiples recetas por jornada
     const [jornadas] = await connection.query(
-      `SELECT 
+      `SELECT DISTINCT
         jp.id_jornada,
         jp.diaSemana,
         jp.id_servicio,
@@ -713,18 +828,8 @@ export const obtenerInsumosSemanales = async (req, res) => {
         // Calcular fecha de esta jornada
         const fechaStr = calcularFechaJornada(jornada.diaSemana);
 
-        // Obtener comensales específicos para este servicio/fecha
-        let comensalesParaCalculo = 119; // valor por defecto
-
-        // Mapeo de servicios a números de comensales típicos
-        const comensalesPorServicio = {
-          Desayuno: 119,
-          Almuerzo: 119,
-          Merienda: 109,
-        };
-
-        comensalesParaCalculo =
-          comensalesPorServicio[jornada.nombreServicio] || 119;
+        // Usar comensales reales de la planificación en lugar de valores fijos
+        const comensalesParaCalculo = planificacion.comensalesEstimados || 119;
 
         // console.log(
         //   `📌 ${fechaStr} - ${jornada.nombreServicio}: ${jornada.nombreReceta} (${comensalesParaCalculo} comensales específicos del servicio)`

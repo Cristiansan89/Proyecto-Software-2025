@@ -608,7 +608,7 @@ export class PedidoController {
       const fechaAprobacion = new Date();
 
       console.log(
-        `📅 Fecha de aprobación: ${fechaAprobacion.toISOString().split("T")[0]}`,
+        `📅 Fecha de aprobación: ${fechaAprobacion.toISOString()}`,
       );
 
       // 4. Cambiar estado a "Aprobado" (ID: 2)
@@ -616,14 +616,14 @@ export class PedidoController {
       console.log("Parámetros:", {
         id,
         id_estadoPedido: 2,
-        fechaAprobacion: fechaAprobacion.toISOString().split("T")[0],
+        fechaAprobacion: fechaAprobacion.toISOString(),
       });
 
       const pedidoAprobado = await this.pedidoModel.update({
         id,
         input: {
           id_estadoPedido: 2, // Aprobado
-          fechaAprobacion: fechaAprobacion.toISOString().split("T")[0],
+          fechaAprobacion: fechaAprobacion.toISOString(),
         },
       });
 
@@ -1032,7 +1032,8 @@ export class PedidoController {
         `SELECT 
           p.id_pedido,
           BIN_TO_UUID(p.id_pedido) as id_pedido_uuid,
-          p.fechaEmision,
+          DATE_FORMAT(p.fechaEmision, '%Y-%m-%d %H:%i') as fechaEmision,
+          DATE_FORMAT(p.fechaConfirmacion, '%Y-%m-%d %H:%i') as fechaConfirmacion,
           pr.id_proveedor,
           BIN_TO_UUID(pr.id_proveedor) as id_proveedor_uuid,
           pr.razonSocial,

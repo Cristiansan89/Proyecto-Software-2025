@@ -162,8 +162,14 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
   }, [planificacionSeleccionada]);
 
   useEffect(() => {
-    cargarMenusAsignados();
-    cargarComensalesSemana();
+    // Primero detectar la planificación de la semana, luego cargar menús con ese contexto
+    const cargarSemana = async () => {
+      const planDetectada = await actualizarPlanificacionParaSemana();
+      // Cargar menús usando la planificación detectada directamente
+      await cargarMenusAsignadosConPlan(planDetectada);
+      await cargarComensalesSemana();
+    };
+    cargarSemana();
   }, [semanaActual]);
 
   // Recargar menús cuando cambia el estado de la planificación
@@ -185,10 +191,15 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
         return fechaA - fechaB;
       });
 
-      // Buscar primero una planificación activa, luego pendiente
+      // Buscar primero una planificación activa, luego programada, luego pendiente
       let planificacion = planificacionesOrdenadas.find(
         (p) => p.estado === "Activo"
       );
+      if (!planificacion) {
+        planificacion = planificacionesOrdenadas.find(
+          (p) => p.estado === "Programado"
+        );
+      }
       if (!planificacion) {
         planificacion = planificacionesOrdenadas.find(
           (p) => p.estado === "Pendiente"
@@ -232,6 +243,34 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     }
   };
 
+  // Busca la planificación que corresponde a la semana visible al navegar
+  // Devuelve la planificación encontrada para uso directo (no sólo via setState)
+  const actualizarPlanificacionParaSemana = async () => {
+    if (planificacionSeleccionada) return planificacionSeleccionada;
+    try {
+      const semana = obtenerSemanaActual();
+      const fechaInicioSemana = semana[0].toISOString().split("T")[0];
+      const fechaFinSemana = semana[4].toISOString().split("T")[0];
+
+      const todasLasPlanificaciones = await planificacionMenuService.getAll();
+      const prioridad = ["Activo", "Programado", "Pendiente", "Finalizado"];
+      let planificacionEncontrada = null;
+      for (const estado of prioridad) {
+        planificacionEncontrada = todasLasPlanificaciones.find((p) => {
+          if (p.estado !== estado) return false;
+          const pInicio = new Date(p.fechaInicio).toISOString().split("T")[0];
+          const pFin = new Date(p.fechaFin).toISOString().split("T")[0];
+          return pInicio <= fechaFinSemana && pFin >= fechaInicioSemana;
+        });
+        if (planificacionEncontrada) break;
+      }
+      setPlanificacionActiva(planificacionEncontrada || null);
+      return planificacionEncontrada || null;
+    } catch {
+      return null;
+    }
+  };
+
   // Nueva función para verificar si el calendario está completo
   const verificarCalendarioCompleto = async () => {
     if (!planificacionActiva || planificacionActiva.estado !== "Pendiente") {
@@ -266,15 +305,9 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
 
     if (asignados >= totalEsperado) {
       try {
-        // Cambiar estado a Activo automáticamente
-        const planificacionActualizada = {
-          ...planificacionActiva,
-          estado: "Activo",
-        };
-
-        await planificacionMenuService.update(
+        await planificacionMenuService.cambiarEstado(
           planificacionActiva.id_planificacion,
-          planificacionActualizada
+          "Activo"
         );
 
         //console.log("✅ Planificación activada automáticamente");
@@ -311,17 +344,17 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     // 2. Definición dinámica de mensajes según estado
     const esPendiente = planificacionActiva.estado === "Pendiente";
     const tituloModal = esPendiente
-      ? "Activar Planificación"
+      ? "Programar Planificación"
       : "Finalizar Planificación";
     const mensajeModal = esPendiente
-      ? "¿Está seguro de que desea activar esta planificación para que sea visible en el calendario?"
+      ? "¿Está seguro de que desea programar esta planificación? Pasará a estado 'Programado' (en espera de activación automática)."
       : "¿Está seguro de que desea finalizar esta planificación? Esta acción es irreversible y cerrará el ciclo actual.";
 
     // 3. Confirmación de cambio de estado
     const confirmChange = await showConfirm(
       tituloModal,
       mensajeModal,
-      esPendiente ? "Sí, activar" : "Sí, finalizar",
+      esPendiente ? "Sí, programar" : "Sí, finalizar",
       "Volver"
     );
 
@@ -329,17 +362,17 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
 
     setFinalizandoPlanificacion(true);
     try {
-      let nuevoEstado = esPendiente ? "Activo" : "Finalizado";
+      let nuevoEstado = esPendiente ? "Programado" : "Finalizado";
       
       if (esPendiente) {
-        // Cambio a estado ACTIVO
-        await planificacionMenuService.update(
+        // Cambio a estado PROGRAMADO
+        await planificacionMenuService.cambiarEstado(
           planificacionActiva.id_planificacion,
-          { estado: "Activo" }
+          "Programado"
         );
         showSuccess(
           "Éxito",
-          "La planificación ha sido activada correctamente."
+          "La planificación ha sido programada correctamente y está en cola para activación."
         );
       } else {
         // Cambio a estado FINALIZADO
@@ -520,25 +553,23 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
   };
 
   const cargarMenusAsignados = async () => {
+    return cargarMenusAsignadosConPlan(planificacionActiva);
+  };
+
+  // Carga menús usando la planificación pasada como parámetro (evita problema de closure de estado)
+  const cargarMenusAsignadosConPlan = async (plan) => {
     try {
       let fechaInicio, fechaFin;
 
       // Si hay una planificación activa, cargar el rango completo
-      if (planificacionActiva) {
-        // Extraer solo la fecha sin la hora
-        fechaInicio = new Date(planificacionActiva.fechaInicio).toISOString().split("T")[0];
-        fechaFin = new Date(planificacionActiva.fechaFin).toISOString().split("T")[0];
-        /*console.log(
-          `📅 Cargando menús para la planificación completa: ${fechaInicio} a ${fechaFin}`
-        );*/
+      if (plan) {
+        fechaInicio = new Date(plan.fechaInicio).toISOString().split("T")[0];
+        fechaFin = new Date(plan.fechaFin).toISOString().split("T")[0];
       } else {
         // Si no, cargar solo la semana visible
         const semana = obtenerSemanaActual();
         fechaInicio = semana[0].toISOString().split("T")[0];
         fechaFin = semana[4].toISOString().split("T")[0];
-        /*console.log(
-          `📅 Cargando menús para la semana ${fechaInicio} a ${fechaFin}`
-        );*/
       }
 
       const response = await planificacionMenuService.getMenusSemana(
@@ -552,21 +583,13 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
         response.forEach((menu) => {
           if (menu && menu.fecha && menu.id_servicio && menu.id_receta) {
             const clave = `${menu.fecha}_${menu.id_servicio}`;
-            //console.log(`✅ Menú agregado: ${clave} - ${menu.nombreReceta}`);
             menusMap[clave] = menu;
-          } else {
-            //console.warn("⚠️ Menú incompleto descartado:", menu);
-            showWarning("Menú incompleto descartado al cargar menús asignados");
           }
         });
       }
 
-      /* console.log(
-        `📊 Total de menús cargados: ${Object.keys(menusMap).length}`
-      );*/
       setMenusAsignados(menusMap);
     } catch (error) {
-      //console.error("❌ Error al cargar menús asignados:", error);
       showError("Error al cargar menús asignados");
       setMenusAsignados({});
     }
@@ -811,10 +834,10 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                       {Object.keys(menusAsignados).length} asignaciones)
                     </span>
                     <button
-                      className="btn btn-success btn-sm"
+                      className="btn btn-info btn-sm"
                       onClick={finalizarPlanificacion}
                       disabled={finalizandoPlanificacion}
-                      title="Complete todas las asignaciones para activar automáticamente"
+                      title="Complete todas las asignaciones para cambiar a Programado"
                     >
                       {finalizandoPlanificacion ? (
                         <>
@@ -823,16 +846,22 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                             role="status"
                             aria-hidden="true"
                           ></span>
-                          Activando...
+                          Programando...
                         </>
                       ) : (
                         <>
-                          <i className="fas fa-play me-1"></i>
-                          Activar Planificación
+                          <i className="fas fa-calendar-check me-1"></i>
+                          Programar Planificación
                         </>
                       )}
                     </button>
                   </>
+                )}
+                {planificacionActiva.estado === "Programado" && (
+                  <span className="badge bg-info">
+                    <i className="fas fa-calendar-check me-1"></i>
+                    Planificación Programada (Esperando)
+                  </span>
                 )}
                 {planificacionActiva.estado === "Activo" && (
                   <span className="badge bg-warning">
@@ -969,55 +998,62 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                                 ) : null;
                               })()}
                               <div className="menu-acciones mt-2">
-                                {planificacionActiva?.estado === "Pendiente" ? (
-                                  <>
-                                    <button
-                                      className="btn-action btn-edit btn-sm me-1"
-                                      title={
-                                        estaDentroDePlanificacion
-                                          ? "Cambiar receta"
-                                          : "Esta fecha está fuera del rango de planificación"
-                                      }
-                                      disabled={!estaDentroDePlanificacion}
-                                      onClick={() =>
-                                        abrirModalAsignacion(
-                                          fecha,
-                                          servicio,
-                                          diaNombre
-                                        )
-                                      }
-                                    >
-                                      <i className="fas fa-edit"></i>
-                                    </button>
-                                    <button
-                                      className="btn-action btn-delete btn-sm"
-                                      title={
-                                        estaDentroDePlanificacion
-                                          ? "Eliminar asignación"
-                                          : "Esta fecha está fuera del rango de planificación"
-                                      }
-                                      disabled={
-                                        loading || !estaDentroDePlanificacion
-                                      }
-                                      onClick={() =>
-                                        eliminarReceta(
-                                          fecha,
-                                          servicio,
-                                          diaNombre
-                                        )
-                                      }
-                                    >
-                                      {loading ? (
-                                        <span
-                                          className="spinner-border spinner-border-sm"
-                                          role="status"
-                                          aria-hidden="true"
-                                        ></span>
-                                      ) : (
-                                        <i className="fas fa-trash"></i>
-                                      )}
-                                    </button>
-                                  </>
+                                {planificacionActiva?.estado === "Pendiente" || planificacionActiva?.estado === "Programado" ? (
+                                  planificacionActiva?.estado === "Pendiente" ? (
+                                    <>
+                                      <button
+                                        className="btn-action btn-edit btn-sm me-1"
+                                        title={
+                                          estaDentroDePlanificacion
+                                            ? "Cambiar receta"
+                                            : "Esta fecha está fuera del rango de planificación"
+                                        }
+                                        disabled={!estaDentroDePlanificacion}
+                                        onClick={() =>
+                                          abrirModalAsignacion(
+                                            fecha,
+                                            servicio,
+                                            diaNombre
+                                          )
+                                        }
+                                      >
+                                        <i className="fas fa-edit"></i>
+                                      </button>
+                                      <button
+                                        className="btn-action btn-delete btn-sm"
+                                        title={
+                                          estaDentroDePlanificacion
+                                            ? "Eliminar asignación"
+                                            : "Esta fecha está fuera del rango de planificación"
+                                        }
+                                        disabled={
+                                          loading || !estaDentroDePlanificacion
+                                        }
+                                        onClick={() =>
+                                          eliminarReceta(
+                                            fecha,
+                                            servicio,
+                                            diaNombre
+                                          )
+                                        }
+                                      >
+                                        {loading ? (
+                                          <span
+                                            className="spinner-border spinner-border-sm"
+                                            role="status"
+                                            aria-hidden="true"
+                                          ></span>
+                                        ) : (
+                                          <i className="fas fa-trash"></i>
+                                        )}
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <div className="text-muted small">
+                                      <i className="fas fa-lock me-1"></i>
+                                      Programado (Solo lectura)
+                                    </div>
+                                  )
                                 ) : planificacionActiva?.estado === "Activo" ? (
                                   <div className="text-muted small">
                                     <i className="fas fa-lock me-1"></i>
@@ -1075,6 +1111,11 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                                     Día no planificado
                                   </div>
                                 )
+                              ) : planificacionActiva?.estado === "Programado" ? (
+                                <div className="text-muted small text-center">
+                                  <i className="fas fa-lock me-1"></i>
+                                  Programado (Solo lectura)
+                                </div>
                               ) : planificacionActiva?.estado === "Activo" ? (
                                 <div className="text-muted small text-center">
                                   <i className="fas fa-lock me-1"></i>

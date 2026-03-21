@@ -1,7 +1,7 @@
 import { InventarioModel } from "../models/inventario.js";
 import { AlertaInventarioModel } from "../models/alertaInventario.js";
 import telegramService from "./telegramService.js";
-import { construirMensajePedidoTelegram, construirBotonesPedidoTelegram } from "../utils/mensajesTelegram.js";
+import { construirMensajePedidoTelegram, construirBotonesPedidoTelegram, construirBotonesAlertasInsumos } from "../utils/mensajesTelegram.js";
 import { formatearFechaLocal } from "../utils/formatoFechas.js";
 
 class AlertasInventarioService {
@@ -355,10 +355,14 @@ class AlertasInventarioService {
       // Construir mensaje con enlace
       const mensaje = this.construirMensajeAlertasConEnlace(insumos, enlacePedidos);
 
+      // Construir botones para acceso directo
+      const botones = construirBotonesAlertasInsumos(enlacePedidos);
+
       // Enviar por Telegram usando el bot del sistema
-      const resultado = await telegramService.sendMessage(
+      const resultado = await telegramService.sendMessageWithButtons(
         chatId,
         mensaje,
+        botones,
         "sistema"
       );
 
@@ -377,7 +381,7 @@ class AlertasInventarioService {
     }
   }
 
-  // Construir mensaje con enlace (sin botones)
+  // Construir mensaje con enlace (será acompañado de botones)
   construirMensajeAlertasConEnlace(insumos, enlace) {
     const tieneAgotados = insumos.some(i => i.estado === "Agotado");
     const emoji = tieneAgotados ? "🚨" : "⚠️";
@@ -394,9 +398,7 @@ class AlertasInventarioService {
     });
 
     mensaje += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-    mensaje += `📲 Para revisar y realizar el pedido, acceda al siguiente enlace:\n\n`;
-    mensaje += `[Ver insumos faltantes](${enlace})\n\n`;
-    mensaje += `⚡ El enlace abre directamente desde tu teléfono.`;
+    mensaje += `⚡ Haz clic en los botones de abajo para gestionar esta alerta.`;
 
     return mensaje;
   }
@@ -617,7 +619,7 @@ class AlertasInventarioService {
           console.log(`  ⏳ Obteniendo info del insumo ID ${id_insumo}...`);
           const [insumos] = await connection.query(
             `SELECT i.id_insumo, i.nombreInsumo, COALESCE(inv.cantidadActual, 0) as cantidadActual, 
-                     inv.nivelMinimoAlerta, BIN_TO_UUID(ip.id_proveedor) as id_proveedor
+                     inv.nivelMinimoAlerta, inv.stockMaximo, BIN_TO_UUID(ip.id_proveedor) as id_proveedor
               FROM Insumos i
               LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
               LEFT JOIN ProveedorInsumo ip ON i.id_insumo = ip.id_insumo
@@ -753,8 +755,8 @@ class AlertasInventarioService {
           // Agregar líneas de pedido
           for (const insumo of insumos) {
             const cantidadAComprar = Math.max(
-              insumo.nivelMinimoAlerta * 2 - insumo.cantidadActual,
-              insumo.nivelMinimoAlerta
+              (insumo.stockMaximo || insumo.nivelMinimoAlerta * 2) - insumo.cantidadActual,
+              0
             );
 
             console.log(`     ⏳ Agregando ${insumo.nombreInsumo} x${cantidadAComprar}...`);

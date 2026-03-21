@@ -20,9 +20,9 @@ export class PedidoModel {
                     pr.direccion as direccionProveedor,
                     pr.CUIT as cuitProveedor,
                     COALESCE(CONCAT(pe.nombre, ' ', pe.apellido), 'Sistema Automatico') as nombreUsuario,
-                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d') as fechaEmision,
+                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d %H:%i') as fechaEmision,
                     p.origen,
-                    DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d') as fechaAprobacion,
+                    DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d %H:%i') as fechaAprobacion,
                     p.motivoCancelacion
                  FROM Pedidos p
                  JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
@@ -53,9 +53,9 @@ export class PedidoModel {
                     pr.direccion as direccionProveedor,
                     pr.CUIT as cuitProveedor,
                     COALESCE(CONCAT(pe.nombre, ' ', pe.apellido), 'Sistema Automatico') as nombreUsuario,
-                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d') as fechaEmision,
+                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d %H:%i') as fechaEmision,
                     p.origen,
-                    DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d') as fechaAprobacion,
+                    DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d %H:%i') as fechaAprobacion,
                     p.motivoCancelacion
                  FROM Pedidos p
                  JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
@@ -78,9 +78,9 @@ export class PedidoModel {
       id_usuario,
       id_estadoPedido = 2, // Por defecto "Aprobado" (ID = 2)
       id_proveedor,
-      fechaEmision = new Date().toISOString().split("T")[0],
+      fechaEmision = new Date().toISOString(),
       origen = "Manual",
-      fechaAprobacion = new Date().toISOString().split("T")[0],
+      fechaAprobacion = new Date().toISOString(),
       motivoCancelacion = null,
     } = input;
 
@@ -243,10 +243,10 @@ export class PedidoModel {
                     BIN_TO_UUID(p.id_proveedor) as id_proveedor,
                     pr.razonSocial as nombreProveedor,
                     CONCAT(COALESCE(pe.nombre, ''), ' ', COALESCE(pe.apellido, '')) as nombreUsuario,
-                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d') as fechaPedido,
-                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d') as fechaEmision,
+                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d %H:%i') as fechaPedido,
+                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d %H:%i') as fechaEmision,
                     p.origen,
-                    DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d') as fechaAprobacion,
+                    DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d %H:%i') as fechaAprobacion,
                     DATE_FORMAT(p.fechaEntregaEsperada, '%Y-%m-%d') as fechaEntregaEsperada,
                     p.motivoCancelacion,
                     (SELECT COUNT(*) FROM DetallePedido dp WHERE dp.id_pedido = p.id_pedido) as cantidadInsumos,
@@ -283,9 +283,9 @@ export class PedidoModel {
                     BIN_TO_UUID(p.id_proveedor) as id_proveedor,
                     pr.razonSocial as nombreProveedor,
                     CONCAT(pe.nombre, ' ', pe.apellido) as nombreUsuario,
-                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d') as fechaEmision,
+                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d %H:%i') as fechaEmision,
                     p.origen,
-                    DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d') as fechaAprobacion,
+                    DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d %H:%i') as fechaAprobacion,
                     p.motivoCancelacion
                  FROM Pedidos p
                  JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor

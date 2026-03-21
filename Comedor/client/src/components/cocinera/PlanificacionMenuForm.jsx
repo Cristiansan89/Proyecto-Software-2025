@@ -29,6 +29,7 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
 
   const estados = [
     { value: "Pendiente", label: "Pendiente" },
+    { value: "Programado", label: "Programado" },
     { value: "Activo", label: "Activo" },
     { value: "Finalizado", label: "Finalizado" },
     { value: "Cancelado", label: "Cancelado" },
@@ -57,7 +58,7 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
         fechaInicio: formatDateForInput(planificacion.fechaInicio),
         fechaFin: formatDateForInput(planificacion.fechaFin),
         comensalesEstimados: planificacion.comensalesEstimados || "",
-        estado: planificacion.estado || "Activo",
+        estado: planificacion.estado || "Programado",
       });
     }
     setDinersCalculated(null);
@@ -124,23 +125,29 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
     setLoading(true);
 
     try {
-      const dataToSend = {
-        ...formData,
-        id_usuario: user?.idUsuario || user?.id_usuario || null,
-        comensalesEstimados: parseInt(formData.comensalesEstimados) || 0,
-        estado: formData.estado || "Pendiente",
-      };
-
-      console.log("Enviando datos:", dataToSend);
-
       if (mode === "create") {
+        const dataToSend = {
+          ...formData,
+          id_usuario: user?.idUsuario || user?.id_usuario || null,
+          comensalesEstimados: parseInt(formData.comensalesEstimados) || 0,
+          estado: formData.estado || "Pendiente",
+        };
+        console.log("Enviando datos:", dataToSend);
         await planificacionMenuService.create(dataToSend);
         showSuccess("Planificación creada correctamente");
       } else {
-        await planificacionMenuService.update(
-          planificacion.id_planificacion,
-          dataToSend
-        );
+        // Para UPDATE: usar endpoint dedicado de estado + update de fechas/comensales
+        const estadoCambio = formData.estado || "Pendiente";
+        const dataToSend = {
+          fechaInicio: formData.fechaInicio,
+          fechaFin: formData.fechaFin,
+          comensalesEstimados: parseInt(formData.comensalesEstimados) || 0,
+        };
+        console.log("Enviando datos:", { ...dataToSend, estado: estadoCambio });
+        await planificacionMenuService.update(planificacion.id_planificacion, dataToSend);
+        if (estadoCambio !== planificacion.estado) {
+          await planificacionMenuService.cambiarEstado(planificacion.id_planificacion, estadoCambio);
+        }
         showSuccess("Planificación actualizada correctamente");
       }
 

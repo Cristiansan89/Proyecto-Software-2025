@@ -243,6 +243,7 @@ const PlanificacionSemanal = () => {
                       <button
                         className="btn-action btn-edit"
                         title={
+                          planificacion.estado === "Programado" ||
                           planificacion.estado === "Activo" ||
                           planificacion.estado === "Finalizado"
                             ? "No se puede editar: planificación " +
@@ -251,11 +252,13 @@ const PlanificacionSemanal = () => {
                         }
                         onClick={() => openModal("edit", planificacion)}
                         disabled={
+                          planificacion.estado === "Programado" ||
                           planificacion.estado === "Activo" ||
                           planificacion.estado === "Finalizado"
                         }
                         style={{
                           display:
+                            planificacion.estado === "Programado" ||
                             planificacion.estado === "Activo" ||
                             planificacion.estado === "Finalizado"
                               ? "none"
@@ -267,6 +270,7 @@ const PlanificacionSemanal = () => {
                       <button
                         className="btn-action btn-delete"
                         title={
+                           planificacion.estado === "Programado" ||
                           planificacion.estado === "Activo" ||
                           planificacion.estado === "Finalizado"
                             ? "No se puede eliminar: planificación " +
@@ -277,11 +281,13 @@ const PlanificacionSemanal = () => {
                           handleDelete(planificacion.id_planificacion)
                         }
                         disabled={
+                          planificacion.estado === "Programado" ||
                           planificacion.estado === "Activo" ||
                           planificacion.estado === "Finalizado"
                         }
                         style={{
                           display:
+                            planificacion.estado === "Programado" ||
                             planificacion.estado === "Activo" ||
                             planificacion.estado === "Finalizado"
                               ? "none"

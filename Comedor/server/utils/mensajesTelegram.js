@@ -49,3 +49,23 @@ export function construirBotonesPedidoTelegram(enlace) {
     ],
   ];
 }
+
+/**
+ * Función para construir botones inline para alertas de insumos faltantes
+ * @param {string} enlace - URL para ver alertas de insumos
+ * @returns {Array} Array de arrays de botones para sendMessageWithButtons
+ */
+export function construirBotonesAlertasInsumos(enlace) {
+  return [
+    [
+      {
+        text: "📋 Ver Insumos Faltantes",
+        url: enlace,
+      },
+      {
+        text: "📦 Realizar Pedido",
+        url: enlace,
+      },
+    ],
+  ];
+}
