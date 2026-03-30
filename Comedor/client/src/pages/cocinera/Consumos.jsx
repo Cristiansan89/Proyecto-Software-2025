@@ -13,6 +13,8 @@ import {
   showInfo,
 } from "../../utils/alertService";
 import "../../styles/Consumos.css";
+import { formatDate, formatDateTime } from "../../utils/dateUtils";
+import { formatNumeroAR } from "../../utils/formatNumero";
 
 // Función para convertir unidades de medida
 function convertirUnidad(cantidad, unidadOrigen, unidadDestino) {
@@ -48,6 +50,18 @@ function convertirUnidad(cantidad, unidadOrigen, unidadDestino) {
     cantidad: Math.round(cantidadFinal * 100) / 100,
     unidad: unidadDestino,
   };
+}
+
+// Formatea la cantidad visualmente: sin decimales para Kg/L/Unidades, con 3 decimales para g/mL
+function formatearCantidad(cantidad, unidad) {
+  const sinDecimales = ["Kilogramos", "Litros", "Unidades"];
+  if (sinDecimales.includes(unidad)) {
+    return Number.isInteger(Number(cantidad))
+      ? String(Math.round(cantidad))
+      : parseFloat(Number(cantidad).toFixed(3)).toString().replace(/\.?0+$/, "");
+  }
+  // Gramos o Mililitros: hasta 3 decimales significativos
+  return parseFloat(Number(cantidad).toFixed(3)).toString();
 }
 
 // Función para obtener la mejor unidad de representación
@@ -253,19 +267,20 @@ const Consumos = () => {
         consumo.unidadMedida || "Unidades"
       );
       return [
-        formatearFecha(consumo.fecha),
+        formatDate(consumo.fecha),
         obtenerNombreServicio(consumo.id_servicio, consumo.nombreServicio),
         consumo.nombreInsumo || `Insumo #${consumo.id_insumo}` || "N/A",
-        convertida.cantidad,
+        formatNumeroAR(convertida.cantidad),
         convertida.unidad,
         consumo.fechaHoraGeneracion
-          ? new Date(consumo.fechaHoraGeneracion).toLocaleDateString("es-ES")
+          ? formatDate(consumo.fechaHoraGeneracion)
           : "N/A",
       ];
     });
 
+    // Separador ";" para evitar conflicto con coma decimal
     const csvContent = [headers, ...csvData]
-      .map((row) => row.map((field) => `"${field}"`).join(","))
+      .map((row) => row.map((field) => `"${field}"`).join(";"))
       .join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -299,15 +314,13 @@ const Consumos = () => {
       // Información del periodo
       doc.setFontSize(12);
       doc.text(
-        `Período: ${formatearFecha(filtros.fechaInicio)} - ${formatearFecha(
-          filtros.fechaFin
-        )}`,
+        `Período: ${formatDate(filtros.fechaInicio)} - ${formatDate(filtros.fechaFin)}`,
         14,
         32
       );
       doc.text(`Generado por: ${user.nombre} ${user.apellido}`, 14, 40);
       doc.text(
-        `Fecha de generación: ${new Date().toLocaleString("es-ES")}`,
+        `Fecha de generación: ${formatDateTime(new Date())}`,
         14,
         48
       );
@@ -336,10 +349,10 @@ const Consumos = () => {
           consumo.unidadMedida || "Unidades"
         );
         return [
-          new Date(consumo.fecha).toLocaleDateString("es-ES"),
+          formatDate(consumo.fecha),
           obtenerNombreServicio(consumo.id_servicio, consumo.nombreServicio),
           consumo.nombreInsumo || "N/A",
-          convertida.cantidad.toString(),
+          formatNumeroAR(convertida.cantidad),
           convertida.unidad,
         ];
       });
@@ -413,7 +426,7 @@ const Consumos = () => {
       📦 Insumo: ${
         consumo.nombreInsumo || `Insumo #${consumo.id_insumo}` || "N/A"
       }
-      ⚖️ Cantidad Utilizada: ${convertida.cantidad} ${convertida.unidad}
+      ⚖️ Cantidad Utilizada: ${formatearCantidad(convertida.cantidad, convertida.unidad)} ${convertida.unidad}
       📐 Cantidad Calculada: ${consumo.cantidadCalculada || "N/A"}
       📊 Varianza: ${varianza}%
       🆔 ID de Consumo: ${consumo.id_consumo}
@@ -423,7 +436,7 @@ const Consumos = () => {
       📋 Origen Cálculo: ${consumo.origenCalculo || "N/A"}
       📋 Fecha Hora Generación: ${
         consumo.fechaHoraGeneracion
-          ? new Date(consumo.fechaHoraGeneracion).toLocaleString("es-ES")
+          ? formatDateTime(consumo.fechaHoraGeneracion)
           : "N/A"
       }`
     );
@@ -667,9 +680,7 @@ const Consumos = () => {
                       <td>
                         <div className="d-flex flex-column">
                           <span className="fw-semibold">
-                            {new Date(consumo.fecha).toLocaleDateString(
-                              "es-ES"
-                            )}
+                            {formatDate(consumo.fecha)}
                           </span>
                         </div>
                       </td>
@@ -703,7 +714,7 @@ const Consumos = () => {
                           return (
                             <span className="badge bg-warning text-dark fs-6">
                               <i className="fas fa-weight me-1"></i>
-                              {convertida.cantidad} {convertida.unidad}
+                              {formatNumeroAR(convertida.cantidad)} {convertida.unidad}
                             </span>
                           );
                         })()}

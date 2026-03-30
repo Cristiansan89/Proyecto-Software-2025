@@ -6,6 +6,7 @@ import generacionAutomaticaService from "../../services/generacionAutomaticaServ
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "../../styles/InsumosSemanal.css";
+import { formatDate, formatDateTime } from "../../utils/dateUtils";
 
 const InsumosSemanal = () => {
   const { isAuthenticated, user } = useAuth();
@@ -17,6 +18,7 @@ const InsumosSemanal = () => {
   const [comensalesData, setComensalesData] = useState({});
   const [generandoPedidos, setGenerandoPedidos] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  const [detallesCalculo, setDetallesCalculo] = useState({});
 
   const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
@@ -195,8 +197,14 @@ const InsumosSemanal = () => {
       }
 
       setInsumosRequeridos(insumosMap);
+
+      // Guardar detalles de cálculo para descarga de auditoría
+      if (response.detallesCalculo) {
+        setDetallesCalculo(response.detallesCalculo);
+      }
     } catch (error) {
       //console.error("❌ Error al calcular insumos:", error);
+      setDetallesCalculo({});
       showError(
         "Error",
         "❌ Ocurrió un error al calcular los insumos. Por favor, intente nuevamente más tarde.",
@@ -244,6 +252,21 @@ const InsumosSemanal = () => {
 
     return cantidad * conversiones[unidadDestino];
   };
+
+  // Formatea la cantidad visualmente: sin decimales para Kg/L/Unidades, con 3 decimales para g/mL
+  const formatearCantidad = (cantidad, unidad) => {
+    const sinDecimales = ["Kilogramos", "Litros", "Unidades"];
+    if (sinDecimales.includes(unidad)) {
+      return Number.isInteger(Number(cantidad))
+        ? String(Math.round(cantidad))
+        : parseFloat(Number(cantidad).toFixed(3)).toString().replace(/\.?0+$/, "").replace(".", ",");
+    }
+    return parseFloat(Number(cantidad).toFixed(3)).toString().replace(".", ",");
+  };
+
+  // Formatea un número con 3 decimales usando coma como separador
+  const formatConComa = (numero) =>
+    parseFloat(Number(numero).toFixed(3)).toFixed(3).replace(".", ",");
 
   const obtenerMejorUnidad = (cantidad, unidadOriginal) => {
     // Para gramos: si es >= 1000, convertir a kilogramos
@@ -319,19 +342,11 @@ const InsumosSemanal = () => {
     // Información de la semana
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    const fechaInicio = semana[0].toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-    const fechaFin = semana[4].toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    const fechaInicio = formatDate(semana[0]);
+    const fechaFin = formatDate(semana[4]);
     doc.text(`Semana: ${fechaInicio} a ${fechaFin}`, 14, 25);
     doc.text(
-      `Fecha de generación: ${new Date().toLocaleDateString("es-ES")}`,
+      `Fecha de generación: ${formatDate(new Date())}`,
       14,
       32,
     );
@@ -342,15 +357,15 @@ const InsumosSemanal = () => {
         const mejorUnidad = obtenerMejorUnidad(datos.cantidad, datos.unidad);
         const stockDisponible = datos.cantidad_disponible || 0;
         const diferencia = parseFloat(
-          (stockDisponible - mejorUnidad.cantidad).toFixed(2),
+          (stockDisponible - mejorUnidad.cantidad).toFixed(3),
         );
 
         return [
           nombreInsumo,
           `${datos.cantidad} ${datos.unidad}`,
-          `${mejorUnidad.cantidad.toFixed(2)} ${mejorUnidad.unidad}`,
+          `${mejorUnidad.cantidad.toFixed(3)} ${mejorUnidad.unidad}`,
           `${stockDisponible} ${datos.unidad_inventario}`,
-          `${diferencia.toFixed(2)} ${mejorUnidad.unidad}`,
+          `${diferencia.toFixed(3)} ${mejorUnidad.unidad}`,
         ];
       },
     );
@@ -583,7 +598,7 @@ const InsumosSemanal = () => {
                             const diferencia = parseFloat(
                               (
                                 stockDisponibleEnMejorUnidad - cantidadNecesaria
-                              ).toFixed(2),
+                              ).toFixed(3),
                             );
 
                             const esFaltante = diferencia < 0;
@@ -615,15 +630,15 @@ const InsumosSemanal = () => {
 
                                 <td width="25%">
                                   <span className="badge bg-success">
-                                    {mejorUnidad.cantidad.toFixed(2)}{" "}
+                                    {formatearCantidad(mejorUnidad.cantidad, mejorUnidad.unidad)}{" "}
                                     {mejorUnidad.unidad}
                                   </span>
                                 </td>
                                 <td width="25%">
                                   <span className="badge bg-info text-dark">
                                     {datos.cantidad_disponible
-                                      ? datos.cantidad_disponible.toFixed(2)
-                                      : "0"}{" "}
+                                      ? formatConComa(datos.cantidad_disponible)
+                                      : "0,000"}{" "}
                                     {datos.unidad_inventario}
                                   </span>
                                 </td>
@@ -633,7 +648,7 @@ const InsumosSemanal = () => {
                                       esFaltante ? "bg-danger" : "bg-success"
                                     }`}
                                   >
-                                    {diferencia.toFixed(2)} {mejorUnidad.unidad}
+                                    {formatConComa(diferencia)} {mejorUnidad.unidad}
                                   </span>
                                 </td>
                               </tr>
@@ -665,6 +680,15 @@ const InsumosSemanal = () => {
                     <i className="fas fa-download me-1"></i>
                     Descargar CSV
                   </button>
+                  {Object.keys(detallesCalculo).length > 0 && (
+                    <button
+                      className="btn btn-outline-secondary"
+                      onClick={generarTXTCalculo}
+                    >
+                      <i className="fas fa-calculator me-1"></i>
+                      Descargar Detalle de Cálculo (TXT)
+                    </button>
+                  )}
                   {/* Botón para generar pedidos por faltantes 
                   <button
                     className="btn btn-outline-danger"
@@ -685,17 +709,65 @@ const InsumosSemanal = () => {
     </div>
   );
 
+  function generarTXTCalculo() {
+    const semana = obtenerSemanaActual();
+    const fechaInicio = formatDate(semana[0]);
+    const fechaFin = formatDate(semana[4]);
+    const ahora = formatDateTime(new Date());
+
+    let txt = "=================================================\n";
+    txt += "        DETALLE DE CÁLCULO DE INSUMOS SEMANAL\n";
+    txt += "=================================================\n";
+    txt += `Semana: ${fechaInicio} a ${fechaFin}\n`;
+    txt += `Generado: ${ahora}\n`;
+    txt += "=================================================\n\n";
+
+    for (const [nombreInsumo, detalles] of Object.entries(detallesCalculo)) {
+      const totalInsumo = detalles.reduce((sum, d) => sum + d.subtotal, 0);
+      const unidadInsumo = detalles[0]?.unidad || "";
+
+      txt += `INSUMO: ${nombreInsumo}\n`;
+      txt += "-------------------------------------------------\n";
+
+      for (const d of detalles) {
+        txt += `  Día:      ${d.dia} (${d.fecha})\n`;
+        txt += `  Servicio: ${d.servicio}\n`;
+        txt += `  Receta:   ${d.receta}\n`;
+        txt += `  Fuente comensales: ${d.fuenteComensales}\n`;
+        txt += `  Cálculo: ${d.cantidadPorPorcion} ${d.unidad}/porción × ${d.comensalesUsados} personas = ${d.subtotal} ${d.unidad}\n`;
+        txt += `  Acumulado: ${d.acumuladoTrasEsteItem} ${d.unidad}\n`;
+        txt += "  . . . . . . . . . . . . . . . . . . . . . .\n";
+      }
+
+      txt += `  TOTAL SEMANA: ${totalInsumo.toFixed(3)} ${unidadInsumo}\n`;
+      txt += "\n";
+    }
+
+    txt += "=================================================\n";
+    txt += `Total de insumos distintos: ${Object.keys(detallesCalculo).length}\n`;
+    txt += "=================================================\n";
+
+    const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Detalle_Calculo_Insumos_${semana[0].toISOString().split("T")[0]}.txt`;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   function generarCSV() {
     let csv = "LISTA DE INSUMOS SEMANAL\n\n";
-    csv += `Semana: ${semana[0].toLocaleDateString(
-      "es-ES",
-    )} a ${semana[4].toLocaleDateString("es-ES")}\n\n`;
+    csv += `Semana: ${formatDate(semana[0])} a ${formatDate(semana[4])}\n\n`;
 
     csv += "Insumo,Cantidad,Unidad,Cantidad Convertida,Unidad Convertida\n";
 
     Object.entries(insumosRequeridos).forEach(([nombreInsumo, datos]) => {
       const mejorUnidad = obtenerMejorUnidad(datos.cantidad, datos.unidad);
-      csv += `"${nombreInsumo}",${datos.cantidad},${datos.unidad},${mejorUnidad.cantidad},${mejorUnidad.unidad}\n`;
+      csv += `"${nombreInsumo}",${parseFloat(datos.cantidad).toFixed(3)},${datos.unidad},${formatearCantidad(mejorUnidad.cantidad, mejorUnidad.unidad)},${mejorUnidad.unidad}\n`;
     });
 
     return csv;

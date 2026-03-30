@@ -3,6 +3,7 @@ import { AlertaInventarioModel } from "../models/alertaInventario.js";
 import telegramService from "./telegramService.js";
 import { construirMensajePedidoTelegram, construirBotonesPedidoTelegram, construirBotonesAlertasInsumos } from "../utils/mensajesTelegram.js";
 import { formatearFechaLocal } from "../utils/formatoFechas.js";
+import { formatDecimalAR } from "../utils/normalizeQuantity.js";
 
 class AlertasInventarioService {
   constructor() {
@@ -226,19 +227,19 @@ class AlertasInventarioService {
   // Validar si la alerta es realmente necesaria
   async validarAlerta(insumo) {
     try {
-      const cantidadActual = parseInt(insumo.cantidadActual || 0);
-      const nivelMinimo = parseInt(insumo.nivelMinimoAlerta || 0);
+      const cantidadActual = parseFloat(insumo.cantidadActual || 0);
+      const nivelMinimo = parseFloat(insumo.nivelMinimoAlerta || 0);
 
       // Log para diagnóstico
       console.log(`🔍 Validando alerta para ${insumo.nombreInsumo}:`);
-      console.log(`   Stock actual: ${cantidadActual}`);
-      console.log(`   Nivel mínimo: ${nivelMinimo}`);
+      console.log(`   Stock actual: ${cantidadActual.toFixed(3)}`);
+      console.log(`   Nivel mínimo: ${nivelMinimo.toFixed(3)}`);
       console.log(`   Estado actual: ${insumo.estado}`);
 
       // Si el stock actual es mayor que el nivel mínimo, la alerta no es válida
       if (cantidadActual > nivelMinimo && nivelMinimo > 0) {
         console.log(
-          `   ❌ Alerta inválida: Stock (${cantidadActual}) > Mínimo (${nivelMinimo})`
+          `   ❌ Alerta inválida: Stock (${cantidadActual.toFixed(3)}) > Mínimo (${nivelMinimo.toFixed(3)})`
         );
 
         // Actualizar estado a Normal si es necesario
@@ -417,8 +418,8 @@ class AlertasInventarioService {
     insumos.forEach((insumo, index) => {
       const estadoEmoji = insumo.estado === "Agotado" ? "🔴" : "🟡";
       mensaje += `${index + 1}. ${estadoEmoji} ${insumo.nombreInsumo}\n`;
-      mensaje += `   📊 Stock: ${Math.round(parseFloat(insumo.cantidadActual))} ${insumo.unidadMedida}\n`;
-      mensaje += `   📈 Mínimo: ${Math.round(parseFloat(insumo.nivelMinimoAlerta))} ${insumo.unidadMedida}\n`;
+      mensaje += `   📊 Stock: ${formatDecimalAR(insumo.cantidadActual || 0)} ${insumo.unidadMedida}\n`;
+      mensaje += `   📈 Mínimo: ${formatDecimalAR(insumo.nivelMinimoAlerta || 0)} ${insumo.unidadMedida}\n`;
       mensaje += `   ⚡ Estado: ${insumo.estado}\n\n`;
     });
 

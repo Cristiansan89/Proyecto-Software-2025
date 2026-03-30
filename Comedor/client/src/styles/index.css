@@ -25,6 +25,11 @@ body {
   overflow-x: hidden;
 }
 
+/* SweetAlert2 siempre por encima de cualquier modal/overlay personalizado */
+.swal2-container {
+  z-index: 99999 !important;
+}
+
 html {
   margin: 0;
   padding: 0;

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import auditoriaService from "../../services/auditoriaService";
+import { formatAuditDateTime, formatDate, formatDateTime } from "../../utils/dateUtils";
 
 const AuditoriaForm = ({ show, onHide }) => {
   const [loading, setLoading] = useState(false);
@@ -113,13 +114,7 @@ const AuditoriaForm = ({ show, onHide }) => {
   };
 
   const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleString("es-ES", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatAuditDateTime(fecha);
   };
 
   const generarPDF = async () => {
@@ -160,12 +155,12 @@ const AuditoriaForm = ({ show, onHide }) => {
       doc.setFontSize(10);
       doc.setTextColor(60, 60, 60);
 
-      const fechaGeneracion = new Date().toLocaleString("es-ES");
+      const fechaGeneracion = formatDateTime(new Date());
       doc.text(`Fecha de generación: ${fechaGeneracion}`, 40, yPosition);
       yPosition += 20;
 
       doc.text(
-        `Período: ${filtros.fechaInicio} al ${filtros.fechaFin}`,
+        `Período: ${formatDate(filtros.fechaInicio)} al ${formatDate(filtros.fechaFin)}`,
         40,
         yPosition,
       );

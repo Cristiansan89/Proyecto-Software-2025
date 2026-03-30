@@ -7,6 +7,7 @@ import asistenciasService from "../../services/asistenciasService";
 import API from "../../services/api.js";
 import "../../styles/MenuesDiaria.css";
 import { showError, showWarning } from "../../utils/alertService.js";
+import { formatNumeroAR } from "../../utils/formatNumero";
 
 const MenuesDiaria = () => {
   const { user } = useAuth();
@@ -30,6 +31,12 @@ const MenuesDiaria = () => {
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+  };
+
+  const formatearCantidadExacta = (valor, decimales = 3) => {
+    const num = Number(valor);
+    if (Number.isNaN(num)) return "0.000";
+    return num.toFixed(decimales);
   };
 
   // Servicios con orden de aparición en el día
@@ -384,11 +391,11 @@ const MenuesDiaria = () => {
     if (unidad.includes("gramos")) {
       if (cantidad >= 1000) {
         return {
-          cantidad: Math.round(cantidad / 1000 * 100) / 100, // Redondear a 2 decimales
+          cantidad: cantidad / 1000,
           unidad: "Kilogramos",
         };
       }
-      return { cantidad: Math.round(cantidad), unidad: "Gramos" };
+      return { cantidad, unidad: "Gramos" };
     }
 
     // Para mililitros: si es >= 1000, convertir a litros
@@ -397,19 +404,19 @@ const MenuesDiaria = () => {
       const cantidadEnLitros = cantidad / 1000;
       if (cantidadEnLitros >= 1) {
         return {
-          cantidad: Math.round(cantidadEnLitros * 100) / 100, // Redondear a 2 decimales
+          cantidad: cantidadEnLitros,
           unidad: "Litros",
         };
       }
-      return { cantidad: Math.round(cantidad), unidad: "Mililitros" };
+      return { cantidad, unidad: "Mililitros" };
     }
 
     // Para litros: mantener en litros
     if (unidad.includes("litros")) {
-      return { cantidad: Math.round(cantidad * 1000), unidad: "Mililitros" };
+      return { cantidad, unidad: "Litros" };
     }
 
-    return { cantidad: Math.round(cantidad), unidad: unidadOriginal };
+    return { cantidad, unidad: unidadOriginal };
   };
 
   const calcularIngredientesParaServicio = (idServicio) => {
@@ -457,17 +464,16 @@ const MenuesDiaria = () => {
         mejorUnidad
       );*/
 
-      // Formateo: si es entero mostrar sin decimales, si tiene fracción mostrar 1 decimal
-      const valor = Number(mejorUnidad.cantidad);
-      const cantidadFormateada = Number.isInteger(valor)
-        ? String(valor)
-        : valor.toFixed(1); // Mostrar solo 1 decimal
+      // Mostrar cantidades con formato regional (coma decimal) para visualización
+      const cantidadFormateada = formatNumeroAR(mejorUnidad.cantidad);
+      // Valor numérico puro para enviar al backend (sin formato de coma)
+      const cantidadNumerica = parseFloat(mejorUnidad.cantidad.toFixed(3));
 
       return {
         ...ingrediente,
         cantidadTotal,
         cantidadOptimizada: `${cantidadFormateada} ${mejorUnidad.unidad}`,
-        cantidadOptimizadaNumero: Math.round(mejorUnidad.cantidad * 100) / 100, // Asegurar número redondeado
+        cantidadOptimizadaNumero: cantidadNumerica,
         unidadOptimizada: mejorUnidad.unidad,
       };
     });
@@ -511,6 +517,7 @@ const MenuesDiaria = () => {
         try {
           const requestData = {
             id_servicio: idServicio,
+            id_jornada: menuDia[idServicio]?.id_jornada,
             id_usuario: user?.id_usuario || user?.idUsuario,
             fecha: fechaStr,
             detalles: ingredientes.map((ingrediente) => ({

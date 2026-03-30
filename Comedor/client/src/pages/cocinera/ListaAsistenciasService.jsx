@@ -132,9 +132,12 @@ const ListaAsistenciasService = () => {
       (sum, registro) => sum + (registro.cantidadPresentes || 0),
       0
     );
+    const registrosConPresencia = asistenciasData.filter(
+      (r) => (r.cantidadPresentes || 0) > 0
+    ).length;
     const porcentajeAsistencia =
       totalRegistros > 0
-        ? Math.round((totalPresentes / (totalRegistros * 30)) * 100)
+        ? Math.round((registrosConPresencia / totalRegistros) * 100)
         : 0;
 
     setEstadisticas({
@@ -293,6 +296,12 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
     return `${day}-${month}-${year} ${horaParte}`;
   };
 
+  const formatearCantidadExacta = (cantidad, decimales = 3) => {
+    const num = Number(cantidad);
+    if (Number.isNaN(num)) return "0.000";
+    return num.toFixed(decimales);
+  };
+
   const exportarMenuAPDF = async (fecha, idServicio, nombreServicio, menu) => {
     try {
       const doc = new jsPDF();
@@ -337,7 +346,7 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
 
         const ingredientesData = recetaDetalles.insumos.map((insumo) => [
           insumo.nombreInsumo || insumo.nombre || "Sin nombre",
-          `${insumo.cantidad} ${insumo.unidad || "unidad"}`,
+          `${formatearCantidadExacta(insumo.cantidad)} ${insumo.unidad || "unidad"}`,
         ]);
 
         autoTable(doc, {
@@ -545,7 +554,7 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
         <div className="col-md-4">
           <div className="card text-center">
             <div className="card-body">
-              <h6 className="card-title text-muted">% Asistencia</h6>
+              <h6 className="card-title text-muted">% Clases con Presencia</h6>
               <h2 className="text-info">
                 {estadisticas.porcentajeAsistencia}%
               </h2>

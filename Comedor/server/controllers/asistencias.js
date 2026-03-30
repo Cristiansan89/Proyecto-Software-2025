@@ -818,8 +818,8 @@ export class AsistenciaController {
       } else {
         // Crear nuevo registro
         await connection.query(
-          `INSERT INTO RegistrosAsistencias (id_grado, id_servicio, fecha, cantidadPresentes)
-           VALUES (?, ?, ?, ?)`,
+          `INSERT INTO RegistrosAsistencias (id_grado, id_servicio, fecha, cantidadPresentes, fechaCreacion, fechaActualizacion)
+           VALUES (?, ?, ?, ?, NOW(), NOW())`,
           [idGrado, idServicio, fecha, cantidadPresentes],
         );
 
@@ -924,8 +924,8 @@ export class AsistenciaController {
           } else {
             // Crear nuevo
             await connection.query(
-              `INSERT INTO RegistrosAsistencias (id_grado, id_servicio, fecha, cantidadPresentes)
-               VALUES (?, ?, ?, ?)`,
+              `INSERT INTO RegistrosAsistencias (id_grado, id_servicio, fecha, cantidadPresentes, fechaCreacion, fechaActualizacion)
+               VALUES (?, ?, ?, ?, NOW(), NOW())`,
               [
                 combinacion.id_grado,
                 combinacion.id_servicio,

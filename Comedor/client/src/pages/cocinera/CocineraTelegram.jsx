@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import api from "../../services/api";
 import "../../styles/CocineraTelegram.css";
 
 const CocineraTelegram = () => {
@@ -19,8 +19,8 @@ const CocineraTelegram = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/alertas-inventario/web/insumos-faltantes`,
+      const response = await api.get(
+        "/alertas-inventario/web/insumos-faltantes",
       );
       if (response.data.success) {
         setInsumos(response.data.insumos || []);
@@ -68,8 +68,8 @@ const CocineraTelegram = () => {
 
       const idsInsumos = insumos.map((i) => i.id_insumo).join(",");
 
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/alertas-inventario/web/realizar-pedido-automatico`,
+      const response = await api.post(
+        "/alertas-inventario/web/realizar-pedido-automatico",
         { idsInsumos, origen_pedido: 'Automático' },
       );
 

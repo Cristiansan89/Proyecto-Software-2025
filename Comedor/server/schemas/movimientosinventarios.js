@@ -36,11 +36,15 @@ const movimientoInventarioSchema = z.object({
     invalid_type_error: "Tipo de movimiento inválido",
   }),
   cantidadMovimiento: z
-    .number({
-      required_error: "La cantidad es requerida",
-      invalid_type_error: "La cantidad debe ser un número",
-    })
-    .positive("La cantidad debe ser positiva"),
+    .preprocess(
+      (val) => (val === "" || val === null || val === undefined ? undefined : parseFloat(val)),
+      z
+        .number({
+          required_error: "La cantidad es requerida",
+          invalid_type_error: "La cantidad debe ser un número",
+        })
+        .positive("La cantidad debe ser positiva")
+    ),
   comentarioMovimiento: z
     .string({
       invalid_type_error: "El comentario debe ser un texto",

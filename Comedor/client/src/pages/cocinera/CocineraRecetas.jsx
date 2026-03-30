@@ -11,6 +11,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import formatCantidad from "../../utils/formatCantidad";
 
 const CocineraRecetas = () => {
   const { user } = useAuth();
@@ -25,20 +26,6 @@ const CocineraRecetas = () => {
   const [itemsPerPage] = useState(12);
   const [loading, setLoading] = useState(false);
   const [filterEstado, setFilterEstado] = useState("");
-
-  // Función para formatear cantidad sin decimales innecesarios
-  const formatCantidad = (cantidad) => {
-    const num = parseFloat(cantidad);
-    // Si es un número entero, mostrar sin decimales
-    if (Number.isInteger(num)) {
-      return num.toString();
-    }
-    // Si tiene decimales, mostrar hasta 3 decimales pero sin ceros innecesarios
-    return num.toLocaleString("es-ES", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 3,
-    });
-  };
 
   useEffect(() => {
     loadRecetas();
@@ -498,7 +485,8 @@ const CocineraRecetas = () => {
                                       </span>
                                       <span className="text-muted">
                                         {formatCantidad(
-                                          ingrediente.cantidadPorPorcion
+                                          ingrediente.cantidadPorPorcion,
+                                          ingrediente.unidadPorPorcion
                                         )}{" "}
                                         {ingrediente.unidadPorPorcion}
                                       </span>

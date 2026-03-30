@@ -11,13 +11,9 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import formatCantidad from "../../utils/formatCantidad";
 
 const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
-  // Función helper para formatear cantidades
-  const formatCantidad = (cantidad) => {
-    return parseInt(cantidad) || 0;
-  };
-
   // Función para normalizar unidades (convertir minúsculas a mayúsculas correctas)
   const normalizarUnidad = (unidad) => {
     const unidadesMap = {
@@ -69,7 +65,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         // Formatear los ingredientes para evitar exceso de decimales y normalizar unidades
         const ingredientesFormateados = response.data.insumos.map((ing) => ({
           ...ing,
-          cantidadPorPorcion: formatCantidad(ing.cantidadPorPorcion),
+          cantidadPorPorcion: parseFloat(ing.cantidadPorPorcion) || 0,
           unidadPorPorcion: normalizarUnidad(ing.unidadPorPorcion),
         }));
         setIngredientes(ingredientesFormateados);
@@ -190,7 +186,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       const nuevoIngredienteCompleto = {
         id_insumo: nuevoIngrediente.id_insumo,
         nombreInsumo: insumoSeleccionado?.nombreInsumo || "Insumo desconocido",
-        cantidadPorPorcion: parseInt(nuevoIngrediente.cantidadPorPorcion),
+        cantidadPorPorcion: parseFloat(nuevoIngrediente.cantidadPorPorcion),
         unidadPorPorcion: nuevoIngrediente.unidadPorPorcion,
       };
 
@@ -263,7 +259,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         for (const ingrediente of ingredientes) {
           const payload = {
             id_insumo: ingrediente.id_insumo,
-            cantidadPorPorcion: parseInt(ingrediente.cantidadPorPorcion) || 0,
+            cantidadPorPorcion: parseFloat(ingrediente.cantidadPorPorcion) || 0,
             unidadPorPorcion: normalizarUnidad(ingrediente.unidadPorPorcion),
           };
 
@@ -329,7 +325,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           try {
             const payload = {
               id_insumo: ingrediente.id_insumo,
-              cantidadPorPorcion: parseInt(ingrediente.cantidadPorPorcion) || 0,
+              cantidadPorPorcion: parseFloat(ingrediente.cantidadPorPorcion) || 0,
               unidadPorPorcion: normalizarUnidad(ingrediente.unidadPorPorcion),
             };
 
@@ -636,8 +632,8 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                           type="number"
                           id="ingrediente_cantidad"
                           className="form-control"
-                          step="1"
-                          min="1"
+                          step="0.001"
+                          min="0.001"
                           value={nuevoIngrediente.cantidadPorPorcion}
                           onChange={(e) =>
                             setNuevoIngrediente({
@@ -645,7 +641,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                               cantidadPorPorcion: e.target.value,
                             })
                           }
-                          placeholder="1"
+                          placeholder="0.001"
                         />
                       </div>
                     </div>
@@ -737,7 +733,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                               {ingrediente.nombreInsumo}
                             </td>
                             <td className="small">
-                              {formatCantidad(ingrediente.cantidadPorPorcion)}
+                              {formatCantidad(ingrediente.cantidadPorPorcion, ingrediente.unidadPorPorcion)}
                             </td>
                             <td className="small">
                               {ingrediente.unidadPorPorcion}

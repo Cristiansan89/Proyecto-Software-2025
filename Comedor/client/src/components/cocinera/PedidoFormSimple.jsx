@@ -13,6 +13,7 @@ import {
   showInfo,
   showConfirm,
 } from "../../utils/alertService";
+import formatCantidad from "../../utils/formatCantidad";
 
 const CALIFICACION_BADGE = {
   Excelente: "success",
@@ -578,8 +579,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                           cantidad: e.target.value,
                         }))
                       }
-                      min="1"
-                      step="1"
+                      min="0.001"
+                      step="0.001"
                     />
                   </div>
                   <div className="col-md-2">
@@ -864,9 +865,9 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                           cantidad: e.target.value,
                         }))
                       }
-                      min="1"
-                      step="1"
-                      placeholder="0"
+                      min="0.001"
+                      step="0.001"
+                      placeholder="0.000"
                     />
                   </div>
                   <div className="col-md-3">
@@ -955,8 +956,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                                     e.target.value
                                   )
                                 }
-                                min="1"
-                                step="1"
+                                min="0.001"
+                                step="0.001"
                                 style={{ width: "80px", margin: "0 auto" }}
                               />
                             </td>
@@ -1058,8 +1059,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                             <td className="fw-medium">{a.nombreInsumo}</td>
                             <td className="text-center">
                               <span className="badge bg-secondary">
-                                {a.cantidad} {a.unidadMedida || "un."}
-                              </span>
+                                  {formatCantidad(a.cantidad, a.unidadMedida)} {a.unidadMedida || "un."}
+                                </span>
                             </td>
                             <td>
                               {a.proveedorAsignado ? (
@@ -1190,7 +1191,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                             <tr key={it.id_insumo}>
                               <td>{it.nombreInsumo}</td>
                               <td className="text-center fw-bold">
-                                {it.cantidad}
+                                {formatCantidad(it.cantidad, it.unidadMedida)}
                               </td>
                               <td className="text-center">
                                 <span className="badge bg-light text-dark">
@@ -1232,7 +1233,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                         <tr key={a.id_insumo}>
                           <td>{a.nombreInsumo}</td>
                           <td className="text-center">
-                            {a.cantidad} {a.unidadMedida || "un."}
+                            {formatCantidad(a.cantidad, a.unidadMedida)} {a.unidadMedida || "un."}
                           </td>
                           <td>
                             <small className="text-muted">

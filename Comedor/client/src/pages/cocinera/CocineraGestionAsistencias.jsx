@@ -36,6 +36,10 @@ const CocineraGestionAsistencias = () => {
     gradosSeleccionados: [],
     mensaje: "",
   });
+  const [fechaDisplay, setFechaDisplay] = useState(() => {
+    const today = new Date().toISOString().split("T")[0];
+    return today.split("-").reverse().join("-");
+  });
   const [enlaces, setEnlaces] = useState([]);
   const [mostrarEnlaces, setMostrarEnlaces] = useState(false);
   const enlacesRef = useRef(null);
@@ -251,6 +255,25 @@ const CocineraGestionAsistencias = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "fecha") {
+      setFechaDisplay(value);
+      // Convertir DD-MM-YYYY a YYYY-MM-DD para uso interno y API
+      const parts = value.split("-");
+      if (
+        parts.length === 3 &&
+        parts[0].length === 2 &&
+        parts[1].length === 2 &&
+        parts[2].length === 4
+      ) {
+        const isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        if (!isNaN(new Date(isoDate).getTime())) {
+          setFormulario((prev) => ({ ...prev, fecha: isoDate }));
+        }
+      }
+      return;
+    }
+
     setFormulario((prev) => ({
       ...prev,
       [name]: value,
@@ -656,12 +679,14 @@ ${user.nombre} ${user.apellido}
   };
 
   const limpiarFormulario = () => {
+    const today = new Date().toISOString().split("T")[0];
     setFormulario({
-      fecha: new Date().toISOString().split("T")[0],
+      fecha: today,
       idServicio: "",
       gradosSeleccionados: [],
       mensaje: "",
     });
+    setFechaDisplay(today.split("-").reverse().join("-"));
     setEnlaces([]);
     setMostrarEnlaces(false);
     setGradosFiltrados(grados); // Resetear grados filtrados
@@ -766,12 +791,14 @@ ${user.nombre} ${user.apellido}
                     Fecha *
                   </label>
                   <input
-                    type="date"
+                    type="text"
                     className="form-control"
                     id="fecha"
                     name="fecha"
-                    value={formulario.fecha}
+                    value={fechaDisplay}
                     onChange={handleInputChange}
+                    placeholder="DD-MM-AAAA"
+                    pattern="\d{2}-\d{2}-\d{4}"
                     required
                   />
                 </div>
@@ -808,12 +835,14 @@ ${user.nombre} ${user.apellido}
                   {serviciosDisponibles.length === 0 &&
                     servicios.length > 0 && (
                       <div className="mt-2 alert alert-info">
-                        <i className="fas fa-info-circle me-2"></i>
-                        <strong>Información:</strong> Todos los servicios ya
-                        tienen enlaces generados para la fecha{" "}
-                        {formulario.fecha}. Si necesita regenerar un enlace,
+                        <span><i className="fas fa-info-circle me-2"></i>
+                        <b>Información: </b>
+                        Todos los servicios ya tienen enlaces generados para la fecha{" "}
+                        {fechaDisplay}. Si necesita regenerar un enlace,
                         primero debe eliminar las asistencias existentes.
-                      </div>
+                      </span>
+                        </div>
+                    
                     )}
                 </div>
               </div>

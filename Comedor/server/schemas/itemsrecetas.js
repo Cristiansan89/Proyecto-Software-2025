@@ -28,11 +28,15 @@ const itemRecetaSchema = z.object({
     }
   ),
   cantidadPorPorcion: z
-    .number({
-      required_error: "La cantidad por porción es requerida",
-      invalid_type_error: "La cantidad por porción debe ser un número",
-    })
-    .positive("La cantidad por porción debe ser positiva"),
+    .preprocess(
+      (val) => (val === "" || val === null || val === undefined ? undefined : parseFloat(val)),
+      z
+        .number({
+          required_error: "La cantidad por porción es requerida",
+          invalid_type_error: "La cantidad por porción debe ser un número",
+        })
+        .positive("La cantidad por porción debe ser positiva")
+    ),
   unidadPorPorcion: z.enum(
     [
       "Gramo",

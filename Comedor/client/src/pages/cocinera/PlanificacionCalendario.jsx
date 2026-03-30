@@ -303,21 +303,8 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       `📊 Verificando calendario: ${asignados}/${totalEsperado} asignados (${diasLaborales} días laborales)`
     );*/
 
-    if (asignados >= totalEsperado) {
-      try {
-        await planificacionMenuService.cambiarEstado(
-          planificacionActiva.id_planificacion,
-          "Activo"
-        );
-
-        //console.log("✅ Planificación activada automáticamente");
-        // Actualizar el estado local sin recargar desde BD
-        setPlanificacionActiva(planificacionActualizada);
-      } catch (error) {
-        //console.error("Error al activar planificación:", error);
-        showError("Error al activar planificación");
-      }
-    }
+    // La activación se realiza manualmente por el usuario mediante el botón "Programar"
+    // No se cambia el estado automáticamente al completar el calendario
   };
 
   const finalizarPlanificacion = async () => {

@@ -6,6 +6,7 @@ import consumosService from "../../services/consumosService";
 import asistenciasService from "../../services/asistenciasService";
 import pedidoService from "../../services/pedidoService";
 import planificacionMenuService from "../../services/planificacionMenuService";
+import formatCantidad from "../../utils/formatCantidad";
 
 const CocineraDashboard = () => {
   const { user } = useAuth();
@@ -375,7 +376,7 @@ const CocineraDashboard = () => {
                           </td>
                           <td>
                             <span className="badge bg-info text-dark">
-                              {consumo.cantidadUtilizada} {consumo.unidadMedida}
+                              {formatCantidad(consumo.cantidadUtilizada, consumo.unidadMedida)} {consumo.unidadMedida}
                             </span>
                           </td>
                           <td className="text-muted">

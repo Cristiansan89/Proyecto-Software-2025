@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import auditoriaService from "../../services/auditoriaService";
+import { formatAuditDateTime, formatDate } from "../../utils/dateUtils";
 import AuditoriaInforme from "../../components/admin/AuditoriaInforme";
 import AuditoriaDetalle from "../../components/admin/AuditoriaDetalle";
 import {
@@ -273,14 +274,7 @@ const Auditoria = () => {
   };
 
   const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleString("es-ES", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    return formatAuditDateTime(fecha);
   };
 
   const obtenerIconoAccion = (accion) => {
@@ -772,14 +766,10 @@ const Auditoria = () => {
                       <td>
                         <div className="auditoria__fecha-info">
                           <span className="auditoria__fecha-date">
-                            {new Date(log.fechaHora).toLocaleDateString(
-                              "es-ES",
-                            )}
+                            {formatDate(log.fechaHora)}
                           </span>
                           <small className="auditoria__fecha-time">
-                            {new Date(log.fechaHora).toLocaleTimeString(
-                              "es-ES",
-                            )}
+                            {new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(new Date(log.fechaHora))}
                           </small>
                         </div>
                       </td>

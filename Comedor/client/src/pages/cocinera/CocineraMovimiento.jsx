@@ -5,6 +5,8 @@ import movimientoInventarioService from "../../services/movimientoInventarioServ
 import inventarioService from "../../services/inventarioService";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
+import { formatDate, formatDateTime } from "../../utils/dateUtils";
+import { formatNumeroAR } from "../../utils/formatNumero";
 import "../../styles/CocineraMovimiento.css";
 
 const CocineraMovimiento = () => {
@@ -194,16 +196,18 @@ const CocineraMovimiento = () => {
   };
 
   const exportarCSV = () => {
+    // Encabezados separados por punto y coma para evitar conflicto con coma decimal
     let csv = "MOVIMIENTOS DE INVENTARIO\n\n";
-    csv += `Generado: ${new Date().toLocaleString("es-ES")}\n\n`;
-    csv += "Fecha,Tipo,Insumo,Cantidad,Unidad,Usuario,Observaciones\n";
+    csv += `Generado: ${formatDateTime(new Date())}\n\n`;
+    csv += "Fecha;Tipo;Insumo;Cantidad;Unidad;Usuario;Observaciones\n";
 
     movimientosOrdenados.forEach((mov) => {
-      csv += `"${new Date(mov.fechaHora).toLocaleString("es-ES")}","${
+      const cantidad = formatNumeroAR(mov.cantidadMovimiento);
+      csv += `"${formatDateTime(mov.fechaHora)}";"${
         mov.tipoMovimiento
-      }","${mov.nombreInsumo}","${mov.cantidadMovimiento}","${
+      }";"${mov.nombreInsumo}";"${cantidad}";"${
         mov.unidadMedida
-      }","${mov.nombreUsuario || "Sistema"}","${
+      }";"${mov.nombreUsuario || "Sistema"}";"${
         mov.comentarioMovimiento || ""
       }"\n`;
     });
@@ -226,13 +230,13 @@ const CocineraMovimiento = () => {
       doc.setFontSize(14);
       doc.text("Movimientos de Inventario", 14, 20);
       doc.setFontSize(10);
-      doc.text(`Generado: ${new Date().toLocaleString("es-ES")}`, 14, 28);
+      doc.text(`Generado: ${formatDateTime(new Date())}`, 14, 28);
 
       const rows = movimientosOrdenados.map((m) => [
-        new Date(m.fechaHora).toLocaleString("es-ES"),
+        formatDateTime(m.fechaHora),
         m.tipoMovimiento,
         m.nombreInsumo || "",
-        Number(m.cantidadMovimiento),
+        formatNumeroAR(m.cantidadMovimiento),
         m.unidadMedida || "",
         m.nombreUsuario || "Sistema",
         m.comentarioMovimiento || "",
@@ -535,19 +539,15 @@ const CocineraMovimiento = () => {
                         <td>
                           <strong>
                             <small className="text-muted">
-                              {new Date(mov.fechaHora).toLocaleDateString(
-                                "es-ES",
-                              )}
+                              {formatDate(mov.fechaHora)}
+                              <br />
                             </small>
-                            <br />
                             <small className="text-muted">
-                              {new Date(mov.fechaHora).toLocaleTimeString(
-                                "es-ES",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
+                              {new Intl.DateTimeFormat("es-AR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: false,
+                              }).format(new Date(mov.fechaHora))}
                             </small>
                           </strong>
                         </td>
@@ -565,7 +565,7 @@ const CocineraMovimiento = () => {
                         </td>
                         <td>
                           <span className="badge bg-light text-dark">
-                            {Number(mov.cantidadMovimiento)}
+                            {formatNumeroAR(mov.cantidadMovimiento)}
                           </span>
                         </td>
                         <td>

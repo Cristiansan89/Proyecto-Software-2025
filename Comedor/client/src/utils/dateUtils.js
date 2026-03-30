@@ -21,41 +21,69 @@ export const formatCicloLectivo = (fecha) => {
     return fecha;
 };
 
-/**
- * Formatea una fecha para mostrar en formato local
- * Maneja correctamente fechas sin información de hora (YYYY-MM-DD)
- * para evitar problemas de zona horaria
- * @param {string|Date} fecha - La fecha a formatear
- * @param {string} locale - Locale para el formato (default: 'es-ES')
- * @returns {string} - Fecha formateada o 'N/A' si no es válida
- */
-export const formatDate = (fecha, locale = 'es-ES') => {
-    if (!fecha) return 'N/A';
+// Opciones Intl compartidas (garantizan cero-relleno independiente del entorno)
+const OPTS_DATE = { day: '2-digit', month: '2-digit', year: 'numeric' };
+const OPTS_DATETIME = { ...OPTS_DATE, hour: '2-digit', minute: '2-digit', hour12: false };
+const OPTS_DATETIME_SEC = { ...OPTS_DATETIME, second: '2-digit' };
+const LOCALE = 'es-AR'; // dd/mm/aaaa garantizado
 
+/**
+ * Parsea una fecha de forma segura evitando desplazamientos UTC.
+ * Si la cadena es solo YYYY-MM-DD se construye como fecha local.
+ */
+const parseFecha = (fecha) => {
+    if (!fecha) return null;
+    if (fecha instanceof Date) return isNaN(fecha.getTime()) ? null : fecha;
+    if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+        const [y, m, d] = fecha.split('-').map(Number);
+        return new Date(y, m - 1, d);
+    }
+    const d = new Date(fecha);
+    return isNaN(d.getTime()) ? null : d;
+};
+
+/**
+ * Formatea una fecha al formato DD/MM/AAAA (zero-padded, ignorando hora).
+ * Maneja YYYY-MM-DD sin desplazamiento UTC.
+ * @param {string|Date} fecha
+ * @returns {string} "19/03/2026" o 'N/A'
+ */
+export const formatDate = (fecha) => {
+    const d = parseFecha(fecha);
+    if (!d) return 'N/A';
     try {
-        // Si es solo una fecha sin hora (YYYY-MM-DD), parsear directamente
-        // Esto evita completamente problemas de zona horaria
-        if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-            const [año, mes, día] = fecha.split('-').map(Number);
-            // Crear fecha local directamente sin conversión UTC
-            return new Date(año, mes - 1, día).toLocaleDateString(locale);
-        }
-        return new Date(fecha).toLocaleDateString(locale);
+        return new Intl.DateTimeFormat(LOCALE, OPTS_DATE).format(d);
     } catch {
         return 'N/A';
     }
 };
 
 /**
- * Formatea una fecha y hora para mostrar en formato local
- * @param {string|Date} fecha - La fecha a formatear
- * @returns {string} - Fecha y hora formateadas o 'N/A' si no es válida
+ * Formatea fecha y hora al formato DD/MM/AAAA HH:mm.
+ * @param {string|Date} fecha
+ * @returns {string} "19/03/2026 14:35" o 'N/A'
  */
 export const formatDateTime = (fecha) => {
-    if (!fecha) return 'N/A';
-
+    const d = parseFecha(fecha);
+    if (!d) return 'N/A';
     try {
-        return new Date(fecha).toLocaleString();
+        return new Intl.DateTimeFormat(LOCALE, OPTS_DATETIME).format(d);
+    } catch {
+        return 'N/A';
+    }
+};
+
+/**
+ * Formatea fecha y hora incluyendo segundos: DD/MM/AAAA HH:mm:ss.
+ * Usar en reportes de auditoría.
+ * @param {string|Date} fecha
+ * @returns {string} "19/03/2026 14:35:07" o 'N/A'
+ */
+export const formatAuditDateTime = (fecha) => {
+    const d = parseFecha(fecha);
+    if (!d) return 'N/A';
+    try {
+        return new Intl.DateTimeFormat(LOCALE, OPTS_DATETIME_SEC).format(d);
     } catch {
         return 'N/A';
     }

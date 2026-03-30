@@ -6,6 +6,7 @@ import { showError } from "../../utils/alertService";
 import CocineraInventario from "./CocineraInventario";
 import CocineraMovimiento from "./CocineraMovimiento";
 import MovimientosForm from "../../components/cocinera/MovimientosForm";
+import RecepcionInsumo from "../../components/cocinera/RecepcionInsumo";
 import API from "../../services/api";
 import "../../styles/ControlInventario.css";
 
@@ -14,6 +15,7 @@ const ControlInventario = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("inventario");
   const [modalMovimiento, setModalMovimiento] = useState(false);
+  const [modalRecepcion, setModalRecepcion] = useState(false);
   const [inventarios, setInventarios] = useState([]);
   const [tiposMerma, setTiposMerma] = useState([]);
   const [alertas, setAlertas] = useState([]);
@@ -126,13 +128,20 @@ const ControlInventario = () => {
           <p>Gestión completa de inventario y movimientos</p>
         </div>
         <div className="header-actions">
-          <div className="btn-group">
+          <div className="d-flex gap-2">
             <button
-              className="btn btn-success w-100"
+              className="btn btn-success"
               onClick={() => setModalMovimiento(true)}
             >
               <i className="fas fa-plus me-2"></i>
-              Movimiento Inventario
+              Registrar Movimiento
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => setModalRecepcion(true)}
+            >
+              <i className="fas fa-truck-loading me-2"></i>
+              Registrar Recepción
             </button>
           </div>
         </div>
@@ -156,11 +165,11 @@ const ControlInventario = () => {
                   <p className="mb-0 mt-2">
                     Stock actual:{" "}
                     <strong>
-                      {Math.round(parseFloat(alerta.cantidadActual || 0))}
+                      {parseFloat(alerta.cantidadActual || 0).toFixed(3)}
                     </strong>{" "}
                     {alerta.unidadMedida}
                     <br />
-                    Nivel mínimo: <strong>{alerta.stockMinimo}</strong>{" "}
+                    Nivel mínimo: <strong>{parseFloat(alerta.stockMinimo || 0).toFixed(3)}</strong>{" "}
                     {alerta.unidadMedida}
                   </p>
                 </div>
@@ -208,6 +217,35 @@ const ControlInventario = () => {
             </div>
           </div>,
           document.body
+        )}
+
+      {/* Modal de Recepción de Insumos */}
+      {modalRecepcion &&
+        createPortal(
+          <div className="modal-overlay">
+            <div className="modal-content movimiento-modal">
+              <div className="modal-header">
+                <h3 className="modal-title">
+                  <i className="fas fa-truck-loading me-2"></i>
+                  Registrar Recepción de Pedido
+                </h3>
+                <button
+                  className="modal-close text-white"
+                  onClick={() => setModalRecepcion(false)}
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="modal-body">
+                <RecepcionInsumo
+                  isOpen={modalRecepcion}
+                  onClose={() => setModalRecepcion(false)}
+                  onRecepcionRegistrada={manejarMovimientoRegistrado}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body,
         )}
 
       {/* Pestañas de navegación */}

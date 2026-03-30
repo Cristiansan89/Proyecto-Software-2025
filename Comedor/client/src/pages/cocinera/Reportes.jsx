@@ -15,6 +15,8 @@ import {
   showInfo,
   showConfirm,
 } from "../../utils/alertService";
+import { formatDate, formatDateTime } from "../../utils/dateUtils";
+import { formatNumeroAR } from "../../utils/formatNumero";
 
 const Reportes = () => {
   const { user } = useAuth();
@@ -122,30 +124,29 @@ const Reportes = () => {
         data: [],
       }));
       const insumosData = resultado.data || [];
-      setInsumosDisponibles(
-        Array.isArray(insumosData) && insumosData.length > 0
-          ? [...new Set(insumosData.map((c) => ({ id: c.id_insumo, nombre: c.nombreInsumo }))).values()]
-          : [
-              { id: 1, nombre: "Arroz" },
-              { id: 2, nombre: "Pollo" },
-              { id: 3, nombre: "Verduras" },
-            ]
-      );
+      if (Array.isArray(insumosData) && insumosData.length > 0) {
+        // Deduplicar por id_insumo usando Map
+        const insumosMap = new Map();
+        insumosData.forEach((c) => {
+          if (c.id_insumo != null) insumosMap.set(String(c.id_insumo), c.nombreInsumo);
+        });
+        setInsumosDisponibles(
+          [...insumosMap.entries()].map(([id, nombre]) => ({ id, nombre }))
+        );
+      } else {
+        setInsumosDisponibles([]);
+      }
     } catch (error) {
       console.error("Error cargando servicios e insumos:", error);
     }
   };
 
   const cargarCategorias = async () => {
-    try {
-      setCategoriasDisponibles([
-        { id: 1, nombre: "Proteínas" },
-        { id: 2, nombre: "Carbohidratos" },
-        { id: 3, nombre: "Vegetales" },
-      ]);
-    } catch (error) {
-      console.error("Error cargando categorías:", error);
-    }
+    // Valores del enum `categoria` de la tabla Insumos en la DB
+    setCategoriasDisponibles([
+      'Carnes','Lacteos','Cereales','Verduras','Frutas','Legumbres',
+      'Condimentos','Bebidas','Enlatados','Conservas','Limpieza','Descartables','Otros'
+    ]);
   };
 
   const cargarProveedoresYUsuarios = async () => {
@@ -257,11 +258,18 @@ const Reportes = () => {
         );
       }
 
+      // Ordenar por fecha ascendente
+      datosConsumo.sort((a, b) => {
+        const fa = new Date(a.fechaHoraGeneracion || a.fecha || 0);
+        const fb = new Date(b.fechaHoraGeneracion || b.fecha || 0);
+        return fa - fb;
+      });
+
       return datosConsumo.map((c) => ({
-        fecha: new Date(c.fechaHoraGeneracion || c.fecha).toLocaleDateString("es-ES"),
+        fecha: formatDate(c.fechaHoraGeneracion || c.fecha),
         servicio: c.nombreServicio || "-",
         insumo: c.nombreInsumo || "-",
-        cantidad: c.cantidadUtilizada || 0,
+        cantidad: formatNumeroAR(c.cantidadUtilizada || 0),
         unidad: c.unidadMedida || "-",
         usuario: c.nombreUsuario || "-",
       }));
@@ -273,25 +281,11 @@ const Reportes = () => {
 
   const generarReporteInventarios = async () => {
     try {
-      const resultado = await inventarioService.obtenerInventarios().catch(() => ({
-        success: false,
-        data: [],
-      }));
-      let datosInventario = Array.isArray(resultado.data) ? resultado.data : resultado.data?.data || [];
+      // inventarioService.obtenerInventarios() devuelve un array directamente
+      const resultado = await inventarioService.obtenerInventarios().catch(() => []);
+      let datosInventario = Array.isArray(resultado) ? resultado : [];
 
-      // Aplicar filtros
-      if (fechaInicio && fechaFin) {
-        const inicio = new Date(fechaInicio);
-        const fin = new Date(fechaFin);
-        fin.setHours(23, 59, 59);
-
-        datosInventario = datosInventario.filter((i) => {
-          const fechaActualizacion = new Date(
-            i.fechaActualizacion || i.fecha
-          );
-          return fechaActualizacion >= inicio && fechaActualizacion <= fin;
-        });
-      }
+      // No se aplica filtro de fechas para inventario (no tiene campo de fecha relevante)
 
       if (categoria) {
         datosInventario = datosInventario.filter(
@@ -301,6 +295,7 @@ const Reportes = () => {
       }
 
       if (estado) {
+        // `i.estado` en la DB puede ser 'Normal','Critico','Agotado'
         datosInventario = datosInventario.filter(
           (i) => i.estado === estado
         );
@@ -309,13 +304,13 @@ const Reportes = () => {
       return datosInventario.map((i) => ({
         insumo: i.nombreInsumo || "-",
         categoria: i.categoria || "-",
-        cantidad: i.cantidadActual || 0,
-        cantidadMinima: i.nivelMinimoAlerta || 0,
+        cantidad: formatNumeroAR(i.cantidadActual || 0),
+        cantidadMinima: formatNumeroAR(i.nivelMinimoAlerta || 0),
         unidad: i.unidadMedida || "-",
-        estado: i.cantidadActual >= (i.nivelMinimoAlerta || 0) ? "Normal" : "Bajo Stock",
-        ultimaActualizacion: new Date(
+        estado: i.estado || (i.cantidadActual >= (i.nivelMinimoAlerta || 0) ? "Normal" : "Bajo Stock"),
+        ultimaActualizacion: formatDate(
           i.fechaUltimaActualizacion || new Date()
-        ).toLocaleDateString("es-ES"),
+        ),
       }));
     } catch (error) {
       console.error("Error generando reporte inventarios:", error);
@@ -363,13 +358,13 @@ const Reportes = () => {
 
       return datosPedidos.map((p) => ({
         id: p.id_pedido || p.idPedido || "-",
-        fechaEmision: new Date(p.fechaEmision).toLocaleDateString("es-ES"),
+        fechaEmision: formatDate(p.fechaEmision),
         proveedor: p.nombreProveedor || "-",
         usuario: p.nombreUsuario || "-",
         estado: p.estadoPedido || "-",
         origen: p.origen || "-",
         fechaAprobacion: p.fechaAprobacion
-          ? new Date(p.fechaAprobacion).toLocaleDateString("es-ES")
+          ? formatDate(p.fechaAprobacion)
           : "-",
       }));
     } catch (error) {
@@ -384,21 +379,29 @@ const Reportes = () => {
         .getAll()
         .catch(() => []);
 
-      // Aplicar filtros de fecha
+      // Aplicar filtros de fecha: detectar superposición con el rango seleccionado
+      // Usamos comparación de strings YYYY-MM-DD para evitar problemas de timezone
       if (fechaInicio && fechaFin) {
-        const inicio = new Date(fechaInicio);
-        const fin = new Date(fechaFin);
-        fin.setHours(23, 59, 59);
+        const toDateStr = (val) => {
+          if (!val) return null;
+          if (typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+          const d = val instanceof Date ? val : new Date(val);
+          if (isNaN(d.getTime())) return null;
+          return d.toISOString().slice(0, 10);
+        };
 
         datosPlanificacion = datosPlanificacion.filter((p) => {
-          const fechaPlan = new Date(p.fecha || p.fechaPlanificacion);
-          return fechaPlan >= inicio && fechaPlan <= fin;
+          const pInicioStr = toDateStr(p.fechaInicio);
+          const pFinStr = toDateStr(p.fechaFin);
+          if (!pInicioStr || !pFinStr) return false;
+          // La planificación se superpone si empieza en o antes del fechaFin y termina en o después del fechaInicio
+          return pInicioStr <= fechaFin && pFinStr >= fechaInicio;
         });
       }
 
       return datosPlanificacion.map((p) => ({
-        fechaInicio: new Date(p.fechaInicio).toLocaleDateString("es-ES"),
-        fechaFin: new Date(p.fechaFin).toLocaleDateString("es-ES"),
+        fechaInicio: formatDate(p.fechaInicio),
+        fechaFin: formatDate(p.fechaFin),
         comensales: p.comensalesEstimados || 0,
         estado: p.estado || "-",
         usuario: p.nombreUsuario || "-",
@@ -454,7 +457,7 @@ const Reportes = () => {
         : "Sistema";
       doc.text(`Generado por: ${nombreUsuario}`, 14, 32);
       doc.text(
-        `Fecha de generación: ${new Date().toLocaleString("es-ES")}`,
+        `Fecha de generación: ${formatDateTime(new Date())}`,
         14,
         40
       );
@@ -466,7 +469,7 @@ const Reportes = () => {
 
       if (fechaInicio && fechaFin) {
         doc.text(
-          `Período: ${fechaInicio} a ${fechaFin}`,
+          `Período: ${formatDate(fechaInicio)} a ${formatDate(fechaFin)}`,
           14,
           56
         );
@@ -590,6 +593,41 @@ const Reportes = () => {
     }
   };
 
+  // Exportar a CSV con punto y coma como delimitador (evita conflicto con coma decimal)
+  const exportarCSV = () => {
+    if (datos.length === 0) {
+      showError("Error", "No hay datos para exportar");
+      return;
+    }
+
+    try {
+      setGenerando(true);
+      const columnas = Object.keys(datos[0] || {});
+      const encabezado = columnas.map(formatearNombreColumna).join(";");
+      const filas = datos.map((d) =>
+        columnas
+          .map((col) => `"${String(d[col] ?? "").replace(/"/g, '""')}"`)
+          .join(";")
+      );
+      // \uFEFF = BOM UTF-8 para que Excel abra correctamente con tildes
+      const csv = "\uFEFF" + [encabezado, ...filas].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `reporte_${tipoReporte}_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      registrarEnAuditoria("EXPORTAR", "REPORTE_CSV", tipoReporte);
+      showSuccess("Éxito", "Reporte CSV exportado correctamente");
+    } catch (error) {
+      showError("Error", "Error al exportar CSV: " + error.message);
+    } finally {
+      setGenerando(false);
+    }
+  };
+
   // Utilidades
   const getNombreReporte = () => {
     const nombres = {
@@ -676,6 +714,8 @@ const Reportes = () => {
                   setTipoReporte(tipo.id);
                   setDatos([]);
                   setFiltroAplicado(false);
+                  setFechaInicio("");
+                  setFechaFin("");
                 }}
               >
                 <i className={`${tipo.icon} me-2`}></i>
@@ -696,26 +736,30 @@ const Reportes = () => {
         </div>
         <div className="card-body">
           <div className="row g-3">
-            {/* Filtros comunes */}
-            <div className="col-md-3">
-              <label className="form-label">Desde:</label>
-              <input
-                type="date"
-                className="form-control"
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-              />
-            </div>
+            {/* Filtros de fecha - no aplican para inventario */}
+            {tipoReporte !== "inventarios" && (
+              <>
+                <div className="col-md-3">
+                  <label className="form-label">Desde:</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={fechaInicio}
+                    onChange={(e) => setFechaInicio(e.target.value)}
+                  />
+                </div>
 
-            <div className="col-md-3">
-              <label className="form-label">Hasta:</label>
-              <input
-                type="date"
-                className="form-control"
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-              />
-            </div>
+                <div className="col-md-3">
+                  <label className="form-label">Hasta:</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={fechaFin}
+                    onChange={(e) => setFechaFin(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
 
             {/* Filtros específicos - Consumos */}
             {tipoReporte === "consumos" && (
@@ -729,7 +773,7 @@ const Reportes = () => {
                   >
                     <option value="">Todos</option>
                     {serviciosDisponibles.map((s) => (
-                      <option key={s.id} value={s.nombre}>
+                      <option key={`servicio-${s.id}`} value={s.nombre}>
                         {s.nombre}
                       </option>
                     ))}
@@ -745,7 +789,7 @@ const Reportes = () => {
                   >
                     <option value="">Todos</option>
                     {insumosDisponibles.map((i) => (
-                      <option key={i.id} value={i.nombre}>
+                      <option key={`insumo-${i.id}`} value={i.nombre}>
                         {i.nombre}
                       </option>
                     ))}
@@ -766,8 +810,8 @@ const Reportes = () => {
                   >
                     <option value="">Todas</option>
                     {categoriasDisponibles.map((c) => (
-                      <option key={c.id} value={c.nombre}>
-                        {c.nombre}
+                      <option key={`cat-${c}`} value={c}>
+                        {c}
                       </option>
                     ))}
                   </select>
@@ -781,8 +825,9 @@ const Reportes = () => {
                     onChange={(e) => setEstado(e.target.value)}
                   >
                     <option value="">Todos</option>
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Critico">Crítico</option>
+                    <option value="Agotado">Agotado</option>
                   </select>
                 </div>
               </>
@@ -815,8 +860,8 @@ const Reportes = () => {
                     onChange={(e) => setProveedor(e.target.value)}
                   >
                     <option value="">Todos</option>
-                    {proveedoresDisponibles.map((p) => (
-                      <option key={p} value={p}>
+                    {proveedoresDisponibles.map((p, idx) => (
+                      <option key={`prov-${idx}-${p}`} value={p}>
                         {p}
                       </option>
                     ))}
@@ -831,8 +876,8 @@ const Reportes = () => {
                     onChange={(e) => setUsuarioPedido(e.target.value)}
                   >
                     <option value="">Todos</option>
-                    {usuariosDisponibles.map((u) => (
-                      <option key={u} value={u}>
+                    {usuariosDisponibles.map((u, idx) => (
+                      <option key={`usr-${idx}-${u}`} value={u}>
                         {u}
                       </option>
                     ))}
@@ -889,6 +934,17 @@ const Reportes = () => {
                   >
                     <i className="fas fa-file-excel me-2"></i>
                     Exportar Excel
+                  </button>
+                </div>
+
+                <div className="col-auto">
+                  <button
+                    className="btn btn-outline-success"
+                    onClick={exportarCSV}
+                    disabled={generando}
+                  >
+                    <i className="fas fa-file-csv me-2"></i>
+                    Exportar CSV
                   </button>
                 </div>
 

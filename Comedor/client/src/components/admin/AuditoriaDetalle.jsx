@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { jsPDF } from "jspdf";
+import { formatDateTime } from "../../utils/dateUtils";
 
 const AuditoriaDetalle = ({
   selectedLog,
@@ -215,7 +216,7 @@ const AuditoriaDetalle = ({
           { align: "center" }
         );
         doc.text(
-          `Generado el ${new Date().toLocaleString("es-ES")}`,
+          `Generado el ${formatDateTime(new Date())}`,
           15,
           pageHeight - 8
         );

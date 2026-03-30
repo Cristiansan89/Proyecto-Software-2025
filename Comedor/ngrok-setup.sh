@@ -3,6 +3,20 @@
 # Script para iniciar el proyecto con ngrok
 # Uso: bash ngrok-setup.sh
 
+# ============================================================
+# CONFIGURACIÓN CENTRALIZADA DE PUERTO NGROK
+# Cambiar este valor para apuntar ngrok a un puerto diferente.
+#
+# Puerto 5175 (RECOMENDADO): expone el cliente Vite.
+#   - Los enlaces de asistencia usan window.location.origin → funciona.
+#   - Las llamadas a /api/* son proxiadas por Vite al puerto 3000 → funciona.
+#   - Las alertas de insumos que llaman a /api también pasan por el proxy.
+#
+# Puerto 3000: expone el backend directamente (solo si el cliente
+#   no necesita ser accedido desde afuera via ngrok).
+# ============================================================
+NGROK_PORT=5175
+
 echo "🚀 Iniciando Comedor App con ngrok..."
 echo ""
 
@@ -22,8 +36,8 @@ sleep 2
 cd ..
 
 echo ""
-echo -e "${YELLOW}Paso 2: Iniciando ngrok en puerto 3000...${NC}"
-ngrok http 3000 > /tmp/ngrok.log 2>&1 &
+echo -e "${YELLOW}Paso 2: Iniciando ngrok en puerto $NGROK_PORT...${NC}"
+ngrok http $NGROK_PORT > /tmp/ngrok.log 2>&1 &
 NGROK_PID=$!
 echo -e "${GREEN}✓ ngrok iniciado (PID: $NGROK_PID)${NC}"
 echo "  Logs disponibles en: /tmp/ngrok.log"

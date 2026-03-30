@@ -87,8 +87,10 @@ export class RegistroAsistenciaModel {
                     id_grado, 
                     id_servicio,
                     fecha, 
-                    cantidadPresentes
-                ) VALUES (?, ?, ?, ?);`,
+                    cantidadPresentes,
+                    fechaCreacion,
+                    fechaActualizacion
+                ) VALUES (?, ?, ?, ?, NOW(), NOW());`,
         [id_grado, id_servicio, fecha, cantidadPresentes],
       );
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatAuditDateTime, formatDate, formatDateTime } from "../../utils/dateUtils";
 import {
   showSuccess,
   showError,
@@ -281,13 +282,7 @@ const AuditoriaInforme = ({
   };
 
   const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleString("es-ES", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatAuditDateTime(fecha);
   };
 
   const obtenerColorCriticidad = (criticidad) => {
@@ -345,12 +340,12 @@ const AuditoriaInforme = ({
       doc.setFontSize(10);
       doc.setTextColor(60, 60, 60);
 
-      const fechaGeneracion = new Date().toLocaleString("es-ES");
+      const fechaGeneracion = formatDateTime(new Date());
       doc.text(`Fecha de generación: ${fechaGeneracion}`, 40, yPosition);
       yPosition += 20;
 
       doc.text(
-        `Período: ${filtrosInforme.fechaInicio} al ${filtrosInforme.fechaFin}`,
+        `Período: ${formatDate(filtrosInforme.fechaInicio)} al ${formatDate(filtrosInforme.fechaFin)}`,
         40,
         yPosition
       );
@@ -1003,14 +998,10 @@ const AuditoriaInforme = ({
                       <td>
                         <div>
                           <span className="d-block">
-                            {new Date(log.fechaHora).toLocaleDateString(
-                              "es-ES"
-                            )}
+                            {formatDate(log.fechaHora)}
                           </span>
                           <small className="text-muted">
-                            {new Date(log.fechaHora).toLocaleTimeString(
-                              "es-ES"
-                            )}
+                            {new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(new Date(log.fechaHora))}
                           </small>
                         </div>
                       </td>

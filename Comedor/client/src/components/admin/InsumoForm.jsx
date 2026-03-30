@@ -157,7 +157,8 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
       // Mostrar error al usuario
       if (error.response?.status === 409) {
         setServerError(
-          error.response?.data?.message || "Ya existe un insumo con estos datos"
+          error.response?.data?.message ||
+            "Ya existe un insumo con estos datos",
         );
       } else if (error.response?.data?.message) {
         showInfoError("Información", `Error: ${error.response.data.message}`);
@@ -167,12 +168,12 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
           .join("\n");
         showInfoError(
           "Información",
-          `Errores de validación:\n${errorMessages}`
+          `Errores de validación:\n${errorMessages}`,
         );
       } else {
         showError(
           "Error",
-          "Error al guardar el insumo. Por favor, inténtelo de nuevo."
+          "Error al guardar el insumo. Por favor, inténtelo de nuevo.",
         );
       }
     } finally {
@@ -318,8 +319,9 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                     value={formData.stockMinimo}
                     onChange={handleInputChange}
                     disabled={isViewMode}
-                    placeholder="0"
+                    placeholder="0.000"
                     min="0"
+                    step="0.001"
                   />
                   {errors.stockMinimo && (
                     <div className="invalid-feedback">{errors.stockMinimo}</div>
@@ -342,8 +344,9 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                     value={formData.stockMaximo}
                     onChange={handleInputChange}
                     disabled={isViewMode}
-                    placeholder="0"
+                    placeholder="0.000"
                     min="0"
+                    step="0.001"
                   />
                   {errors.stockMaximo && (
                     <div className="invalid-feedback">{errors.stockMaximo}</div>
@@ -367,8 +370,9 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                       value={formData.stockActual}
                       onChange={handleInputChange}
                       disabled={isViewMode}
-                      placeholder="0"
+                      placeholder="0.000"
                       min="0"
+                      step="0.001"
                     />
                     {errors.stockActual && (
                       <div className="invalid-feedback">
@@ -388,9 +392,11 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                 Number(formData.stockActual) <=
                   Number(formData.stockMinimo) && (
                   <div className="alert alert-warning ">
-                    <i className="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Atención:</strong> El stock actual está por debajo o
-                    igual al mínimo establecido.
+                    <p>
+                      <i className="fas fa-exclamation-triangle mx-1"></i>
+                      <b>Atención: </b> El stock actual está por debajo o igual
+                      al mínimo establecido.
+                    </p>
                   </div>
                 )}
 
@@ -440,15 +446,15 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
                           insumo.stockActual <= insumo.stockMinimo * 0.75
                             ? "text-danger"
                             : insumo.stockActual <= insumo.stockMinimo
-                            ? "text-warning"
-                            : "text-success"
+                              ? "text-warning"
+                              : "text-success"
                         }`}
                       >
                         {insumo.stockActual <= insumo.stockMinimo * 0.75
                           ? "Stock Crítico"
                           : insumo.stockActual <= insumo.stockMinimo
-                          ? "Stock Bajo"
-                          : "Stock Bueno"}
+                            ? "Stock Bajo"
+                            : "Stock Bueno"}
                       </span>
                     </div>
                   </div>

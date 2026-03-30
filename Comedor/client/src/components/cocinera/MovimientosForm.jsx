@@ -11,6 +11,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import { formatNumeroAR, parsearDecimalAR, sanitizarInputDecimal } from "../../utils/formatNumero";
 
 const MovimientosForm = ({
   isOpen,
@@ -157,11 +158,11 @@ const MovimientosForm = ({
 
       // Validar que la cantidad no exceda el stock máximo para entradas
       if (nuevoMovimiento.tipoMovimiento === "Entrada" && stockMaximoInsumo) {
-        const cantidad = parseFloat(nuevoMovimiento.cantidadMovimiento);
+        const cantidad = parsearDecimalAR(nuevoMovimiento.cantidadMovimiento);
         if (cantidad > stockMaximoInsumo) {
           showError(
             "Cantidad excedida",
-            `La cantidad (${cantidad}) no puede exceder el stock máximo permitido (${stockMaximoInsumo})`
+            `La cantidad (${formatNumeroAR(cantidad)}) no puede exceder el stock máximo permitido (${formatNumeroAR(stockMaximoInsumo)})`
           );
           return;
         }
@@ -195,7 +196,7 @@ const MovimientosForm = ({
       const movimientoData = {
         id_insumo: parseInt(nuevoMovimiento.id_insumo),
         tipoMovimiento: nuevoMovimiento.tipoMovimiento,
-        cantidadMovimiento: parseInt(nuevoMovimiento.cantidadMovimiento),
+        cantidadMovimiento: parsearDecimalAR(nuevoMovimiento.cantidadMovimiento),
         comentarioMovimiento: nuevoMovimiento.comentarioMovimiento,
         id_usuario: user.idUsuario || user.id_usuario,
         id_tipoMerma:
@@ -353,10 +354,8 @@ const MovimientosForm = ({
           styles={customSelectStyles}
           formatOptionLabel={(option) => {
             const stockFormato = option.data.inventario
-              ? Math.round(
-                  parseFloat(option.data.inventario.cantidadActual || 0),
-                ).toLocaleString("es-ES")
-              : "0";
+              ? formatNumeroAR(option.data.inventario.cantidadActual || 0)
+              : "0,000";
             return (
               <div>
                 <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
@@ -397,9 +396,7 @@ const MovimientosForm = ({
                 (inv) => inv.id_insumo == nuevoMovimiento.id_insumo,
               );
               if (inventarioSeleccionado) {
-                const stockFormato = Math.round(
-                  parseFloat(inventarioSeleccionado.cantidadActual),
-                ).toLocaleString("es-ES");
+                const stockFormato = formatNumeroAR(inventarioSeleccionado.cantidadActual);
                 return `Stock actual: ${stockFormato} ${inventarioSeleccionado.unidadMedida}`;
               }
               return "";
@@ -442,26 +439,24 @@ const MovimientosForm = ({
           <label className="form-label">Cantidad *</label>
           <div className="input">
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               className="form-control"
               value={nuevoMovimiento.cantidadMovimiento}
               onChange={(e) =>
                 setNuevoMovimiento({
                   ...nuevoMovimiento,
-                  cantidadMovimiento: e.target.value,
+                  cantidadMovimiento: sanitizarInputDecimal(e.target.value),
                 })
               }
-              min="0"
-              step="0"
-              placeholder="0"
-              max={nuevoMovimiento.tipoMovimiento === "Entrada" ? stockMaximoInsumo : undefined}
+              placeholder="0,000"
               required
               disabled={loading}
             />
           </div>
           {nuevoMovimiento.tipoMovimiento === "Entrada" && stockMaximoInsumo && (
             <small className="form-text text-muted">
-              Máximo permitido: {stockMaximoInsumo.toLocaleString("es-ES")}
+              Máximo permitido: {formatNumeroAR(stockMaximoInsumo)}
             </small>
           )}
         </div>

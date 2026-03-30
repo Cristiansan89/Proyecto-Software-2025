@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import InsumoForm from "../../components/admin/InsumoForm";
+import { formatNumeroAR } from "../../utils/formatNumero";
 import insumoService from "../../services/insumoService";
 import {
   showSuccess,
@@ -224,11 +225,10 @@ const ListaInsumos = () => {
   };
 
   const formatStockActual = (value) => {
-    if (value === null || value === undefined) return "0";
+    if (value === null || value === undefined) return "0,000";
     const n = Number(value);
     if (isNaN(n)) return String(value);
-    // Mostrar como entero (sin decimales)
-    return String(Math.round(n));
+    return formatNumeroAR(n);
   };
 
   if (loading) {

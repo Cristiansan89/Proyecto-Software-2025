@@ -3,6 +3,8 @@ import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import Select from "react-select";
 import { showSuccess, showError, showWarning } from "../../utils/alertService";
+import { formatNumeroAR } from "../../utils/formatNumero";
+import { formatDate } from "../../utils/dateUtils";
 import "../../styles/CocineraInventario.css";
 
 const CocineraInventario = () => {
@@ -71,9 +73,9 @@ const CocineraInventario = () => {
     const alertas = [];
 
     inventariosData.forEach((inv) => {
-      const cantidad = parseInt(inv.cantidadActual);
-      const nivelMinimo = parseInt(inv.nivelMinimoAlerta);
-      const stockMaximo = parseInt(inv.stockMaximo) || nivelMinimo; // Fallback si no hay stockMaximo
+      const cantidad = parseFloat(inv.cantidadActual);
+      const nivelMinimo = parseFloat(inv.nivelMinimoAlerta);
+      const stockMaximo = parseFloat(inv.stockMaximo) || nivelMinimo; // Fallback si no hay stockMaximo
 
       // Alerta si: stock actual <= stock mínimo de alerta
       if (cantidad <= nivelMinimo) {
@@ -180,7 +182,7 @@ const CocineraInventario = () => {
       const movimientoData = {
         id_insumo: parseInt(nuevoMovimiento.id_insumo),
         tipoMovimiento: nuevoMovimiento.tipoMovimiento,
-        cantidadMovimiento: parseInt(nuevoMovimiento.cantidadMovimiento),
+        cantidadMovimiento: parseFloat(nuevoMovimiento.cantidadMovimiento),
         comentarioMovimiento: nuevoMovimiento.comentarioMovimiento,
         id_usuario: user.idUsuario || user.id_usuario,
         id_tipoMerma:
@@ -360,7 +362,7 @@ const CocineraInventario = () => {
                         }`}
                       >
                         <strong>{alerta.insumo}</strong>
-                        <small>{alerta.cantidad} {alerta.unidad} ({alerta.porcentaje.toFixed(1)}% del stock máximo)</small>
+                        <small>{formatNumeroAR(alerta.cantidad)} {alerta.unidad} ({alerta.porcentaje.toFixed(1)}% del stock máximo)</small>
                       </div>
                     </div>
                   ))}
@@ -526,17 +528,13 @@ const CocineraInventario = () => {
                             </td>
                             <td>
                               <strong>
-                                {Math.round(
-                                  parseFloat(inventario.cantidadActual),
-                                )}{" "}
+                                {formatNumeroAR(inventario.cantidadActual)}{" "}
                                 {inventario.unidadMedida}
                               </strong>
                             </td>
                             <td className="text-danger">
                               <strong>
-                                {Math.round(
-                                  parseFloat(inventario.nivelMinimoAlerta),
-                                )}{" "}
+                                {formatNumeroAR(inventario.nivelMinimoAlerta)}{" "}
                                 {inventario.unidadMedida}
                               </strong>
                             </td>
@@ -568,9 +566,7 @@ const CocineraInventario = () => {
                               </div>
                             </td>
                             <td className="text-center">
-                              {new Date(
-                                inventario.fechaUltimaActualizacion,
-                              ).toLocaleDateString("es-ES")}
+                              {formatDate(inventario.fechaUltimaActualizacion)}
                             </td>
                           </tr>
                         );
@@ -732,9 +728,7 @@ const CocineraInventario = () => {
                                 : "🗑️ Merma"}
                           </span>
                           <small className="text-muted mx-2">
-                            {new Date(mov.fechaHora).toLocaleDateString(
-                              "es-ES",
-                            )}
+                            {formatDate(mov.fechaHora)}
                           </small>
                         </div>
                         <div className="movimiento-content mb-2">
@@ -743,7 +737,7 @@ const CocineraInventario = () => {
                           </strong>
                           <br />
                           <span>
-                            {Math.round(parseFloat(mov.cantidadMovimiento))}{" "}
+                            {formatNumeroAR(mov.cantidadMovimiento)}{" "}
                             {insumo?.unidadMedida}
                           </span>
                         </div>
@@ -820,11 +814,9 @@ const CocineraInventario = () => {
                           Unidad: {option.data.unidadMedida} | Categoría:{" "}
                           {option.data.categoria || "Sin categoría"}
                           {option.data.inventario &&
-                            ` | Stock: ${Math.round(
-                              parseFloat(
-                                option.data.inventario.cantidadActual || 0,
-                              ),
-                            )}`}
+                            ` | Stock: ${parseFloat(
+                              option.data.inventario.cantidadActual || 0,
+                            ).toFixed(3)}`}
                         </div>
                       </div>
                     )}
@@ -838,9 +830,9 @@ const CocineraInventario = () => {
                           (inv) => inv.id_insumo == nuevoMovimiento.id_insumo,
                         );
                         if (inventarioSeleccionado) {
-                          return `Stock actual: ${Math.round(
-                            parseFloat(inventarioSeleccionado.cantidadActual),
-                          )} ${
+                          return `Stock actual: ${parseFloat(
+                            inventarioSeleccionado.cantidadActual,
+                          ).toFixed(3)} ${
                             inventarioSeleccionado.unidadMedida
                           } | Categoría: ${
                             inventarioSeleccionado.categoria || "Sin categoría"

@@ -1082,6 +1082,7 @@ export class PedidoController {
       const [detalles] = await connection.query(
         `SELECT 
           HEX(dp.id_detallePedido) as id_detallePedido_hex,
+          dp.id_insumo,
           i.nombreInsumo,
           i.unidadMedida,
           dp.cantidadSolicitada,
