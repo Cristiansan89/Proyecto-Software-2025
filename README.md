@@ -799,4 +799,8 @@ Proyecto en desarrollo activo con funcionalidades core implementadas y en proces
 - ✅ Búsqueda y filtrado en tablas
 - ✅ Validación de formularios
 
-**Última actualización:** Febrero 4, 2026
+**Última actualización:** Marzo 30, 2026
+
+*Modelo Entidad Relación - Base de Datos*
+
+![Imagen](MC.png)
