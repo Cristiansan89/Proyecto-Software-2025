@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import pedidoService from "../../services/pedidoService";
 import { showError, showSuccess } from "../../utils/alertService";
-import "./ProveedorPedidos.css";
+import "../../styles/ProveedorPedidos.css";
 
 const ProveedorPedidos = () => {
   const { user } = useAuth();

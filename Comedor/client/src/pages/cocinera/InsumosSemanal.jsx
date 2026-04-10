@@ -15,6 +15,7 @@ const InsumosSemanal = () => {
   const [menusSemanales, setMenusSemanales] = useState([]);
   const [insumosRequeridos, setInsumosRequeridos] = useState({});
   const [loading, setLoading] = useState(false);
+  const [estadoPlanificacion, setEstadoPlanificacion] = useState(null);
   const [comensalesData, setComensalesData] = useState({});
   const [generandoPedidos, setGenerandoPedidos] = useState(false);
   const [mensaje, setMensaje] = useState(null);
@@ -113,6 +114,19 @@ const InsumosSemanal = () => {
         fechaFin,
       );
 
+      // Guardar el estado de la planificación y las fechas exactas del primer menú
+      let fechaInicioReal = fechaInicio;
+      let fechaFinReal = fechaFin;
+      
+      if (response && response.length > 0) {
+        setEstadoPlanificacion(response[0]?.estado || null);
+        // Usar las fechas exactas de la planificación para las solicitudes posteriores
+        fechaInicioReal = response[0]?.fechaInicio || fechaInicio;
+        fechaFinReal = response[0]?.fechaFin || fechaFin;
+      }
+
+      setMenusSemanales(response || []);
+
       // 2. Obtener datos de comensales por fecha
       const comensalesMap = {};
       for (const fecha of semana) {
@@ -123,10 +137,7 @@ const InsumosSemanal = () => {
           comensalesMap[fechaStr] = datosComensales;
         } catch (err) {
           //console.warn(`Error al cargar comensales para ${fechaStr}:`, err);
-          showWarning(
-            "Advertencia",
-            `⚠️ No se pudieron cargar los comensales para la fecha ${fechaStr}.`,
-          );
+          // Ignorar errores silenciosamente para no interrumpir el flujo
           comensalesMap[fechaStr] = {
             servicios: [],
             resumen: { totalDia: 0 },
@@ -136,17 +147,19 @@ const InsumosSemanal = () => {
       setComensalesData(comensalesMap);
 
       // 3. Procesar menús y calcular insumos
-      // console.log("📊 Menús obtenidos:", response);
-      setMenusSemanales(response || []);
-
-      // 4. Calcular insumos desde menús de la semana actual
-      await calcularInsumosSemanales(response || [], comensalesMap, fechaInicio, fechaFin);
+      // Calcular insumos con las fechas exactas de la planificación
+      await calcularInsumosSemanales(
+        response || [],
+        comensalesMap,
+        fechaInicioReal,
+        fechaFinReal,
+      );
     } catch (error) {
       //console.error("❌ Error al cargar datos semanales:", error);
-      showError(
-        "Error",
-        "❌ Ocurrió un error al cargar los datos semanales. Por favor, intente nuevamente más tarde.",
-      );
+      setMensaje({
+        tipo: "error",
+        texto: "❌ Ocurrió un error al cargar los datos semanales. Por favor, intente nuevamente más tarde.",
+      });
       setMenusSemanales([]);
       setInsumosRequeridos({});
     } finally {
@@ -154,28 +167,61 @@ const InsumosSemanal = () => {
     }
   };
 
-  const calcularInsumosSemanales = async (menus, comensalesMap, fechaInicio, fechaFin) => {
+  const calcularInsumosSemanales = async (
+    menus,
+    comensalesMap,
+    fechaInicio,
+    fechaFin,
+  ) => {
     try {
-      // Llamar al endpoint backend que calcula insumos correctamente
-      // Enviar fechaInicio y fechaFin para que el backend sepa qué semana calcular
+      console.log(`🔍 Llamando a obtenerInsumosSemanales con fechas: ${fechaInicio} a ${fechaFin}`);
+      
       const response =
-        await generacionAutomaticaService.obtenerInsumosSemanales(fechaInicio, fechaFin);
-
-      if (!response || !response.insumos) {
-        //console.warn("⚠️ No se obtuvieron insumos del backend");
-        showError(
-          "Error",
-          "❌ No se pudieron obtener los insumos desde el backend.",
+        await generacionAutomaticaService.obtenerInsumosSemanales(
+          fechaInicio,
+          fechaFin,
         );
+
+      console.log("📊 Respuesta completa del backend:", response);
+      console.log("📊 response.insumos:", response?.insumos);
+      console.log("📊 response.insumos length:", response?.insumos?.length);
+
+      // Guardar el estado de la planificación si viene en la respuesta
+      if (response.estado) {
+        console.log(`✅ Estado detectado: ${response.estado}`);
+        setEstadoPlanificacion(response.estado);
+      }
+
+      // Si está en estado Programado, mostrar mensaje y no cargar insumos
+      if (response.estado === "Programado") {
+        console.log("⚠️ Planificación en estado Programado");
+        setMensaje({
+          tipo: "warning",
+          texto: "⏳ La planificación de esta semana está en estado Programado. Los insumos se mostrarán cuando cambie a estado Activo.",
+        });
         setInsumosRequeridos({});
         return;
       }
+
+      if (!response || !response.insumos || response.insumos.length === 0) {
+        console.log("⚠️ No hay insumos en la respuesta o respuesta vacía");
+        setMensaje({
+          tipo: "info",
+          texto: "ℹ️ No hay una planificación activa para esta semana. Cree una en la sección 'Planificación de Menús'.",
+        });
+        setInsumosRequeridos({});
+        return;
+      }
+
+      console.log(`✅ Se obtuvieron ${response.insumos.length} insumos`);
 
       // Convertir array a map con nombre como clave
       const insumosMap = {};
       let insumosDesconocidosEncontrados = false;
 
       for (const insumo of response.insumos) {
+        console.log(`  Procesando insumo:`, insumo);
+        
         // Filtrar insumos desconocidos (sin nombre válido)
         if (insumo.nombre === "Insumo desconocido" || !insumo.nombre) {
           console.warn(
@@ -196,23 +242,30 @@ const InsumosSemanal = () => {
         };
       }
 
+      console.log(`✅ insumosMap contiene ${Object.keys(insumosMap).length} insumos`);
+      console.log("insumosMap:", insumosMap);
+
       setInsumosRequeridos(insumosMap);
+      console.log(`✅ Se cargaron ${Object.keys(insumosMap).length} insumos en el estado`);
 
       // Guardar detalles de cálculo para descarga de auditoría
       if (response.detallesCalculo) {
         setDetallesCalculo(response.detallesCalculo);
       }
     } catch (error) {
-      //console.error("❌ Error al calcular insumos:", error);
+      console.error("❌ Error en catch:", error);
+      console.error("Error response data:", error.response?.data);
+      
       setDetallesCalculo({});
-      showError(
-        "Error",
-        "❌ Ocurrió un error al calcular los insumos. Por favor, intente nuevamente más tarde.",
-      );
+
+      // Capturar estado si viene en la respuesta de error
+      if (error.response?.data?.estado) {
+        console.log(`✅ Estado en error detectado: ${error.response.data.estado}`);
+        setEstadoPlanificacion(error.response.data.estado);
+      }
 
       // Manejar error de autenticación
       if (error.response?.status === 401) {
-        // console.log("🔐 Token expirado, redirigiendo al login");
         setMensaje({
           tipo: "error",
           texto: "Sesión expirada. Por favor, inicia sesión nuevamente.",
@@ -225,9 +278,11 @@ const InsumosSemanal = () => {
 
       // Otros errores
       if (error.response?.status === 400) {
+        console.log("Error 400 detectado");
         setMensaje({
           tipo: "warning",
           texto:
+            error.response?.data?.mensaje ||
             "No hay planificación activa para esta semana. Por favor, cree una planificación primero en la sección 'Planificación de Menús'.",
         });
       } else {
@@ -259,7 +314,10 @@ const InsumosSemanal = () => {
     if (sinDecimales.includes(unidad)) {
       return Number.isInteger(Number(cantidad))
         ? String(Math.round(cantidad))
-        : parseFloat(Number(cantidad).toFixed(3)).toString().replace(/\.?0+$/, "").replace(".", ",");
+        : parseFloat(Number(cantidad).toFixed(3))
+            .toString()
+            .replace(/\.?0+$/, "")
+            .replace(".", ",");
     }
     return parseFloat(Number(cantidad).toFixed(3)).toString().replace(".", ",");
   };
@@ -345,11 +403,7 @@ const InsumosSemanal = () => {
     const fechaInicio = formatDate(semana[0]);
     const fechaFin = formatDate(semana[4]);
     doc.text(`Semana: ${fechaInicio} a ${fechaFin}`, 14, 25);
-    doc.text(
-      `Fecha de generación: ${formatDate(new Date())}`,
-      14,
-      32,
-    );
+    doc.text(`Fecha de generación: ${formatDate(new Date())}`, 14, 32);
 
     // Preparar datos para la tabla
     const tableData = Object.entries(insumosRequeridos).map(
@@ -446,10 +500,6 @@ const InsumosSemanal = () => {
       }
     } catch (error) {
       //console.error("Error generando pedidos:", error);
-      showError(
-        "Error",
-        "❌ Ocurrió un error al generar pedidos automáticos. Por favor, intente nuevamente más tarde.",
-      );
       setMensaje({
         tipo: "error",
         texto:
@@ -462,6 +512,11 @@ const InsumosSemanal = () => {
   };
 
   useEffect(() => {
+    // Limpiar estados cuando cambia la semana
+    setMensaje(null);
+    setEstadoPlanificacion(null);
+    setMenusSemanales([]);
+    setInsumosRequeridos({});
     cargarDatosSemanales();
   }, [semanaActual]);
 
@@ -521,6 +576,7 @@ const InsumosSemanal = () => {
             </div>
           )}
 
+          {/* Para no planificado */}
           {!loading && menusSemanales.length === 0 && (
             <div
               className="alert alert-warning d-flex align-items-center"
@@ -533,32 +589,51 @@ const InsumosSemanal = () => {
                 </h6>
                 <p className="mb-2">
                   Para generar insumos semanales, necesita crear una
-                  planificación de menús primero. 
+                  planificación de menús primero.
                 </p>
               </div>
             </div>
           )}
 
-          {!loading && menusSemanales.length > 0 && Object.keys(insumosRequeridos).length === 0 && (
-            <div
-              className="alert alert-success d-flex align-items-center"
-              role="alert"
-            >
-              <i className="fas fa-calendar-check me-3 fs-4"></i>
-              <div>
-                <h6 className="alert-heading mb-2">
-                  La planificación de menús ya está programada para esta semana
-                </h6>
-                <p className="mb-2">
-                  Se debería esperar a que se termine la planificación de la semana anterior. Y se Active esta.
-                </p>
+          {/* Para Programado */}
+          {!loading && estadoPlanificacion === "Programado" && (
+              <div
+                className="alert alert-success d-flex align-items-center"
+                role="alert"
+              >
+                <i className="fas fa-calendar-check me-3 fs-4"></i>
+                <div>
+                  <h6 className="alert-heading mb-2">
+                    La planificación de menús ya está programada para esta
+                    semana
+                  </h6>
+                  <p className="mb-2">
+                    Se debería esperar a que se termine la planificación de la
+                    semana anterior. Y se Active esta.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {!loading &&
-            Object.keys(insumosRequeridos).length > 0 &&
-            menusSemanales.length > 0 && (
+          {/* Para Finalizado */}
+          {!loading && estadoPlanificacion === "Finalizado" && (
+              <div
+                className="alert alert-dark d-flex align-items-center"
+                role="alert"
+              >
+                <i className="fas fa-calendar-check me-3 fs-4"></i>
+                <div>
+                  <h6 className="alert-heading mb-2">
+                    La planificación de menús de está semana ya fue finalizada.
+                  </h6>
+                  <p className="mb-2">Pase a la siguiente semana.</p>
+                </div>
+              </div>
+            )}
+
+          {/* Para activo */}
+    
+          {!loading && estadoPlanificacion === "Activo" && Object.keys(insumosRequeridos).length > 0 && (
               <>
                 {/* Resumen de insumos */}
                 <div className="mb-4">
@@ -611,7 +686,9 @@ const InsumosSemanal = () => {
 
                             return (
                               <tr key={nombreInsumo} className={classRow}>
-                                <td className="text-center"><strong>{index+1}</strong></td>
+                                <td className="text-center">
+                                  <strong>{index + 1}</strong>
+                                </td>
                                 <td width="30%">
                                   <strong>{nombreInsumo}</strong>
                                   {esFaltante && !datos.enPedido && (
@@ -630,7 +707,10 @@ const InsumosSemanal = () => {
 
                                 <td width="25%">
                                   <span className="badge bg-success">
-                                    {formatearCantidad(mejorUnidad.cantidad, mejorUnidad.unidad)}{" "}
+                                    {formatearCantidad(
+                                      mejorUnidad.cantidad,
+                                      mejorUnidad.unidad,
+                                    )}{" "}
                                     {mejorUnidad.unidad}
                                   </span>
                                 </td>
@@ -648,7 +728,8 @@ const InsumosSemanal = () => {
                                       esFaltante ? "bg-danger" : "bg-success"
                                     }`}
                                   >
-                                    {formatConComa(diferencia)} {mejorUnidad.unidad}
+                                    {formatConComa(diferencia)}{" "}
+                                    {mejorUnidad.unidad}
                                   </span>
                                 </td>
                               </tr>

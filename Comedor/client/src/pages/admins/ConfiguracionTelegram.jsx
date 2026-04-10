@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../services/api";
 import ChatIDProveedorForm from "../../components/admin/ChatIDProveedorForm";
 import ChatIDDocenteForm from "../../components/admin/ChatIDDocenteForm";
+import TelegramInstructionsModal from "../../components/admin/TelegramInstructionsModal";
 import {
   showSuccess,
   showError,
@@ -18,6 +19,7 @@ const ConfiguracionTelegram = () => {
   const [docentes, setDocentes] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showModalDocente, setShowModalDocente] = useState(false);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
   const [proveedorSeleccionado, setProveedorSeleccionado] = useState(null);
   const [docenteSeleccionado, setDocenteSeleccionado] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -166,6 +168,35 @@ const ConfiguracionTelegram = () => {
           <p className="pt-1">
             Configura los Chat IDs para recibir notificaciones automáticas
           </p>
+        </div>
+      </div>
+
+      {/* Banner de Instrucciones */}
+      <div 
+        className="alert alert-info border-0 mb-4" 
+        style={{
+          background: 'linear-gradient(135deg, #e3f2fd 0%, #fff3e0 100%)',
+          borderLeft: '4px solid #0088cc',
+          padding: '16px 20px',
+          borderRadius: '8px',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <i className="fas fa-lightbulb me-2" style={{ color: '#0088cc' }}></i>
+            <strong>¿No sabes cómo configurar tu chat ID?</strong>
+            <p style={{ margin: '8px 0 0 0', color: '#555', fontSize: '14px' }}>
+              Haz clic en el botón de ayuda para ver instrucciones paso a paso
+            </p>
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowInstructionsModal(true)}
+            style={{ whiteSpace: 'nowrap', marginLeft: '16px' }}
+          >
+            <i className="fas fa-book me-2 text-white"></i>
+            Ver Instrucciones
+          </button>
         </div>
       </div>
 
@@ -540,6 +571,13 @@ const ConfiguracionTelegram = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Instrucciones de Telegram */}
+      <TelegramInstructionsModal
+        show={showInstructionsModal}
+        onClose={() => setShowInstructionsModal(false)}
+        botName="@DocenteComedor_Bot"
+      />
     </div>
   );
 };

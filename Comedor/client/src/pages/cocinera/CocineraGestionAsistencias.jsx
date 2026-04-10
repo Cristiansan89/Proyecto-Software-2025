@@ -24,22 +24,40 @@ const CocineraGestionAsistencias = () => {
     const [year, month, day] = fechaISO.split("-");
     return new Date(year, month - 1, day);
   };
+
+  // 🆕 Función para obtener lista de docentes con chat_ids desde la BD
+  const obtenerChatIdsDocentes = async () => {
+    try {
+      const response = await api.get("/telegram/docentes-list");
+      if (response.data.success && response.data.docentes) {
+        // Retornar el array de docentes completo para buscar después
+        console.log("📱 Lista de docentes desde BD:", response.data.docentes);
+        return response.data.docentes || [];
+      }
+      return [];
+    } catch (error) {
+      console.warn("⚠️ Error obteniendo lista de docentes:", error);
+      return [];
+    }
+  };
   const [servicios, setServicios] = useState([]);
   const [serviciosDisponibles, setServiciosDisponibles] = useState([]);
   const [grados, setGrados] = useState([]);
   const [gradosFiltrados, setGradosFiltrados] = useState([]);
   const [turnosServicio, setTurnosServicio] = useState([]);
   const [docentes, setDocentes] = useState([]);
+
   const [formulario, setFormulario] = useState({
     fecha: new Date().toISOString().split("T")[0],
     idServicio: "",
     gradosSeleccionados: [],
     mensaje: "",
   });
+  
   const [fechaDisplay, setFechaDisplay] = useState(() => {
-    const today = new Date().toISOString().split("T")[0];
-    return today.split("-").reverse().join("-");
+    return new Date().toISOString().split("T")[0];
   });
+
   const [enlaces, setEnlaces] = useState([]);
   const [mostrarEnlaces, setMostrarEnlaces] = useState(false);
   const enlacesRef = useRef(null);
@@ -56,7 +74,7 @@ const CocineraGestionAsistencias = () => {
 
       // Obtener turnos asociados al servicio
       const turnosResponse = await api.get(
-        `/servicio-turnos/servicio/${idServicio}/turnos`
+        `/servicio-turnos/servicio/${idServicio}/turnos`,
       );
       const turnosDelServicio = turnosResponse.data || [];
       setTurnosServicio(turnosDelServicio);
@@ -73,7 +91,7 @@ const CocineraGestionAsistencias = () => {
       for (const turno of turnosDelServicio) {
         try {
           const gradosResponse = await api.get(
-            `/grados/turno/${turno.idTurno}`
+            `/grados/turno/${turno.idTurno}`,
           );
           const gradosDelTurno = gradosResponse.data || [];
 
@@ -99,7 +117,7 @@ const CocineraGestionAsistencias = () => {
           showError(
             `Error al cargar grados del turno ${
               turno.nombreTurno || turno.nombre
-            }.`
+            }.`,
           );
         }
       }
@@ -148,13 +166,13 @@ const CocineraGestionAsistencias = () => {
 
       // Verificar qué servicios ya tienen asistencias generadas para esta fecha
       const response = await asistenciasService.obtenerRegistrosAsistencias(
-        `fecha=${formulario.fecha}`
+        `fecha=${formulario.fecha}`,
       );
 
       if (response.success) {
         // Obtener IDs de servicios que ya tienen asistencias
         const serviciosConAsistencias = new Set(
-          response.data.map((asistencia) => asistencia.id_servicio)
+          response.data.map((asistencia) => asistencia.id_servicio),
         );
 
         // Filtrar servicios que NO tienen asistencias generadas
@@ -213,7 +231,7 @@ const CocineraGestionAsistencias = () => {
       // Filtrar solo los docentes y agregar información de grados asignados
       const docentesFiltrados =
         docentesRes.data?.filter(
-          (p) => p.nombreRol === "Docente" && p.estado === "Activo"
+          (p) => p.nombreRol === "Docente" && p.estado === "Activo",
         ) || [];
 
       // Mapear docentes con sus grados asignados y datos de usuario (teléfono)
@@ -233,7 +251,7 @@ const CocineraGestionAsistencias = () => {
 
         // Buscar el usuario asociado para obtener el teléfono
         const usuarioAsociado = usuariosRes.data?.find(
-          (u) => u.idPersona === idPersonaDocente
+          (u) => u.idPersona === idPersonaDocente,
         );
 
         return {
@@ -259,7 +277,7 @@ const CocineraGestionAsistencias = () => {
     if (name === "fecha") {
       setFechaDisplay(value);
       // Convertir DD-MM-YYYY a YYYY-MM-DD para uso interno y API
-      const parts = value.split("-");
+      const parts = value.split("/");
       if (
         parts.length === 3 &&
         parts[0].length === 2 &&
@@ -345,18 +363,22 @@ const CocineraGestionAsistencias = () => {
       const verificacion =
         await asistenciasService.verificarAsistenciasCompletas(
           formulario.fecha,
-          formulario.idServicio
+          formulario.idServicio,
         );
 
       if (verificacion.data.completas) {
         const confirmar = await showConfirm(
           "Confirmar acción",
-          "Ya existen registros de asistencia para esta fecha y servicio. ¿Desea generar enlaces de todas formas?"
+          "Ya existen registros de asistencia para esta fecha y servicio. ¿Desea generar enlaces de todas formas?",
         );
         if (!confirmar) {
           return;
         }
       }
+
+      // 🆕 Obtener lista de docentes con chat_ids desde la BD
+      const docentesBD = await obtenerChatIdsDocentes();
+      console.log("📱 Docentes desde BD:", docentesBD);
 
       // Generar enlaces para cada grado seleccionado
       const enlacesGenerados = [];
@@ -365,7 +387,7 @@ const CocineraGestionAsistencias = () => {
         const grado = grados.find((g) => (g.id_grado || g.idGrado) === gradoId);
         const servicio = servicios.find(
           (s) =>
-            (s.idServicio || s.id_servicio) === parseInt(formulario.idServicio)
+            (s.idServicio || s.id_servicio) === parseInt(formulario.idServicio),
         );
 
         // 🔧 NUEVO: Inicializar asistencias en el backend para este grado
@@ -379,7 +401,7 @@ const CocineraGestionAsistencias = () => {
           showWarning(
             `No se pudieron inicializar las asistencias para el grado ${
               grado?.nombreGrado || grado?.nombre
-            }, pero continuando...`
+            }, pero continuando...`,
           );
         }
 
@@ -402,7 +424,7 @@ const CocineraGestionAsistencias = () => {
           showWarning(
             `No se encontró docente asignado para el grado ${
               grado?.nombreGrado || grado?.nombre
-            }`
+            }`,
           );
           continue; // Saltar este grado si no tiene docente asignado
         }
@@ -422,6 +444,23 @@ const CocineraGestionAsistencias = () => {
         const token = btoa(unescape(encodeURIComponent(tokenString))); // Maneja caracteres UTF-8
         const enlace = `${window.location.origin}/asistencias/registro/${token}`;
 
+        // 🆕 Buscar al docente en la lista de docentes desde BD por nombre y apellido
+        const docenteEnBD = docentesBD.find(
+          (d) =>
+            d.nombre.toLowerCase() === docenteGrado.nombre.toLowerCase() &&
+            d.apellido.toLowerCase() === docenteGrado.apellido.toLowerCase()
+        );
+
+        const chatIdDocente = docenteEnBD?.chatId || null;
+        console.log(
+          `🔍 Buscando docente ${docenteGrado.nombre} ${docenteGrado.apellido}:`,
+          {
+            encontrado: !!docenteEnBD,
+            chatId: chatIdDocente,
+            docenteEnBD: docenteEnBD ? { id: docenteEnBD.id, nombre: docenteEnBD.nombre, apellido: docenteEnBD.apellido } : null,
+          }
+        );
+
         enlacesGenerados.push({
           id: `${gradoId}-${formulario.idServicio}`,
           grado: grado?.nombreGrado || grado?.nombre || `Grado ${gradoId}`,
@@ -429,12 +468,23 @@ const CocineraGestionAsistencias = () => {
           enlace,
           token,
           docente: {
+            id_persona: docenteGrado.id_persona,
             nombre: `${docenteGrado.nombre} ${docenteGrado.apellido}`,
+            nombre_completo: `${docenteGrado.nombre} ${docenteGrado.apellido}`,
             telefono: docenteGrado.telefono || null,
             email: docenteGrado.email || docenteGrado.correo,
+            chat_id: chatIdDocente, // 🆕 Chat ID del docente desde BD
           },
           fecha: formulario.fecha,
         });
+
+        console.log(
+          `✅ Enlace generado para ${docenteGrado.nombre} ${docenteGrado.apellido}`,
+          {
+            grado: grado?.nombreGrado,
+            chat_id: chatIdDocente,
+          }
+        );
       }
 
       setEnlaces(enlacesGenerados);
@@ -453,7 +503,7 @@ const CocineraGestionAsistencias = () => {
       // Mostrar mensaje de éxito
       showInfo(
         "Información",
-        `✅ Se generaron ${enlacesGenerados.length} enlaces exitosamente`
+        `✅ Se generaron ${enlacesGenerados.length} enlaces exitosamente`,
       );
 
       // Actualizar servicios disponibles después de generar enlaces
@@ -526,7 +576,7 @@ const CocineraGestionAsistencias = () => {
     telefono,
     mensaje,
     grado,
-    servicio
+    servicio,
   ) => {
     if (!telefono) {
       showInfo("No hay información de teléfono para este docente");
@@ -535,28 +585,30 @@ const CocineraGestionAsistencias = () => {
 
     try {
       const enlace = enlaces.find(
-        (e) => e.grado === grado && e.servicio === servicio
+        (e) => e.grado === grado && e.servicio === servicio,
       );
 
+      const fechaFormato = formulario.fecha.split("-").reverse().join("/");
+      
       const mensajeCompleto = `🏫 *Comedor Escolar* 📝
 
-¡Hola!
+      ¡Hola!
 
-${
-  mensaje ||
-  `Te envío el enlace para registrar las asistencias del ${grado} para el servicio de ${servicio}.`
-}
+      ${
+        mensaje ||
+        `Te envío el enlace para registrar las asistencias del ${grado} para el servicio de ${servicio}.`
+      }
 
-📅 *Fecha:* ${parseFechaLocal(formulario.fecha).toLocaleDateString("es-ES")}
-🍽️ *Servicio:* ${servicio}
-📚 *Grado:* ${grado}
+      📅 *Fecha:* ${fechaFormato}
+      🍽️ *Servicio:* ${servicio}
+      📚 *Grado:* ${grado}
 
-Por favor registra las asistencias en el siguiente enlace:
-${enlace?.enlace}
+      Por favor registra las asistencias en el siguiente enlace:
+      ${enlace?.enlace}
 
-Saludos cordiales,
-${user.nombre} ${user.apellido}
-🍳 *Comedor Escolar*`;
+      Saludos cordiales,
+      ${user.nombre} ${user.apellido}
+      🍳 *Comedor Escolar*`;
 
       // Formatear teléfono para Telegram (usar número internacional)
       const telefonoFormateado = formatearTelefonoTelegram(telefono);
@@ -570,7 +622,7 @@ ${user.nombre} ${user.apellido}
         window.open(telegramUrl, "_blank");
         showInfo(
           "Información",
-          `✅ Se abrió Telegram para enviar mensaje a ${grado} (+${telefonoFormateado})`
+          `✅ Se abrió Telegram para enviar mensaje a ${grado} (+${telefonoFormateado})`,
         );
       } else {
         // Fallback: abrir bot general con mensaje
@@ -578,54 +630,246 @@ ${user.nombre} ${user.apellido}
         window.open(botUrl, "_blank");
         showInfo(
           "Información",
-          `📱 Se abrió el bot de Telegram (número no válido para ${grado})`
+          `📱 Se abrió el bot de Telegram (número no válido para ${grado})`,
         );
       }
     } catch (error) {
       //console.error("Error al generar enlace de Telegram:", error);
       showInfoError(
         "Información",
-        `❌ Error al generar enlace de Telegram: ${error.message}`
+        `❌ Error al generar enlace de Telegram: ${error.message}`,
       );
     }
   };
 
   const enviarTelegramTodos = async () => {
+    console.log("🔘 Click en botón 'Enviar por Telegram'");
+    
     if (enlaces.length === 0) {
+      console.warn("⚠️ No hay enlaces generados");
       showInfo("Primero debe generar los enlaces");
       return;
     }
 
     // Validar que los enlaces tengan la estructura correcta
     const enlacesValidos = enlaces.every(
-      (e) => (e.enlace || e.token) && e.grado
+      (e) => (e.enlace || e.token) && e.grado,
     );
     if (!enlacesValidos) {
-      //console.error("Enlaces inválidos:", enlaces);
+      console.error("❌ Enlaces inválidos:", enlaces);
       showError("Error", "Error: Los enlaces no tienen la estructura correcta");
       return;
     }
 
     try {
-      //console.log("Enviando enlaces por Telegram:", enlaces);
+      setLoading(true);
+      console.log("⏳ Iniciando envío de asistencias con chat_ids dinámicos");
+      console.log("📋 Enlaces a procesar:", enlaces);
 
-      // Preparar datos para enviar al servidor
-      // El servidor reconstruirá los URLs con FRONTEND_URL correcto
-      const gradosData = enlaces.map((e) => ({
-        grado: e.grado,
-        docente: e.docente,
-        token: e.token, // Enviar el token para que el servidor reconstruya la URL
-        enlace: e.enlace,
-      }));
+      // ✅ NUEVA LÓGICA: Usar chat_ids individuales de cada docente
+      const resultados = {
+        exitosos: 0,
+        fallidos: 0,
+        conWarning: 0,
+        detalles: [],
+      };
 
-      const response = await api.post("/telegram/send-asistencias", {
-        gradosData: gradosData,
-        fecha: formulario.fecha,
-        mensaje: formulario.mensaje,
-      });
+      // 📤 ENVÍO INDIVIDUAL: Para cada docente, enviar su mensaje personalizado CON BOTÓN
+      for (const enlace of enlaces) {
+        try {
+          console.log(`\n═══════════════════════════════════════`);
+          console.log(`📦 PROCESANDO ENLACE: ${enlace.grado}`);
+          console.log(`═══════════════════════════════════════`);
+          
+          const fechaFormato = formulario.fecha.split("-").reverse().join("/");
+          const chatId = enlace.docente?.chat_id;
 
-      if (response.data.success) {
-        showSuccess("Éxito", "Enlaces enviados por Telegram correctamente");
+          console.log(`   Chat ID: ${chatId}`);
+          console.log(`   Docente: ${enlace.docente?.nombre}`);
+
+          if (!chatId) {
+            console.warn(
+              `⚠️ [${enlace.grado}] Sin chat_id configurado para ${enlace.docente?.nombre}`
+            );
+            resultados.conWarning++;
+            resultados.detalles.push({
+              docente: enlace.docente?.nombre || "Desconocido",
+              grado: enlace.grado,
+              estado: "sin_chatid",
+              error: "El docente no tiene Chat ID configurado en Telegram",
+            });
+            continue;
+          }
+
+          // 📝 Mensaje personalizado para el docente
+          const mensajePersonalizado = `👨‍🏫 *${enlace.docente?.nombre}*
+
+📝 *Registro de Asistencias*
+
+📚 *Grado:* ${enlace.grado}
+🍽️ *Servicio:* ${enlace.servicio}
+📅 *Fecha:* ${fechaFormato}
+
+${formulario.mensaje ? `📌 *Nota:* ${formulario.mensaje}\n` : ""}
+✅ Por favor completa el registro de asistencias cuanto antes.
+
+🔗 *Accedé haciendo clic en el botón de abajo:*
+
+Un saludo cordial,
+🍳 *Sistema Comedor Escolar*`;
+
+          console.log(`   ✏️ Mensaje generado (length: ${mensajePersonalizado.length})`);
+
+          // 🔘 Botón de acceso directo - FORMATO SEGURO PARA TELEGRAM
+          // Detectar si estamos en ngrok o localhost
+          const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+          const isNgrok = window.location.hostname.includes("ngrok");
+          
+          console.log(`   🌐 Hostname: ${window.location.hostname}`);
+          console.log(`   🔧 isLocalhost: ${isLocalhost}, isNgrok: ${isNgrok}`);
+          
+          // Obtener URL pública para botones
+          let urlPublica = null;
+          if (isNgrok) {
+            // Si estamos accediendo vía ngrok, usar esa URL
+            urlPublica = `https://${window.location.hostname}`;
+            console.log(`   ✅ URL ngrok detectada: ${urlPublica}`);
+          } else if (import.meta.env.VITE_PUBLIC_APP_URL) {
+            // Si hay variable de entorno, usar esa
+            urlPublica = import.meta.env.VITE_PUBLIC_APP_URL;
+            console.log(`   ✅ VITE_PUBLIC_APP_URL: ${urlPublica}`);
+          } else {
+            console.warn(`   ⚠️ No se encontró URL pública`);
+          }
+          
+          let buttons = [];
+          let mensajeFinal = mensajePersonalizado;
+          
+          if (urlPublica) {
+            // Tenemos URL pública, crear botón
+            const urlBoton = `${urlPublica}/asistencias/registro/${enlace.token}`;
+            buttons = [
+              [
+                {
+                  text: `📚 ${enlace.grado} (${enlace.servicio})`,
+                  url: urlBoton,
+                },
+              ],
+            ];
+            console.log(`   🔘 Botón creado: ${urlBoton.substring(0, 50)}...`);
+          } else if (isLocalhost) {
+            // Estamos en localhost sin ngrok, mostrar enlace en el mensaje
+            console.warn(`   ⚠️ Localhost detectado - Enviando enlace en texto`);
+            mensajeFinal = mensajePersonalizado + 
+              `\n\n🔐 *Enlace de acceso privado:*\n\`${enlace.enlace}\`\n\n` +
+              `_Nota: Copia el enlace y abrelo en tu navegador._`;
+          }
+
+          // 📤 Envío individual a través de la API
+          console.log(`\n📡 Preparando envío a API...`);
+
+          // Preparar opciones del mensaje
+          const msgOptions = {};
+          if (buttons.length > 0) {
+            msgOptions.reply_markup = {
+              inline_keyboard: buttons,
+            };
+            console.log(`   ✅ Opciones con botones preparadas`);
+          } else {
+            console.log(`   ℹ️ Sin botones en opciones`);
+          }
+
+          console.log(`   📊 Datos a enviar:`, {
+            chatId: String(chatId),
+            messageLength: mensajeFinal.length,
+            botType: "docente",
+            hasButtons: buttons.length > 0,
+          });
+
+          // Llamada a la API para enviar el mensaje
+          const response = await api.post("/telegram/send-message", {
+            chatId: String(chatId),
+            message: mensajeFinal,
+            botType: "docente", // Bot para docentes
+            options: msgOptions,
+          });
+
+          console.log(`   📬 Respuesta del servidor:`, response.data);
+
+          if (response.data.success) {
+            resultados.exitosos++;
+            console.log(`   ✅ ÉXITO! Message ID: ${response.data.messageId}\n`);
+            resultados.detalles.push({
+              docente: enlace.docente?.nombre,
+              grado: enlace.grado,
+              chatId: chatId,
+              estado: "enviado",
+              messageId: response.data.messageId,
+            });
+          } else {
+            const errorMsg = response.data.error || "Error desconocido";
+            console.error(`   ❌ FALLO en respuesta: ${errorMsg}`);
+            throw new Error(errorMsg);
+          }
+        } catch (err) {
+          resultados.fallidos++;
+          
+          console.error(`   ❌ ERROR:`, err);
+          console.error(`      Mensaje: ${err.message}`);
+          console.error(`      Response: ${err.response?.data?.error}`);
+          console.error(`      Status: ${err.response?.status}`);
+          if (err.response?.data) {
+            console.error(`      Data completo:`, err.response.data);
+          }
+
+          const esChatNoEncontrado = 
+            err.message?.includes("chat not found") ||
+            err.response?.data?.error?.includes("chat not found");
+          const errorMsg = esChatNoEncontrado
+            ? "El usuario no ha iniciado /start con el bot en Telegram"
+            : err.response?.data?.error || err.message || "Error desconocido";
+
+          console.warn(
+            `   ⚠️ Error enviando a ${enlace.docente?.nombre}: ${errorMsg}\n`
+          );
+          resultados.detalles.push({
+            docente: enlace.docente?.nombre || "Desconocido",
+            grado: enlace.grado,
+            chatId: enlace.docente?.chat_id,
+            estado: "error",
+            error: errorMsg,
+          });
+        }
+      }
+
+      // Mostrar resumen
+      const totalEnviados = resultados.exitosos;
+      const totalFallidos = resultados.fallidos;
+      const totalWarning = resultados.conWarning;
+
+      console.log("\n📊 RESUMEN DE ENVÍO:", resultados);
+
+      if (totalEnviados > 0 || totalFallidos > 0) {
+        // Hubo envíos (exitosos o fallidos)
+        let mensajeResumen = `📬 Envío Completado\n\n`;
+        
+        if (totalEnviados > 0) {
+          mensajeResumen += `✅ ${totalEnviados} mensaje(s) enviado(s) correctamente\n`;
+        }
+        
+        if (totalFallidos > 0) {
+          mensajeResumen += `❌ ${totalFallidos} fallo(s) - El usuario debe iniciar /start con el bot\n`;
+        }
+        
+        if (totalWarning > 0) {
+          mensajeResumen += `⚠️ ${totalWarning} sin configurar - Los docentes deben guardar su chat_id\n`;
+        }
+
+        if (totalEnviados > 0) {
+          showSuccess("Éxito - Resumen de Envío", mensajeResumen);
+        } else {
+          showWarning("Envío Completado", mensajeResumen);
+        }
 
         // Inicializar asistencias en estado Pendiente para cada grado seleccionado
         for (const gradoId of formulario.gradosSeleccionados) {
@@ -637,17 +881,13 @@ ${user.nombre} ${user.apellido}
               idDocente:
                 docentes.find((d) =>
                   d.gradosAsignados?.some(
-                    (g) => (g.idGrado || g.id_grado) === gradoId
-                  )
+                    (g) => (g.idGrado || g.id_grado) === gradoId,
+                  ),
                 )?.id_persona || null,
             });
           } catch (err) {
-            /*console.warn(
-              `Error inicializando asistencias para grado ${gradoId}:`,
-              err
-            );*/
             showWarning(
-              `Error inicializando asistencias para grado ${gradoId}: ${err.message}`
+              `Error inicializando asistencias para grado ${gradoId}: ${err.message}`,
             );
           }
         }
@@ -664,17 +904,38 @@ ${user.nombre} ${user.apellido}
           mensaje: "",
         });
         setGradosFiltrados(grados); // Resetear grados filtrados
-      } else {
-        throw new Error(
-          response.data.message || "Error al enviar por Telegram"
+
+        // Mostrar detalles en consola
+        console.log("📊 Detalles del envío:", resultados.detalles);
+      } else if (totalWarning === enlaces.length) {
+        // TODOS los docentes sin chat_id
+        showWarning(
+          "⚠️ Ningún docente está configurado",
+          `Ninguno de los ${enlaces.length} docentes tiene Chat ID configurado en Telegram.\n\n` +
+          `📋 Pasos necesarios:\n\n` +
+          `1. Cada docente debe ir a "Configuración Telegram"\n` +
+          `2. Buscar el bot @DocenteComedor_Bot en Telegram\n` +
+          `3. Escribir /start y luego /chatid\n` +
+          `4. Guardar su Chat ID en la app\n\n` +
+          `💡 Usa el botón "Ver Instrucciones" en Configuración Telegram para más detalles.`
         );
       }
     } catch (error) {
-      //console.error("Error enviando por Telegram:", error);
+      console.error("❌ ERROR GENERAL en enviarTelegramTodos:");
+      console.error("   Mensaje:", error.message);
+      console.error("   Stack:", error.stack);
+      if (error.response) {
+        console.error("   Response status:", error.response.status);
+        console.error("   Response data:", error.response.data);
+      }
+      
       showError(
         "Error",
-        "Error al enviar por Telegram. Verifique la configuración del bot."
+        `Error al enviar por Telegram: ${error.message}. Verifique que los docentes tengan Chat ID de Telegram configurado.`,
       );
+    } finally {
+      setLoading(false);
+      console.log("\n✅ Proceso completado");
     }
   };
 
@@ -695,7 +956,7 @@ ${user.nombre} ${user.apellido}
   const registrarAsistenciaDirecta = async (enlace) => {
     const cantidadPresentes = prompt(
       `Registre la cantidad de alumnos presentes para ${enlace.grado} - ${enlace.servicio}:`,
-      "0"
+      "0",
     );
 
     if (cantidadPresentes === null || cantidadPresentes === "") {
@@ -713,7 +974,7 @@ ${user.nombre} ${user.apellido}
 
       // Buscar el ID del grado en la estructura de datos
       const grado = grados.find(
-        (g) => (g.nombreGrado || g.nombre) === enlace.grado
+        (g) => (g.nombreGrado || g.nombre) === enlace.grado,
       );
       if (!grado) {
         showError("Error", "No se pudo encontrar el grado");
@@ -734,8 +995,8 @@ ${user.nombre} ${user.apellido}
           prev.map((e) =>
             e.id === enlace.id
               ? { ...e, registrado: true, cantidadPresentes: cantidad }
-              : e
-          )
+              : e,
+          ),
         );
       } else {
         showInfoError("Información", `❌ Error: ${resultado.message}`);
@@ -791,13 +1052,13 @@ ${user.nombre} ${user.apellido}
                     Fecha *
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     className="form-control"
                     id="fecha"
                     name="fecha"
                     value={fechaDisplay}
                     onChange={handleInputChange}
-                    placeholder="DD-MM-AAAA"
+                    placeholder="DD/MM/AAAA"
                     pattern="\d{2}-\d{2}-\d{4}"
                     required
                   />
@@ -835,14 +1096,15 @@ ${user.nombre} ${user.apellido}
                   {serviciosDisponibles.length === 0 &&
                     servicios.length > 0 && (
                       <div className="mt-2 alert alert-info">
-                        <span><i className="fas fa-info-circle me-2"></i>
-                        <b>Información: </b>
-                        Todos los servicios ya tienen enlaces generados para la fecha{" "}
-                        {fechaDisplay}. Si necesita regenerar un enlace,
-                        primero debe eliminar las asistencias existentes.
-                      </span>
-                        </div>
-                    
+                        <span>
+                          <i className="fas fa-info-circle me-2"></i>
+                          <b>Información: </b>
+                          Todos los servicios ya tienen enlaces generados para
+                          la fecha {fechaDisplay.split("-").reverse().join("-")}. Si necesita regenerar un
+                          enlace, primero debe eliminar las asistencias
+                          existentes.
+                        </span>
+                      </div>
                     )}
                 </div>
               </div>
@@ -922,8 +1184,8 @@ ${user.nombre} ${user.apellido}
                           const docenteAsignado = docentes.find((docente) =>
                             docente.gradosAsignados?.some(
                               (grad) =>
-                                (grad.idGrado || grad.id_grado) === gradoId
-                            )
+                                (grad.idGrado || grad.id_grado) === gradoId,
+                            ),
                           );
 
                           const isSelected =
@@ -1022,7 +1284,7 @@ ${user.nombre} ${user.apellido}
                               </div>
                             </div>
                           );
-                        }
+                        },
                       )}
                     </div>
 
@@ -1060,16 +1322,15 @@ ${user.nombre} ${user.apellido}
                         <i className="fas fa-info-circle me-2"></i>
                         <strong>
                           {formulario.gradosSeleccionados.length}
-                        </strong>{" "}
-                        grado(s) seleccionado(s)
+                        </strong>
+                        &nbsp;grado(s) seleccionado(s)
                         {formulario.idServicio && turnosServicio.length > 0 && (
                           <span>
-                            {" "}
-                            del servicio{" "}
+                            &nbsp;del servicio{" "}
                             <strong>
                               {
                                 servicios.find(
-                                  (s) => s.idServicio === formulario.idServicio
+                                  (s) => s.idServicio === formulario.idServicio,
                                 )?.nombre
                               }
                             </strong>
@@ -1140,7 +1401,7 @@ ${user.nombre} ${user.apellido}
                     if (enlaces.length > 0) {
                       const confirmar = await showConfirm(
                         "Confirmar acción",
-                        "¿Está seguro que desea limpiar el formulario? Se perderán los enlaces generados."
+                        "¿Está seguro que desea limpiar el formulario? Se perderán los enlaces generados.",
                       );
                       if (confirmar) {
                         limpiarFormulario();
@@ -1172,11 +1433,26 @@ ${user.nombre} ${user.apellido}
             </div>
             <div>
               <button
-                className="btn btn-primary me-2"
+                className={`btn btn-primary me-2 ${loading ? "disabled" : ""}`}
                 onClick={enviarTelegramTodos}
+                disabled={loading}
               >
-                <i className="fab fa-telegram me-2"></i>
-                Enviar por Telegram
+                {loading ? (
+                  <>
+                    <div
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    >
+                      <span className="visually-hidden">Enviando...</span>
+                    </div>
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <i className="fab fa-telegram me-2"></i>
+                    Enviar por Telegram
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1226,7 +1502,9 @@ ${user.nombre} ${user.apellido}
                             {enlace.servicio}
                           </div>
                           <small className="text-muted">
-                            {parseFechaLocal(enlace.fecha).toLocaleDateString("es-ES")}
+                            {parseFechaLocal(enlace.fecha).toLocaleDateString(
+                              "es-ES",
+                            )}
                           </small>
                         </td>
                         <td>

@@ -691,48 +691,92 @@ export const obtenerInsumosSemanales = async (req, res) => {
     let planificacion;
 
     if (fechaInicioParam && fechaFinParam) {
-      // Si se proporciona semana específica, buscar esa planificación exacta
-      // ⚠️ SOLO ACTIVOS: Solo mostrar insumos de planificaciones en estado 'Activo'
+      console.log(`[Insumos] Buscando planificación que se superponga con: ${fechaInicioParam} - ${fechaFinParam}`);
+      
+      // Si se proporciona semana específica, buscar una planificación que se SUPERPONGA
+      // (que tenga al menos un día en común, no que sea exactamente igual)
+      // ⚠️ Buscar tanto 'Activo' como 'Finalizado'
       const [planificaciones] = await connection.query(
-        `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados 
+        `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados, estado 
          FROM PlanificacionMenus 
-         WHERE DATE(fechaInicio) = ? AND DATE(fechaFin) = ? AND estado = 'Activo'
+         WHERE DATE(fechaInicio) <= ? AND DATE(fechaFin) >= ? AND estado IN ('Activo', 'Finalizado')
          LIMIT 1`,
-        [fechaInicioParam, fechaFinParam]
+        [fechaFinParam, fechaInicioParam]
       );
 
+      console.log(`[Insumos] Resultado de búsqueda Activo/Finalizado:`, planificaciones);
+
       if (!planificaciones || planificaciones.length === 0) {
-        return res.status(400).json({
-          success: false,
-          mensaje: `No existe planificación ACTIVA para la semana ${fechaInicioParam} - ${fechaFinParam}. Solo se muestran insumos de semanas en estado Activo.`,
+        // Verificar si existe en estado Programado
+        const [planificacionProgramada] = await connection.query(
+          `SELECT estado 
+           FROM PlanificacionMenus 
+           WHERE DATE(fechaInicio) <= ? AND DATE(fechaFin) >= ? AND estado = 'Programado'
+           LIMIT 1`,
+          [fechaFinParam, fechaInicioParam]
+        );
+        
+        if (planificacionProgramada && planificacionProgramada.length > 0) {
+          // Retornar 200 con estado "Programado" en lugar de 400
+          // Esto permite que el frontend maneje elegantemente sin "error"
+          return res.status(200).json({
+            success: true,
+            insumos: [],
+            estado: "Programado",
+            mensaje: `La planificación de esta semana está en estado Programado. Los insumos solo se muestran cuando la planificación está en estado Activo o Finalizado.`,
+          });
+        }
+        
+        // Retornar 200 con array vacío en lugar de 400 para casos sin planificación
+        // Esto permite que el frontend maneje elegantemente el caso de "sin datos"
+        return res.status(200).json({
+          success: true,
+          insumos: [],
+          mensaje: `No existe planificación para la semana ${fechaInicioParam} - ${fechaFinParam}.`,
         });
       }
 
       planificacion = planificaciones[0];
       console.log(
-        `[Insumos] Usando planificación Activa específica: ${fechaInicioParam} - ${fechaFinParam}`
+        `[Insumos] Usando planificación ${planificacion.estado} específica: ${fechaInicioParam} - ${fechaFinParam}`
       );
     } else {
-      // Fallback: obtener SOLO la planificación Activa actual
+      // Fallback: obtener la planificación Activa o Finalizado actual
       const [planificaciones] = await connection.query(
-        `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados 
+        `SELECT BIN_TO_UUID(id_planificacion) as id_planificacion, fechaInicio, fechaFin, comensalesEstimados, estado 
          FROM PlanificacionMenus 
-         WHERE estado = 'Activo' AND DATE(fechaFin) >= CURDATE()
-         ORDER BY fechaInicio ASC 
+         WHERE estado IN ('Activo', 'Finalizado') AND DATE(fechaFin) >= CURDATE()
+         ORDER BY FIELD(estado, 'Activo', 'Finalizado'), fechaInicio ASC 
          LIMIT 1`
       );
 
       if (!planificaciones || planificaciones.length === 0) {
+        // Verificar si existe en estado Programado
+        const [planificacionProgramada] = await connection.query(
+          `SELECT estado 
+           FROM PlanificacionMenus 
+           WHERE estado = 'Programado' AND DATE(fechaFin) >= CURDATE()
+           LIMIT 1`
+        );
+        
+        if (planificacionProgramada && planificacionProgramada.length > 0) {
+          return res.status(400).json({
+            success: false,
+            mensaje: `La planificación de esta semana está en estado Programado. Los insumos solo se muestran cuando la planificación está en estado Activo o Finalizado.`,
+            estado: "Programado",
+          });
+        }
+        
         return res.status(400).json({
           success: false,
           mensaje:
-            "No hay planificación ACTIVA en este momento. El cálculo de insumos solo se realiza para semanas en estado Activo.",
+            "No hay planificación en estado Activo o Finalizado en este momento. El cálculo de insumos solo se realiza para semanas en estos estados.",
         });
       }
 
       planificacion = planificaciones[0];
       console.log(
-        `[Insumos] Usando planificación Activa vigente: ${planificacion.fechaInicio} - ${planificacion.fechaFin}`
+        `[Insumos] Usando planificación ${planificacion.estado} vigente: ${planificacion.fechaInicio} - ${planificacion.fechaFin}`
       );
     }
 
@@ -960,6 +1004,9 @@ export const obtenerInsumosSemanales = async (req, res) => {
       insumos,
       detallesCalculo: detallesCalculoNombrado,
       planificacion: planificacion.id_planificacion,
+      estado: planificacion.estado,
+      fechaInicio: planificacion.fechaInicio,
+      fechaFin: planificacion.fechaFin,
     });
   } catch (error) {
     console.error("Error obteniendo insumos semanales:", error);

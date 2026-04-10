@@ -118,9 +118,9 @@ const formatearMoneda = (valor) => {
  */
 const KPICard = ({ icon, title, value, subtitle, color = "primary" }) => (
   <div className="col-md-6 five-card mb-2">
-    <div className="card kpi-card text-center">
+    <div className="card card-estadistica kpi-card text-center">
       <div className="card-body">
-        <div className={`kpi-icon text-${color} mb-3`}>
+        <div className={`kpi-icon text-${color} mb-2`}>
           <i className={`${icon} fa-3x`}></i>
         </div>
         <h6 className="kpi-title mb-2">{title}</h6>

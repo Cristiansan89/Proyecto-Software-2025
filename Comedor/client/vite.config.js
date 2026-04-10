@@ -11,7 +11,9 @@ export default defineConfig({
     allowedHosts: [
       "localhost",
       "127.0.0.1",
-      "spleeny-slouchily-brenda.ngrok-free.dev",
+      // "spleeny-slouchily-brenda.ngrok-free.dev",
+      //"vincent-intercalary-unhealthily.ngrok-free.dev",
+      "gift-emission-hurled.ngrok-free.dev"
     ],
     // Headers para evitar caché a través de ngrok
     headers: {

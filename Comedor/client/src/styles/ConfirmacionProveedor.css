@@ -724,12 +724,12 @@
 }
 
 .footer-exitosa p {
-  margin: 0.3rem 0;
+  padding-left: 12px;
 }
 
 .timestamp {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgb(255, 255, 255);
 }
 
 /* Responsive */

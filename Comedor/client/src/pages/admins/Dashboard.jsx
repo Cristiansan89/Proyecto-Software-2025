@@ -267,11 +267,11 @@ const AdminDashboard = () => {
                 <div className="system-info">
                   <div className="info-item">
                     <span className="info-label">Versión:</span>
-                    <span className="info-value">2.27.31</span>
+                    <span className="info-value">2.28.32</span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Última actualización:</span>
-                    <span className="info-value">Marzo 2026</span>
+                    <span className="info-value">Abril 2026</span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Base de datos:</span>

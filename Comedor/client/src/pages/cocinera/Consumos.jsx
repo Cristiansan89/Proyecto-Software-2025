@@ -86,6 +86,8 @@ const Consumos = () => {
   const [loading, setLoading] = useState(false);
   const [consumos, setConsumos] = useState([]);
   const [servicios, setServicios] = useState([]);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [filtros, setFiltros] = useState({
     fechaInicio: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
@@ -458,6 +460,13 @@ const Consumos = () => {
     );
   }
 
+  // Cálculo de paginación
+  const filteredInsumos = consumos;
+  const totalPages = Math.ceil(filteredInsumos.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const consumosAMostrar = filteredInsumos.slice(startIndex, endIndex);
+
   return (
     <div>
       {/* Header */}
@@ -631,6 +640,28 @@ const Consumos = () => {
           </button>
         </div>
 
+        {/* Selector de tamaño de página y Paginación */}
+        <div className="page-size-selector mt-3 mx-4">
+          <span className="text-dark">Registros por página</span>
+          <select
+            className="form-select"
+            style={{ width: "60px" }}
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+          </select>
+          <span className="ms-2 text-muted">
+            Total {filteredInsumos.length} registros
+          </span>
+        </div>
+
+        {/* Tabla de Consumos */}
         <div className="card-body">
           {loading ? (
             <div className="text-center py-4">
@@ -672,10 +703,10 @@ const Consumos = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {consumos.map((consumo, index) => (
+                  {consumosAMostrar.map((consumo, index) => (
                     <tr key={`${consumo.id_consumo}-${index}`}>
                       <td>
-                        <strong>{index + 1}</strong>
+                        <strong>{startIndex + index + 1}</strong>
                       </td>
                       <td>
                         <div className="d-flex flex-column">
@@ -723,6 +754,32 @@ const Consumos = () => {
                   ))}
                 </tbody>
               </table>
+               {totalPages > 1 && (
+                <div className="table-footer">
+                  <div className="pagination">
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+                    <div className="pagination-info">
+                      Página {currentPage} de {totalPages} (
+                      {filteredInsumos.length} registros)
+                    </div>
+                    <button
+                      className="pagination-btn"
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                    >
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

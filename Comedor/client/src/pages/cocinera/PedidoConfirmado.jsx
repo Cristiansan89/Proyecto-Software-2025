@@ -17,6 +17,8 @@ const PedidoConfirmado = () => {
     estado: "",
     numeroPedido: "",
   });
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     cargarPedidosConfirmados();
@@ -133,7 +135,7 @@ const PedidoConfirmado = () => {
         fecha = new Date(fechaString);
       } else {
         // Si es solo fecha (YYYY-MM-DD), crear fecha local
-        const [año, mes, día] = fechaString.split('-').map(Number);
+        const [año, mes, día] = fechaString.split("-").map(Number);
         fecha = new Date(año, mes - 1, día);
       }
 
@@ -154,6 +156,11 @@ const PedidoConfirmado = () => {
   };
 
   const pedidosFiltrados = filtrarPedidos();
+  const filteredInsumos = pedidosFiltrados;
+  const totalPages = Math.ceil(filteredInsumos.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const pedidosACamostre = filteredInsumos.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -216,19 +223,40 @@ const PedidoConfirmado = () => {
         )}
       </div>
 
+      {/* Selector de tamaño de página y Paginación */}
+      <div className="page-size-selector mt-3 mb-3">
+        <span className="text-dark mx-2">Registros por página</span>
+        <select
+          className="form-select"
+          style={{ width: "60px" }}
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setCurrentPage(1);
+          }}
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+        </select>
+        <span className="ms-2 text-muted">
+          Total {filteredInsumos.length} registros
+        </span>
+      </div>
+
       {/* Tabla de Pedidos Confirmados */}
       <div className="table-container">
         {pedidosFiltrados.length === 0 ? (
           <div colSpan={12}>
-              <div className="empty-state">
-                <i className="fas fa-search empty-icon"></i>
-                <h5>No se encontraron pedidos confirmados</h5>
-                <p>No hay pedidos que coincidan con tu búsqueda.</p>
-              </div>
+            <div className="empty-state">
+              <i className="fas fa-search empty-icon"></i>
+              <h5>No se encontraron pedidos confirmados</h5>
+              <p>No hay pedidos que coincidan con tu búsqueda.</p>
             </div>
+          </div>
         ) : (
-          <div className="scrollable-table">
-            <div className="">
+          <div>
+            <div>
               <div>
                 <table
                   className="table table-striped data-table"
@@ -239,7 +267,6 @@ const PedidoConfirmado = () => {
                     <col style={{ width: "11%" }} />
                     <col style={{ width: "11%" }} />
                     <col style={{ width: "11%" }} />
-
                     <col style={{ width: "11%" }} />
                     <col style={{ width: "11%" }} />
                     <col style={{ width: "11%" }} />
@@ -260,10 +287,10 @@ const PedidoConfirmado = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {pedidosFiltrados.map((pedido, index) => (
+                    {pedidosACamostre.map((pedido, index) => (
                       <tr key={pedido.id_pedido}>
                         <td className="numero-id">
-                          <span>{index + 1}</span>
+                          <span>{startIndex + index + 1}</span>
                         </td>
                         <td className="proveedor-nombre">
                           {pedido.razonSocial}
@@ -328,6 +355,34 @@ const PedidoConfirmado = () => {
                     ))}
                   </tbody>
                 </table>
+                {totalPages > 1 && (
+                  <div className="table-footer">
+                    <div className="pagination">
+                      <button
+                        className="pagination-btn"
+                        onClick={() =>
+                          setCurrentPage((p) => Math.max(1, p - 1))
+                        }
+                        disabled={currentPage === 1}
+                      >
+                        <i className="fas fa-chevron-left"></i>
+                      </button>
+                      <div className="pagination-info">
+                        Página {currentPage} de {totalPages} (
+                        {filteredInsumos.length} registros)
+                      </div>
+                      <button
+                        className="pagination-btn"
+                        onClick={() =>
+                          setCurrentPage((p) => Math.min(totalPages, p + 1))
+                        }
+                        disabled={currentPage === totalPages}
+                      >
+                        <i className="fas fa-chevron-right"></i>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -327,6 +327,63 @@
   animation: fadeInUp 0.6s ease-out 1.8s both;
 }
 
+/* Botones de acción */
+.botones-accion {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.aviso-cierre {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.1rem;
+  animation: pulse 2s ease-in-out infinite;
+  max-width: 600px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  margin-top: 2rem;
+}
+
+.aviso-cierre p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.aviso-cierre strong {
+  font-size: 1.4rem;
+  color: #ffeb3b;
+  font-weight: 700;
+  display: block;
+  margin-top: 0.5rem;
+  letter-spacing: 1px;
+}
+
+
+/* Footer */
+.footer-exitosa {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: white;
+  margin-top: 2rem;
+}
+
+.footer-exitosa p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.timestamp {
+  font-size: 0.85rem;
+  color: white;
+  opacity: 0.8;
+  padding-left: 15px;
+}
+
 .btn-cerrar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -337,9 +394,11 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: inline-flex;
+  display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
+  margin-top: 2rem;
   box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
 }
 
@@ -354,27 +413,34 @@
 
 /* Footer de contacto */
 .footer-contacto {
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 1.5rem;
   animation: fadeInUp 0.6s ease-out 2s both;
+  color: white;
 }
 
 .footer-contacto p {
-  color: #7f8c8d;
+  color: white;
   font-size: 0.9rem;
   margin: 0;
+  padding-left: 15px;
   line-height: 1.6;
 }
 
 .footer-contacto a {
-  color: #667eea;
+  color: #ffffff;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
+.textcolor {
+  color: white;
+  padding-left: 15px;
+}
+
 .footer-contacto a:hover {
-  color: #764ba2;
+  color: #ffffff;
   text-decoration: underline;
 }
 
@@ -421,8 +487,19 @@
   }
 
   .btn-cerrar {
+    background: rgba(102, 126, 234, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.4);
+    color: #667eea;
     padding: 0.8rem 2rem;
-    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+  }
+
+  .botones-accion {
+    flex-direction: column;
+    gap: 0.8rem;
   }
 
   .info-row {

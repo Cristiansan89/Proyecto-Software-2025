@@ -38,6 +38,8 @@ const PedidoInsumo = ({ onModoEdicion }) => {
   const [pedidoEditando, setPedidoEditando] = useState(null);
   const [mostrarDetallesPedido, setMostrarDetallesPedido] = useState(null);
   const [mostrarAutomatico, setMostrarAutomatico] = useState(false);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Función auxiliar para parsear fechas de manera consistente
   const parsearFecha = (fechaString) => {
@@ -51,7 +53,7 @@ const PedidoInsumo = ({ onModoEdicion }) => {
         fecha = new Date(fechaString);
       } else {
         // Si es solo fecha (YYYY-MM-DD), parsear directamente sin conversión UTC
-        const [año, mes, día] = fechaString.split('-').map(Number);
+        const [año, mes, día] = fechaString.split("-").map(Number);
         // Crear fecha local directamente
         fecha = new Date(año, mes - 1, día);
       }
@@ -97,7 +99,7 @@ const PedidoInsumo = ({ onModoEdicion }) => {
         fecha = new Date(fechaString);
       } else {
         // Si es solo fecha (YYYY-MM-DD), crear fecha local
-        const [año, mes, día] = fechaString.split('-').map(Number);
+        const [año, mes, día] = fechaString.split("-").map(Number);
         fecha = new Date(año, mes - 1, día);
       }
 
@@ -534,6 +536,13 @@ const PedidoInsumo = ({ onModoEdicion }) => {
     }
   };
 
+  // Cálculo de paginación
+  const filteredInsumos = pedidosFiltrados;
+  const totalPages = Math.ceil(filteredInsumos.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const pedidosAMostrar = filteredInsumos.slice(startIndex, endIndex);
+
   // Vista de creación/edición de pedido
   if (vistaActual === "crear") {
     return (
@@ -789,6 +798,29 @@ const PedidoInsumo = ({ onModoEdicion }) => {
             </button>
           </div>
         </div>
+
+        {/* Selector de tamaño de página y Paginación */}
+        <div className="page-size-selector mt-3">
+          <span className="text-dark mx-4">Registros por página</span>
+          <select
+            className="form-select"
+            style={{ width: "60px" }}
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+          </select>
+          <span className="ms-2 text-muted">
+            Total {filteredInsumos.length} registros
+          </span>
+        </div>
+
+        {/* Tabla de la lista de Pedido */}
         <div className="card-body">
           {loading ? (
             <div className="text-center py-4">
@@ -808,8 +840,8 @@ const PedidoInsumo = ({ onModoEdicion }) => {
               </p>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover">
+            <div className="table-container">
+              <table className="table table-striped data-table">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -823,10 +855,10 @@ const PedidoInsumo = ({ onModoEdicion }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {pedidosFiltrados.map((pedido, index) => (
+                  {pedidosAMostrar.map((pedido, index) => (
                     <tr key={pedido.id_pedido || `pedido-${index}`}>
                       <td>
-                        <strong>{index + 1}</strong>
+                        <strong>{startIndex + index + 1}</strong>
                       </td>
                       <td>{formatearFechaConHora(pedido.fechaEmision)}</td>
                       <td>
@@ -939,6 +971,32 @@ const PedidoInsumo = ({ onModoEdicion }) => {
                   ))}
                 </tbody>
               </table>
+              {totalPages > 1 && (
+                <div className="table-footer">
+                  <div className="pagination">
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+                    <div className="pagination-info">
+                      Página {currentPage} de {totalPages} (
+                      {filteredInsumos.length} registros)
+                    </div>
+                    <button
+                      className="pagination-btn"
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                    >
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

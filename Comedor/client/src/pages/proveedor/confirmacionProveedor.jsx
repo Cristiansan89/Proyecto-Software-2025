@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api.js";
-import "./confirmacionProveedor.css";
+import "../../styles/ConfirmacionProveedor.css";
 
 const ConfirmacionProveedor = () => {
   const { token } = useParams();

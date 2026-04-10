@@ -45,4 +45,7 @@ router.get("/docentes-list", TelegramController.listDocentesWithChatId);
 // Manejar callbacks de botones de alertas (Dar visto / Realizar Pedido)
 router.post("/alerta-callback", TelegramController.handleAlertaCallback);
 
+// 🚀 NUEVO: Enviar mensajes personalizados a múltiples destinatarios
+router.post("/send-personalized-mass", TelegramController.sendPersonalizedMassMessages);
+
 export default router;

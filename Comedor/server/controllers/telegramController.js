@@ -751,4 +751,194 @@ export class TelegramController {
       });
     }
   }
+
+  /**
+   * 🚀 NUEVO ENDPOINT: Enviar mensajes personalizados a múltiples destinatarios
+   * 
+   * Características:
+   * - Filtra dinámicamente qué registros recibirán mensajes
+   * - Personaliza el contenido para cada destinatario
+   * - Extrae chat_id único de cada persona
+   * - Envía mensajes individuales
+   * 
+   * Body esperado:
+   * {
+   *   "tipoDestinatarios": "docentes|proveedores|alumnos",
+   *   "filtro": { propiedades para filtrar },
+   *   "contenido": { datos para personalizar el mensaje },
+   *   "botType": "docente|proveedor|sistema"
+   * }
+   */
+  static async sendPersonalizedMassMessages(req, res) {
+    const timestampLog = `[${new Date().toISOString().substr(11, 8)}]`;
+    
+    try {
+      const { tipoDestinatarios, filtro, contenido, botType = "docente" } = req.body;
+
+      console.log(`\n${timestampLog} 🚀 INICIANDO ENVÍO MASIVO PERSONALIZADO`);
+      console.log(`${timestampLog} ├─ Tipo: ${tipoDestinatarios}`);
+      console.log(`${timestampLog} ├─ Bot: ${botType}`);
+      console.log(`${timestampLog} └─ Filtro: ${JSON.stringify(filtro)}\n`);
+
+      // 📋 VALIDACIONES
+      if (!tipoDestinatarios) {
+        return res.status(400).json({
+          success: false,
+          message: "Se requiere 'tipoDestinatarios' (docentes|proveedores|alumnos)",
+        });
+      }
+
+      const { connection } = await import("../models/db.js");
+      let registros = [];
+
+      // 🔍 OBTENER REGISTROS SEGÚN TIPO
+      if (tipoDestinatarios === "docentes") {
+        const [docentes] = await connection.query(`
+          SELECT 
+            d.id_docenteTitular,
+            d.nombre,
+            d.apellido,
+            d.mail,
+            d.telefono,
+            dct.telegramChatId as chat_id,
+            dct.telegramUsuario,
+            dct.notificacionesTelegram,
+            g.nombreGrado as grado,
+            d.seccion
+          FROM DocenteTitular d
+          LEFT JOIN DocenteConfiguracionTelegram dct ON d.id_docenteTitular = dct.id_docenteTitular
+          LEFT JOIN Grados g ON d.id_grado = g.id_grado
+          WHERE d.estado = 'Activo'
+          ORDER BY d.nombre ASC
+        `);
+        registros = docentes || [];
+      } else if (tipoDestinatarios === "proveedores") {
+        const [proveedores] = await connection.query(`
+          SELECT 
+            p.id_proveedor,
+            p.razonSocial,
+            p.email,
+            p.telefono,
+            pct.telegramChatId as chat_id,
+            pct.telegramUsuario,
+            pct.notificacionesTelegram
+          FROM Proveedores p
+          LEFT JOIN ProveedorConfiguracionTelegram pct ON p.id_proveedor = pct.id_proveedor
+          WHERE p.estado = 'Activo'
+          ORDER BY p.razonSocial ASC
+        `);
+        registros = proveedores || [];
+      } else if (tipoDestinatarios === "alumnos") {
+        const [alumnos] = await connection.query(`
+          SELECT 
+            a.id_alumno,
+            a.nombre,
+            a.apellido,
+            a.email,
+            act.telegramChatId as chat_id,
+            act.telegramUsuario,
+            act.notificacionesTelegram,
+            g.nombreGrado as grado,
+            a.seccion
+          FROM Alumnos a
+          LEFT JOIN AlumnoConfiguracionTelegram act ON a.id_alumno = act.id_alumno
+          LEFT JOIN Grados g ON a.id_grado = g.id_grado
+          WHERE a.estado = 'Activo'
+          ORDER BY a.nombre ASC
+        `);
+        registros = alumnos || [];
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: `Tipo de destinatarios no reconocido: ${tipoDestinatarios}`,
+        });
+      }
+
+      console.log(`${timestampLog} 📊 Se encontraron ${registros.length} registros`);
+
+      // 🔄 CREAR FUNCIÓN DE FILTRO
+      const funcionFiltro = (registro) => {
+        if (!filtro) return true; // Sin filtro = enviar a todos
+
+        // Filtro por notificaciones activas (por defecto)
+        if (filtro.notificacionesActivas && 
+            registro.notificacionesTelegram !== "Activo") {
+          return false;
+        }
+
+        // Filtro por chat_id configurado
+        if (filtro.conChatId && !registro.chat_id) {
+          return false;
+        }
+
+        // Filtro por grado
+        if (filtro.grado && registro.grado !== filtro.grado) {
+          return false;
+        }
+
+        // Filtro por email
+        if (filtro.email && !registro.email?.includes(filtro.email)) {
+          return false;
+        }
+
+        // Permitir filtros customizados adicionales
+        for (const [key, value] of Object.entries(filtro)) {
+          if (!["notificacionesActivas", "conChatId", "grado", "email"].includes(key)) {
+            if (registro[key] !== value) {
+              return false;
+            }
+          }
+        }
+
+        return true;
+      };
+
+      // 📝 CREAR FUNCIÓN DE CONSTRUCCIÓN DE MENSAJES
+      const constructorMensaje = (registro) => {
+        let tipo = tipoDestinatarios.slice(0, -1); // Eliminar la 's' final
+        if (tipoDestinatarios === "alumnos") tipo = "alumno";
+        
+        return telegramService.formatPersonalizedMessage(
+          registro,
+          tipo,
+          contenido || {}
+        );
+      };
+
+      // 📤 ENVIAR MENSAJES PERSONALIZADOS
+      const resultado = await telegramService.sendPersonalizedMessages(
+        registros,
+        funcionFiltro,
+        constructorMensaje,
+        botType,
+        {}
+      );
+
+      // 📊 RESPONDER CON RESUMEN
+      console.log(`${timestampLog} ✅ ENVÍO COMPLETADO\n`);
+      
+      res.json({
+        success: resultado.success,
+        message: resultado.message,
+        resumen: {
+          totalRegistros: registros.length,
+          enviados: resultado.enviados.length,
+          fallidos: resultado.fallidos.length,
+          filtrados: resultado.filtrados,
+          detallesFallidos: resultado.fallidos.map((f) => ({
+            chatId: f.chatId,
+            error: f.error,
+          })),
+        },
+        tipoDestinatarios,
+      });
+    } catch (error) {
+      console.error(`${timestampLog} ❌ Error en sendPersonalizedMassMessages:`, error);
+      res.status(500).json({
+        success: false,
+        message: "Error al enviar mensajes personalizados",
+        error: error.message,
+      });
+    }
+  }
 }

@@ -217,7 +217,7 @@ const CocineraInventario = () => {
   const obtenerUltimosMovimientos = () => {
     return movimientos
       .sort((a, b) => new Date(b.fechaHora) - new Date(a.fechaHora))
-      .slice(0, 10);
+      .slice(0, 5);
   };
 
   // Opciones para react-select
@@ -688,64 +688,81 @@ const CocineraInventario = () => {
           </div>
 
           {/* Últimos movimientos */}
-          <div className="card mt-3">
-            <div className="card-header text-dark pb-0">
-              <h6>
-                <i className="fas fa-history me-2"></i>
-                Últimos Movimientos
-              </h6>
-            </div>
-            <div className="card-body">
-              {ultimosMovimientos.length === 0 ? (
-                <p className="text-muted text-center">
-                  No hay movimientos recientes
-                </p>
-              ) : (
-                <div className="movimientos-list">
-                  {ultimosMovimientos.map((mov, index) => {
-                    const insumo = inventarios.find(
-                      (inv) =>
-                        inv.id_insumo === mov.idInsumo ||
-                        inv.id_insumo === mov.id_insumo,
-                    );
+          <div className="accordion ml-2 mt-3" id="accordionMovimientos">
+            <div className="accordion-item">
+              <h2 className="accordion-header" id="headingMov">
+                <button
+                  className="accordion-button"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapseMov"
+                  aria-expanded="true"
+                  aria-controls="collapseMov"
+                >
+                  <i className="fas fa-history me-2"></i>
+                  Últimos Movimientos
+                </button>
+              </h2>
 
-                    return (
-                      <div key={index} className="movimiento-item">
-                        <div className="movimiento-header">
-                          <span
-                            className={`badge bg-${
-                              mov.tipoMovimiento === "Entrada"
-                                ? "success"
-                                : mov.tipoMovimiento === "Salida"
-                                  ? "danger"
-                                  : "warning"
-                            }`}
-                          >
-                            {mov.tipoMovimiento === "Entrada"
-                              ? "↗️ Entrada"
-                              : mov.tipoMovimiento === "Salida"
-                                ? "↙️ Salida"
-                                : "🗑️ Merma"}
-                          </span>
-                          <small className="text-muted mx-2">
-                            {formatDate(mov.fechaHora)}
-                          </small>
-                        </div>
-                        <div className="movimiento-content mb-2">
-                          <strong>
-                            {insumo?.nombreInsumo || "Insumo desconocido"}
-                          </strong>
-                          <br />
-                          <span>
-                            {formatNumeroAR(mov.cantidadMovimiento)}{" "}
-                            {insumo?.unidadMedida}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div
+                id="collapseMov"
+                className="accordion-collapse collapse"
+                aria-labelledby="headingMov"
+                data-bs-parent="#accordionMovimientos"
+              >
+                <div className="accordion-body">
+                  {ultimosMovimientos.length === 0 ? (
+                    <p className="text-muted text-center">
+                      No hay movimientos recientes
+                    </p>
+                  ) : (
+                    <div className="movimientos-list">
+                      {ultimosMovimientos.map((mov, index) => {
+                        const insumo = inventarios.find(
+                          (inv) =>
+                            inv.id_insumo === mov.idInsumo ||
+                            inv.id_insumo === mov.id_insumo,
+                        );
+
+                        return (
+                          <div key={index} className="movimiento-item">
+                            <div className="movimiento-header">
+                              <span
+                                className={`badge bg-${
+                                  mov.tipoMovimiento === "Entrada"
+                                    ? "success"
+                                    : mov.tipoMovimiento === "Salida"
+                                      ? "danger"
+                                      : "warning"
+                                }`}
+                              >
+                                {mov.tipoMovimiento === "Entrada"
+                                  ? "↗️ Entrada"
+                                  : mov.tipoMovimiento === "Salida"
+                                    ? "↙️ Salida"
+                                    : "🗑️ Merma"}
+                              </span>
+                              <small className="text-muted mx-2">
+                                {formatDate(mov.fechaHora)}
+                              </small>
+                            </div>
+                            <div className="movimiento-content mb-2">
+                              <strong>
+                                {insumo?.nombreInsumo || "Insumo desconocido"}
+                              </strong>
+                              <br />
+                              <span>
+                                {formatNumeroAR(mov.cantidadMovimiento)}{" "}
+                                {insumo?.unidadMedida}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

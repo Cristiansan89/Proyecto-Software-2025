@@ -425,29 +425,63 @@ export class AlertasInventarioController {
         if (planificaciones && planificaciones.length > 0) {
           hayPlanificacion = true;
           const plan = planificaciones[0];
-          const comensales = plan.comensalesEstimados || 100;
-          console.log(`📋 Planificación activa: ${plan.id_planificacion} | Comensales: ${comensales}`);
+          console.log(`📋 Planificación activa: ${plan.id_planificacion}`);
 
-          // Obtener items de receta para los días de servicio restantes de esta planificación
-          const placeholders = diasRestantes.map(() => '?').join(', ');
-          const [itemsReceta] = await connection.query(
-            `SELECT ir.id_insumo, SUM(ir.cantidadPorPorcion) AS cantidadPorDia_porServicio
-             FROM JornadaPlanificada jp
-             JOIN RecetaJornada rj ON jp.id_jornada = rj.id_jornada
-             JOIN ItemsRecetas ir ON rj.id_receta = ir.id_receta
-             WHERE jp.id_planificacion = UUID_TO_BIN(?)
-               AND jp.diaSemana IN (${placeholders})
-               AND ir.id_insumo IS NOT NULL
-             GROUP BY ir.id_insumo`,
-            [plan.id_planificacion, ...diasRestantes]
-          );
+          // CORRECCIÓN: Obtener comensales POR SERVICIO, no un total único
+          const { PlanificacionMenuModel } = await import("../models/planificacionmenu.js");
 
-          for (const item of itemsReceta) {
-            // Total = cantidad_por_porcion_por_servicio * comensales (acumulado por todos los días)
-            demandaMap[item.id_insumo] = (demandaMap[item.id_insumo] || 0) + (parseFloat(item.cantidadPorDia_porServicio) * comensales);
+          console.log(`📊 Calculando demanda por SERVICIO para ${diasRestantes.length} día(s)...`);
+
+          // Para cada día restante
+          for (const diaEnum of diasRestantes) {
+            // Convertir enum a fecha
+            const jsDay = Object.keys(mapJStoEnum).find(k => mapJStoEnum[k] === diaEnum);
+            const fechaDia = new Date(hoy);
+            fechaDia.setDate(hoy.getDate() + (parseInt(jsDay) - diaSemanaJS));
+
+            // Obtener comensales reales por servicio para ese día
+            const comensalesPorServicio = await PlanificacionMenuModel.calcularComensalesPorServicioYFecha({
+              fecha: fechaDia.toISOString().split('T')[0]
+            });
+
+            console.log(`  📅 ${diaEnum} (${fechaDia.toISOString().split('T')[0]}): ${comensalesPorServicio.length} servicios`);
+
+            // Crear mapa id_servicio → comensales para este día
+            const servicioComensalesMap = {};
+            comensalesPorServicio.forEach(s => {
+              servicioComensalesMap[s.id_servicio] = s.totalComensales;
+              console.log(`     → ${s.nombreServicio}: ${s.totalComensales} comensales`);
+            });
+
+            // Obtener items de receta para este día, agrupados por SERVICIO
+            const [itemsReceta] = await connection.query(
+              `SELECT ir.id_insumo, 
+                      jp.id_jornada,
+                      COALESCE(st.id_servicio, (SELECT id_servicio FROM Servicios WHERE estado='Activo' LIMIT 1)) as id_servicio,
+                      SUM(ir.cantidadPorPorcion) AS cantidadPorServicio
+               FROM JornadaPlanificada jp
+               LEFT JOIN ServicioTurno st ON jp.id_turno = st.id_turno
+               JOIN RecetaJornada rj ON jp.id_jornada = rj.id_jornada
+               JOIN ItemsRecetas ir ON rj.id_receta = ir.id_receta
+               WHERE jp.id_planificacion = UUID_TO_BIN(?)
+                 AND jp.diaSemana = ?
+                 AND ir.id_insumo IS NOT NULL
+               GROUP BY ir.id_insumo, jp.id_jornada, id_servicio`,
+              [plan.id_planificacion, diaEnum]
+            );
+
+            // Acumular demanda: cantidad_por_porcion × comensales_real_del_servicio
+            for (const item of itemsReceta) {
+              const comensales = servicioComensalesMap[item.id_servicio] || 0;
+              const cantidadNecesaria = parseFloat(item.cantidadPorServicio || 0) * comensales;
+              
+              demandaMap[item.id_insumo] = (demandaMap[item.id_insumo] || 0) + cantidadNecesaria;
+              
+              console.log(`     💾 Insumo ${item.id_insumo}: ${item.cantidadPorServicio} × ${comensales} = ${cantidadNecesaria}`);
+            }
           }
 
-          console.log(`📊 Demanda calculada para ${Object.keys(demandaMap).length} insumo(s)`);
+          console.log(`📊 Demanda semanal calculada para ${Object.keys(demandaMap).length} insumos`);
         } else {
           console.log("ℹ️ No hay planificación activa para la semana actual. Se usa solo criterio de stock mínimo.");
         }
@@ -495,13 +529,13 @@ export class AlertasInventarioController {
         });
       }
 
-      console.log(`✅ ${insumosValidos.length} insumo(s) requieren pedido según demanda semanal`);
+      console.log(`✅ ${insumosValidos.length} insumo(s) requieren pedido según demanda de alumnos por servicio`);
 
       res.json({
         success: true,
         message: insumosValidos.length > 0
-          ? `Se encontraron ${insumosValidos.length} insumo(s) que no cubren la demanda semanal`
-          : "El stock actual es suficiente para cubrir los servicios de esta semana",
+          ? `Se encontraron ${insumosValidos.length} insumo(s) que no cubren la demanda de alumnos por servicio esta semana`
+          : "El stock actual es suficiente para cubrir a los alumnos de esta semana",
         insumos: insumosValidos,
         diasRestantes,
         hayPlanificacion,

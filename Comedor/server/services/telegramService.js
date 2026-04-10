@@ -369,9 +369,18 @@ class TelegramService {
       messageText += `📝 *Mensaje:* ${mensaje}\n\n`;
     }
 
-    messageText += `📅 *Fecha:* ${new Date(fecha).toLocaleDateString(
-      "es-ES"
-    )}\n`;
+    // Parsear fecha en zona horaria local (YYYY-MM-DD -> DD/MM/YYYY)
+    let fechaFormato;
+    if (typeof fecha === "string" && fecha.includes("-")) {
+      // Si es formato ISO (YYYY-MM-DD), convertir a DD/MM/YYYY
+      const [year, month, day] = fecha.split("-");
+      fechaFormato = `${day}/${month}/${year}`;
+    } else {
+      // Si es un Date, formatear localmente
+      fechaFormato = new Date(fecha).toLocaleDateString("es-ES");
+    }
+
+    messageText += `📅 *Fecha:* ${fechaFormato}\n`;
     messageText += `⏰ *Generado:* ${new Date().toLocaleString("es-ES")}\n\n`;
 
     enlaces.forEach((enlace, index) => {
@@ -493,6 +502,282 @@ class TelegramService {
       );
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * 🔄 MÉTODO PRINCIPAL: Envía mensajes personalizados a múltiples destinatarios
+   * 
+   * Flujo:
+   * 1. Filtra registros según una condición customizable
+   * 2. Itera sobre cada destinatario
+   * 3. Extrae chat_id único de cada registro
+   * 4. Construye mensaje personalizado con datos del destinatario
+   * 5. Envía mensaje individual
+   * 
+   * @param {Array<Object>} registros - Array de objetos con datos de destinatarios
+   * @param {Function|null} filtro - Función que recibe un registro y retorna true/false
+   * @param {Function} constructorMensaje - Función que recibe un registro y retorna el mensaje personalizado
+   * @param {string} botType - Tipo de bot ('docente', 'proveedor', 'sistema')
+   * @param {Object} options - Opciones adicionales (buttons, parse_mode, etc)
+   * 
+   * @returns {Object} { success, enviados, fallidos, detalles[] }
+   */
+  async sendPersonalizedMessages(
+    registros,
+    filtro = null,
+    constructorMensaje,
+    botType = "sistema",
+    options = {}
+  ) {
+    const timestampLog = `[${new Date().toISOString().substr(11, 8)}]`;
+    const resultados = {
+      success: true,
+      enviados: [],
+      fallidos: [],
+      filtrados: 0,
+      detalles: [],
+    };
+
+    try {
+      // 📋 VALIDACIONES
+      if (!Array.isArray(registros) || registros.length === 0) {
+        throw new Error("registros debe ser un array no vacío");
+      }
+
+      if (typeof constructorMensaje !== "function") {
+        throw new Error("constructorMensaje debe ser una función");
+      }
+
+      // 🤖 INICIALIZAR BOT SI ES NECESARIO
+      if (!this.isReady[botType]) {
+        const initResult = await this.initialize(botType);
+        if (!initResult.success) {
+          throw new Error(`No se pudo inicializar bot ${botType}: ${initResult.message}`);
+        }
+      }
+
+      console.log(
+        `\n${timestampLog} 📨 INICIANDO ENVÍO PERSONALIZADO DE MENSAJES`
+      );
+      console.log(
+        `${timestampLog} ├─ Total registros: ${registros.length}`
+      );
+      console.log(
+        `${timestampLog} ├─ Tipo de bot: ${botType}`
+      );
+      console.log(
+        `${timestampLog} ├─ Filtro aplicado: ${filtro ? "Sí" : "No"}`
+      );
+      console.log(
+        `${timestampLog} └─ Con botones: ${options.buttons ? "Sí" : "No"}\n`
+      );
+
+      // 🔄 FILTRAR REGISTROS
+      let registrosFiltrados = registros;
+      if (filtro && typeof filtro === "function") {
+        registrosFiltrados = registros.filter((reg) => {
+          try {
+            return filtro(reg);
+          } catch (e) {
+            console.warn(`${timestampLog} ⚠️ Error en función filtro:`, e.message);
+            return false;
+          }
+        });
+        resultados.filtrados = registros.length - registrosFiltrados.length;
+        console.log(
+          `${timestampLog} 🔍 FILTRADO: ${registrosFiltrados.length} de ${registros.length} registros`
+        );
+      }
+
+      if (registrosFiltrados.length === 0) {
+        console.log(`${timestampLog} ⚠️ No hay registros que cumplan el filtro`);
+        return {
+          ...resultados,
+          success: true,
+          message: "No hay registros para enviar",
+        };
+      }
+
+      // 📤 ITERAR Y ENVIAR A CADA DESTINATARIO
+      for (let i = 0; i < registrosFiltrados.length; i++) {
+        const registro = registrosFiltrados[i];
+        const chatId = registro.chat_id || registro.chatId || registro.telegramChatId;
+
+        if (!chatId) {
+          resultados.fallidos.push({
+            registro,
+            error: "chat_id no encontrado en el registro",
+            indice: i,
+          });
+          console.warn(
+            `${timestampLog} ⚠️ [${i + 1}/${registrosFiltrados.length}] chat_id faltante`
+          );
+          continue;
+        }
+
+        try {
+          // 📝 CONSTRUIR MENSAJE PERSONALIZADO
+          const mensaje = constructorMensaje(registro);
+
+          if (!mensaje || typeof mensaje !== "string") {
+            throw new Error(
+              "constructorMensaje debe retornar un string (el mensaje)"
+            );
+          }
+
+          // 📤 ENVIAR MENSAJE
+          let result;
+          if (options.buttons && typeof options.buttons === "function") {
+            // Si buttons es una función, usarla para generar botones personalizados
+            const botones = options.buttons(registro);
+            result = await this.bots[botType].sendMessage(chatId, mensaje, {
+              parse_mode: "Markdown",
+              disable_web_page_preview: true,
+              reply_markup: {
+                inline_keyboard: botones,
+              },
+            });
+          } else {
+            // Envío simple sin botones
+            result = await this.bots[botType].sendMessage(chatId, mensaje, {
+              parse_mode: "Markdown",
+              disable_web_page_preview: true,
+            });
+          }
+
+          // ✅ REGISTRAR ÉXITO
+          resultados.enviados.push({
+            chatId,
+            messageId: result.message_id,
+            registro,
+            indice: i,
+          });
+
+          console.log(
+            `${timestampLog} ✅ [${i + 1}/${registrosFiltrados.length}] Enviado a chat_id=${chatId} (msg_id=${result.message_id})`
+          );
+        } catch (error) {
+          // ❌ REGISTRAR ERROR
+          resultados.fallidos.push({
+            chatId,
+            registro,
+            error: error.message || String(error),
+            indice: i,
+          });
+
+          const esChatNoEncontrado =
+            error.message?.includes("chat not found") ||
+            error.response?.body?.description?.includes("chat not found");
+
+          const tipoError = esChatNoEncontrado
+            ? "chat_id inválido o usuario no inició /start"
+            : error.message;
+
+          console.warn(
+            `${timestampLog} ❌ [${i + 1}/${registrosFiltrados.length}] Error en chat_id=${chatId}: ${tipoError}`
+          );
+        }
+      }
+
+      console.log(
+        `\n${timestampLog} 📊 RESUMEN FINAL`
+      );
+      console.log(
+        `${timestampLog} ├─ Enviados: ${resultados.enviados.length} ✅`
+      );
+      console.log(
+        `${timestampLog} ├─ Fallidos: ${resultados.fallidos.length} ❌`
+      );
+      console.log(
+        `${timestampLog} └─ Filtrados: ${resultados.filtrados}\n`
+      );
+
+      resultados.success =
+        resultados.fallidos.length === 0;
+      resultados.message = `Enviados: ${resultados.enviados.length}, Fallidos: ${resultados.fallidos.length}`;
+
+      return resultados;
+    } catch (mainError) {
+      console.error(
+        `${timestampLog} ❌ ERROR CRÍTICO en sendPersonalizedMessages:`,
+        mainError.message
+      );
+      return {
+        ...resultados,
+        success: false,
+        error: mainError.message,
+        detalles: [{ error: mainError.message }],
+      };
+    }
+  }
+
+  /**
+   * 🎯 HELPER: Formatea un mensaje personalizado
+   * Útil cuando necesitas usar la lógica de construcción en el controlador
+   * 
+   * @param {Object} destinatario - Objeto con datos del destinatario
+   * @param {string} tipo - Tipo de mensaje ('docente', 'proveedor', 'alumno', etc)
+   * @param {Object} datos - Datos específicos para el mensaje
+   * 
+   * @returns {string} Mensaje formateado
+   */
+  formatPersonalizedMessage(destinatario, tipo, datos = {}) {
+    let mensaje = "";
+
+    switch (tipo) {
+      case "docente":
+        // Para docentes: mostrar grado, sección y asistencias pendientes
+        mensaje = `👨‍🏫 *Hola ${destinatario.nombre || "Docente"}*\n\n`;
+        mensaje += `📚 *Grado/Sección:* ${datos.grado || "No especificado"}\n`;
+        if (datos.asistenciasPendientes && datos.asistenciasPendientes > 0) {
+          mensaje += `⏳ *Asistencias pendientes:* ${datos.asistenciasPendientes}\n`;
+        }
+        if (datos.mensaje) {
+          mensaje += `\n📝 ${datos.mensaje}`;
+        }
+        mensaje += `\n\n✅ Accede al sistema para completar el registro.`;
+        break;
+
+      case "proveedor":
+        // Para proveedores: mostrar pedidos pendientes y detalles
+        mensaje = `🏪 *Hola ${destinatario.razonSocial || destinatario.nombre || "Proveedor"}*\n\n`;
+        if (datos.pedidosPendientes && datos.pedidosPendientes > 0) {
+          mensaje += `📦 *Pedidos pendientes:* ${datos.pedidosPendientes}\n`;
+        }
+        if (datos.insumosPendientes && datos.insumosPendientes.length > 0) {
+          mensaje += `📋 *Insumos solicitados:*\n`;
+          datos.insumosPendientes.forEach((insumo) => {
+            mensaje += `  • ${insumo.nombre || insumo} (${insumo.cantidad || ""})  \n`;
+          });
+        }
+        if (datos.mensaje) {
+          mensaje += `\n📝 ${datos.mensaje}`;
+        }
+        mensaje += `\n\n⏰ *Fecha de entrega esperada:* ${datos.fechaEntrega || "A confirmar"}\n`;
+        mensaje += `✅ Por favor confirma la disponibilidad.`;
+        break;
+
+      case "alumno":
+        // Para alumnos: información sobre comidas del día
+        mensaje = `👋 *Hola ${destinatario.nombre || "Alumno"}*\n\n`;
+        mensaje += `🍽️ *Menú del día ${datos.fecha || new Date().toLocaleDateString("es-ES")}:*\n`;
+        if (datos.menu && datos.menu.length > 0) {
+          datos.menu.forEach((item) => {
+            mensaje += `  • ${item}\n`;
+          });
+        }
+        if (datos.mensaje) {
+          mensaje += `\n📝 ${datos.mensaje}`;
+        }
+        break;
+
+      default:
+        // Mensaje genérico
+        mensaje = `*Mensaje del Sistema*\n\n`;
+        mensaje += datos.mensaje || "Notificación sin contenido";
+    }
+
+    return mensaje;
   }
 }
 
