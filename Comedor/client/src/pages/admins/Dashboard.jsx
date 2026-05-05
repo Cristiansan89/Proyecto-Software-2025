@@ -267,7 +267,7 @@ const AdminDashboard = () => {
                 <div className="system-info">
                   <div className="info-item">
                     <span className="info-label">Versión:</span>
-                    <span className="info-value">2.28.32</span>
+                    <span className="info-value">2.29.33</span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Última actualización:</span>

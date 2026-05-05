@@ -15,7 +15,7 @@ const TelegramInstructionsModal = ({ show, onClose, botName = "@DocenteComedor_B
             <i className="fab fa-telegram-plane text-white"></i>
             <h2 className="text-white">Configurar Telegram - Instrucciones</h2>
           </div>
-          <button className="close-btn" onClick={onClose}>
+          <button className="modal-close" onClick={onClose}>
             <i className="fas fa-times"></i>
           </button>
         </div>
