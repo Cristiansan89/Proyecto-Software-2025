@@ -823,14 +823,14 @@ Para correr los tests localmente, asegúrate de instalar las dependencias y ejec
 
 ```bash
 cd client
-npm run test    # o el comando que uses para vitest en el frontend
+pnpm run test    # o el comando que uses para vitest en el frontend
 ```
 
 ### Backend
 
 ```bash
 cd server
-npm run test    # o el comando que uses para vitest en el backend
+pnpm run test    # o el comando que uses para vitest en el backend
 ```
 
 ### Ejecutar en Modo Desarrollo
