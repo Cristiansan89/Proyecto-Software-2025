@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api.js";
 import { showError, showSuccess } from "../../utils/alertService";
 import jsPDF from "jspdf";
-import "autoTable";
+import "jspdf-autotable";
 import ContenidoStyle from "../../styles/ContenidoPage.module.css";
 import DocenteStyle from "../../styles/Docente.module.css";
 import TablaStyle from "../../styles/Tabla.module.css";
