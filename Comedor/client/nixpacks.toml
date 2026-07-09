@@ -2,12 +2,13 @@ providers = ["node"]
 
 [phases.install]
 cmds = [
-    "pnpm install --no-frozen-lockfile", 
-    "npm install -g corepack",
-    "corepack enable",
-    "corepack prepare pnpm@9.1.0 --activate",
-    "pnpm install --no-frozen-lockfile"
+  "npm install -g corepack",
+  "corepack enable",
+  "corepack prepare pnpm@9.1.0 --activate",
+  "pnpm install --no-frozen-lockfile"
 ]
+# Esto le dice a Railway: "No ejecutes tu propia instalación después de mis comandos"
+onlyIncludeFiles = ["package.json", "pnpm-lock.yaml"] 
 
 [phases.build]
 cmds = ["pnpm run build"]
