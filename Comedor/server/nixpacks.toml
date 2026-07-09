@@ -1,2 +1,9 @@
+providers = ["node"]
+
 [phases.install]
-cmds = ["pnpm install --no-frozen-lockfile"]
+cmds = [
+  "npm install -g corepack",
+  "corepack enable",
+  "corepack prepare pnpm@9.1.0 --activate",
+  "pnpm install --no-frozen-lockfile"
+]
