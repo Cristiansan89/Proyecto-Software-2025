@@ -17,6 +17,10 @@ import {
 } from "../../utils/alertService";
 import { formatDate, formatDateTime } from "../../utils/dateUtils";
 import { formatNumeroAR } from "../../utils/formatNumero";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const Reportes = () => {
   const { user } = useAuth();
@@ -59,7 +63,7 @@ const Reportes = () => {
       if (inicio > fin) {
         showError(
           "Error de fechas",
-          "La fecha de inicio no puede ser posterior a la fecha de fin"
+          "La fecha de inicio no puede ser posterior a la fecha de fin",
         );
         return false;
       }
@@ -71,7 +75,7 @@ const Reportes = () => {
       if (diffDays > 365) {
         showError(
           "Rango demasiado amplio",
-          "El rango de fechas no puede exceder 1 año"
+          "El rango de fechas no puede exceder 1 año",
         );
         return false;
       }
@@ -128,10 +132,11 @@ const Reportes = () => {
         // Deduplicar por id_insumo usando Map
         const insumosMap = new Map();
         insumosData.forEach((c) => {
-          if (c.id_insumo != null) insumosMap.set(String(c.id_insumo), c.nombreInsumo);
+          if (c.id_insumo != null)
+            insumosMap.set(String(c.id_insumo), c.nombreInsumo);
         });
         setInsumosDisponibles(
-          [...insumosMap.entries()].map(([id, nombre]) => ({ id, nombre }))
+          [...insumosMap.entries()].map(([id, nombre]) => ({ id, nombre })),
         );
       } else {
         setInsumosDisponibles([]);
@@ -144,8 +149,19 @@ const Reportes = () => {
   const cargarCategorias = async () => {
     // Valores del enum `categoria` de la tabla Insumos en la DB
     setCategoriasDisponibles([
-      'Carnes','Lacteos','Cereales','Verduras','Frutas','Legumbres',
-      'Condimentos','Bebidas','Enlatados','Conservas','Limpieza','Descartables','Otros'
+      "Carnes",
+      "Lacteos",
+      "Cereales",
+      "Verduras",
+      "Frutas",
+      "Legumbres",
+      "Condimentos",
+      "Bebidas",
+      "Enlatados",
+      "Conservas",
+      "Limpieza",
+      "Descartables",
+      "Otros",
     ]);
   };
 
@@ -158,14 +174,14 @@ const Reportes = () => {
           ...new Set(
             pedidosData
               .map((p) => p.nombreProveedor)
-              .filter((p) => p && p.trim())
+              .filter((p) => p && p.trim()),
           ),
         ];
         const usuarios = [
           ...new Set(
             pedidosData
               .map((p) => p.nombreUsuario)
-              .filter((u) => u && u.trim())
+              .filter((u) => u && u.trim()),
           ),
         ];
 
@@ -201,7 +217,10 @@ const Reportes = () => {
       }
 
       if (datosReporte.length === 0) {
-        showInfo("Sin resultados", "No se encontraron resultados con los filtros aplicados");
+        showInfo(
+          "Sin resultados",
+          "No se encontraron resultados con los filtros aplicados",
+        );
         setFiltroAplicado(false);
         return;
       }
@@ -214,12 +233,12 @@ const Reportes = () => {
 
       showSuccess(
         "Éxito",
-        `Reporte de ${getNombreReporte()} generado con ${datosReporte.length} registros`
+        `Reporte de ${getNombreReporte()} generado con ${datosReporte.length} registros`,
       );
     } catch (error) {
       showError(
         "Error",
-        "Error al generar reporte: " + (error.message || "Error desconocido")
+        "Error al generar reporte: " + (error.message || "Error desconocido"),
       );
     } finally {
       setGenerando(false);
@@ -232,7 +251,9 @@ const Reportes = () => {
         success: false,
         data: [],
       }));
-      let datosConsumo = Array.isArray(resultado.data) ? resultado.data : resultado.data?.data || [];
+      let datosConsumo = Array.isArray(resultado.data)
+        ? resultado.data
+        : resultado.data?.data || [];
 
       // Aplicar filtros
       if (fechaInicio && fechaFin) {
@@ -248,13 +269,13 @@ const Reportes = () => {
 
       if (servicio) {
         datosConsumo = datosConsumo.filter(
-          (c) => c.servicio === servicio || c.nombreServicio === servicio
+          (c) => c.servicio === servicio || c.nombreServicio === servicio,
         );
       }
 
       if (insumo) {
         datosConsumo = datosConsumo.filter(
-          (c) => c.nombreInsumo === insumo || c.idInsumo === insumo
+          (c) => c.nombreInsumo === insumo || c.idInsumo === insumo,
         );
       }
 
@@ -282,23 +303,22 @@ const Reportes = () => {
   const generarReporteInventarios = async () => {
     try {
       // inventarioService.obtenerInventarios() devuelve un array directamente
-      const resultado = await inventarioService.obtenerInventarios().catch(() => []);
+      const resultado = await inventarioService
+        .obtenerInventarios()
+        .catch(() => []);
       let datosInventario = Array.isArray(resultado) ? resultado : [];
 
       // No se aplica filtro de fechas para inventario (no tiene campo de fecha relevante)
 
       if (categoria) {
         datosInventario = datosInventario.filter(
-          (i) =>
-            i.categoria === categoria || i.nombreCategoria === categoria
+          (i) => i.categoria === categoria || i.nombreCategoria === categoria,
         );
       }
 
       if (estado) {
         // `i.estado` en la DB puede ser 'Normal','Critico','Agotado'
-        datosInventario = datosInventario.filter(
-          (i) => i.estado === estado
-        );
+        datosInventario = datosInventario.filter((i) => i.estado === estado);
       }
 
       return datosInventario.map((i) => ({
@@ -307,9 +327,13 @@ const Reportes = () => {
         cantidad: formatNumeroAR(i.cantidadActual || 0),
         cantidadMinima: formatNumeroAR(i.nivelMinimoAlerta || 0),
         unidad: i.unidadMedida || "-",
-        estado: i.estado || (i.cantidadActual >= (i.nivelMinimoAlerta || 0) ? "Normal" : "Bajo Stock"),
+        estado:
+          i.estado ||
+          (i.cantidadActual >= (i.nivelMinimoAlerta || 0)
+            ? "Normal"
+            : "Bajo Stock"),
         ultimaActualizacion: formatDate(
-          i.fechaUltimaActualizacion || new Date()
+          i.fechaUltimaActualizacion || new Date(),
         ),
       }));
     } catch (error) {
@@ -336,7 +360,7 @@ const Reportes = () => {
 
       if (estadoPedido) {
         datosPedidos = datosPedidos.filter(
-          (p) => p.estadoPedido === estadoPedido
+          (p) => p.estadoPedido === estadoPedido,
         );
       }
 
@@ -344,7 +368,7 @@ const Reportes = () => {
         datosPedidos = datosPedidos.filter(
           (p) =>
             p.nombreProveedor &&
-            p.nombreProveedor.toLowerCase().includes(proveedor.toLowerCase())
+            p.nombreProveedor.toLowerCase().includes(proveedor.toLowerCase()),
         );
       }
 
@@ -352,7 +376,7 @@ const Reportes = () => {
         datosPedidos = datosPedidos.filter(
           (p) =>
             p.nombreUsuario &&
-            p.nombreUsuario.toLowerCase().includes(usuarioPedido.toLowerCase())
+            p.nombreUsuario.toLowerCase().includes(usuarioPedido.toLowerCase()),
         );
       }
 
@@ -384,7 +408,8 @@ const Reportes = () => {
       if (fechaInicio && fechaFin) {
         const toDateStr = (val) => {
           if (!val) return null;
-          if (typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+          if (typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val))
+            return val;
           const d = val instanceof Date ? val : new Date(val);
           if (isNaN(d.getTime())) return null;
           return d.toISOString().slice(0, 10);
@@ -419,14 +444,16 @@ const Reportes = () => {
   // Registrar en auditoría
   const registrarEnAuditoria = async (accion, modulo, detalles) => {
     try {
-      await auditoriaService.registrarReportePDF({
-        nombreReporte: `${detalles} - ${accion}`,
-        tipoReporte: detalles,
-        descripcion: `${accion} de reporte: ${detalles}`,
-        detallesReporte: `Período: ${fechaInicio || "Sin fecha"} a ${fechaFin || "Sin fecha"}`,
-      }).catch(() => {
-        // Si falla, no hay problema, continuar
-      });
+      await auditoriaService
+        .registrarReportePDF({
+          nombreReporte: `${detalles} - ${accion}`,
+          tipoReporte: detalles,
+          descripcion: `${accion} de reporte: ${detalles}`,
+          detallesReporte: `Período: ${fechaInicio || "Sin fecha"} a ${fechaFin || "Sin fecha"}`,
+        })
+        .catch(() => {
+          // Si falla, no hay problema, continuar
+        });
     } catch (error) {
       console.error("Error registrando en auditoría:", error);
     }
@@ -443,8 +470,14 @@ const Reportes = () => {
       setGenerando(true);
       const doc = new jsPDF();
       const columnasRaw = Object.keys(datos[0] || {});
-      const columnasFormateadas = columnasRaw.map((col) => formatearNombreColumna(col));
-      const filas = datos.map((d) => columnasRaw.map((col) => d[col]));
+      const columnasFormateadas = [
+        "#",
+        ...columnasRaw.map((col) => formatearNombreColumna(col)),
+      ];
+      const filas = datos.map((d, idx) => [
+        idx + 1,
+        ...columnasRaw.map((col) => d[col]),
+      ]);
 
       // Título
       doc.setFontSize(16);
@@ -456,22 +489,14 @@ const Reportes = () => {
         ? `${user.nombre} ${user.apellido}`
         : "Sistema";
       doc.text(`Generado por: ${nombreUsuario}`, 14, 32);
-      doc.text(
-        `Fecha de generación: ${formatDateTime(new Date())}`,
-        14,
-        40
-      );
-      doc.text(
-        `Total de registros: ${datos.length}`,
-        14,
-        48
-      );
+      doc.text(`Fecha de generación: ${formatDateTime(new Date())}`, 14, 40);
+      doc.text(`Total de registros: ${datos.length}`, 14, 48);
 
       if (fechaInicio && fechaFin) {
         doc.text(
           `Período: ${formatDate(fechaInicio)} a ${formatDate(fechaFin)}`,
           14,
-          56
+          56,
         );
       }
 
@@ -500,7 +525,7 @@ const Reportes = () => {
         console.warn("Error con tabla, usando fallback:", tableError);
         // Fallback: crear tabla simple sin autoTable
         let yPosition = 65;
-        
+
         // Headers
         doc.setFont(undefined, "bold");
         doc.setFillColor(34, 139, 34);
@@ -508,7 +533,7 @@ const Reportes = () => {
         columnasFormateadas.forEach((col, i) => {
           doc.text(col, 14 + i * 30, yPosition);
         });
-        
+
         // Datos
         doc.setFont(undefined, "normal");
         doc.setTextColor(0);
@@ -531,7 +556,7 @@ const Reportes = () => {
         doc.text(
           `Página ${i} de ${pageCount}`,
           doc.internal.pageSize.width - 30,
-          doc.internal.pageSize.height - 10
+          doc.internal.pageSize.height - 10,
         );
       }
 
@@ -560,27 +585,26 @@ const Reportes = () => {
     try {
       setGenerando(true);
 
+      const columnasRaw = Object.keys(datos[0] || {});
+      const datosConNumeracion = datos.map((d, idx) => ({
+        "#": idx + 1,
+        ...d,
+      }));
+
       // Crear worksheet
-      const ws = XLSX.utils.json_to_sheet(datos);
+      const ws = XLSX.utils.json_to_sheet(datosConNumeracion);
 
       // Establecer ancho de columnas
-      const maxCols = Object.keys(datos[0] || {}).length;
+      const maxCols = Object.keys(datosConNumeracion[0] || {}).length;
       const columnWidths = Array(maxCols).fill(15);
       ws["!cols"] = columnWidths.map((w) => ({ wch: w }));
 
       // Crear workbook
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(
-        wb,
-        ws,
-        `Reporte ${getNombreReporte()}`
-      );
+      XLSX.utils.book_append_sheet(wb, ws, `Reporte ${getNombreReporte()}`);
 
       // Guardar
-      XLSX.writeFile(
-        wb,
-        `reporte_${tipoReporte}_${new Date().getTime()}.xlsx`
-      );
+      XLSX.writeFile(wb, `reporte_${tipoReporte}_${new Date().getTime()}.xlsx`);
 
       // Registrar exportación
       registrarEnAuditoria("EXPORTAR", "REPORTE_EXCEL", tipoReporte);
@@ -602,12 +626,12 @@ const Reportes = () => {
 
     try {
       setGenerando(true);
-      const columnas = Object.keys(datos[0] || {});
+      const columnas = ["#", ...Object.keys(datos[0] || {})];
       const encabezado = columnas.map(formatearNombreColumna).join(";");
-      const filas = datos.map((d) =>
-        columnas
-          .map((col) => `"${String(d[col] ?? "").replace(/"/g, '""')}"`)
-          .join(";")
+      const filas = datos.map((d, idx) =>
+        [idx + 1, ...columnas.slice(1).map((col) => d[col])]
+          .map((valor) => `"${String(valor ?? "").replace(/"/g, '""')}"`)
+          .join(";"),
       );
       // \uFEFF = BOM UTF-8 para que Excel abra correctamente con tildes
       const csv = "\uFEFF" + [encabezado, ...filas].join("\n");
@@ -665,13 +689,21 @@ const Reportes = () => {
       .trim();
   };
 
+  if (loading) {
+    return (
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Reportes...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="content-page">
-      {/* Encabezado */}
-      <div className="page-header">
-        <div className="header-left mx-3">
-          <h1 className="page-title">
-            <i className="fas fa-file-alt me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-file-alt"></i>
             Reportes
           </h1>
           <p>Genera reportes personalizados de diferentes módulos</p>
@@ -679,81 +711,64 @@ const Reportes = () => {
       </div>
 
       {/* Selector de tipo de reporte */}
-      <div className="card mb-4">
-        <div className="card-header text-dark">
-          <h5 className="mb-0">
-            <i className="fas fa-list me-2"></i>
-            Seleccionar Tipo de Reporte
-          </h5>
-        </div>
-        <div className="card-body">
-          <div className="btn-group w-100" role="group">
-            {[
-              { id: "consumos", label: "Consumos", icon: "fas fa-receipt" },
-              {
-                id: "inventarios",
-                label: "Inventarios",
-                icon: "fas fa-boxes",
-              },
-              { id: "pedidos", label: "Pedidos", icon: "fas fa-shopping-cart" },
-              {
-                id: "planificacion",
-                label: "Planificación",
-                icon: "fas fa-calendar-alt",
-              },
-            ].map((tipo) => (
-              <button
-                key={tipo.id}
-                type="button"
-                className={`btn ${
-                  tipoReporte === tipo.id
-                    ? "btn-primary"
-                    : "btn-outline-primary"
-                }`}
-                onClick={() => {
-                  setTipoReporte(tipo.id);
-                  setDatos([]);
-                  setFiltroAplicado(false);
-                  setFechaInicio("");
-                  setFechaFin("");
-                }}
-              >
-                <i className={`${tipo.icon} me-2`}></i>
-                {tipo.label}
-              </button>
-            ))}
-          </div>
+      <div className={ContenidoStyle.navigationTabs}>
+        <div className={ContenidoStyle.tabsHeader} role="group">
+          {[
+            { id: "consumos", label: "Consumos", icon: "fas fa-receipt" },
+            {
+              id: "inventarios",
+              label: "Inventarios",
+              icon: "fas fa-boxes",
+            },
+            { id: "pedidos", label: "Pedidos", icon: "fas fa-shopping-cart" },
+            {
+              id: "planificacion",
+              label: "Planificación",
+              icon: "fas fa-calendar-alt",
+            },
+          ].map((tipo) => (
+            <button
+              key={tipo.id}
+              type="button"
+              className={`${ContenidoStyle.tabsButton} ${
+                tipoReporte === tipo.id ? ContenidoStyle.active : ""
+              }`}
+              onClick={() => {
+                setTipoReporte(tipo.id);
+                setDatos([]);
+                setFiltroAplicado(false);
+                setFechaInicio("");
+                setFechaFin("");
+              }}
+            >
+              <i className={tipo.icon}></i>
+              <span>{tipo.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Filtros dinámicos */}
-      <div className="card mb-4">
-        <div className="card-header text-dark">
-          <h5 className="mb-0">
-            <i className="fas fa-filter me-2"></i>
-            Filtros - {getNombreReporte()}
-          </h5>
-        </div>
-        <div className="card-body">
+      <div className={ContenidoStyle.card}>
+        <div className={ContenidoStyle.cardBody}>
           <div className="row g-3">
-            {/* Filtros de fecha - no aplican para inventario */}
             {tipoReporte !== "inventarios" && (
               <>
                 <div className="col-md-3">
-                  <label className="form-label">Desde:</label>
+                  <label className={ComponenteStyle.formLabel}>Desde:</label>
                   <input
                     type="date"
-                    className="form-control"
+                    className={ComponenteStyle.formControl}
                     value={fechaInicio}
                     onChange={(e) => setFechaInicio(e.target.value)}
                   />
                 </div>
 
                 <div className="col-md-3">
-                  <label className="form-label">Hasta:</label>
+                  <label className={ComponenteStyle.formLabel}>Hasta:</label>
                   <input
                     type="date"
-                    className="form-control"
+                    className={ComponenteStyle.formControl}
                     value={fechaFin}
                     onChange={(e) => setFechaFin(e.target.value)}
                   />
@@ -761,13 +776,12 @@ const Reportes = () => {
               </>
             )}
 
-            {/* Filtros específicos - Consumos */}
             {tipoReporte === "consumos" && (
               <>
                 <div className="col-md-3">
-                  <label className="form-label">Servicio:</label>
+                  <label className={ComponenteStyle.formLabel}>Servicio:</label>
                   <select
-                    className="form-select"
+                    className={ComponenteStyle.formSelect}
                     value={servicio}
                     onChange={(e) => setServicio(e.target.value)}
                   >
@@ -781,9 +795,9 @@ const Reportes = () => {
                 </div>
 
                 <div className="col-md-3">
-                  <label className="form-label">Insumo:</label>
+                  <label className={ComponenteStyle.formLabel}>Insumo:</label>
                   <select
-                    className="form-select"
+                    className={ComponenteStyle.formSelect}
                     value={insumo}
                     onChange={(e) => setInsumo(e.target.value)}
                   >
@@ -802,9 +816,11 @@ const Reportes = () => {
             {tipoReporte === "inventarios" && (
               <>
                 <div className="col-md-3">
-                  <label className="form-label">Categoría:</label>
+                  <label className={ComponenteStyle.formLabel}>
+                    Categoría:
+                  </label>
                   <select
-                    className="form-select"
+                    className={ComponenteStyle.formSelect}
                     value={categoria}
                     onChange={(e) => setCategoria(e.target.value)}
                   >
@@ -818,9 +834,9 @@ const Reportes = () => {
                 </div>
 
                 <div className="col-md-3">
-                  <label className="form-label">Estado:</label>
+                  <label className={ComponenteStyle.formLabel}>Estado:</label>
                   <select
-                    className="form-select"
+                    className={ComponenteStyle.formSelect}
                     value={estado}
                     onChange={(e) => setEstado(e.target.value)}
                   >
@@ -837,9 +853,9 @@ const Reportes = () => {
             {tipoReporte === "pedidos" && (
               <>
                 <div className="col-md-2">
-                  <label className="form-label">Estado:</label>
+                  <label className={ComponenteStyle.formLabel}>Estado:</label>
                   <select
-                    className="form-select"
+                    className={ComponenteStyle.formSelect}
                     value={estadoPedido}
                     onChange={(e) => setEstadoPedido(e.target.value)}
                   >
@@ -853,9 +869,11 @@ const Reportes = () => {
                 </div>
 
                 <div className="col-md-2">
-                  <label className="form-label">Proveedor:</label>
+                  <label className={ComponenteStyle.formLabel}>
+                    Proveedor:
+                  </label>
                   <select
-                    className="form-select"
+                    className={ComponenteStyle.formSelect}
                     value={proveedor}
                     onChange={(e) => setProveedor(e.target.value)}
                   >
@@ -869,9 +887,9 @@ const Reportes = () => {
                 </div>
 
                 <div className="col-md-2">
-                  <label className="form-label">Usuario:</label>
+                  <label className={ComponenteStyle.formLabel}>Usuario:</label>
                   <select
-                    className="form-select"
+                    className={ComponenteStyle.formSelect}
                     value={usuarioPedido}
                     onChange={(e) => setUsuarioPedido(e.target.value)}
                   >
@@ -886,7 +904,7 @@ const Reportes = () => {
               </>
             )}
           </div>
-          
+
           {/* Botones de acción */}
           <div className="row mt-4">
             <div className="col-auto">
@@ -898,7 +916,7 @@ const Reportes = () => {
                 {generando ? (
                   <>
                     <span
-                      className="spinner-border spinner-border-sm me-2"
+                      className="spinner-border spinner-border-sm"
                       role="status"
                       aria-hidden="true"
                     ></span>
@@ -906,7 +924,7 @@ const Reportes = () => {
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-sync-alt me-2"></i>
+                    <i className="fas fa-sync-alt"></i>
                     Generar Reporte
                   </>
                 )}
@@ -966,58 +984,42 @@ const Reportes = () => {
 
       {/* Tabla de previsualización */}
       {filtroAplicado && datos.length > 0 && (
-        <div className="card">
-          <div className="card-header text-dark">
-            <div className="d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">
-                <i className="fas fa-table me-2"></i>
-                Previsualización de Datos ({datos.length} registros)
-              </h5>
-              <span className="badge bg-info">{datos.length}</span>
+        <div className={ContenidoStyle.card}>
+          <div className={`${ContenidoStyle.cardHeader} text-dark`}>
+            <div className={ContenidoStyle.headerInventario}>
+              <h4 className="mb-0">
+                <i className="fas fa-table me-1"></i>
+                Previsualización de Datos
+              </h4>
+              <span className={`${ContenidoStyle.badge} bg-info`}>
+                {datos.length} Registros
+              </span>
             </div>
           </div>
-          <div className="card-body">
-            <div className="table-responsive">
-              <table className="table table-hover table-striped">
-                <thead>
-                  <tr>
-                    {Object.keys(datos[0] || {}).map((col) => (
-                      <th key={col}>{formatearNombreColumna(col)}</th>
+
+          <div className={TablaStyle.tableResponsive}>
+            <table
+              className={`${TablaStyle.tableData} table table-striped m-0`}
+            >
+              <thead className={TablaStyle.tableHeaderFixed}>
+                <tr>
+                  <th>#</th>
+                  {Object.keys(datos[0] || {}).map((col) => (
+                    <th key={col}>{formatearNombreColumna(col)}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {datos.slice(0, datos.length).map((fila, idx) => (
+                  <tr key={idx}>
+                    <td>{idx + 1}</td>
+                    {Object.values(fila).map((valor, vidx) => (
+                      <td key={vidx}>{valor}</td>
                     ))}
                   </tr>
-                </thead>
-                <tbody>
-                  {datos.slice(0, 50).map((fila, idx) => (
-                    <tr key={idx}>
-                      {Object.values(fila).map((valor, vidx) => (
-                        <td key={vidx}>{valor}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {datos.length > 50 && (
-                <div className="alert alert-info mt-3">
-                  <i className="fas fa-info-circle me-2"></i>
-                  Se muestran los primeros 50 registros. Exporta el reporte
-                  completo a PDF o Excel para ver todos los datos ({datos.length} registros totales).
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Estado vacío */}
-      {filtroAplicado && datos.length === 0 && (
-        <div className="card">
-          <div className="card-body text-center py-5">
-            <i className="fas fa-search fa-3x text-muted mb-3"></i>
-            <h5>No se encontraron resultados</h5>
-            <p className="text-muted">
-              No hay datos que coincidan con los filtros aplicados. Intenta
-              modificar los criterios de búsqueda.
-            </p>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

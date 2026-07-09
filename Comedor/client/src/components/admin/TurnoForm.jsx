@@ -8,6 +8,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -127,7 +128,7 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
         setServerError(errorMessage);
       } else {
         setServerError(
-          "Error al guardar el turno. Por favor, inténtelo de nuevo."
+          "Error al guardar el turno. Por favor, inténtelo de nuevo.",
         );
       }
     } finally {
@@ -151,145 +152,152 @@ const TurnoForm = ({ turno, mode, onSave, onCancel }) => {
   }, [turno]);
 
   return (
-    <div className="turno-form">
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          {/* Información del Turno */}
-          <div>
-            <h5 className="section-title">Información del Turno</h5>
-            <div className="form-group">
-              <label htmlFor="nombre" className="form-label required">
-                Nombre del Turno
-              </label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                className={`form-control ${errors.nombre ? "is-invalid" : ""}`}
-                value={formData.nombre}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-                placeholder="Ej: Mañana, Tarde, Noche"
-                maxLength="16"
-              />
-              {errors.nombre && (
-                <div className="invalid-feedback">{errors.nombre}</div>
-              )}
-            </div>
-
-            <div className="form-row">
-              <div className="form-group mt-2">
-                <label htmlFor="horaInicio" className="form-label required">
-                  Hora de Inicio
-                </label>
-                <input
-                  type="time"
-                  id="horaInicio"
-                  name="horaInicio"
-                  className={`form-control ${
-                    errors.horaInicio ? "is-invalid" : ""
-                  }`}
-                  value={formData.horaInicio}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                />
-                {errors.horaInicio && (
-                  <div className="invalid-feedback">{errors.horaInicio}</div>
-                )}
-              </div>
-
-              <div className="form-group mt-2">
-                <label htmlFor="horaFin" className="form-label required">
-                  Hora de Fin
-                </label>
-                <input
-                  type="time"
-                  id="horaFin"
-                  name="horaFin"
-                  className={`form-control ${
-                    errors.horaFin ? "is-invalid" : ""
-                  }`}
-                  value={formData.horaFin}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                />
-                {errors.horaFin && (
-                  <div className="invalid-feedback">{errors.horaFin}</div>
-                )}
-              </div>
-            </div>
-
-            {/* Estado */}
-            <div className="form-group">
-              <label htmlFor="estado" className="form-label">
-                Estado
-              </label>
-              <select
-                id="estado"
-                name="estado"
-                className="form-control"
-                value={formData.estado}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-              >
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Mostrar error del servidor */}
-        {serverError && (
-          <div
-            className="alert alert-danger alert-dismissible fade show mb-3"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error al guardar:</strong>
-            <div
-              className="me-1"
-              style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-            >
-              {serverError}
-            </div>
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>
+        Información del Turno
+      </h4>
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="nombre"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          Nombre del Turno
+        </label>
+        <input
+          type="text"
+          id="nombre"
+          name="nombre"
+          className={`${ComponenteStyle.formControl} ${errors.nombre ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.nombre}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+          placeholder="Ej: Mañana, Tarde, Noche"
+          maxLength="16"
+        />
+        {errors.nombre && (
+          <div className={`${ComponenteStyle.invalidFeedback}`}>
+            {errors.nombre}
           </div>
         )}
+      </div>
 
-        {/* Botones */}
-        <div className="form-actions mt-3">
-          <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
-            disabled={loading}
+      <div className={ComponenteStyle.formRow}>
+        <div className={ComponenteStyle.formGroup} mt-2>
+          <label
+            htmlFor="horaInicio"
+            className={`${ComponenteStyle.formLabel} required`}
           >
-            <i className="fas fa-times"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
-          </button>
-
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary me-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  {isCreateMode ? "Crear Turno" : "Actualizar Turno"}
-                </>
-              )}
-            </button>
+            Hora de Inicio
+          </label>
+          <input
+            type="time"
+            id="horaInicio"
+            name="horaInicio"
+            className={`${ComponenteStyle.formControl} ${errors.horaInicio ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.horaInicio}
+            onChange={handleInputChange}
+            disabled={isViewMode}
+          />
+          {errors.horaInicio && (
+            <div className={`${ComponenteStyle.invalidFeedback}`}>
+              {errors.horaInicio}
+            </div>
           )}
         </div>
-      </form>
-    </div>
+
+        <div className={ComponenteStyle.formGroup} mt-2>
+          <label
+            htmlFor="horaFin"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Hora de Fin
+          </label>
+          <input
+            type="time"
+            id="horaFin"
+            name="horaFin"
+            className={`${ComponenteStyle.formControl} ${errors.horaFin ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.horaFin}
+            onChange={handleInputChange}
+            disabled={isViewMode}
+          />
+          {errors.horaFin && (
+            <div className={`${ComponenteStyle.invalidFeedback}`}>
+              {errors.horaFin}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Estado */}
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="estado" className={`${ComponenteStyle.formLabel}`}>
+          Estado
+        </label>
+        <select
+          id="estado"
+          name="estado"
+          className={`${ComponenteStyle.formControl}`}
+          value={formData.estado}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+        >
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
+
+      {/* Mostrar error del servidor */}
+      {serverError && (
+        <div
+          className="alert alert-danger alert-dismissible fade show mb-3"
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error al guardar:</strong>
+          <div
+            className="me-1"
+            style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+          >
+            {serverError}
+          </div>
+        </div>
+      )}
+
+      {/* Botones */}
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
+          <button
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <i className="fas fa-spinner fa-spin me-2"></i>
+                <p>Guardando...</p>
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save"></i>
+                {isCreateMode ? "Crear Turno" : "Actualizar Turno"}
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </form>
   );
 };
 

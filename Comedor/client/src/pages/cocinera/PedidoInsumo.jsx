@@ -16,6 +16,10 @@ import {
   showConfirm,
   showCancelar,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const PedidoInsumo = ({ onModoEdicion }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -426,17 +430,15 @@ const PedidoInsumo = ({ onModoEdicion }) => {
   const getEstadoBadgeClass = (estado) => {
     switch (estado) {
       case "Aprobado":
-        return "bg-success";
-      case "Aprobado":
-        return "bg-success";
+        return "bg-success text-white fw-bold";
       case "Enviado":
-        return "bg-info";
+        return "bg-info text-black fw-bold";
       case "Recibido":
-        return "bg-primary";
+        return "bg-primary text-white fw-bold";
       case "Cancelado":
-        return "bg-danger";
+        return "bg-danger text-white fw-bold";
       default:
-        return "bg-secondary";
+        return "bg-secondary text-white fw-bold";
     }
   };
 
@@ -546,19 +548,19 @@ const PedidoInsumo = ({ onModoEdicion }) => {
   // Vista de creación/edición de pedido
   if (vistaActual === "crear") {
     return (
-      <div>
-        <div className="page-header">
-          <div className="header-left">
-            <h1 className="page-title">
+      <div className={ContenidoStyle.pageContent}>
+        <div className={ContenidoStyle.pageHeader}>
+          <div className={ContenidoStyle.headerLeft}>
+            <h2 className={ContenidoStyle.pageTitle}>
               {pedidoEditando ? "Editar Pedido" : "Crear Nuevo Pedido"}
-            </h1>
-            <p>
+            </h2>
+            <p className={ContenidoStyle.pageSubtitle}>
               {pedidoEditando
                 ? "Actualiza el pedido con los nuevos datos"
                 : "Complete el formulario para crear un pedido manual"}
             </p>
           </div>
-          <div className="header-actions">
+          <div className={ContenidoStyle.headerActions}>
             <button
               className="btn btn-outline-secondary"
               onClick={() => {
@@ -584,17 +586,25 @@ const PedidoInsumo = ({ onModoEdicion }) => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Pedido de Insumos...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="content-page">
-      {/* Encabezado */}
-      <div className="page-header">
-        <div className="header-left mx-3">
-          <h1 className="page-title">Lista de Pedidos</h1>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h2 className={ContenidoStyle.pageTitle}>Lista de Pedidos</h2>
         </div>
-        <div className="header-actions">
-          <div className="btn-group">
+        <div className={ContenidoStyle.headerActions}>
+          <div className="d-flex gap-2">
             <button
-              className="btn btn-success"
+              className={`${ContenidoStyle.btn} btn-success`}
               onClick={() => {
                 setPedidoEditando(null);
                 setVistaActual("crear");
@@ -609,7 +619,9 @@ const PedidoInsumo = ({ onModoEdicion }) => {
 
       {/* Alertas de stock bajo */}
       {insumosBajoStock.length > 0 && (
-        <div className="alert alert-warning mb-4">
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning} mb-4`}
+        >
           <div className="d-flex align-items-center">
             <i className="fas fa-exclamation-triangle fa-2x me-3"></i>
             <div>
@@ -635,201 +647,186 @@ const PedidoInsumo = ({ onModoEdicion }) => {
       )}
 
       {/* Filtros */}
-      <div className="card mb-4">
-        <div className="card-header text-dark">
-          <h5 className="mb-0">
-            <i className="fas fa-filter me-2"></i>
-            Filtros
-          </h5>
-        </div>
-        <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-2">
-              <label className="form-label">Estado:</label>
-              <select
-                className="form-select"
-                value={filtros.estado}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, estado: e.target.value })
-                }
-              >
-                <option value="">Todos</option>
-                {estadosPedido.map((estado, index) => (
-                  <option
-                    key={estado.id_estadoPedido || `estado-${index}`}
-                    value={estado.id_estadoPedido}
-                  >
-                    {estado.nombreEstado}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-md-2">
-              <label className="form-label">Proveedor:</label>
-              <select
-                className="form-select"
-                value={filtros.proveedor}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, proveedor: e.target.value })
-                }
-              >
-                <option value="">Todos</option>
-                {proveedoresUnicos.map((proveedor, index) => (
-                  <option key={`proveedor-${index}`} value={proveedor}>
-                    {proveedor}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-md-2">
-              <label className="form-label">Usuario:</label>
-              <select
-                className="form-select"
-                value={filtros.usuario}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, usuario: e.target.value })
-                }
-              >
-                <option value="">Todos</option>
-                {usuariosUnicos.map((usuario, index) => (
-                  <option key={`usuario-${index}`} value={usuario}>
-                    {usuario}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-md-2">
-              <label className="form-label">Origen:</label>
-              <select
-                className="form-select"
-                value={filtros.origen}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, origen: e.target.value })
-                }
-              >
-                <option value="">Todos</option>
-                <option value="Manual">Manual</option>
-                <option value="Generado">Automático</option>
-              </select>
-            </div>
-
-            <div className="col-md-2">
-              <label className="form-label">Desde:</label>
-              <input
-                type="date"
-                className="form-control"
-                value={filtros.fechaInicio}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, fechaInicio: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="col-md-2">
-              <label className="form-label">Hasta:</label>
-              <input
-                type="date"
-                className="form-control"
-                value={filtros.fechaFin}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, fechaFin: e.target.value })
-                }
-              />
-            </div>
-          </div>
-          <div className="row align-items-center">
-            <div className="col-auto mt-3">
-              <button
-                className="btn btn-danger"
-                onClick={exportarPDFPedidos}
-                disabled={
-                  pedidos.filter((p) => p.estadoPedido === "Aprobado")
-                    .length === 0
-                }
-                title="Exportar solo pedidos aprobados"
-              >
-                <i className="fas fa-file-pdf me-1"></i>
-                Exportar PDF
-              </button>
-            </div>
-
-            {hayFiltrosAplicados() && (
-              <div className="col-auto mt-3">
-                <button
-                  className="btn btn-outline-secondary"
-                  onClick={() =>
-                    setFiltros({
-                      estado: "",
-                      fechaInicio: "",
-                      fechaFin: "",
-                      proveedor: "",
-                      usuario: "",
-                      origen: "",
-                    })
-                  }
+      <div className={ContenidoStyle.headerLeft}>
+        <div className={ContenidoStyle.searchFilters}>
+          <div className={ContenidoStyle.filterActionsCook}>
+            <label className={`${ComponenteStyle.formLabel} mb-0`}>
+              Estado:
+            </label>
+            <select
+              className={ComponenteStyle.formSelect}
+              value={filtros.estado}
+              onChange={(e) =>
+                setFiltros({ ...filtros, estado: e.target.value })
+              }
+            >
+              <option value="">Todos</option>
+              {estadosPedido.map((estado, index) => (
+                <option
+                  key={estado.id_estadoPedido || `estado-${index}`}
+                  value={estado.id_estadoPedido}
                 >
-                  <i className="fas fa-times me-1"></i>
-                  Limpiar Filtros
+                  {estado.nombreEstado}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={ContenidoStyle.filterActionsCook}>
+            <label className={`${ComponenteStyle.formLabel} mb-0`}>
+              Proveedor:
+            </label>
+            <select
+              className={ComponenteStyle.formSelect}
+              value={filtros.proveedor}
+              onChange={(e) =>
+                setFiltros({ ...filtros, proveedor: e.target.value })
+              }
+            >
+              <option value="">Todos</option>
+              {proveedoresUnicos.map((proveedor, index) => (
+                <option key={`proveedor-${index}`} value={proveedor}>
+                  {proveedor}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={ContenidoStyle.filterActionsCook}>
+            <label className={`${ComponenteStyle.formLabel} mb-0`}>
+              Usuario:
+            </label>
+            <select
+              className={ComponenteStyle.formSelect}
+              value={filtros.usuario}
+              onChange={(e) =>
+                setFiltros({ ...filtros, usuario: e.target.value })
+              }
+            >
+              <option value="">Todos</option>
+              {usuariosUnicos.map((usuario, index) => (
+                <option key={`usuario-${index}`} value={usuario}>
+                  {usuario}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={ContenidoStyle.filterActionsCook}>
+            <label className={`${ComponenteStyle.formLabel} mb-0`}>
+              Origen:
+            </label>
+            <select
+              className={ComponenteStyle.formSelect}
+              value={filtros.origen}
+              onChange={(e) =>
+                setFiltros({ ...filtros, origen: e.target.value })
+              }
+            >
+              <option value="">Todos</option>
+              <option value="Manual">Manual</option>
+              <option value="Generado">Automático</option>
+            </select>
+          </div>
+          <div className={ContenidoStyle.filterActionsCook}>
+            <label className={`${ComponenteStyle.formLabel} mb-0`}>
+              Desde:
+            </label>
+            <input
+              type="date"
+              className={ComponenteStyle.formControl}
+              value={filtros.fechaInicio}
+              onChange={(e) =>
+                setFiltros({ ...filtros, fechaInicio: e.target.value })
+              }
+            />
+          </div>
+          <div className={ContenidoStyle.filterActionsCook}>
+            <label className={`${ComponenteStyle.formLabel} mb-0`}>
+              Hasta:
+            </label>
+            <input
+              type="date"
+              className={ComponenteStyle.formControl}
+              value={filtros.fechaFin}
+              onChange={(e) =>
+                setFiltros({ ...filtros, fechaFin: e.target.value })
+              }
+            />
+          </div>
+
+          <div className={ContenidoStyle.filterActionsCook}>
+            <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
+              {" "}
+              <div className="mt-2">
+                <button
+                  className="btn btn-danger"
+                  onClick={exportarPDFPedidos}
+                  disabled={
+                    pedidos.filter((p) => p.estadoPedido === "Aprobado")
+                      .length === 0
+                  }
+                  title="Exportar solo pedidos aprobados"
+                >
+                  <i className="fas fa-file-pdf me-1"></i>
+                  Exportar PDF
                 </button>
               </div>
-            )}
+              {hayFiltrosAplicados() && (
+                <div className="mt-2">
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={() =>
+                      setFiltros({
+                        estado: "",
+                        fechaInicio: "",
+                        fechaFin: "",
+                        proveedor: "",
+                        usuario: "",
+                        origen: "",
+                      })
+                    }
+                  >
+                    <i className="fas fa-times me-1"></i>
+                    Limpiar
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Lista de pedidos */}
-      <div className="card">
-        <div className="card-header">
-          <div className="d-flex justify-content-between align-items-center text-dark">
-            <h5 className="mb-0">
-              <i className="fas fa-list me-2"></i>
-              Lista de Pedidos ({pedidosFiltrados.length})
-            </h5>
-            <button
-              className="btn btn-outline-primary btn-sm"
-              onClick={cargarPedidos}
-              disabled={loading}
+      <div className={ContenidoStyle.card}>
+        <div
+          className={`${ContenidoStyle.cardHeader} ${ContenidoStyle.headerInventario} pb-0 pt-2`}
+        >
+          <h5>
+            <i className="fas fa-list me-2"></i>
+            Lista de Pedidos ({pedidosFiltrados.length})
+          </h5>
+          <div className={ContenidoStyle.headerRight}>
+            <label className="mx-2">
+              <span>Registros por página:</span>
+            </label>
+            <select
+              className={ComponenteStyle.formSelect}
+              style={{ width: "60px" }}
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
             >
-              <i className="fas fa-sync-alt me-1"></i>
-              Actualizar
-            </button>
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
           </div>
         </div>
 
-        {/* Selector de tamaño de página y Paginación */}
-        <div className="page-size-selector mt-3">
-          <span className="text-dark mx-4">Registros por página</span>
-          <select
-            className="form-select"
-            style={{ width: "60px" }}
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-          </select>
-          <span className="ms-2 text-muted">
-            Total {filteredInsumos.length} registros
-          </span>
-        </div>
-
         {/* Tabla de la lista de Pedido */}
-        <div className="card-body">
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-              <p className="mt-2">Cargando pedidos...</p>
-            </div>
-          ) : pedidosFiltrados.length === 0 ? (
+        <div className={TablaStyle.tableContainer}>
+          {pedidosFiltrados.length === 0 ? (
             <div className="text-center py-5">
               <i className="fas fa-search fa-3x text-muted mb-3"></i>
               <h5>No se encontraron pedidos</h5>
@@ -840,161 +837,167 @@ const PedidoInsumo = ({ onModoEdicion }) => {
               </p>
             </div>
           ) : (
-            <div className="table-container">
-              <table className="table table-striped data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Fecha Emisión</th>
-                    <th>Proveedor</th>
-                    <th>Usuario</th>
-                    <th>Origen</th>
-                    <th>Estado</th>
-                    <th>Fecha Aprobación</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pedidosAMostrar.map((pedido, index) => (
-                    <tr key={pedido.id_pedido || `pedido-${index}`}>
-                      <td>
-                        <strong>{startIndex + index + 1}</strong>
-                      </td>
-                      <td>{formatearFechaConHora(pedido.fechaEmision)}</td>
-                      <td>
-                        <strong>{pedido.nombreProveedor}</strong>
-                      </td>
-                      <td>{pedido.nombreUsuario}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            pedido.origen === "Manual"
-                              ? "bg-primary"
-                              : "bg-success"
-                          }`}
-                          title={
-                            pedido.origen === "Generado"
-                              ? "Pedido generado automáticamente por el sistema"
-                              : "Pedido creado manualmente"
-                          }
-                        >
-                          {pedido.origen === "Generado"
-                            ? "🤖 Automático"
-                            : "👤 Manual"}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`badge ${getEstadoBadgeClass(
-                            pedido.estadoPedido,
-                          )}`}
-                        >
-                          {pedido.estadoPedido}
-                        </span>
-                      </td>
-                      <td>
-                        {pedido.fechaAprobacion ? (
-                          <div className="d-flex flex-column">
-                            <small className="text-muted">
-                              (Aprobado:{" "}
-                              {formatearFechaConHora(pedido.fechaAprobacion)})
-                            </small>
-                            <span className="text-success">
-                              Entrega:{" "}
-                              {calcularFechaEntrega(
-                                pedido.fechaAprobacion,
-                              )?.toLocaleDateString("es-ES") || "-"}
-                            </span>
-                          </div>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td>
-                        <div className="btn-group-sm">
-                          <button
-                            className="btn btn-outline-info btn-sm me-1"
-                            onClick={() => verDetallesPedido(pedido)}
-                            title="Ver detalles"
-                          >
-                            <i className="fas fa-eye"></i>
-                          </button>
-
-                          {pedido.estadoPedido === "Pendiente" && (
-                            <>
-                              <button
-                                className="btn btn-outline-warning btn-sm me-1"
-                                onClick={async () => {
-                                  try {
-                                    setLoading(true);
-                                    const pedidoCompleto =
-                                      await pedidoService.getPedidoCompleto(
-                                        pedido.id_pedido,
-                                      );
-                                    setPedidoEditando(pedidoCompleto);
-                                    setVistaActual("crear");
-                                  } catch (error) {
-                                    showError(
-                                      "Error",
-                                      "Error al cargar el pedido: " +
-                                        error.message,
-                                    );
-                                  } finally {
-                                    setLoading(false);
-                                  }
-                                }}
-                                title="Editar pedido"
-                              >
-                                <i className="fas fa-edit"></i>
-                              </button>
-
-                              <button
-                                className="btn btn-outline-danger btn-sm me-1"
-                                onClick={() => cancelarPedido(pedido.id_pedido)}
-                                title="Cancelar pedido"
-                              >
-                                <i className="fas fa-ban"></i>
-                              </button>
-
-                              <button
-                                className="btn btn-outline-danger btn-sm"
-                                onClick={() => eliminarPedido(pedido.id_pedido)}
-                                title="Eliminar pedido"
-                              >
-                                <i className="fas fa-trash"></i>
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
+            <div className={TablaStyle.scrollableTable}>
+              <div className={TablaStyle.tableBodyScroll}>
+                <table
+                  className={`${TablaStyle.tableData} table table-striped`}
+                >
+                  <thead className={TablaStyle.tableHeaderFixed}>
+                    <tr>
+                      <th>#</th>
+                      <th>Fecha Emisión</th>
+                      <th>Proveedor</th>
+                      <th>Usuario</th>
+                      <th>Origen</th>
+                      <th>Estado</th>
+                      <th>Fecha Aprobación</th>
+                      <th>Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {pedidosAMostrar.map((pedido, index) => (
+                      <tr key={pedido.id_pedido || `pedido-${index}`}>
+                        <td>
+                          <strong>{startIndex + index + 1}</strong>
+                        </td>
+                        <td>{formatearFechaConHora(pedido.fechaEmision)}</td>
+                        <td>
+                          <strong>{pedido.nombreProveedor}</strong>
+                        </td>
+                        <td>{pedido.nombreUsuario}</td>
+                        <td>
+                          <span
+                            className={`${ComponenteStyle.badge} ${
+                              pedido.origen === "Manual"
+                                ? "bg-warning text-black"
+                                : "bg-success text-white"
+                            }  fw-bold`}
+                            title={
+                              pedido.origen === "Generado"
+                                ? "Pedido generado automáticamente por el sistema"
+                                : "Pedido creado manualmente"
+                            }
+                          >
+                            {pedido.origen === "Generado"
+                              ? "🤖 Automático"
+                              : "👤 Manual"}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`${ComponenteStyle.badge} ${getEstadoBadgeClass(
+                              pedido.estadoPedido,
+                            )}`}
+                          >
+                            {pedido.estadoPedido}
+                          </span>
+                        </td>
+                        <td>
+                          {pedido.fechaAprobacion ? (
+                            <div className="d-flex flex-column">
+                              <small className="text-muted">
+                                (Aprobado:{" "}
+                                {formatearFechaConHora(pedido.fechaAprobacion)})
+                              </small>
+                              <span className="text-success">
+                                Entrega:{" "}
+                                {calcularFechaEntrega(
+                                  pedido.fechaAprobacion,
+                                )?.toLocaleDateString("es-ES") || "-"}
+                              </span>
+                            </div>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td>
+                          <div className={TablaStyle.actionButtons}>
+                            <button
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnView}`}
+                              onClick={() => verDetallesPedido(pedido)}
+                              title="Ver detalles"
+                            >
+                              <i className="fas fa-eye"></i>
+                            </button>
+
+                            {pedido.estadoPedido === "Pendiente" && (
+                              <>
+                                <button
+                                  className={`${TablaStyle.btnAction} ${TablaStyle.btnWarning}`}
+                                  onClick={async () => {
+                                    try {
+                                      setLoading(true);
+                                      const pedidoCompleto =
+                                        await pedidoService.getPedidoCompleto(
+                                          pedido.id_pedido,
+                                        );
+                                      setPedidoEditando(pedidoCompleto);
+                                      setVistaActual("crear");
+                                    } catch (error) {
+                                      showError(
+                                        "Error",
+                                        "Error al cargar el pedido: " +
+                                          error.message,
+                                      );
+                                    } finally {
+                                      setLoading(false);
+                                    }
+                                  }}
+                                  title="Editar pedido"
+                                >
+                                  <i className="fas fa-edit"></i>
+                                </button>
+
+                                <button
+                                  className={`${TablaStyle.btnAction} ${TablaStyle.btnDisable}`}
+                                  onClick={() =>
+                                    cancelarPedido(pedido.id_pedido)
+                                  }
+                                  title="Cancelar pedido"
+                                >
+                                  <i className="fas fa-ban"></i>
+                                </button>
+
+                                <button
+                                  className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
+                                  onClick={() =>
+                                    eliminarPedido(pedido.id_pedido)
+                                  }
+                                  title="Eliminar pedido"
+                                >
+                                  <i className="fas fa-trash"></i>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               {totalPages > 1 && (
-                <div className="table-footer">
-                  <div className="pagination">
-                    <button
-                      className="pagination-btn"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <i className="fas fa-chevron-left"></i>
-                    </button>
-                    <div className="pagination-info">
-                      Página {currentPage} de {totalPages} (
-                      {filteredInsumos.length} registros)
-                    </div>
-                    <button
-                      className="pagination-btn"
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={currentPage === totalPages}
-                    >
-                      <i className="fas fa-chevron-right"></i>
-                    </button>
+                <div className={TablaStyle.pagination}>
+                  <button
+                    className={TablaStyle.paginationBtn}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <i className="fas fa-chevron-left"></i>
+                  </button>
+                  <div className={TablaStyle.paginationInfo}>
+                    Página {currentPage} de {totalPages} (
+                    {filteredInsumos.length} registros)
                   </div>
+                  <button
+                    className={TablaStyle.paginationBtn}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    <i className="fas fa-chevron-right"></i>
+                  </button>
                 </div>
               )}
             </div>
@@ -1005,136 +1008,124 @@ const PedidoInsumo = ({ onModoEdicion }) => {
       {/* Modal de detalles del pedido */}
       {mostrarDetallesPedido &&
         createPortal(
-          <div
-            className="modal-overlay"
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.5)",
-              zIndex: 9999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              className="modal-content"
-              style={{
-                backgroundColor: "white",
-                borderRadius: "8px",
-                padding: "0",
-                maxWidth: "900px",
-                width: "90%",
-                maxHeight: "80vh",
-              }}
-            >
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  <i className="fas fa-info-circle me-2"></i>
-                  Detalles del Pedido
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setMostrarDetallesPedido(null)}
-                ></button>
-              </div>
-              <div
-                className="modal-body"
-                style={{ maxHeight: "60vh", overflowY: "auto" }}
-              >
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <strong>Proveedor:</strong>{" "}
-                    {mostrarDetallesPedido.nombreProveedor}
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-info-circle me-2"></i>
+                    Detalles del Pedido
+                  </h5>
+                  <button
+                    type="button"
+                    className={FormularioStyle.modalClose}
+                    onClick={() => setMostrarDetallesPedido(null)}
+                  ></button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <div className="row mb-3">
+                    <div className="col-md-6">
+                      <strong>Proveedor:</strong>{" "}
+                      {mostrarDetallesPedido.nombreProveedor}
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Fecha de Emisión:</strong>{" "}
+                      {formatearFecha(mostrarDetallesPedido.fechaEmision)}
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Usuario:</strong>{" "}
+                      {mostrarDetallesPedido.nombreUsuario}
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Estado:</strong>
+                      <span
+                        className={`${ComponenteStyle.badge} ms-2 ${getEstadoBadgeClass(
+                          mostrarDetallesPedido.estadoPedido,
+                        )}`}
+                      >
+                        {mostrarDetallesPedido.estadoPedido}
+                      </span>
+                    </div>
                   </div>
-                  <div className="col-md-6">
-                    <strong>Fecha de Emisión:</strong>{" "}
-                    {formatearFecha(mostrarDetallesPedido.fechaEmision)}
-                  </div>
-                  <div className="col-md-6">
-                    <strong>Usuario:</strong>{" "}
-                    {mostrarDetallesPedido.nombreUsuario}
-                  </div>
-                  <div className="col-md-6">
-                    <strong>Estado:</strong>
-                    <span
-                      className={`badge ms-2 ${getEstadoBadgeClass(
-                        mostrarDetallesPedido.estadoPedido,
-                      )}`}
+
+                  {mostrarDetallesPedido.observaciones && (
+                    <div className="mb-3">
+                      <strong>Observaciones:</strong>
+                      <p className="mt-1">
+                        {mostrarDetallesPedido.observaciones}
+                      </p>
+                    </div>
+                  )}
+                  <div className={ContenidoStyle.card}>
+                    <div
+                      className={`${ContenidoStyle.cardHeader} ${ContenidoStyle.headerInventario} pb-0 pt-2`}
                     >
-                      {mostrarDetallesPedido.estadoPedido}
-                    </span>
+                      <h6>
+                        <i className="fas fa-list me-2"></i>Insumos del Pedido
+                      </h6>
+                    </div>
+                    {mostrarDetallesPedido.detalles &&
+                    mostrarDetallesPedido.detalles.length > 0 ? (
+                      <div className={TablaStyle.tableContainer}>
+                        <div className={TablaStyle.scrollableTable}>
+                          <div className={TablaStyle.tableBodyScroll}>
+                            <table
+                              className={`${TablaStyle.tableData} table table-striped`}
+                            >
+                              <thead className={TablaStyle.tableHeaderFixed}>
+                                <tr>
+                                  <th>Insumo</th>
+                                  <th>Unidad</th>
+                                  <th>Cantidad</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {mostrarDetallesPedido.detalles.map(
+                                  (detalle, index) => (
+                                    <tr
+                                      key={
+                                        detalle.id_detallePedido ||
+                                        `detalle-${index}`
+                                      }
+                                    >
+                                      <td>{detalle.nombreInsumo}</td>
+                                      <td>{detalle.unidadMedida}</td>
+                                      <td>
+                                        {(() => {
+                                          const cantidad = Number(
+                                            detalle.cantidad ||
+                                              detalle.cantidadSolicitada,
+                                          );
+                                          return (
+                                            Math.round(cantidad * 100) / 100
+                                          );
+                                        })()}
+                                      </td>
+                                    </tr>
+                                  ),
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-muted">
+                        No hay detalles disponibles para este pedido.
+                      </p>
+                    )}
                   </div>
                 </div>
-
-                {mostrarDetallesPedido.observaciones && (
-                  <div className="mb-3">
-                    <strong>Observaciones:</strong>
-                    <p className="mt-1">
-                      {mostrarDetallesPedido.observaciones}
-                    </p>
-                  </div>
-                )}
-
-                <h6>
-                  <i className="fas fa-list me-2"></i>Insumos del Pedido
-                </h6>
-                {mostrarDetallesPedido.detalles &&
-                mostrarDetallesPedido.detalles.length > 0 ? (
-                  <div className="table-responsive">
-                    <table className="table table-sm">
-                      <thead>
-                        <tr>
-                          <th>Insumo</th>
-                          <th>Unidad</th>
-                          <th>Cantidad</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {mostrarDetallesPedido.detalles.map(
-                          (detalle, index) => (
-                            <tr
-                              key={
-                                detalle.id_detallePedido || `detalle-${index}`
-                              }
-                            >
-                              <td>{detalle.nombreInsumo}</td>
-                              <td>{detalle.unidadMedida}</td>
-                              <td>
-                                {(() => {
-                                  const cantidad = Number(
-                                    detalle.cantidad ||
-                                      detalle.cantidadSolicitada,
-                                  );
-                                  // Mostrar la cantidad tal cual está guardada en la BD
-                                  // Sin hacer divisiones automáticas
-                                  return Math.round(cantidad * 100) / 100;
-                                })()}
-                              </td>
-                            </tr>
-                          ),
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-muted">
-                    No hay detalles disponibles para este pedido.
-                  </p>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setMostrarDetallesPedido(null)}
-                >
-                  Cerrar
-                </button>
+                <div className={`${ComponenteStyle.formActions} m-0 p-0`}>
+                  <button
+                    type="button"
+                    className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel} mb-4 mt-3`}
+                    onClick={() => setMostrarDetallesPedido(null)}
+                  >
+                    <i className="fas fa-close"></i>
+                    Cerrar
+                  </button>
+                </div>
               </div>
             </div>
           </div>,

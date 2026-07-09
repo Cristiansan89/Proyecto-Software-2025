@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import recetaService from "../../services/recetaService";
-import "../../styles/PlanificacionMenus.css";
 import {
   showSuccess,
   showError,
@@ -12,36 +11,21 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import CalendarioStyle from "../../styles/Calendario.module.css";
 
 const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
   const { user } = useAuth();
 
   // Debug: Verificar estructura del usuario
   useEffect(() => {
-    //console.log("=== DEBUG USUARIO ===");
-    //console.log("Usuario completo:", user);
-    //console.log(
-    //  "Propiedades del usuario:",
-    //  user ? Object.keys(user) : "Usuario es null"
-    //);
-    //console.log("user?.id_usuario:", user?.id_usuario);
-    //console.log("user?.idUsuario:", user?.idUsuario);
-    //console.log("user?.id:", user?.id);
-
     // Validar UUID si hay usuario
     if (user?.idUsuario || user?.id_usuario) {
       const usuarioId = user?.idUsuario || user?.id_usuario;
       const uuidRegex =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      /* console.log("✅ Validación UUID:", {
-        usuarioId,
-        esUUIDValido: uuidRegex.test(usuarioId),
-        longitud: usuarioId?.length,
-        formato: typeof usuarioId,
-      });*/
     }
-
-    // console.log("===================");
   }, [user]);
   const [servicios, setServicios] = useState([
     { id_servicio: 1, nombre: "Desayuno", descripcion: "Comida matutina" },
@@ -78,24 +62,11 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     const dif = inicio.getDate() - dia + (dia === 0 ? -6 : 1);
     inicio.setDate(dif);
 
-    /*console.log(`🗓️ Calculando semana desde: ${semanaActual.toISOString()}`);
-    console.log(`   - Día de la semana original: ${dia}`);
-    console.log(
-      `   - Fecha de inicio de semana calculada: ${
-        inicio.toISOString().split("T")[0]
-      }`
-    );*/
-
     const semana = [];
     for (let i = 0; i < 5; i++) {
       const fecha = new Date(inicio);
       fecha.setDate(inicio.getDate() + i);
       semana.push(fecha);
-      /*console.log(
-        `   - Día ${i}: ${
-          fecha.toISOString().split("T")[0]
-        } (${fecha.toLocaleDateString("es-ES", { weekday: "long" })})`
-      );*/
     }
     return semana;
   };
@@ -103,11 +74,6 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
   // Verificar si una fecha específica está dentro del rango de planificación
   const estaFechaEnRangoPlanificacion = (fecha) => {
     if (!planificacionActiva) {
-      /*console.log(
-        `❌ No hay planificación activa para fecha: ${
-          fecha.toISOString().split("T")[0]
-        }`
-      );*/
       return false; // Sin planificación, no se puede asignar
     }
 
@@ -122,13 +88,6 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       .split("T")[0];
 
     const resultado = fechaStr >= inicioStr && fechaStr <= finStr;
-
-    // Solo log si no está en rango para debug
-    /*if (!resultado) {
-      console.log(`❌ ${fechaStr} fuera de rango: ${inicioStr} a ${finStr}`);
-    } else {
-      console.log(`✅ ${fechaStr} en rango de planificación`);
-    }*/
 
     return resultado;
   };
@@ -185,24 +144,26 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       const todasLasPlanificaciones = await planificacionMenuService.getAll();
 
       // Ordenar por fecha de inicio (ascendente - menor fecha primero)
-      const planificacionesOrdenadas = [...todasLasPlanificaciones].sort((a, b) => {
-        const fechaA = new Date(a.fechaInicio);
-        const fechaB = new Date(b.fechaInicio);
-        return fechaA - fechaB;
-      });
+      const planificacionesOrdenadas = [...todasLasPlanificaciones].sort(
+        (a, b) => {
+          const fechaA = new Date(a.fechaInicio);
+          const fechaB = new Date(b.fechaInicio);
+          return fechaA - fechaB;
+        },
+      );
 
       // Buscar primero una planificación activa, luego programada, luego pendiente
       let planificacion = planificacionesOrdenadas.find(
-        (p) => p.estado === "Activo"
+        (p) => p.estado === "Activo",
       );
       if (!planificacion) {
         planificacion = planificacionesOrdenadas.find(
-          (p) => p.estado === "Programado"
+          (p) => p.estado === "Programado",
         );
       }
       if (!planificacion) {
         planificacion = planificacionesOrdenadas.find(
-          (p) => p.estado === "Pendiente"
+          (p) => p.estado === "Pendiente",
         );
       }
 
@@ -211,33 +172,11 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
         const fechaInicioPlanificacion = new Date(planificacion.fechaInicio);
         setSemanaActual(fechaInicioPlanificacion);
         setPlanificacionActiva(planificacion);
-        /*console.log(
-          `✅ Planificación ${planificacion.estado.toLowerCase()} encontrada:`
-        );
-        console.log(`   - ID: ${planificacion.id_planificacion}`);
-        console.log(
-          `   - Fecha inicio: ${
-            new Date(planificacion.fechaInicio).toISOString().split("T")[0]
-          }`
-        );
-        console.log(
-          `   - Fecha fin: ${
-            new Date(planificacion.fechaFin).toISOString().split("T")[0]
-          }`
-        );
-        console.log(`   - Estado: ${planificacion.estado}`);
-        console.log(
-          `   - Inicializando calendario desde ${
-            new Date(planificacion.fechaInicio).toISOString().split("T")[0]
-          }`
-        );*/
       } else {
         // Si no hay planificación activa o pendiente, usar la semana actual
         setPlanificacionActiva(null);
-        // console.log(`❌ No se encontró planificación activa ni pendiente`);
       }
     } catch (error) {
-      //console.error("Error al verificar planificación activa:", error);
       showError("Error al verificar planificación activa");
       setPlanificacionActiva(null);
     }
@@ -299,10 +238,6 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     const totalEsperado = diasLaborales * servicios.length; // días laborales × 3 servicios
     const asignados = Object.keys(menusAsignados).length;
 
-    /* console.log(
-      `📊 Verificando calendario: ${asignados}/${totalEsperado} asignados (${diasLaborales} días laborales)`
-    );*/
-
     // La activación se realiza manualmente por el usuario mediante el botón "Programar"
     // No se cambia el estado automáticamente al completar el calendario
   };
@@ -323,7 +258,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
         "Planificación Incompleta",
         `Faltan ${faltantes} asignaciones de menú. ¿Desea activar la planificación de todas formas?`,
         "Sí, activar así",
-        "Cancelar"
+        "Cancelar",
       );
       if (!confirmedIntegrity) return;
     }
@@ -342,7 +277,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       tituloModal,
       mensajeModal,
       esPendiente ? "Sí, programar" : "Sí, finalizar",
-      "Volver"
+      "Volver",
     );
 
     if (!confirmChange) return;
@@ -350,35 +285,35 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     setFinalizandoPlanificacion(true);
     try {
       let nuevoEstado = esPendiente ? "Programado" : "Finalizado";
-      
+
       if (esPendiente) {
         // Cambio a estado PROGRAMADO
         await planificacionMenuService.cambiarEstado(
           planificacionActiva.id_planificacion,
-          "Programado"
+          "Programado",
         );
         showSuccess(
           "Éxito",
-          "La planificación ha sido programada correctamente y está en cola para activación."
+          "La planificación ha sido programada correctamente y está en cola para activación.",
         );
       } else {
         // Cambio a estado FINALIZADO
         await planificacionMenuService.finalizar(
-          planificacionActiva.id_planificacion
+          planificacionActiva.id_planificacion,
         );
         showSuccess(
           "Éxito",
-          "La planificación ha sido finalizada correctamente."
+          "La planificación ha sido finalizada correctamente.",
         );
       }
 
       // Actualizar el estado localmente sin perder las fechas
       const planificacionActualizada = {
         ...planificacionActiva,
-        estado: nuevoEstado
+        estado: nuevoEstado,
       };
       setPlanificacionActiva(planificacionActualizada);
-      
+
       // Cargar menús con la planificación actualizada localmente
       await cargarMenusAsignados();
     } catch (error) {
@@ -417,13 +352,10 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-    //console.log("🔍 Validando usuario ID:", usuarioId);
-    //console.log("🔍 Formato UUID válido:", uuidRegex.test(usuarioId));
-
     if (!uuidRegex.test(usuarioId)) {
       showInfo(
         "Información",
-        `Error: El ID del usuario no tiene formato UUID válido: ${usuarioId}`
+        `Error: El ID del usuario no tiene formato UUID válido: ${usuarioId}`,
       );
       return;
     }
@@ -442,22 +374,17 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
         estado: "Pendiente",
       };
 
-      // console.log("📅 Creando planificación:", nuevaPlanificacion);
+      const resultado =
+        await planificacionMenuService.create(nuevaPlanificacion);
 
-      const resultado = await planificacionMenuService.create(
-        nuevaPlanificacion
-      );
-
-      // console.log("✅ Planificación creada:", resultado);
       showSuccess(
         "Éxito",
-        "Planificación creada exitosamente. Ahora puede asignar menús."
+        "Planificación creada exitosamente. Ahora puede asignar menús.",
       );
 
       // Recargar planificaciones
       await verificarPlanificacionActiva();
     } catch (error) {
-      //console.error("❌ Error al crear planificación:", error);
       showError("Error al crear planificación");
       // Mostrar mensaje más específico según el tipo de error
       let mensajeError = "Error al crear planificación";
@@ -479,15 +406,6 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       }
 
       showError("Error", mensajeError);
-
-      // Mostrar información adicional en consola para debug
-      /*console.log("🔍 Detalles del error:", {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        usuario: user,
-        planificacion: nuevaPlanificacion,
-      });*/
     } finally {
       setLoading(false);
     }
@@ -497,9 +415,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     try {
       const response = await recetaService.getActivas();
       setRecetasDisponibles(response || []);
-      //console.log("📚 Recetas cargadas:", response);
     } catch (error) {
-      //console.error("Error al cargar recetas disponibles:", error);
       showError("Error al cargar recetas disponibles");
       setRecetasDisponibles([]);
     }
@@ -507,11 +423,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
 
   // Función para obtener recetas filtradas por servicio
   const obtenerRecetasPorServicio = (id_servicio) => {
-    //console.log(`🔍 Filtrando recetas para servicio ID: ${id_servicio}`);
-    //console.log(`📚 Total recetas disponibles: ${recetasDisponibles.length}`);
-
     if (!id_servicio) {
-      //console.log("⚠️ No hay ID de servicio, devolviendo todas las recetas");
       return recetasDisponibles;
     }
 
@@ -519,21 +431,12 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       // Las recetas ahora vienen con un array de servicios desde el backend
       if (receta.servicios && Array.isArray(receta.servicios)) {
         const pertenece = receta.servicios.includes(id_servicio);
-        /* console.log(
-          `   ${pertenece ? "✅" : "❌"} ${receta.nombreReceta} - servicios: [${
-            receta.servicios
-          }] - ${pertenece ? "SÍ" : "NO"} incluye ${id_servicio}`
-        );*/
         return pertenece;
       } else {
-        //console.log(`   ❌ ${receta.nombreReceta} - Sin servicios asociados`);
         return false;
       }
     });
 
-    /*console.log(
-      `✅ Recetas filtradas para servicio ${id_servicio}: ${recetasFiltradas.length}`
-    );*/
     recetasFiltradas.forEach((r) => console.log(`   - ${r.nombreReceta}`));
 
     return recetasFiltradas;
@@ -561,7 +464,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
 
       const response = await planificacionMenuService.getMenusSemana(
         fechaInicio,
-        fechaFin
+        fechaFin,
       );
 
       // Convertir la respuesta a un objeto para fácil acceso
@@ -596,10 +499,6 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
             await planificacionMenuService.calcularComensalesPorFecha(fechaStr);
           comensalesMap[fechaStr] = datosComensales;
         } catch (err) {
-          /*console.warn(
-            `Error al cargar comensales para ${fechaStr}:`,
-            err?.message || err
-          );*/
           showWarning(`Error al cargar comensales para ${fechaStr}`);
           comensalesMap[fechaStr] = {
             fecha: fechaStr,
@@ -611,7 +510,6 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
 
       setComensalesPorFecha(comensalesMap);
     } catch (error) {
-      //console.error("Error al cargar comensales de la semana:", error);
       showError("Error al cargar comensales de la semana");
     } finally {
       setCargandoComensales(false);
@@ -649,14 +547,10 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     if (planificacionActiva?.estado !== "Pendiente") {
       showInfo(
         "Solo se pueden asignar menús en planificaciones con estado Pendiente",
-        4000
+        4000,
       );
       return;
     }
-
-    //console.log("=== ASIGNANDO MENÚ ===");
-    //console.log("Usuario actual:", user);
-    //console.log("ID del usuario:", user?.idUsuario || user?.id_usuario);
 
     const usuarioId = user?.idUsuario || user?.id_usuario;
     if (!usuarioId) {
@@ -668,10 +562,9 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(usuarioId)) {
-      //console.error("❌ ID de usuario inválido:", usuarioId);
       showInfo(
         "Información",
-        `Error: El ID del usuario no es válido: ${usuarioId}`
+        `Error: El ID del usuario no es válido: ${usuarioId}`,
       );
       return;
     }
@@ -685,19 +578,13 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
         id_usuario: usuarioId,
       };
 
-      //console.log("📤 Datos de asignación:", datosAsignacion);
-
-      const resultado = await planificacionMenuService.asignarReceta(
-        datosAsignacion
-      );
-
-      //console.log("✅ Respuesta del servidor:", resultado);
+      const resultado =
+        await planificacionMenuService.asignarReceta(datosAsignacion);
 
       // Pequeño delay para asegurar que la BD esté actualizada
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Recargar menús asignados
-      //console.log("🔄 Recargando menús asignados...");
       await cargarMenusAsignados();
 
       // Verificar si el calendario está completo para activar la planificación
@@ -706,7 +593,6 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       cerrarModalAsignacion();
       showSuccess("Éxito", "Menú asignado exitosamente");
     } catch (error) {
-      //console.error("❌ Error al asignar menú:", error);
       showError("Error al asignar menú");
 
       // 🔧 MEJORADO: Mostrar mensaje más descriptivo
@@ -729,7 +615,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     if (planificacionActiva?.estado !== "Pendiente") {
       showInfo(
         "Información",
-        "Solo se pueden eliminar menús en planificaciones con estado 'Pendiente'."
+        "Solo se pueden eliminar menús en planificaciones con estado 'Pendiente'.",
       );
       return;
     }
@@ -739,7 +625,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       "Quitar Receta",
       `¿Está seguro de que desea eliminar la receta asignada para el ${dia} en el servicio de ${servicio.nombre}?`,
       "Sí, quitar",
-      "Cancelar"
+      "Cancelar",
     );
 
     if (!confirmed) return;
@@ -775,11 +661,20 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Calendario de Menús...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="planificacion-calendario">
+    <div>
       <div>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div className="week-navigation">
+        <div className={CalendarioStyle.week}>
+          <div className={CalendarioStyle.navigationWeek}>
             <button
               className="btn btn-outline-primary-sm btn-sm me-2"
               onClick={() => cambiarSemana(-1)}
@@ -793,7 +688,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
               {(() => {
                 const totalSemana = Object.values(comensalesPorFecha).reduce(
                   (sum, dia) => sum + (dia.resumen?.totalDia || 0),
-                  0
+                  0,
                 );
                 return totalSemana > 0 ? (
                   <div className="small text-muted d-block mt-1">
@@ -812,10 +707,12 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
           </div>
           <div>
             {planificacionActiva && (
-              <div className="d-flex gap-2 align-items-center">
+              <div className={CalendarioStyle.itemPlanificacion}>
                 {planificacionActiva.estado === "Pendiente" && (
                   <>
-                    <span className="badge bg-warning">
+                    <span
+                      className={`${ContenidoStyle.badge} ${ContenidoStyle.badgeWarning}`}
+                    >
                       <i className="fas fa-clock me-1"></i>
                       Planificación Pendiente (
                       {Object.keys(menusAsignados).length} asignaciones)
@@ -845,19 +742,25 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                   </>
                 )}
                 {planificacionActiva.estado === "Programado" && (
-                  <span className="badge bg-info">
+                  <span
+                    className={`${ContenidoStyle.badge} ${ContenidoStyle.badgeInfo}`}
+                  >
                     <i className="fas fa-calendar-check me-1"></i>
                     Planificación Programada (Esperando)
                   </span>
                 )}
                 {planificacionActiva.estado === "Activo" && (
-                  <span className="badge bg-warning">
+                  <span
+                    className={`${ContenidoStyle.badge} ${ContenidoStyle.badgeWarning}`}
+                  >
                     <i className="fas fa-robot me-1"></i>
                     Planificación Activo (Automatizada)
                   </span>
                 )}
                 {planificacionActiva.estado === "Finalizado" && (
-                  <span className="badge bg-success">
+                  <span
+                    className={`${ContenidoStyle.badge} ${ContenidoStyle.badgeSuccess}`}
+                  >
                     <i className="fas fa-lock me-1"></i>
                     Planificación Finalizada (Solo Lectura)
                   </span>
@@ -865,8 +768,10 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
               </div>
             )}
             {!planificacionActiva && (
-              <div className="d-flex gap-2 align-items-center">
-                <span className="badge bg-warning">
+              <div className={CalendarioStyle.itemPlanificacion}>
+                <span
+                  className={`${ContenidoStyle.badge} ${ContenidoStyle.badgeWarning}`}
+                >
                   <i className="fas fa-exclamation-triangle me-1"></i>
                   No hay planificación para esta semana
                 </span>
@@ -874,9 +779,11 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
             )}
           </div>
         </div>
-        <div className="table-responsive">
-          <table className="table table-bordered menu-calendar-table">
-            <thead className="table-light">
+        <div className={CalendarioStyle.tableResponsive}>
+          <table
+            className={`${CalendarioStyle.tableMenuCalendar} table table-bordered`}
+          >
+            <thead>
               <tr>
                 <th className="font-italic">
                   <h4>Servicio</h4>
@@ -894,9 +801,11 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                         estaDentroDePlanificacion ? "" : "dia-no-planificado"
                       }`}
                     >
-                      <div className="dia-nombre">{diaNombre}</div>
+                      <div className={CalendarioStyle.nombreDia}>
+                        {diaNombre}
+                      </div>
                       <div
-                        className={`dia-fecha ${
+                        className={`${CalendarioStyle.fechaDia} ${
                           estaDentroDePlanificacion ? "" : "text-muted"
                         }`}
                       >
@@ -937,8 +846,8 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
             <tbody>
               {servicios.map((servicio) => (
                 <tr key={servicio.id_servicio}>
-                  <td className="servicio-cell">
-                    <div className="servicio-info">
+                  <td className={CalendarioStyle.cellServicio}>
+                    <div className={CalendarioStyle.infoServicio}>
                       <strong>{servicio.nombre}</strong>
                       <small className="text-muted d-block">
                         {servicio.descripcion}
@@ -955,13 +864,13 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                     const menuAsignado = menusAsignados[claveMenu];
 
                     return (
-                      <td key={index} className="menu-cell">
-                        <div className="menu-slot">
+                      <td key={index} className={CalendarioStyle.cellMenu}>
+                        <div className={CalendarioStyle.slotMenu}>
                           {menuAsignado ? (
                             <div
-                              className={`menu-asignado servicio-${servicio.id_servicio}`}
+                              className={`${CalendarioStyle.menuAsignado} ${CalendarioStyle[`servicio-${servicio.id_servicio}`]}`}
                             >
-                              <div className="receta-nombre">
+                              <div className={CalendarioStyle.nombreReceta}>
                                 <strong>{menuAsignado.nombreReceta}</strong>
                               </div>
                               {/* Mostrar comensales específicos para este servicio y día */}
@@ -974,7 +883,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                                 const servicioComensales =
                                   comensalesDia?.servicios?.find(
                                     (s) =>
-                                      s.id_servicio === servicio.id_servicio
+                                      s.id_servicio === servicio.id_servicio,
                                   );
                                 return servicioComensales ? (
                                   <div className="small text-dark mt-1">
@@ -984,12 +893,16 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                                   </div>
                                 ) : null;
                               })()}
-                              <div className="menu-acciones mt-2">
-                                {planificacionActiva?.estado === "Pendiente" || planificacionActiva?.estado === "Programado" ? (
-                                  planificacionActiva?.estado === "Pendiente" ? (
+                              <div
+                                className={`${CalendarioStyle.actionsMenu} mt-2`}
+                              >
+                                {planificacionActiva?.estado === "Pendiente" ||
+                                planificacionActiva?.estado === "Programado" ? (
+                                  planificacionActiva?.estado ===
+                                  "Pendiente" ? (
                                     <>
                                       <button
-                                        className="btn-action btn-edit btn-sm me-1"
+                                        className={`${CalendarioStyle.btnAction} ${CalendarioStyle.btnEdit} btn-sm me-1`}
                                         title={
                                           estaDentroDePlanificacion
                                             ? "Cambiar receta"
@@ -1000,14 +913,14 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                                           abrirModalAsignacion(
                                             fecha,
                                             servicio,
-                                            diaNombre
+                                            diaNombre,
                                           )
                                         }
                                       >
                                         <i className="fas fa-edit"></i>
                                       </button>
                                       <button
-                                        className="btn-action btn-delete btn-sm"
+                                        className={`${CalendarioStyle.btnAction} ${CalendarioStyle.btnDelete} btn-sm`}
                                         title={
                                           estaDentroDePlanificacion
                                             ? "Eliminar asignación"
@@ -1020,7 +933,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                                           eliminarReceta(
                                             fecha,
                                             servicio,
-                                            diaNombre
+                                            diaNombre,
                                           )
                                         }
                                       >
@@ -1056,7 +969,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                               </div>
                             </div>
                           ) : (
-                            <div className="menu-placeholder">
+                            <div className={CalendarioStyle.placeholderMenu}>
                               {/* Mostrar comensales específicos para este servicio y día */}
                               {(() => {
                                 const fechaStr = fecha
@@ -1067,7 +980,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                                 const servicioComensales =
                                   comensalesDia?.servicios?.find(
                                     (s) =>
-                                      s.id_servicio === servicio.id_servicio
+                                      s.id_servicio === servicio.id_servicio,
                                   );
                                 return servicioComensales ? (
                                   <div className="small text-muted mb-2">
@@ -1085,7 +998,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                                       abrirModalAsignacion(
                                         fecha,
                                         servicio,
-                                        diaNombre
+                                        diaNombre,
                                       )
                                     }
                                   >
@@ -1098,7 +1011,8 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                                     Día no planificado
                                   </div>
                                 )
-                              ) : planificacionActiva?.estado === "Programado" ? (
+                              ) : planificacionActiva?.estado ===
+                                "Programado" ? (
                                 <div className="text-muted small text-center">
                                   <i className="fas fa-lock me-1"></i>
                                   Programado (Solo lectura)
@@ -1130,8 +1044,8 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       {/* Modal para asignar receta - Renderizado en Portal para cubrir toda la pantalla */}
       {modalAsignacionVisible &&
         createPortal(
-          <div 
-            className="modal-overlay-calendario"
+          <div
+            className={FormularioStyle.modal}
             onClick={(e) => {
               // Cerrar el modal solo si se hace clic en el overlay, no en el contenido
               if (e.target === e.currentTarget) {
@@ -1139,156 +1053,161 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
               }
             }}
           >
-            <div className="modal-content-planificacion">
-                <div className="modal-header">
-                  <div>
-                    <h5 className="modal-title">
-                      <i className="fas fa-utensils me-2"></i>
-                      {recetaSeleccionada &&
-                      menusAsignados[
-                        `${
-                          asignacionSeleccionada.fecha
-                            ?.toISOString()
-                            .split("T")[0]
-                        }_${asignacionSeleccionada.servicio?.id_servicio}`
-                      ]
-                        ? "Cambiar Menú"
-                        : "Asignar Menú"}
-                    </h5>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-utensils me-2"></i>
+                    {recetaSeleccionada &&
+                    menusAsignados[
+                      `${
+                        asignacionSeleccionada.fecha
+                          ?.toISOString()
+                          .split("T")[0]
+                      }_${asignacionSeleccionada.servicio?.id_servicio}`
+                    ]
+                      ? "Cambiar Menú"
+                      : "Asignar Menú"}
+                  </h5>
+                </div>
+                <button
+                  type="button"
+                  className={FormularioStyle.modalClose}
+                  onClick={cerrarModalAsignacion}
+                ></button>
+              </div>
+              <div className={FormularioStyle.modalBody}>
+                <div className="mb-2">
+                  <label className={ComponenteStyle.formLabel}>
+                    <strong>
+                      {asignacionSeleccionada.dia} -{" "}
+                      {asignacionSeleccionada.servicio?.nombre}
+                    </strong>
+                  </label>
+                </div>
+                <div className="mb-3">
+                  <label className={ComponenteStyle.formLabel}>
+                    <strong>Fecha:</strong>{" "}
+                    {asignacionSeleccionada.fecha?.toLocaleDateString("es-ES")}
+                  </label>
+                </div>
+                <div className="mb-3">
+                  <label className={ComponenteStyle.formLabel}>
+                    <strong>Servicio:</strong>{" "}
+                    {asignacionSeleccionada.servicio?.descripcion}
+                  </label>
+                </div>
+                "
+                <div className="mb-4">
+                  <label
+                    htmlFor="recetaSelect"
+                    className={ComponenteStyle.formLabel}
+                  >
+                    <i className="fas fa-book me-2"></i>
+                    Seleccionar Receta * (
+                    {asignacionSeleccionada.servicio?.nombre})
+                  </label>
+                  {(() => {
+                    const recetasFiltradas = obtenerRecetasPorServicio(
+                      asignacionSeleccionada.servicio?.id_servicio,
+                    );
+                    return (
+                      <>
+                        <select
+                          id="recetaSelect"
+                          className={ComponenteStyle.formSelect}
+                          value={recetaSeleccionada}
+                          onChange={(e) =>
+                            setRecetaSeleccionada(e.target.value)
+                          }
+                        >
+                          <option value="">-- Seleccione una receta --</option>
+                          {recetasFiltradas.map((receta) => (
+                            <option
+                              key={receta.id_receta}
+                              value={receta.id_receta}
+                            >
+                              {receta.nombreReceta}
+                            </option>
+                          ))}
+                        </select>
+                        {recetasFiltradas.length === 0 && (
+                          <div
+                            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning} mt-2 mb-0`}
+                          >
+                            <i className="fas fa-exclamation-triangle me-2"></i>
+                            No hay recetas disponibles para{" "}
+                            {asignacionSeleccionada.servicio?.nombre}. Cree
+                            recetas y asócielas a este servicio.
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+                {recetasDisponibles.length === 0 && (
+                  <div
+                    className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning}`}
+                  >
+                    <i className="fas fa-exclamation-triangle me-2"></i>
+                    No hay recetas disponibles. Por favor, cree algunas recetas
+                    primero.
                   </div>
+                )}
+                <div className={`${ComponenteStyle.formActions} mt-3`}>
                   <button
                     type="button"
-                    className="btn-close"
+                    className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel} me-2`}
                     onClick={cerrarModalAsignacion}
-                  ></button>
+                  >
+                    <i className="fas fa-times me-2"></i>
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+                    onClick={asignarMenu}
+                    disabled={!recetaSeleccionada || loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        {asignacionSeleccionada &&
+                        menusAsignados[
+                          `${
+                            asignacionSeleccionada.fecha
+                              ?.toISOString()
+                              .split("T")[0]
+                          }_${asignacionSeleccionada.servicio?.id_servicio}`
+                        ]
+                          ? "Cambiando..."
+                          : "Asignando..."}
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-check me-2"></i>
+                        {asignacionSeleccionada &&
+                        menusAsignados[
+                          `${
+                            asignacionSeleccionada.fecha
+                              ?.toISOString()
+                              .split("T")[0]
+                          }_${asignacionSeleccionada.servicio?.id_servicio}`
+                        ]
+                          ? "Cambiar Menú"
+                          : "Asignar Menú"}
+                      </>
+                    )}
+                  </button>
                 </div>
-                <div className="modal-body">
-                  <div className="mb-2">
-                    <label className="form-label">
-                      <strong>
-                        {asignacionSeleccionada.dia} -{" "}
-                        {asignacionSeleccionada.servicio?.nombre}
-                      </strong>
-                    </label>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">
-                      <strong>Fecha:</strong>{" "}
-                      {asignacionSeleccionada.fecha?.toLocaleDateString("es-ES")}
-                    </label>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">
-                      <strong>Servicio:</strong>{" "}
-                      {asignacionSeleccionada.servicio?.descripcion}
-                    </label>
-                  </div>
-
-                  <div className="mb-4">
-                    <label htmlFor="recetaSelect" className="form-label">
-                      <i className="fas fa-book me-2"></i>
-                      Seleccionar Receta * (
-                      {asignacionSeleccionada.servicio?.nombre})
-                    </label>
-                    {(() => {
-                      const recetasFiltradas = obtenerRecetasPorServicio(
-                        asignacionSeleccionada.servicio?.id_servicio
-                      );
-                      return (
-                        <>
-                          <select
-                            id="recetaSelect"
-                            className="form-select"
-                            value={recetaSeleccionada}
-                            onChange={(e) =>
-                              setRecetaSeleccionada(e.target.value)
-                            }
-                          >
-                            <option value="">-- Seleccione una receta --</option>
-                            {recetasFiltradas.map((receta) => (
-                              <option
-                                key={receta.id_receta}
-                                value={receta.id_receta}
-                              >
-                                {receta.nombreReceta}
-                              </option>
-                            ))}
-                          </select>
-                          {recetasFiltradas.length === 0 && (
-                            <div className="alert alert-warning mt-2 mb-0">
-                              <i className="fas fa-exclamation-triangle me-2"></i>
-                              No hay recetas disponibles para{" "}
-                              {asignacionSeleccionada.servicio?.nombre}. Cree
-                              recetas y asócielas a este servicio.
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-
-                  {recetasDisponibles.length === 0 && (
-                    <div className="alert alert-warning">
-                      <i className="fas fa-exclamation-triangle me-2"></i>
-                      No hay recetas disponibles. Por favor, cree algunas recetas
-                      primero.
-                    </div>
-                  )}
-
-                  <div className="form-actions mt-3">
-                    <button
-                      type="button"
-                      className="btn btn-secondary me-2"
-                      onClick={cerrarModalAsignacion}
-                    >
-                      <i className="fas fa-times me-2"></i>
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-success"
-                      onClick={asignarMenu}
-                      disabled={!recetaSeleccionada || loading}
-                    >
-                      {loading ? (
-                        <>
-                          <span
-                            className="spinner-border spinner-border-sm me-2"
-                            role="status"
-                            aria-hidden="true"
-                          ></span>
-                          {asignacionSeleccionada &&
-                          menusAsignados[
-                            `${
-                              asignacionSeleccionada.fecha
-                                ?.toISOString()
-                                .split("T")[0]
-                            }_${asignacionSeleccionada.servicio?.id_servicio}`
-                          ]
-                            ? "Cambiando..."
-                            : "Asignando..."}
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-check me-2"></i>
-                          {asignacionSeleccionada &&
-                          menusAsignados[
-                            `${
-                              asignacionSeleccionada.fecha
-                                ?.toISOString()
-                                .split("T")[0]
-                            }_${asignacionSeleccionada.servicio?.id_servicio}`
-                          ]
-                            ? "Cambiar Menú"
-                            : "Asignar Menú"}
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+              </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

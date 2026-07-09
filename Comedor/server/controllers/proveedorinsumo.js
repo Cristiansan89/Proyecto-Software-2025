@@ -3,6 +3,8 @@ import {
   validatePartialProveedorInsumo,
 } from "../schemas/proveedorinsumo.js";
 
+import { validateCalificacionProveedorInsumo } from "../schemas/proveedorinsumo.js";
+
 export class ProveedorInsumoController {
   constructor({ proveedorInsumoModel }) {
     this.proveedorInsumoModel = proveedorInsumoModel;
@@ -21,7 +23,10 @@ export class ProveedorInsumoController {
   getById = async (req, res) => {
     try {
       const { id_proveedor, id_insumo } = req.params;
-      const proveedorInsumo = await this.proveedorInsumoModel.getById({ id_proveedor, id_insumo });
+      const proveedorInsumo = await this.proveedorInsumoModel.getById({
+        id_proveedor,
+        id_insumo,
+      });
 
       if (proveedorInsumo) return res.json(proveedorInsumo);
       res
@@ -62,7 +67,10 @@ export class ProveedorInsumoController {
   delete = async (req, res) => {
     try {
       const { id_proveedor, id_insumo } = req.params;
-      const deleted = await this.proveedorInsumoModel.delete({ id_proveedor, id_insumo });
+      const deleted = await this.proveedorInsumoModel.delete({
+        id_proveedor,
+        id_insumo,
+      });
 
       if (!deleted) {
         return res
@@ -155,6 +163,41 @@ export class ProveedorInsumoController {
         .json({ message: "No se encontraron proveedores para este insumo" });
     } catch (error) {
       console.error("Error al obtener mejor proveedor por insumo:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  };
+
+  // Endpoint para que la cocinera califique una relación proveedor-insumo
+  calificar = async (req, res) => {
+    try {
+      const result = validateCalificacionProveedorInsumo(req.body);
+
+      if (!result.success) {
+        return res.status(400).json({
+          message: "Datos de entrada inválidos",
+          errors: result.error.issues.map((err) => ({
+            field: err.path.join("."),
+            message: err.message,
+          })),
+        });
+      }
+
+      const { id_proveedor, id_insumo, calificacion } = result.data;
+      const updated = await this.proveedorInsumoModel.setCalificacion({
+        id_proveedor,
+        id_insumo,
+        calificacion,
+      });
+
+      if (!updated) {
+        return res
+          .status(404)
+          .json({ message: "Relación no encontrada o no está activa" });
+      }
+
+      return res.json(updated);
+    } catch (error) {
+      console.error("Error al calificar relación proveedor-insumo:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   };

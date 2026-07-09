@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import CocineraSidebar from "../components/cocinera/CocineraSidebar";
 import Navbar from "../components/Navbar";
-import "../styles/CocineraLayout.css";
+import LayoutStyle from "../styles/Layouts.module.css";
 
 const CocineraLayout = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -27,22 +27,22 @@ const CocineraLayout = ({ children }) => {
   };
 
   return (
-    <div className="cocinera-layout">
+    <div className={LayoutStyle.layout}>
       <CocineraSidebar
         collapsed={sidebarCollapsed}
         onToggle={toggleSidebar}
         currentPage={getCurrentPage()}
       />
       <div
-        className={`main-content ${
-          sidebarCollapsed ? "sidebar-collapsed" : ""
+        className={`${LayoutStyle.mainContent} ${
+          sidebarCollapsed ? LayoutStyle.mainCollapsed : ""
         }`}
       >
         <Navbar
           onToggleSidebar={toggleSidebar}
           sidebarCollapsed={sidebarCollapsed}
         />
-        <main className="content-area">{children}</main>
+        <main className={`${LayoutStyle.contentArea}`}>{children}</main>
       </div>
     </div>
   );

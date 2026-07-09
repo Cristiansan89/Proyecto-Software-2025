@@ -2,6 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import api from "../../services/api";
 import "../../styles/CocineraTelegram.css";
 
+// Función para formatear números con localización española (coma decimal, punto separador de miles)
+const formatearNumero = (numero, decimales = 2) => {
+  return parseFloat(numero).toLocaleString('es-ES', {
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales,
+  });
+};
+
 const CocineraTelegram = () => {
   const [insumos, setInsumos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +174,7 @@ const CocineraTelegram = () => {
                   <div className="detalle">
                     <span className="label">Stock Actual:</span>
                     <span className="valor">
-                      {Math.round(parseFloat(insumo.cantidadActual))}{" "}
+                      {formatearNumero(insumo.cantidadActual)}{" "}
                       {insumo.unidadMedida}
                     </span>
                   </div>
@@ -175,14 +183,14 @@ const CocineraTelegram = () => {
                       {insumo.criterio === "demanda_semanal" ? "Necesario esta semana:" : "Stock Mínimo:"}
                     </span>
                     <span className="valor necesario">
-                      {Math.round(parseFloat(insumo.totalNecesario))}{" "}
+                      {formatearNumero(insumo.totalNecesario)}{" "}
                       {insumo.unidadMedida}
                     </span>
                   </div>
                   <div className="detalle">
                     <span className="label">Faltante:</span>
                     <span className="valor faltante">
-                      {Math.round(parseFloat(insumo.totalNecesario) - parseFloat(insumo.cantidadActual))}{" "}
+                      {formatearNumero(parseFloat(insumo.totalNecesario) - parseFloat(insumo.cantidadActual))}{" "}
                       {insumo.unidadMedida}
                     </span>
                   </div>

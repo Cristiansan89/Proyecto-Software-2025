@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import ProveedorForm from "../../components/admin/ProveedorForm";
 import AsignarInsumosForm from "../../components/admin/AsignarInsumosForm";
 import proveedorService from "../../services/proveedorService";
@@ -11,6 +12,9 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const Proveedores = () => {
   const [proveedores, setProveedores] = useState([]);
@@ -20,10 +24,10 @@ const Proveedores = () => {
   const [selectedProveedor, setSelectedProveedor] = useState(null);
   const [modalMode, setModalMode] = useState("create"); // 'create', 'edit', 'view'
   const [searchTerm, setSearchTerm] = useState("");
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [filteredProveedores, setFilteredProveedores] = useState([]);
-  const [estadoFilter, setEstadoFilter] = useState("todos");
+  const [estadoFilter, setEstadoFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     loadProveedores();
@@ -49,7 +53,7 @@ const Proveedores = () => {
     let filtered = proveedores;
 
     // Filtrar por estado
-    if (estadoFilter !== "todos") {
+    if (estadoFilter !== "") {
       filtered = filtered.filter(
         (proveedor) => proveedor.estado === estadoFilter,
       );
@@ -82,11 +86,6 @@ const Proveedores = () => {
     setCurrentPage(1);
   }, [searchTerm, estadoFilter, proveedores]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredProveedores.length / pageSize),
-  );
-
   // Ordenar proveedores por id (numérico si corresponde, si no lexicográfico)
   const sortedProveedores = filteredProveedores.slice().sort((a, b) => {
     const ia = String(a.idProveedor ?? "");
@@ -98,10 +97,16 @@ const Proveedores = () => {
     return ia.localeCompare(ib);
   });
 
-  const paginatedProveedores = sortedProveedores.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  // Paginación
+  const totalPages = Math.ceil(filteredProveedores.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProveedores = filteredProveedores.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    if (page < 1) page = 1;
+    setCurrentPage(page);
+  };
 
   const handleCreate = () => {
     setSelectedProveedor(null);
@@ -124,6 +129,35 @@ const Proveedores = () => {
   const handleAssignInsumos = (proveedor) => {
     setSelectedProveedor(proveedor);
     setShowInsumosModal(true);
+  };
+
+  const getPaginationNumbers = () => {
+    if (totalPages <= 10) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    // Si hay más de 10 páginas, mostrar 10 números
+    let start = currentPage - 5;
+    let end = currentPage + 5;
+
+    // Ajustar si está cerca del inicio
+    if (start < 1) {
+      start = 1;
+      end = 10;
+    }
+
+    // Ajustar si está cerca del final
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, totalPages - 9);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setEstadoFilter("");
   };
 
   const handleDelete = async (proveedorId, proveedor) => {
@@ -258,163 +292,148 @@ const Proveedores = () => {
 
   if (loading) {
     return (
-      <div>
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "400px" }}
-        >
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Proveedores...</p>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-truck me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-truck"></i>
             Gestión de Proveedores
           </h1>
-          <p className="page-subtitle">
+          <p className={ContenidoStyle.pageSubtitle}>
             Administra los proveedores y sus insumos disponibles
           </p>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-primary-new" onClick={handleCreate}>
-            <i className="fas fa-plus me-2"></i>
+        <div className={ContenidoStyle.headerActions}>
+          <button
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
+            onClick={handleCreate}
+          >
+            <i className="fas fa-plus me-1"></i>
             Nuevo Proveedor
           </button>
         </div>
       </div>
 
       {/* Filtros y Búsqueda */}
-      <div className="tab-content">
-        <div className="page-header mb-3">
-          <div className="header-left">
-            <div className="filters-section">
-              <div className="search-bar">
-                <input
-                  type="text"
-                  className="form-control search-input"
-                  placeholder="Buscar por razón social, dirección, teléfono o insumos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="filter-actions">
-                <select
-                  className="filter-select"
-                  value={estadoFilter}
-                  onChange={(e) => setEstadoFilter(e.target.value)}
-                >
-                  <option value="todos">Todos los estados</option>
-                  <option value="Activo">Activos</option>
-                  <option value="Inactivo">Inactivos</option>
-                </select>
-              </div>
+      <div className={ContenidoStyle.tabContent}>
+        <div className={ContenidoStyle.headerLeft}>
+          <div className={ContenidoStyle.searchFilters}>
+            <div className={ContenidoStyle.searchBar}>
+              <input
+                type="text"
+                className={ContenidoStyle.searchInput}
+                placeholder="Buscar por razón social, dirección, teléfono o insumos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-
-            {/* Información de resultados y paginación */}
-            <div className="results-info">
-              <div className="results-count">
-                Mostrando {paginatedProveedores.length} de{" "}
-                {filteredProveedores.length} proveedores{" "}
-                {searchTerm && (
-                  <span className="filter-indicator">
-                    filtrado por "{searchTerm}"
-                  </span>
+            <div className={ContenidoStyle.filterActions}>
+              <select
+                className={ContenidoStyle.filterSelect}
+                value={estadoFilter}
+                onChange={(e) => setEstadoFilter(e.target.value)}
+              >
+                <option value="">Todos los estados</option>
+                <option value="Activo">Activos</option>
+                <option value="Inactivo">Inactivos</option>
+              </select>
+              <div className="mt-2">
+                {(searchTerm || estadoFilter) && (
+                  <button
+                    className="btn btn-outline-secondary btn-sm me-2"
+                    onClick={clearFilters}
+                    title="Limpiar filtros"
+                  >
+                    <i className="fas fa-times"></i>
+                    Limpiar
+                  </button>
                 )}
-              </div>
-              <div className="page-size-selector d-flex align-items-center gap-2">
-                <label className="mb-0">
-                  <strong>Registros por página:</strong>
-                </label>
-                <select
-                  className="form-select form-select-sm"
-                  style={{ width: "70px" }}
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                </select>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabla de Proveedores */}
+        {/* Información de resultados y paginación */}
+        <div className={TablaStyle.paginationInfoBar}>
+          <div className={TablaStyle.paginationInfo}>
+            Mostrando {startIndex + 1} a{" "}
+            {Math.min(endIndex, filteredProveedores.length)} de{" "}
+            {filteredProveedores.length} permisos
+          </div>
+          <div className={TablaStyle.itemsPerPage}>
+            <label>
+              <strong>Registros por página:</strong>
+            </label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(parseInt(e.target.value, 10));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
 
-        <div className="table-container">
-          <div className="scrollable-table">
-            <div className="table-body-scroll">
-              <table className="table table-striped data-table">
-                <thead className="table-header-fixed">
-                  <tr>
-                    <th>#</th>
-                    <th>Proveedor</th>
-                    <th>CUIT</th>
-                    <th>Insumos Asignados</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedProveedores.length === 0 ? (
+        {/* Tabla de Proveedores */}
+        <div className={TablaStyle.tableContainer}>
+          {currentProveedores.length === 0 ? (
+            <div className={TablaStyle.emptyState}>
+              <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+              <h5>No se encontraron proveedores</h5>
+              <p>No hay proveedores que coincidan con tu búsqueda.</p>
+            </div>
+          ) : (
+            <div className={TablaStyle.scrollableTable}>
+              <div className={TablaStyle.tableBodyScroll}>
+                <table
+                  className={`${TablaStyle.tableData} table table-striped`}
+                >
+                  <thead className={TablaStyle.tableHeaderFixed}>
                     <tr>
-                      <td colSpan={12}>
-                        {" "}
-                        <div className="empty-state">
-                          <i className="fas fa-search empty-icon"></i>
-                          <h5>No se encontraron proveedores</h5>
-                          <p>
-                            No hay proveedores que coincidan con tu búsqueda.
-                          </p>
-                        </div>
-                      </td>
+                      <th>#</th>
+                      <th>Proveedor</th>
+                      <th>CUIT</th>
+                      <th>Insumos Asignados</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
                     </tr>
-                  ) : (
-                    paginatedProveedores.map((proveedor, index) => (
+                  </thead>
+                  <tbody>
+                    {currentProveedores.map((proveedor, index) => (
                       <tr key={proveedor.idProveedor || `proveedor-${index}`}>
                         <td>
-                          {/* Mostrar un id entero basado en la posición global (no por página) */}
-                          <strong>
-                            {(currentPage - 1) * pageSize + index + 1}
-                          </strong>
-                          {/* Si necesitas ver el UUID original, descomenta la línea siguiente */}
-                          {/* <div className="text-muted small">{proveedor.idProveedor}</div> */}
+                          <strong>{startIndex + index + 1}</strong>
                         </td>
                         <td>
-                          <div className="item-info">
-                            <div>
-                              <div className="item-name">
-                                <h5>{proveedor.razonSocial}</h5>
-                              </div>
-                              <div>
-                                <i className="fas fa-envelope me-1"></i>
-                                {proveedor.mail}
-                              </div>
-                              <div>
-                                <i className="fas fa-phone me-1"></i>
-                                {proveedor.telefono}
-                              </div>
-                              <div className="item-detail text-muted">
-                                <i className="fas fa-map-marker-alt me-1"></i>
-                                {proveedor.direccion}
-                              </div>
-                            </div>
+                          <h5>{proveedor.razonSocial}</h5>
+                          <div>
+                            <i className="fas fa-envelope me-1"></i>
+                            {proveedor.mail}
+                          </div>
+                          <div>
+                            <i className="fas fa-phone me-1"></i>
+                            {proveedor.telefono}
+                          </div>
+                          <div className="text-muted">
+                            <i className="fas fa-map-marker-alt me-1"></i>
+                            {proveedor.direccion}
                           </div>
                         </td>
                         <td>
-                          <div className="contact-info">
+                          <div>
                             <h6>{formatCUIT(proveedor.CUIT)}</h6>
                           </div>
                         </td>
@@ -426,7 +445,7 @@ const Proveedores = () => {
                                   .slice(0, 5)
                                   .map((insumo, index) => (
                                     <div key={index}>
-                                      <span className="insumo-name">
+                                      <span className="text-muted">
                                         {insumo.nombreInsumo}
                                       </span>
                                     </div>
@@ -446,38 +465,40 @@ const Proveedores = () => {
                         </td>
                         <td>
                           <span
-                            className={`status-badge ${getEstadoBadge(
-                              proveedor.estado,
-                            )}`}
+                            className={`${TablaStyle.statusBadge} ${
+                              proveedor.estado.toLowerCase() === "activo"
+                                ? TablaStyle.activo
+                                : TablaStyle.inactivo
+                            }`}
                           >
                             {proveedor.estado}
                           </span>
                         </td>
                         <td>
-                          <div className="action-buttons">
+                          <div className={TablaStyle.actionButtons}>
                             <button
-                              className="btn-action btn-view"
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnView}`}
                               onClick={() => handleView(proveedor)}
                               title="Ver detalles"
                             >
                               <i className="fas fa-eye"></i>
                             </button>
                             <button
-                              className="btn-action btn-edit"
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnEdit}`}
                               onClick={() => handleEdit(proveedor)}
                               title="Editar"
                             >
                               <i className="fas fa-edit"></i>
                             </button>
                             <button
-                              className="btn-action btn-assign"
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnAssign}`}
                               onClick={() => handleAssignInsumos(proveedor)}
                               title="Asignar Insumos"
                             >
                               <i className="fas fa-boxes"></i>
                             </button>
                             <button
-                              className="btn-action btn-delete"
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
                               onClick={() =>
                                 handleDelete(proveedor.idProveedor, proveedor)
                               }
@@ -488,91 +509,118 @@ const Proveedores = () => {
                           </div>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-              {totalPages > 1 && (
-                <div className="table-footer">
-                  <div className="pagination">
-                    <button
-                      className="pagination-btn"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <i className="fas fa-chevron-left"></i>
-                    </button>
-                    <div className="pagination-info">
-                      Página {currentPage} de {totalPages} (
-                      {filteredProveedores.length} registros)
-                    </div>
-                    <button
-                      className="pagination-btn"
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={currentPage === totalPages}
-                    >
-                      <i className="fas fa-chevron-right"></i>
-                    </button>
-                  </div>
-                </div>
-              )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className={TablaStyle.pagination}>
+            <button
+              className={TablaStyle.paginationButton}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+            {getPaginationNumbers().map((page) => (
+              <button
+                key={page}
+                className={`${TablaStyle.paginationButton} ${currentPage === page ? TablaStyle.active : ""}`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              className={TablaStyle.paginationButton}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modal para Proveedor */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content-proveedores-insumos proveedor-modal">
-            <div className="modal-header">
-              <h5 className="modal-title">
-                <i className="fas fa-truck me-2"></i>
-                {modalMode === "create" && "Nuevo Proveedor"}
-                {modalMode === "edit" && "Editar Proveedor"}
-                {modalMode === "view" && "Detalles del Proveedor"}
-              </h5>
-              <button className="modal-close" onClick={handleCloseModal}>
-                <i className="fas fa-times"></i>
-              </button>
+      {showModal &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-truck me-2"></i>
+                    {modalMode === "create" && "Nuevo Proveedor"}
+                    {modalMode === "edit" && "Editar Proveedor"}
+                    {modalMode === "view" && "Detalles del Proveedor"}
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={handleCloseModal}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <ProveedorForm
+                    proveedor={selectedProveedor}
+                    mode={modalMode}
+                    onSave={handleSaveProveedor}
+                    onCancel={handleCloseModal}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="modal-body">
-              <ProveedorForm
-                proveedor={selectedProveedor}
-                mode={modalMode}
-                onSave={handleSaveProveedor}
-                onCancel={handleCloseModal}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {/* Modal para Asignar Insumos */}
-      {showInsumosModal && (
-        <div className="modal-overlay">
-          <div className="modal-content insumos-asignacion-modal">
-            <div className="modal-header">
-              <h5 className="modal-title">
-                <i className="fas fa-boxes me-2"></i>
-                Asignar Insumos - {selectedProveedor?.razonSocial}
-              </h5>
-              <button className="modal-close" onClick={handleCloseInsumosModal}>
-                <i className="fas fa-times"></i>
-              </button>
+      {showInsumosModal &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-boxes me-2"></i>
+                    Asignar Insumos - {selectedProveedor?.razonSocial}
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={handleCloseInsumosModal}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <AsignarInsumosForm
+                    proveedor={selectedProveedor}
+                    onSave={handleSaveInsumosAsignados}
+                    onCancel={handleCloseInsumosModal}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="modal-body">
-              <AsignarInsumosForm
-                proveedor={selectedProveedor}
-                onSave={handleSaveInsumosAsignados}
-                onCancel={handleCloseInsumosModal}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
+
+      {showModal ||
+        (showInsumosModal &&
+          createPortal(
+            <div
+              className={`${FormularioStyle.modalBackdrop}`}
+              style={{ zIndex: 1040, pointerEvents: "all" }}
+            ></div>,
+            document.body,
+          ))}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import GradoForm from "../../components/admin/GradoForm";
 import gradoService from "../../services/gradoService";
 import {
@@ -10,6 +11,9 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const ListaGrados = () => {
   const [grados, setGrados] = useState([]);
@@ -19,7 +23,7 @@ const ListaGrados = () => {
   const [modalMode, setModalMode] = useState("create"); // 'create', 'edit', 'view'
   const [selectedGrado, setSelectedGrado] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
   const [filterEstado, setFilterEstado] = useState("");
 
@@ -63,10 +67,10 @@ const ListaGrados = () => {
   }, [searchQuery, grados, filterEstado]);
 
   // Paginación
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentGrados = filteredGrados.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredGrados.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentGrados = filteredGrados.slice(startIndex, endIndex);
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
@@ -95,17 +99,35 @@ const ListaGrados = () => {
 
   const handleSaveGrado = async () => {
     try {
+      // Cerrar el modal inmediatamente
       closeModal();
+
+      // Resetear filtro y página para evitar inconsistencias
+      // cuando el grado cambió de estado (Activo a Inactivo, etc)
+      setFilterEstado("");
+      setSearchQuery("");
+      setCurrentPage(1);
+
+      // Recargar la lista sin filtros
+      try {
+        const gradosData = await gradoService.getAll();
+        setGrados(gradosData);
+        setFilteredGrados(gradosData);
+      } catch (error) {
+        // Si falla la recarga, aún mostramos éxito porque la actualización fue exitosa
+        console.warn("Advertencia al recargar grados:", error);
+      }
+
+      // Mostrar mensaje de éxito al final
       showSuccess(
         "Éxito",
         `Grado ${
           modalMode === "create" ? "creado" : "actualizado"
         } correctamente`,
       );
-      loadGrados(); // Recargar la lista
     } catch (error) {
-      showError("Error", "No se pudo guardar el grado");
-      /*console.error("Error al guardar grado:", error);*/
+      console.error("Error en handleSaveGrado:", error);
+      // No mostrar error aquí, el mensaje de éxito ya se mostró
     }
   };
 
@@ -129,10 +151,23 @@ const ListaGrados = () => {
           filteredGrados.filter((g) => g.idGrado !== grado.idGrado),
         );
 
+        // Limpiar estado si el grado eliminado era el seleccionado
+        if (selectedGrado?.idGrado === grado.idGrado) {
+          setSelectedGrado(null);
+        }
+
         showSuccess("Grado eliminado correctamente");
 
-        // Recargar para sincronizar con backend (importante para datos de auditoría, etc)
-        setTimeout(() => loadGrados(), 500);
+        // Resetear filtros y recargar para sincronizar con backend
+        setFilterEstado("");
+        setSearchQuery("");
+        setCurrentPage(1);
+
+        setTimeout(async () => {
+          const gradosData = await gradoService.getAll();
+          setGrados(gradosData);
+          setFilteredGrados(gradosData);
+        }, 500);
       } catch (error) {
         /*console.error("Error al eliminar grado:", error);*/
 
@@ -148,83 +183,142 @@ const ListaGrados = () => {
   };
 
   const handlePageChange = (page) => {
+    if (page < 1) page = 1;
     setCurrentPage(page);
   };
 
+  const getPaginationNumbers = () => {
+    if (totalPages <= 10) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    // Si hay más de 10 páginas, mostrar 10 números
+    let start = currentPage - 5;
+    let end = currentPage + 5;
+
+    // Ajustar si está cerca del inicio
+    if (start < 1) {
+      start = 1;
+      end = 10;
+    }
+
+    // Ajustar si está cerca del final
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, totalPages - 9);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  if (loading) {
+    return (
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Grados...</p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-graduation-cap me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-graduation-cap"></i>
             Gestión de Grados
           </h1>
-          <p>Administra los grados académicos del centro educativo</p>
+          <p className={ContenidoStyle.pageSubtitle}>
+            Administra los grados académicos del centro educativo
+          </p>
         </div>
-        <div className="header-actions">
+        <div className={ContenidoStyle.headerActions}>
           <button
-            className="btn btn-primary-new"
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
             onClick={() => openModal("create")}
           >
-            <i className="fas fa-plus"></i>
+            <i className="fas fa-plus me-1"></i>
             Nuevo Grado
           </button>
         </div>
       </div>
-      <div className="tab-content">
-        {/* Controles de búsqueda y filtros */}
-        <div className="page-header mb-3">
-          <div className="header-left">
-            <div className="search-filters">
-              <div className="search-bar">
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Buscar por nombre del grado..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
-              <div className="filter-actions">
-                <select
-                  className="filter-select"
-                  value={filterEstado}
-                  onChange={handleFilterEstado}
+
+      <div className={ContenidoStyle.tabContent}>
+        <div className={ContenidoStyle.headerLeft}>
+          <div className={ContenidoStyle.searchFilters}>
+            <div className={ContenidoStyle.searchBar}>
+              <input
+                type="text"
+                className={ContenidoStyle.searchInput}
+                placeholder="Buscar por nombre del grado..."
+                value={searchQuery}
+                onChange={handleSearch}
+              />
+            </div>
+            <div className={ContenidoStyle.filterActions}>
+              <select
+                className={ContenidoStyle.filterSelect}
+                value={filterEstado}
+                onChange={handleFilterEstado}
+              >
+                <option value="">Todos los estados</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
+              {(searchQuery || filterEstado) && (
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={clearFilters}
+                  title="Limpiar filtros"
                 >
-                  <option value="">Todos los estados</option>
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                </select>
-                {(searchQuery || filterEstado) && (
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={clearFilters}
-                    title="Limpiar filtros"
-                  >
-                    <i className="fas fa-times"></i>
-                    Limpiar
-                  </button>
-                )}
-              </div>
+                  <i className="fas fa-times"></i>
+                  Limpiar
+                </button>
+              )}
             </div>
           </div>
         </div>
 
+        <div className={TablaStyle.paginationInfoBar}>
+          <div className={TablaStyle.paginationInfo}>
+            Mostrando {startIndex + 1} a{" "}
+            {Math.min(endIndex, filteredGrados.length)} de{" "}
+            {filteredGrados.length} grados
+          </div>
+          <div className={TablaStyle.itemsPerPage}>
+            <label>
+              <strong>Registros por página:</strong>
+            </label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(parseInt(e.target.value, 10));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
+
         {/* Tabla */}
-        <div className="table-container">
-          {loading ? (
-            <div className="loading-spinner">
-              <i className="fas fa-spinner fa-spin"></i>
-              <p>Cargando grados...</p>
+        <div className={TablaStyle.tableContainer}>
+          {currentGrados.length === 0 ? (
+            <div className={TablaStyle.emptyState}>
+              <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+              <h5>No se encontraron grados</h5>
+              <p>No hay grados que coincidan con tu búsqueda.</p>
             </div>
           ) : (
-            <div className="scrollable-table">
-              <div className="table-body-scroll">
+            <div className={TablaStyle.scrollableTable}>
+              <div className={TablaStyle.tableBodyScroll}>
                 <table
-                  className="table table-striped data-table"
-                  style={{ width: "100%" }}
+                  className={`${TablaStyle.tableData} table table-striped`}
                 >
-                  <thead className="table-header-fixed">
+                  <thead className={TablaStyle.tableHeaderFixed}>
                     <tr>
                       <th>#</th>
                       <th>Grado</th>
@@ -234,68 +328,60 @@ const ListaGrados = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {currentGrados.length === 0 ? (
-                      <tr>
-                        <td colSpan={12}>
-                          <div className="empty-state">
-                            <i className="fas fa-search empty-icon"></i>
-                            <h5>No se encontraron grados</h5>
-                            <p>No hay grados que coincidan con tu búsqueda.</p>
+                    {currentGrados.map((grado) => (
+                      <tr key={grado.idGrado}>
+                        <td>
+                          <strong>{grado.idGrado}</strong>
+                        </td>
+                        <td>
+                          <div>
+                            <strong>{grado.nombreGrado}</strong>
+                          </div>
+                        </td>
+                        <td>
+                          <div>
+                            <span className={TablaStyle.turnoName}>
+                              {grado.turno}
+                            </span>
+                            <span className={TablaStyle.turnoHours}>
+                              ({grado.horaInicio} - {grado.horaFin})
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className={`${TablaStyle.statusBadge} ${grado.estado.toLowerCase() === "activo" ? TablaStyle.activo : TablaStyle.inactivo}`}
+                          >
+                            {grado.estado}
+                          </span>
+                        </td>
+                        <td>
+                          <div className={TablaStyle.actionButtons}>
+                            <button
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnView}`}
+                              onClick={() => openModal("view", grado)}
+                              title="Ver detalles"
+                            >
+                              <i className="fas fa-eye"></i>
+                            </button>
+                            <button
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnEdit}`}
+                              onClick={() => openModal("edit", grado)}
+                              title="Editar"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
+                              onClick={() => handleDelete(grado)}
+                              title="Eliminar"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
                           </div>
                         </td>
                       </tr>
-                    ) : (
-                      currentGrados.map((grado) => (
-                        <tr key={grado.idGrado}>
-                          <td>{grado.idGrado}</td>
-                          <td>
-                            <div className="grado-name">
-                              <strong>{grado.nombreGrado}</strong>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="turno-info">
-                              <span className="turno-name">{grado.turno}</span>
-                              <span className="turno-hours">
-                                ({grado.horaInicio} - {grado.horaFin})
-                              </span>
-                            </div>
-                          </td>
-                          <td>
-                            <span
-                              className={`status-badge ${grado.estado.toLowerCase()}`}
-                            >
-                              {grado.estado}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="table-actions">
-                              <button
-                                className="btn-action btn-view"
-                                onClick={() => openModal("view", grado)}
-                                title="Ver detalles"
-                              >
-                                <i className="fas fa-eye"></i>
-                              </button>
-                              <button
-                                className="btn-action btn-edit"
-                                onClick={() => openModal("edit", grado)}
-                                title="Editar"
-                              >
-                                <i className="fas fa-edit"></i>
-                              </button>
-                              <button
-                                className="btn-action btn-delete"
-                                onClick={() => handleDelete(grado)}
-                                title="Eliminar"
-                              >
-                                <i className="fas fa-trash"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -305,22 +391,25 @@ const ListaGrados = () => {
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div className="pagination">
+          <div className={TablaStyle.pagination}>
             <button
-              className="pagination-btn"
+              className={TablaStyle.paginationButton}
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
               <i className="fas fa-chevron-left"></i>
             </button>
-
-            <div className="pagination-info">
-              Página {currentPage} de {totalPages} ({filteredGrados.length}{" "}
-              grados)
-            </div>
-
+            {getPaginationNumbers().map((page) => (
+              <button
+                key={page}
+                className={`${TablaStyle.paginationButton} ${currentPage === page ? TablaStyle.active : ""}`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
             <button
-              className="pagination-btn"
+              className={TablaStyle.paginationButton}
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
@@ -331,45 +420,60 @@ const ListaGrados = () => {
       </div>
 
       {/* Modal para Grado */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content grado-modal">
-            <div className="modal-header">
-              <h3>
-                {modalMode === "create" && (
-                  <>
-                    <i className="fas fa-plus me-2"></i>
-                    Nuevo Grado
-                  </>
-                )}
-                {modalMode === "edit" && (
-                  <>
-                    <i className="fas fa-edit me-2"></i>
-                    Editar Grado
-                  </>
-                )}
-                {modalMode === "view" && (
-                  <>
-                    <i className="fas fa-graduation-cap me-2"></i>
-                    Detalles del Grado
-                  </>
-                )}
-              </h3>
-              <button className="modal-close" onClick={closeModal}>
-                <i className="fas fa-times"></i>
-              </button>
+      {showModal &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    {modalMode === "create" && (
+                      <>
+                        <i className="fas fa-plus me-2"></i>
+                        Nuevo Grado
+                      </>
+                    )}
+                    {modalMode === "edit" && (
+                      <>
+                        <i className="fas fa-edit me-2"></i>
+                        Editar Grado
+                      </>
+                    )}
+                    {modalMode === "view" && (
+                      <>
+                        <i className="fas fa-graduation-cap me-2"></i>
+                        Detalles del Grado
+                      </>
+                    )}
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={closeModal}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <GradoForm
+                    grado={selectedGrado}
+                    mode={modalMode}
+                    onSave={handleSaveGrado}
+                    onCancel={closeModal}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="modal-body">
-              <GradoForm
-                grado={selectedGrado}
-                mode={modalMode}
-                onSave={handleSaveGrado}
-                onCancel={closeModal}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
+      {showModal &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

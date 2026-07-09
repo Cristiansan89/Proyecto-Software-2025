@@ -440,9 +440,10 @@ export class AlertasInventarioController {
             fechaDia.setDate(hoy.getDate() + (parseInt(jsDay) - diaSemanaJS));
 
             // Obtener comensales reales por servicio para ese día
-            const comensalesPorServicio = await PlanificacionMenuModel.calcularComensalesPorServicioYFecha({
+            const comensalesData = await PlanificacionMenuModel.calcularComensalesPorServicioYFecha({
               fecha: fechaDia.toISOString().split('T')[0]
             });
+            const comensalesPorServicio = comensalesData.servicios || [];
 
             console.log(`  📅 ${diaEnum} (${fechaDia.toISOString().split('T')[0]}): ${comensalesPorServicio.length} servicios`);
 
@@ -457,16 +458,15 @@ export class AlertasInventarioController {
             const [itemsReceta] = await connection.query(
               `SELECT ir.id_insumo, 
                       jp.id_jornada,
-                      COALESCE(st.id_servicio, (SELECT id_servicio FROM Servicios WHERE estado='Activo' LIMIT 1)) as id_servicio,
+                      jp.id_servicio,
                       SUM(ir.cantidadPorPorcion) AS cantidadPorServicio
                FROM JornadaPlanificada jp
-               LEFT JOIN ServicioTurno st ON jp.id_turno = st.id_turno
                JOIN RecetaJornada rj ON jp.id_jornada = rj.id_jornada
                JOIN ItemsRecetas ir ON rj.id_receta = ir.id_receta
                WHERE jp.id_planificacion = UUID_TO_BIN(?)
                  AND jp.diaSemana = ?
                  AND ir.id_insumo IS NOT NULL
-               GROUP BY ir.id_insumo, jp.id_jornada, id_servicio`,
+               GROUP BY ir.id_insumo, jp.id_jornada, jp.id_servicio`,
               [plan.id_planificacion, diaEnum]
             );
 

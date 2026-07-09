@@ -8,6 +8,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const TipoMermaForm = ({ tipoMerma, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -84,10 +85,6 @@ const TipoMermaForm = ({ tipoMerma, mode, onSave, onCancel }) => {
       }
       onSave();
     } catch (error) {
-      console.error("Error completo:", error);
-      console.error("Error response:", error.response);
-      console.error("Error response data:", error.response?.data);
-
       let errorMessage = "";
 
       if (error.response?.data?.message) {
@@ -102,15 +99,13 @@ const TipoMermaForm = ({ tipoMerma, mode, onSave, onCancel }) => {
         errorMessage = error.message;
       }
 
-      console.log("Mensaje de error extraído:", errorMessage);
-
       if (errorMessage.toLowerCase().includes("existe")) {
         setServerError("Ya existe un tipo de merma con este nombre");
       } else if (errorMessage) {
         setServerError(errorMessage);
       } else {
         setServerError(
-          "Error al guardar el tipo de merma. Por favor, inténtelo de nuevo."
+          "Error al guardar el tipo de merma. Por favor, inténtelo de nuevo.",
         );
       }
     } finally {
@@ -120,119 +115,117 @@ const TipoMermaForm = ({ tipoMerma, mode, onSave, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit} className="needs-validation" noValidate>
-      <div className="form-sections">
-        {/* Información del Tipo de Merma */}
-        <div>
-          <h5 className="section-title">Información del Tipo de Merma</h5>
-          <div className="mb-3">
-            <label htmlFor="nombre" className="form-label">
-              Nombre <span className="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              className={`form-control ${errors.nombre ? "is-invalid" : ""}`}
-              id="nombre"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleInputChange}
-              maxLength={50}
-              placeholder="Ingrese el nombre del tipo de merma"
-              disabled={loading}
-              required
-            />
-            {errors.nombre && (
-              <div className="invalid-feedback">{errors.nombre}</div>
-            )}
-            <div className="form-text">Máximo 50 caracteres</div>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>
+        Información del Tipo de Merma
+      </h4>
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="nombre" className={ComponenteStyle.formLabel}>
+          Nombre <span className="text-danger">*</span>
+        </label>
+        <input
+          type="text"
+          className={`${ComponenteStyle.formControl} ${errors.nombre ? ComponenteStyle.isInvalid : ""}`}
+          id="nombre"
+          name="nombre"
+          value={formData.nombre}
+          onChange={handleInputChange}
+          maxLength={50}
+          placeholder="Ingrese el nombre del tipo de merma"
+          disabled={loading}
+          required
+        />
+        {errors.nombre && (
+          <div className={ComponenteStyle.invalidFeedback}>{errors.nombre}</div>
+        )}
+        <div className={ComponenteStyle.formText}>Máximo 50 caracteres</div>
+      </div>
+
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="descripcion" className={ComponenteStyle.formLabel}>
+          Descripción
+        </label>
+        <textarea
+          className={`${ComponenteStyle.formControl} ${errors.descripcion ? ComponenteStyle.isInvalid : ""}`}
+          id="descripcion"
+          name="descripcion"
+          value={formData.descripcion}
+          onChange={handleInputChange}
+          maxLength={200}
+          rows={3}
+          placeholder="Descripción opcional del tipo de merma"
+          disabled={loading}
+        />
+        {errors.descripcion && (
+          <div className={ComponenteStyle.invalidFeedback}>
+            {errors.descripcion}
           </div>
+        )}
+        <div className={ComponenteStyle.formText}>Máximo 200 caracteres</div>
+      </div>
 
-          <div className="mb-3">
-            <label htmlFor="descripcion" className="form-label">
-              Descripción
-            </label>
-            <textarea
-              className={`form-control ${
-                errors.descripcion ? "is-invalid" : ""
-              }`}
-              id="descripcion"
-              name="descripcion"
-              value={formData.descripcion}
-              onChange={handleInputChange}
-              maxLength={200}
-              rows={3}
-              placeholder="Descripción opcional del tipo de merma"
-              disabled={loading}
-            />
-            {errors.descripcion && (
-              <div className="invalid-feedback">{errors.descripcion}</div>
-            )}
-            <div className="form-text">Máximo 200 caracteres</div>
-          </div>
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="estado" className={ComponenteStyle.formLabel}>
+          Estado
+        </label>
+        <select
+          className={ComponenteStyle.formSelect}
+          id="estado"
+          name="estado"
+          value={formData.estado}
+          onChange={handleInputChange}
+          disabled={loading}
+        >
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
 
-          <div className="mb-3">
-            <label htmlFor="estado" className="form-label">
-              Estado
-            </label>
-            <select
-              className="form-select"
-              id="estado"
-              name="estado"
-              value={formData.estado}
-              onChange={handleInputChange}
-              disabled={loading}
-            >
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
-          </div>
-
-          {/* Mostrar error del servidor */}
-          {serverError && (
-            <div
-              className="alert alert-danger alert-dismissible fade show mb-3"
-              role="alert"
-            >
-              <i className="fas fa-exclamation-circle me-2"></i>
-              <strong className="me-1">Error al guardar:</strong>
-              <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                {serverError}
-              </div>
-            </div>
-          )}
-
-          <div className="form-actions mt-4">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onCancel}
-              disabled={loading}
-            >
-              <i className="fas fa-times"></i>
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              <i className="fas fa-save"></i>
-              {loading ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  Guardando...
-                </>
-              ) : mode === "crear" ? (
-                "Crear Tipo"
-              ) : (
-                "Guardar Cambios"
-              )}
-            </button>
+      {/* Mostrar error del servidor */}
+      {serverError && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error al guardar:</strong>
+          <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {serverError}
           </div>
         </div>
+      )}
+
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+          disabled={loading}
+        >
+          <i className="fas fa-save"></i>
+          {loading ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              Guardando...
+            </>
+          ) : mode === "crear" ? (
+            "Crear Tipo"
+          ) : (
+            "Guardar Cambios"
+          )}
+        </button>
       </div>
     </form>
   );

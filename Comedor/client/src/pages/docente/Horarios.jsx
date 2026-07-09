@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import "../../styles/DocenteHorarios.css";
 import API from "../../services/api.js";
 import { showError } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
 
 const Horarios = () => {
   const { user } = useAuth();
@@ -22,20 +22,20 @@ const Horarios = () => {
 
         // Cargar grados asignados al docente
         const gradosRes = await API.get(
-          `/docente-grados?idPersona=${user.idPersona || user.id_persona}`
+          `/docente-grados?idPersona=${user.idPersona || user.id_persona}`,
         );
         setGrados(gradosRes.data || []);
 
         // Cargar horarios (simulados por ahora)
         const horariosSimulados = generarHorariosSimulados(
-          serviciosRes.data || []
+          serviciosRes.data || [],
         );
         setHorarios(horariosSimulados);
       } catch (error) {
         //console.error('Error al cargar datos:', error);
         showError(
           "Error",
-          "❌ Ocurrió un error al cargar los horarios. Por favor, intente nuevamente más tarde."
+          "❌ Ocurrió un error al cargar los horarios. Por favor, intente nuevamente más tarde.",
         );
       } finally {
         setLoading(false);
@@ -77,7 +77,7 @@ const Horarios = () => {
     };
 
     const servicio = Object.keys(horariosPorServicio).find((key) =>
-      nombreServicio.toLowerCase().includes(key.toLowerCase())
+      nombreServicio.toLowerCase().includes(key.toLowerCase()),
     );
 
     return servicio ? horariosPorServicio[servicio][tipo] : "00:00";
@@ -113,13 +113,9 @@ const Horarios = () => {
 
   if (loading) {
     return (
-      <div className="horarios">
-        <div className="loading-container">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-          <p className="mt-3">Cargando horarios...</p>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Horarios...</p>
       </div>
     );
   }
@@ -128,59 +124,20 @@ const Horarios = () => {
   const diaActual = getDiaActual();
 
   return (
-    <div className="horarios">
-      <div className="page-header">
-        <h2>🕐 Horarios</h2>
-        <p>Horarios de servicios de comedor para la semana</p>
-      </div>
-
-      {/* Información del docente */}
-      <div className="card mb-4">
-        <div className="card-header">
-          <h4>👨‍🏫 Información del Docente</h4>
-        </div>
-        <div className="card-body">
-          <div className="row">
-            <div className="col-md-6">
-              <p>
-                <strong>Nombre:</strong> {user.nombre} {user.apellido}
-              </p>
-              <p>
-                <strong>Grados Asignados:</strong>
-              </p>
-              <div className="grados-badges">
-                {grados.length > 0 ? (
-                  grados.map((grado, index) => (
-                    <span key={index} className="badge bg-primary me-2 mb-2">
-                      {grado.nombreGrado}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-muted">No hay grados asignados</span>
-                )}
-              </div>
-            </div>
-            <div className="col-md-6">
-              <div className="hora-actual-card">
-                <h5>🕒 Hora Actual</h5>
-                <p className="hora-actual">
-                  {new Date().toLocaleString("es-ES", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
-            </div>
-          </div>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fa-regular fa-clock"></i> Horarios
+          </h1>
+          <p className={ContenidoStyle.pageSubtitle}>
+            Horarios de servicios de comedor para la semana
+          </p>
         </div>
       </div>
 
       {/* Horarios por día */}
-      <div className="horarios-semana">
+      <div>
         {diasSemana.map((dia) => {
           const horariosDelDia = getHorariosPorDia(dia);
           const esDiaActual = dia === diaActual;
@@ -188,19 +145,23 @@ const Horarios = () => {
           return (
             <div
               key={dia}
-              className={`card mb-3 ${esDiaActual ? "dia-actual" : ""}`}
+              className={`${ContenidoStyle.card} mb-3 ${esDiaActual ? "diaActual" : ""}`}
             >
-              <div className="card-header d-flex justify-content-between align-items-center">
+              <div
+                className={`${ContenidoStyle.cardHeader} d-flex justify-content-between align-items-center`}
+              >
                 <h5 className="mb-0">
                   {esDiaActual && "📍 "}
                   {dia}
                   {esDiaActual && " (Hoy)"}
                 </h5>
-                <span className="badge bg-info">
+                <span
+                  className={`${ContenidoStyle.badge} ${ContenidoStyle.badgeSuccess} fw-bold`}
+                >
                   {horariosDelDia.length} servicios
                 </span>
               </div>
-              <div className="card-body">
+              <div className={ContenidoStyle.cardBody}>
                 {horariosDelDia.length === 0 ? (
                   <p className="text-muted text-center py-3">
                     No hay servicios programados para este día
@@ -214,28 +175,24 @@ const Horarios = () => {
 
                       return (
                         <div key={horario.id} className="col-md-6 mb-3">
-                          <div
-                            className={`horario-item ${
-                              esActivo ? "activo" : ""
-                            }`}
-                          >
-                            <div className="horario-header">
-                              <h6 className="horario-servicio">
+                          <div className={`${esActivo ? "activo" : ""}`}>
+                            <div>
+                              <h6>
                                 🍽️ {horario.servicio}
                                 {esActivo && (
-                                  <span className="badge bg-success ms-2">
+                                  <span
+                                    className={`${ContenidoStyle.badge} bg-success ms-1`}
+                                  >
                                     En curso
                                   </span>
                                 )}
                               </h6>
-                              <div className="horario-tiempo">
+                              <div>
                                 <i className="fas fa-clock me-1"></i>
                                 {horario.hora_inicio} - {horario.hora_fin}
                               </div>
                             </div>
-                            <p className="horario-descripcion">
-                              {horario.descripcion}
-                            </p>
+                            <p>{horario.descripcion}</p>
                           </div>
                         </div>
                       );
@@ -249,21 +206,24 @@ const Horarios = () => {
       </div>
 
       {/* Resumen de servicios */}
-      <div className="card mt-4">
-        <div className="card-header">
-          <h4>📊 Resumen de Servicios</h4>
+      <div className={`${ContenidoStyle.card} mt-4`}>
+        <div className={ContenidoStyle.cardHeader}>
+          <h5>
+            <i class="fa-solid fa-chart-column me-1"></i>
+            Resumen de Servicios
+          </h5>
         </div>
-        <div className="card-body">
+        <div className={ContenidoStyle.cardBody}>
           <div className="row">
             {servicios
               .filter((s) => s.estado === "Activo")
               .map((servicio) => (
                 <div key={servicio.id_servicio} className="col-md-3 mb-3">
-                  <div className="servicio-resumen">
-                    <div className="servicio-icono">🍽️</div>
+                  <div>
+                    <div>🍽️</div>
                     <h6>{servicio.nombre}</h6>
                     <p className="text-muted small">{servicio.descripcion}</p>
-                    <div className="servicio-horario">
+                    <div>
                       <small>
                         <i className="fas fa-clock me-1"></i>
                         {getHoraServicio(servicio.nombre, "inicio")} -{" "}

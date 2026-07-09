@@ -80,7 +80,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   const loadRecetaServicios = async () => {
     try {
       const servicios = await recetasServiciosService.getServiciosPorReceta(
-        receta.id_receta
+        receta.id_receta,
       );
 
       if (servicios && Array.isArray(servicios)) {
@@ -94,7 +94,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
     } catch (error) {
       // Silenciar el error si la tabla no existe
       console.warn(
-        "Advertencia: No se pudieron cargar los servicios asociados a la receta."
+        "Advertencia: No se pudieron cargar los servicios asociados a la receta.",
       );
       // Continuar sin cargar servicios (no mostrar alerta)
     }
@@ -171,12 +171,12 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       }
 
       const insumoSeleccionado = insumos.find(
-        (ins) => ins.idInsumo === nuevoIngrediente.id_insumo
+        (ins) => ins.idInsumo === nuevoIngrediente.id_insumo,
       );
 
       // Verificar si el ingrediente ya existe
       const yaExiste = ingredientes.some(
-        (ing) => ing.id_insumo === nuevoIngrediente.id_insumo
+        (ing) => ing.id_insumo === nuevoIngrediente.id_insumo,
       );
       if (yaExiste) {
         showInfo("Este ingrediente ya está en la lista");
@@ -244,12 +244,12 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           try {
             await recetasServiciosService.actualizarServiciosReceta(
               savedReceta.id_receta,
-              formData.servicios
+              formData.servicios,
             );
           } catch (servicioError) {
             // Silenciar error si la tabla no existe
             console.warn(
-              "Advertencia: No se pudieron guardar los servicios asociados a la receta."
+              "Advertencia: No se pudieron guardar los servicios asociados a la receta.",
             );
             // Continuar sin guardar servicios
           }
@@ -266,14 +266,14 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           try {
             await API.post(
               `/recetas/${savedReceta.id_receta}/insumos`,
-              payload
+              payload,
             );
           } catch (addError) {
             //  console.error("❌ Error completo:", addError);
             //  console.error("Response:", addError.response?.data);
             showError(
               "Error",
-              "No se pudieron guardar todos los ingredientes de la receta."
+              "No se pudieron guardar todos los ingredientes de la receta.",
             );
             throw addError;
           }
@@ -288,12 +288,12 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         try {
           await recetasServiciosService.actualizarServiciosReceta(
             receta.id_receta,
-            formData.servicios
+            formData.servicios,
           );
         } catch (servicioError) {
           // Silenciar error si la tabla no existe
           console.warn(
-            "Advertencia: No se pudieron actualizar los servicios asociados a la receta."
+            "Advertencia: No se pudieron actualizar los servicios asociados a la receta.",
           );
           // Continuar sin actualizar servicios
         }
@@ -303,7 +303,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         // Primero obtenemos los ingredientes existentes para eliminarlos uno por uno
         try {
           const existingIngredients = await API.get(
-            `/recetas/${receta.id_receta}/insumos`
+            `/recetas/${receta.id_receta}/insumos`,
           );
 
           if (existingIngredients.data && existingIngredients.data.insumos) {
@@ -325,7 +325,8 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
           try {
             const payload = {
               id_insumo: ingrediente.id_insumo,
-              cantidadPorPorcion: parseFloat(ingrediente.cantidadPorPorcion) || 0,
+              cantidadPorPorcion:
+                parseFloat(ingrediente.cantidadPorPorcion) || 0,
               unidadPorPorcion: normalizarUnidad(ingrediente.unidadPorPorcion),
             };
 
@@ -335,7 +336,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
             //console.error("Response completa:", addError.response?.data);
             showError(
               "Error",
-              "No se pudieron guardar todos los ingredientes de la receta."
+              "No se pudieron guardar todos los ingredientes de la receta.",
             );
             throw addError; // Re-lanzar para abortar el proceso
           }
@@ -349,12 +350,12 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       // Mostrar errores específicos
       const statusCode = error.response?.status;
       const errorData = error.response?.data;
-      
+
       if (statusCode === 409) {
         // Error de conflicto: nombre duplicado
         showError(
           "Receta Duplicada",
-          `Ya existe una receta con el nombre "${formData.nombreReceta}". Por favor, utiliza un nombre diferente.`
+          `Ya existe una receta con el nombre "${formData.nombreReceta}". Por favor, utiliza un nombre diferente.`,
         );
       } else if (errorData?.errors) {
         const apiErrors = {};
@@ -364,19 +365,19 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         setErrors(apiErrors);
         showError(
           "Error",
-          "Error de validación. Revise los campos marcados en rojo."
+          "Error de validación. Revise los campos marcados en rojo.",
         );
       } else if (errorData?.message) {
         showError("Error", errorData.message);
       } else if (error.response) {
         showError(
           "Error",
-          `Error del servidor (${statusCode}): ${error.response.statusText}`
+          `Error del servidor (${statusCode}): ${error.response.statusText}`,
         );
       } else if (error.request) {
         showError(
           "Error",
-          "Error de conexión. Verifique su conexión a internet."
+          "Error de conexión. Verifique su conexión a internet.",
         );
       } else {
         showError("Error", `Error inesperado: ${error.message}`);
@@ -390,416 +391,406 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   const isCreateMode = mode === "create";
 
   return (
-    <div className="receta-form">
-      <form onSubmit={handleSubmit}>
-        <div className="row">
-          {/* Columna izquierda - Información de la receta */}
-          <div className="col-lg-6">
-            <div className="form-section">
-              <h4 className="section-title">
-                <i className="fas fa-utensils me-2"></i>
-                Información de la Receta
-              </h4>
+    <form onSubmit={handleSubmit}>
+      <div className="row">
+        {/* Columna izquierda - Información de la receta */}
+        <div className="col-lg-6">
+          <div className="form-section">
+            <h4 className="section-title">
+              <i className="fas fa-utensils me-2"></i>
+              Información de la Receta
+            </h4>
 
-              <div className="form-group">
-                <label htmlFor="nombreReceta" className="form-label required">
-                  Nombre de la receta
-                </label>
-                <input
-                  type="text"
-                  id="nombreReceta"
-                  name="nombreReceta"
-                  className={`form-control ${
-                    errors.nombreReceta ? "is-invalid" : ""
-                  }`}
-                  value={formData.nombreReceta}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  placeholder="Ej: Arroz con pollo"
-                />
-                {errors.nombreReceta && (
-                  <div className="invalid-feedback">{errors.nombreReceta}</div>
-                )}
-              </div>
-
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="form-group">
-                    <label
-                      htmlFor="unidadSalida"
-                      className="form-label required"
-                    >
-                      Unidad de Salida
-                    </label>
-                    <select
-                      id="unidadSalida"
-                      name="unidadSalida"
-                      className={`form-control ${
-                        errors.unidadSalida ? "is-invalid" : ""
-                      }`}
-                      value={formData.unidadSalida}
-                      onChange={handleInputChange}
-                      disabled={isViewMode}
-                    >
-                      <option value="Porcion">Porción</option>
-                      <option value="Litro">Litro</option>
-                      <option value="Kilogramo">Kilogramo</option>
-                      <option value="Unidad">Unidad</option>
-                    </select>
-                    {errors.unidadSalida && (
-                      <div className="invalid-feedback">
-                        {errors.unidadSalida}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="col-md-6">
-                  <div className="form-group">
-                    <label htmlFor="estado" className="form-label">
-                      Estado
-                    </label>
-                    <select
-                      id="estado"
-                      name="estado"
-                      className="form-control"
-                      value={formData.estado}
-                      onChange={handleInputChange}
-                      disabled={isViewMode}
-                    >
-                      <option value="Activo">Activo</option>
-                      <option value="Inactivo">Inactivo</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="col-12">
-                  <div className="form-group">
-                    <label className="form-label">
-                      <strong>Servicios Disponibles</strong>
-                    </label>
-                    <div className="d-flex gap-3">
-                      {serviciosDisponibles.map((servicio) => (
-                        <div key={servicio.id_servicio} className="form-check">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id={`servicio-${servicio.id_servicio}`}
-                            checked={formData.servicios.includes(
-                              servicio.id_servicio
-                            )}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  servicios: [
-                                    ...prev.servicios,
-                                    servicio.id_servicio,
-                                  ],
-                                }));
-                              } else {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  servicios: prev.servicios.filter(
-                                    (id) => id !== servicio.id_servicio
-                                  ),
-                                }));
-                              }
-                            }}
-                            disabled={isViewMode}
-                          />
-                          <label
-                            className="form-check-label"
-                            htmlFor={`servicio-${servicio.id_servicio}`}
-                          >
-                            {servicio.nombre}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                    {errors.servicios && (
-                      <div className="text-danger small mt-1">
-                        {errors.servicios}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="instrucciones" className="form-label required">
-                  Instrucciones de preparación
-                </label>
-                <textarea
-                  id="instrucciones"
-                  name="instrucciones"
-                  className={`form-control ${
-                    errors.instrucciones ? "is-invalid" : ""
-                  }`}
-                  rows="8"
-                  value={formData.instrucciones}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  placeholder="Describe paso a paso cómo preparar esta receta..."
-                />
-                {errors.instrucciones && (
-                  <div className="invalid-feedback">{errors.instrucciones}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Columna derecha - Gestión de ingredientes */}
-          <div className="col-lg-6">
-            <div className="form-section">
-              <h4 className="section-title">
-                <i className="fas fa-list me-2"></i>
-                Ingredientes de la Receta
-                {errors.ingredientes && (
-                  <span className="text-danger ms-2 small">
-                    ({errors.ingredientes})
-                  </span>
-                )}
-              </h4>
-
-              {!isViewMode && (
-                <>
-                  {/* Formulario para agregar ingredientes */}
-                  <div className="form-group">
-                    <label htmlFor="ingrediente_insumo" className="form-label">
-                      Seleccionar insumo
-                    </label>
-                    <Select
-                      inputId="ingrediente_insumo"
-                      options={
-                        insumos?.map((insumo) => ({
-                          value: insumo.idInsumo,
-                          label: insumo.nombreInsumo,
-                          data: insumo,
-                        })) || []
-                      }
-                      value={
-                        nuevoIngrediente.id_insumo
-                          ? {
-                              value: nuevoIngrediente.id_insumo,
-                              label:
-                                insumos?.find(
-                                  (ins) =>
-                                    ins.idInsumo === nuevoIngrediente.id_insumo
-                                )?.nombreInsumo || "Seleccionar...",
-                              data: insumos?.find(
-                                (ins) =>
-                                  ins.idInsumo === nuevoIngrediente.id_insumo
-                              ),
-                            }
-                          : null
-                      }
-                      onChange={(option) =>
-                        setNuevoIngrediente({
-                          ...nuevoIngrediente,
-                          id_insumo: option ? option.value : "",
-                        })
-                      }
-                      placeholder="Buscar insumo..."
-                      isSearchable
-                      isClearable
-                      noOptionsMessage={() => "No hay insumos disponibles"}
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          borderColor: "#ced4da",
-                          borderRadius: "0.375rem",
-                          "&:hover": {
-                            borderColor: "#86b7fe",
-                          },
-                          "&:focus-within": {
-                            borderColor: "#86b7fe",
-                            boxShadow: "0 0 0 0.25rem rgba(13, 110, 253, 0.25)",
-                          },
-                        }),
-                      }}
-                    />
-                  </div>
-
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <label
-                          htmlFor="ingrediente_cantidad"
-                          className="form-label mt-3"
-                        >
-                          Cantidad
-                        </label>
-                        <input
-                          type="number"
-                          id="ingrediente_cantidad"
-                          className="form-control"
-                          step="0.001"
-                          min="0.001"
-                          value={nuevoIngrediente.cantidadPorPorcion}
-                          onChange={(e) =>
-                            setNuevoIngrediente({
-                              ...nuevoIngrediente,
-                              cantidadPorPorcion: e.target.value,
-                            })
-                          }
-                          placeholder="0.001"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <label
-                          htmlFor="ingrediente_unidad"
-                          className="form-label mt-3"
-                        >
-                          Unidad
-                        </label>
-                        <select
-                          id="ingrediente_unidad"
-                          className="form-control"
-                          value={nuevoIngrediente.unidadPorPorcion}
-                          onChange={(e) =>
-                            setNuevoIngrediente({
-                              ...nuevoIngrediente,
-                              unidadPorPorcion: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="">Seleccione unidad</option>
-                          <option value="Gramos">Gramos</option>
-                          <option value="Kilogramos">Kilogramos</option>
-                          <option value="Mililitros">Mililitros</option>
-                          <option value="Litros">Litros</option>
-                          <option value="Unidades">Unidades</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-group mt-3">
-                    <button
-                      type="button"
-                      className="btn btn-success w-100"
-                      onClick={agregarIngrediente}
-                      disabled={
-                        !nuevoIngrediente.id_insumo ||
-                        !nuevoIngrediente.cantidadPorPorcion ||
-                        !nuevoIngrediente.unidadPorPorcion
-                      }
-                    >
-                      <i className="fas fa-plus me-2"></i>
-                      Agregar Ingrediente
-                    </button>
-                  </div>
-                </>
+            <div className="form-group">
+              <label htmlFor="nombreReceta" className="form-label required">
+                Nombre de la receta
+              </label>
+              <input
+                type="text"
+                id="nombreReceta"
+                name="nombreReceta"
+                className={`form-control ${
+                  errors.nombreReceta ? "is-invalid" : ""
+                }`}
+                value={formData.nombreReceta}
+                onChange={handleInputChange}
+                disabled={isViewMode}
+                placeholder="Ej: Arroz con pollo"
+              />
+              {errors.nombreReceta && (
+                <div className="invalid-feedback">{errors.nombreReceta}</div>
               )}
+            </div>
 
-              {/* Lista de ingredientes */}
-              <div className="mt-4">
-                <h6 className="small">
-                  Ingredientes agregados
-                  <span className="badge bg-info ms-2">
-                    {ingredientes.length}
-                  </span>
-                </h6>
-
-                {ingredientes.length === 0 ? (
-                  <div className="text-center py-3 text-muted">
-                    <i className="fas fa-list fa-2x mb-2"></i>
-                    <p>No hay ingredientes agregados</p>
-                    {!isViewMode && (
-                      <small>
-                        Agrega al menos un ingrediente para continuar
-                      </small>
-                    )}
-                  </div>
-                ) : (
-                  <div
-                    className="table-responsive"
-                    style={{ maxHeight: "300px", overflowY: "auto" }}
+            <div className="row">
+              <div className="col-md-6">
+                <div className="form-group">
+                  <label htmlFor="unidadSalida" className="form-label required">
+                    Unidad de Salida
+                  </label>
+                  <select
+                    id="unidadSalida"
+                    name="unidadSalida"
+                    className={`form-control ${
+                      errors.unidadSalida ? "is-invalid" : ""
+                    }`}
+                    value={formData.unidadSalida}
+                    onChange={handleInputChange}
+                    disabled={isViewMode}
                   >
-                    <table className="table table-sm table-striped">
-                      <thead>
-                        <tr>
-                          <th>Ingrediente</th>
-                          <th>Cant.</th>
-                          <th>Unidad</th>
-                          {!isViewMode && <th>Acción</th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ingredientes.map((ingrediente, index) => (
-                          <tr key={index}>
-                            <td className="small">
-                              {ingrediente.nombreInsumo}
-                            </td>
-                            <td className="small">
-                              {formatCantidad(ingrediente.cantidadPorPorcion, ingrediente.unidadPorPorcion)}
-                            </td>
-                            <td className="small">
-                              {ingrediente.unidadPorPorcion}
-                            </td>
-                            {!isViewMode && (
-                              <td>
-                                <button
-                                  type="button"
-                                  className="btn btn-outline-danger btn-sm"
-                                  onClick={() => eliminarIngrediente(index)}
-                                  title="Eliminar ingrediente"
-                                >
-                                  <i className="fas fa-trash"></i>
-                                </button>
-                              </td>
-                            )}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                    <option value="Porcion">Porción</option>
+                    <option value="Litro">Litro</option>
+                    <option value="Kilogramo">Kilogramo</option>
+                    <option value="Unidad">Unidad</option>
+                  </select>
+                  {errors.unidadSalida && (
+                    <div className="invalid-feedback">
+                      {errors.unidadSalida}
+                    </div>
+                  )}
+                </div>
               </div>
+              <div className="col-md-6">
+                <div className="form-group">
+                  <label htmlFor="estado" className="form-label">
+                    Estado
+                  </label>
+                  <select
+                    id="estado"
+                    name="estado"
+                    className="form-control"
+                    value={formData.estado}
+                    onChange={handleInputChange}
+                    disabled={isViewMode}
+                  >
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                </div>
+              </div>
+              <div className="col-12">
+                <div className="form-group">
+                  <label className="form-label">
+                    <strong>Servicios Disponibles</strong>
+                  </label>
+                  <div className="d-flex gap-3">
+                    {serviciosDisponibles.map((servicio) => (
+                      <div key={servicio.id_servicio} className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={`servicio-${servicio.id_servicio}`}
+                          checked={formData.servicios.includes(
+                            servicio.id_servicio,
+                          )}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                servicios: [
+                                  ...prev.servicios,
+                                  servicio.id_servicio,
+                                ],
+                              }));
+                            } else {
+                              setFormData((prev) => ({
+                                ...prev,
+                                servicios: prev.servicios.filter(
+                                  (id) => id !== servicio.id_servicio,
+                                ),
+                              }));
+                            }
+                          }}
+                          disabled={isViewMode}
+                        />
+                        <label
+                          className="form-check-label"
+                          htmlFor={`servicio-${servicio.id_servicio}`}
+                        >
+                          {servicio.nombre}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.servicios && (
+                    <div className="text-danger small mt-1">
+                      {errors.servicios}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="instrucciones" className="form-label required">
+                Instrucciones de preparación
+              </label>
+              <textarea
+                id="instrucciones"
+                name="instrucciones"
+                className={`form-control ${
+                  errors.instrucciones ? "is-invalid" : ""
+                }`}
+                rows="8"
+                value={formData.instrucciones}
+                onChange={handleInputChange}
+                disabled={isViewMode}
+                placeholder="Describe paso a paso cómo preparar esta receta..."
+              />
+              {errors.instrucciones && (
+                <div className="invalid-feedback">{errors.instrucciones}</div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Botones */}
-        <div className="form-actions mt-4">
-          <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
-            disabled={loading}
-          >
-            <i className="fas fa-times me-2"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
-          </button>
-
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save me-2"></i>
-                  {isCreateMode ? "Crear Receta" : "Actualizar Receta"}
-                  {ingredientes.length > 0 && (
-                    <span className="badge bg-light text-dark ms-2">
-                      {ingredientes.length} ingredientes
-                    </span>
-                  )}
-                </>
+        {/* Columna derecha - Gestión de ingredientes */}
+        <div className="col-lg-6">
+          <div className="form-section">
+            <h4 className="section-title">
+              <i className="fas fa-list me-2"></i>
+              Ingredientes de la Receta
+              {errors.ingredientes && (
+                <span className="text-danger ms-2 small">
+                  ({errors.ingredientes})
+                </span>
               )}
-            </button>
-          )}
+            </h4>
+
+            {!isViewMode && (
+              <>
+                {/* Formulario para agregar ingredientes */}
+                <div className="form-group">
+                  <label htmlFor="ingrediente_insumo" className="form-label">
+                    Seleccionar insumo
+                  </label>
+                  <Select
+                    inputId="ingrediente_insumo"
+                    options={
+                      insumos?.map((insumo) => ({
+                        value: insumo.idInsumo,
+                        label: insumo.nombreInsumo,
+                        data: insumo,
+                      })) || []
+                    }
+                    value={
+                      nuevoIngrediente.id_insumo
+                        ? {
+                            value: nuevoIngrediente.id_insumo,
+                            label:
+                              insumos?.find(
+                                (ins) =>
+                                  ins.idInsumo === nuevoIngrediente.id_insumo,
+                              )?.nombreInsumo || "Seleccionar...",
+                            data: insumos?.find(
+                              (ins) =>
+                                ins.idInsumo === nuevoIngrediente.id_insumo,
+                            ),
+                          }
+                        : null
+                    }
+                    onChange={(option) =>
+                      setNuevoIngrediente({
+                        ...nuevoIngrediente,
+                        id_insumo: option ? option.value : "",
+                      })
+                    }
+                    placeholder="Buscar insumo..."
+                    isSearchable
+                    isClearable
+                    noOptionsMessage={() => "No hay insumos disponibles"}
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderColor: "#ced4da",
+                        borderRadius: "0.375rem",
+                        "&:hover": {
+                          borderColor: "#86b7fe",
+                        },
+                        "&:focus-within": {
+                          borderColor: "#86b7fe",
+                          boxShadow: "0 0 0 0.25rem rgba(13, 110, 253, 0.25)",
+                        },
+                      }),
+                    }}
+                  />
+                </div>
+
+                <div className="row">
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label
+                        htmlFor="ingrediente_cantidad"
+                        className="form-label mt-3"
+                      >
+                        Cantidad
+                      </label>
+                      <input
+                        type="number"
+                        id="ingrediente_cantidad"
+                        className="form-control"
+                        step="0.001"
+                        min="0.001"
+                        value={nuevoIngrediente.cantidadPorPorcion}
+                        onChange={(e) =>
+                          setNuevoIngrediente({
+                            ...nuevoIngrediente,
+                            cantidadPorPorcion: e.target.value,
+                          })
+                        }
+                        placeholder="0.001"
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label
+                        htmlFor="ingrediente_unidad"
+                        className="form-label mt-3"
+                      >
+                        Unidad
+                      </label>
+                      <select
+                        id="ingrediente_unidad"
+                        className="form-control"
+                        value={nuevoIngrediente.unidadPorPorcion}
+                        onChange={(e) =>
+                          setNuevoIngrediente({
+                            ...nuevoIngrediente,
+                            unidadPorPorcion: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Seleccione unidad</option>
+                        <option value="Gramos">Gramos</option>
+                        <option value="Kilogramos">Kilogramos</option>
+                        <option value="Mililitros">Mililitros</option>
+                        <option value="Litros">Litros</option>
+                        <option value="Unidades">Unidades</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group mt-3">
+                  <button
+                    type="button"
+                    className="btn btn-success w-100"
+                    onClick={agregarIngrediente}
+                    disabled={
+                      !nuevoIngrediente.id_insumo ||
+                      !nuevoIngrediente.cantidadPorPorcion ||
+                      !nuevoIngrediente.unidadPorPorcion
+                    }
+                  >
+                    <i className="fas fa-plus me-2"></i>
+                    Agregar Ingrediente
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Lista de ingredientes */}
+            <div className="mt-4">
+              <h6 className="small">
+                Ingredientes agregados
+                <span className="badge bg-info ms-2">
+                  {ingredientes.length}
+                </span>
+              </h6>
+
+              {ingredientes.length === 0 ? (
+                <div className="text-center py-3 text-muted">
+                  <i className="fas fa-list fa-2x mb-2"></i>
+                  <p>No hay ingredientes agregados</p>
+                  {!isViewMode && (
+                    <small>Agrega al menos un ingrediente para continuar</small>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className="table-responsive"
+                  style={{ maxHeight: "300px", overflowY: "auto" }}
+                >
+                  <table className="table table-sm table-striped">
+                    <thead>
+                      <tr>
+                        <th>Ingrediente</th>
+                        <th>Cant.</th>
+                        <th>Unidad</th>
+                        {!isViewMode && <th>Acción</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ingredientes.map((ingrediente, index) => (
+                        <tr key={index}>
+                          <td className="small">{ingrediente.nombreInsumo}</td>
+                          <td className="small">
+                            {formatCantidad(
+                              ingrediente.cantidadPorPorcion,
+                              ingrediente.unidadPorPorcion,
+                            )}
+                          </td>
+                          <td className="small">
+                            {ingrediente.unidadPorPorcion}
+                          </td>
+                          {!isViewMode && (
+                            <td>
+                              <button
+                                type="button"
+                                className="btn btn-outline-danger btn-sm"
+                                onClick={() => eliminarIngrediente(index)}
+                                title="Eliminar ingrediente"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </form>
-    </div>
+      </div>
+
+      {/* Botones */}
+      <div className="form-actions mt-4">
+        <button
+          type="button"
+          className="btn btn-secondary me-2"
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times me-2"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save me-2"></i>
+                {isCreateMode ? "Crear Receta" : "Actualizar Receta"}
+                {ingredientes.length > 0 && (
+                  <span className="badge bg-light text-dark ms-2">
+                    {ingredientes.length} ingredientes
+                  </span>
+                )}
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </form>
   );
 };
 

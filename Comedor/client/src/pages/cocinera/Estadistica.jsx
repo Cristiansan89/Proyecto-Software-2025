@@ -20,7 +20,6 @@ import consumosService from "../../services/consumosService";
 import asistenciasService from "../../services/asistenciasService";
 import auditoriaService from "../../services/auditoriaService";
 import API from "../../services/api";
-import "../../styles/Estadistica.css";
 import {
   showSuccess,
   showError,
@@ -43,6 +42,10 @@ ChartJS.register(
   Filler,
 );
 
+import EstadisticaStyle from "../../styles/Estadistica.module.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+
 // ============================================
 // UTILIDADES DE FORMATEO
 // ============================================
@@ -64,10 +67,10 @@ const formatearNumero = (valor, decimales = 3) => {
  * Define el mapeo de colores por unidad de medida
  */
 const COLORES_UNIDADES = {
-  "Kilogramos": "#0d6efd",      // Azul
-  "Litros": "#198754",       // Verde
-  "Gramos": "#fd7e14",       // Naranja
-  "Mililitros": "#dc3545",      // Rojo
+  Kilogramos: "#0d6efd", // Azul
+  Litros: "#198754", // Verde
+  Gramos: "#fd7e14", // Naranja
+  Mililitros: "#dc3545", // Rojo
 };
 
 /**
@@ -78,15 +81,15 @@ const COLORES_UNIDADES = {
 const normalizarUnidad = (unidad) => {
   if (!unidad) return "Kilogramos";
   const unidadLower = String(unidad).toLowerCase().trim();
-  
+
   // Líquidos
   if (unidadLower.includes("litro") || unidadLower === "l") return "Litros";
   if (unidadLower.includes("ml") || unidadLower === "ml") return "Mililitros";
-  
+
   // Sólidos
   if (unidadLower.includes("gramo") || unidadLower === "g") return "Gramos";
   if (unidadLower.includes("kg") || unidadLower === "kg") return "Kilogramos";
-  
+
   return "Kg"; // Por defecto
 };
 
@@ -117,14 +120,16 @@ const formatearMoneda = (valor) => {
  * Componente para las tarjetas de KPI
  */
 const KPICard = ({ icon, title, value, subtitle, color = "primary" }) => (
-  <div className="col-md-6 five-card mb-2">
-    <div className="card card-estadistica kpi-card text-center">
-      <div className="card-body">
-        <div className={`kpi-icon text-${color} mb-2`}>
+  <div className={`col-md-6 ${EstadisticaStyle.fiveCard} mb-2`}>
+    <div
+      className={`${EstadisticaStyle.card} ${EstadisticaStyle.kpiCard} text-center`}
+    >
+      <div className={EstadisticaStyle.cardBody}>
+        <div className={`${EstadisticaStyle.kpiIcon} text-${color} mb-2`}>
           <i className={`${icon} fa-3x`}></i>
         </div>
-        <h6 className="kpi-title mb-2">{title}</h6>
-        <h3 className="kpi-value mb-2">{value}</h3>
+        <h6 className={`${EstadisticaStyle.kpiTitle} mb-2`}>{title}</h6>
+        <h3 className={`${EstadisticaStyle.kpiValue} mb-2`}>{value}</h3>
         {subtitle && <small className="text-muted">{subtitle}</small>}
       </div>
     </div>
@@ -132,172 +137,25 @@ const KPICard = ({ icon, title, value, subtitle, color = "primary" }) => (
 );
 
 /**
- * Componente para la barra de filtros
- */
-const FiltrosGlobales = ({
-  filtros,
-  setFiltros,
-  categorias,
-  tiposMenu,
-  estadosInsumo,
-  grados,
-  onActualizar,
-  onLimpiar,
-  loading,
-}) => (
-  <div className="card filtros-card mb-4">
-    <div className="card-header bg-light">
-      <h5 className="mb-0">
-        <i className="fas fa-filter me-2"></i>
-        Filtros Globales
-      </h5>
-    </div>
-    <div className="card-body">
-      <div className="row g-3 align-items-end">
-        {/* Rango de Fechas */}
-        <div className="col-md-2">
-          <label className="form-label">Desde (DD/MM/AAAA)</label>
-          <input
-            type="date"
-            className="form-control"
-            value={filtros.fechaInicio}
-            onChange={(e) =>
-              setFiltros({ ...filtros, fechaInicio: e.target.value })
-            }
-            disabled={loading}
-          />
-        </div>
-
-        <div className="col-md-2">
-          <label className="form-label">Hasta (DD/MM/AAAA)</label>
-          <input
-            type="date"
-            className="form-control"
-            value={filtros.fechaFin}
-            onChange={(e) =>
-              setFiltros({ ...filtros, fechaFin: e.target.value })
-            }
-            disabled={loading}
-          />
-        </div>
-
-        {/* Categoría de Insumos */}
-        <div className="col-md-2">
-          <label className="form-label">Categoría Insumo</label>
-          <select
-            className="form-select"
-            value={filtros.categoriaInsumo}
-            onChange={(e) =>
-              setFiltros({ ...filtros, categoriaInsumo: e.target.value })
-            }
-            disabled={loading}
-          >
-            <option value="">Todos</option>
-            {categorias.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Tipo de Menú */}
-        <div className="col-md-2">
-          <label className="form-label">Tipo de Menú</label>
-          <select
-            className="form-select"
-            value={filtros.tipoMenu}
-            onChange={(e) =>
-              setFiltros({ ...filtros, tipoMenu: e.target.value })
-            }
-            disabled={loading}
-          >
-            <option value="">Todos</option>
-            {tiposMenu.map((tipo) => (
-              <option key={tipo} value={tipo}>
-                {tipo}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Estado de Insumo */}
-        <div className="col-md-2">
-          <label className="form-label">Estado Insumo</label>
-          <select
-            className="form-select"
-            value={filtros.estadoInsumo}
-            onChange={(e) =>
-              setFiltros({ ...filtros, estadoInsumo: e.target.value })
-            }
-            disabled={loading}
-          >
-            <option value="">Todos</option>
-            {estadosInsumo.map((estado) => (
-              <option key={estado} value={estado}>
-                {estado}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Grado */}
-        <div className="col-md-2">
-          <label className="form-label">Grado</label>
-          <select
-            className="form-select"
-            value={filtros.grado}
-            onChange={(e) => setFiltros({ ...filtros, grado: e.target.value })}
-            disabled={loading}
-          >
-            <option value="">Todos</option>
-            {grados.map((grado) => (
-              <option key={grado} value={grado}>
-                {grado}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Botones de Acción */}
-        <div className="col-12 d-flex gap-2">
-          <button
-            className="btn btn-primary flex-grow-1"
-            onClick={onActualizar}
-            disabled={loading}
-          >
-            <i className="fas fa-sync me-2"></i>
-            Actualizar Datos
-          </button>
-          <button
-            className="btn btn-outline-secondary flex-grow-1"
-            onClick={onLimpiar}
-          >
-            <i className="fas fa-times me-2"></i>
-            Limpiar Filtros
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-/**
- * Componente para gráficos con leyenda explicativa
+ * Volumen de Consumo, Tasa de asistencia, top de insumos mas consumidos, etc.
  */
 const GraficoConLeyenda = ({ titulo, leyenda, children, icon }) => (
-  <div className="card grafico-card h-100">
-    <div className="card-header bg-light">
-      <h5 className="mb-2">
-        <i className={`${icon} me-2`}></i>
+  <div className={`${ContenidoStyle.card} h-100 bg-white`}>
+    <div className={`${EstadisticaStyle.cardHeader}`}>
+      <h5 className="mb-2 mx-2 mt-2">
+        <i className={`${icon} mx-2`}></i>
         {titulo}
       </h5>
-      <small className="text-muted badge bg-info-light">
-        <i className="fas fa-lightbulb me-1"></i>
-        {leyenda}
-      </small>
+      <div className="mx-2 border-bottom">
+        <small
+          className={`${EstadisticaStyle.badge} text-muted bg-info-light mx-2`}
+        >
+          <i className="fas fa-lightbulb me-1 "></i>
+          {leyenda}
+        </small>
+      </div>
     </div>
-    <div className="card-body">{children}</div>
+    <div className={EstadisticaStyle.cardBody}>{children}</div>
   </div>
 );
 
@@ -396,8 +254,6 @@ const Estadistica = () => {
     }
   };
 
-
-
   const cargarDatos = async () => {
     try {
       setLoading(true);
@@ -441,18 +297,18 @@ const Estadistica = () => {
       if (response.success && response.data) {
         // Consumos por día (sin separar por unidad)
         const consumosPorDia = {};
-        
+
         // Consumos por servicio y unidad {servicio-unidad: cantidad}
         const consumosPorServicioUnidad = {};
-        
+
         // Insumos con su unidad {nombre: {cantidad, unidad}}
         const insumosPorTipo = {};
 
         response.data.forEach((consumo) => {
           const fecha = new Date(consumo.fecha).toLocaleDateString("es-ES");
           const cantidad = parseFloat(consumo.cantidadUtilizada) || 0;
-          const cantidadActual = (consumosPorDia[fecha] || 0);
-          
+          const cantidadActual = consumosPorDia[fecha] || 0;
+
           consumosPorDia[fecha] = parseFloat(
             (cantidadActual + cantidad).toFixed(3),
           );
@@ -461,9 +317,11 @@ const Estadistica = () => {
           const servicio = consumo.nombreServicio || "Sin servicio";
           const unidad = normalizarUnidad(consumo.unidadMedida);
           const keyServicioUnidad = `${servicio}|${unidad}`;
-          
+
           consumosPorServicioUnidad[keyServicioUnidad] = parseFloat(
-            ((consumosPorServicioUnidad[keyServicioUnidad] || 0) + cantidad).toFixed(3),
+            (
+              (consumosPorServicioUnidad[keyServicioUnidad] || 0) + cantidad
+            ).toFixed(3),
           );
 
           // Guardar insumo con su unidad
@@ -824,7 +682,14 @@ const Estadistica = () => {
       const graphicsStartY = margin + 15;
       if (imgHeight + graphicsStartY < pageHeight - 10) {
         // Si cabe en una página
-        pdf.addImage(imgData, "PNG", margin, graphicsStartY, imgWidth, imgHeight);
+        pdf.addImage(
+          imgData,
+          "PNG",
+          margin,
+          graphicsStartY,
+          imgWidth,
+          imgHeight,
+        );
       } else {
         // Si no cabe, usar múltiples páginas
         let remainingHeight = imgHeight;
@@ -857,7 +722,14 @@ const Estadistica = () => {
           const tempImgData = tempCanvas.toDataURL("image/png");
           const tempHeight = (heightInSource * imgWidth) / canvas.width;
 
-          pdf.addImage(tempImgData, "PNG", margin, currentY, imgWidth, tempHeight);
+          pdf.addImage(
+            tempImgData,
+            "PNG",
+            margin,
+            currentY,
+            imgWidth,
+            tempHeight,
+          );
 
           remainingHeight -= heightToCopy;
           sourceY += heightInSource;
@@ -869,7 +741,6 @@ const Estadistica = () => {
         }
       }
       pdf.text("Página 2", 10, pageHeight - 10);
-
 
       // ============== PÁGINA FINAL: RESUMEN ==============
       pdf.addPage();
@@ -1037,32 +908,30 @@ const Estadistica = () => {
     }
   };
 
-
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-        <p className="mt-3">Cargando datos estadísticos...</p>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Datos Estadisticos...</p>
       </div>
     );
   }
 
   return (
-    <div className="estadistica-container">
-      {/* Header */}
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
             <i className="fas fa-chart-bar me-2"></i>
             Estadísticas del Sistema
           </h1>
-          <p className="page-subtitle">Análisis de datos y métricas clave</p>
+          <p className={ContenidoStyle.pageSubtitle}>
+            Análisis de datos y métricas clave
+          </p>
         </div>
-        <div className="header-actions">
+        <div className={ContenidoStyle.headerActions}>
           <button
-            className="btn btn-primary"
+            className={`${ContenidoStyle.btn} btn-danger`}
             onClick={exportarPDF}
             disabled={loading}
           >
@@ -1073,15 +942,15 @@ const Estadistica = () => {
       </div>
 
       {/* Filtros */}
-      <div className="card mb-4">
-        <div className="card-body">
+      <div className={`${ContenidoStyle.card} mb-4`}>
+        <div className={ContenidoStyle.cardBody}>
           <div className="row g-3">
             {/* Fecha Inicio */}
             <div className="col-md-2">
-              <label className="form-label">Fecha Inicio</label>
+              <label className={ComponenteStyle.formLabel}>Fecha Inicio</label>
               <input
                 type="date"
-                className="form-control"
+                className={ComponenteStyle.formControl}
                 value={filtros.fechaInicio}
                 onChange={(e) =>
                   setFiltros({ ...filtros, fechaInicio: e.target.value })
@@ -1091,10 +960,10 @@ const Estadistica = () => {
 
             {/* Fecha Fin */}
             <div className="col-md-2">
-              <label className="form-label">Fecha Fin</label>
+              <label className={ComponenteStyle.formLabel}>Fecha Fin</label>
               <input
                 type="date"
-                className="form-control"
+                className={ComponenteStyle.formControl}
                 value={filtros.fechaFin}
                 onChange={(e) =>
                   setFiltros({ ...filtros, fechaFin: e.target.value })
@@ -1104,7 +973,7 @@ const Estadistica = () => {
 
             <div className="col-md-6">
               <div className="col-12">
-                <label className="form-label">
+                <label className={ComponenteStyle.formLabel}>
                   <strong>Cantidad de Top Insumos a mostrar</strong>
                 </label>
                 <div className="d-flex gap-2 align-items-center">
@@ -1118,7 +987,7 @@ const Estadistica = () => {
                     style={{ maxWidth: "300px" }}
                   />
                   <span
-                    className="badge bg-primary"
+                    className={`${ComponenteStyle.badge} bg-primary text-white fw-bold`}
                     style={{ minWidth: "50px" }}
                   >
                     Top {cantidadTop}
@@ -1128,9 +997,11 @@ const Estadistica = () => {
             </div>
 
             {/* Botones */}
-            <div className="col-12 d-flex gap-2">
+            <div
+              className={` ${ContenidoStyle.headerActions} col-12 d-flex gap-2`}
+            >
               <button
-                className="btn btn-primary"
+                className={`${ContenidoStyle.btn} btn-primary`}
                 onClick={cargarDatos}
                 disabled={loading}
               >
@@ -1149,8 +1020,6 @@ const Estadistica = () => {
         </div>
       </div>
 
-
-
       {/* Tarjetas de Resumen (KPIs) */}
       <div className="row mb-4">
         {datosConsumos && (
@@ -1160,16 +1029,6 @@ const Estadistica = () => {
             value={`${formatearNumero(datosConsumos.total)} Kg`}
             subtitle="Volumen total de insumos utilizados"
             color="success"
-          />
-        )}
-
-        {datosInventario && datosInventario.insumoMasCritico && (
-          <KPICard
-            icon="fas fa-exclamation-triangle"
-            title="Insumo más Crítico"
-            value={datosInventario.insumoMasCritico.nombre}
-            subtitle={`Diferencia: ${formatearNumero(datosInventario.insumoMasCritico.diferencia)} ${normalizarUnidad(datosInventario.insumoMasCritico.unidad)}`}
-            color="danger"
           />
         )}
 
@@ -1198,13 +1057,13 @@ const Estadistica = () => {
             icon="fas fa-percent"
             title="Eficiencia de Receta"
             value={`${datosAsistencias.porcentajeAsistencia}%`}
-            subtitle="Cumplimiento del plan (basado en asistencia)"
+            subtitle="Cumplimiento del plan"
             color="primary"
           />
         )}
       </div>
 
-      <div ref={graficoRef} className="graficos-container">
+      <div ref={graficoRef} className={EstadisticaStyle.graficosContainer}>
         <div className="row mb-4">
           {/* Consumo por Día */}
           {datosConsumos && (
@@ -1343,22 +1202,27 @@ const Estadistica = () => {
             <div className="col-lg-6">
               <GraficoConLeyenda
                 titulo="Consumo por Tipo de Menú"
-                leyenda="Identifica qué servicios (Desayuno, Almuerzo, etc.) consumen más insumos, separado por unidad de medida con colores específicos"
+                leyenda="Identifica qué servicios consumen más insumos, separado por unidad de medida con colores específicos"
                 icon="fas fa-bars"
               >
                 {(() => {
                   // Preparar datos para gráfico con unidades
                   const servicios = Object.keys(datosConsumos.porServicio);
                   const unidadesSet = new Set();
-                  
-                  servicios.forEach(servicio => {
-                    Object.keys(datosConsumos.porServicio[servicio]).forEach(u => unidadesSet.add(u));
+
+                  servicios.forEach((servicio) => {
+                    Object.keys(datosConsumos.porServicio[servicio]).forEach(
+                      (u) => unidadesSet.add(u),
+                    );
                   });
-                  
+
                   const unidades = Array.from(unidadesSet).sort();
-                  const datasets = unidades.map(unidad => ({
+                  const datasets = unidades.map((unidad) => ({
                     label: unidad,
-                    data: servicios.map(servicio => datosConsumos.porServicio[servicio][unidad] || 0),
+                    data: servicios.map(
+                      (servicio) =>
+                        datosConsumos.porServicio[servicio][unidad] || 0,
+                    ),
                     backgroundColor: obtenerColorUnidad(unidad),
                   }));
 
@@ -1478,12 +1342,18 @@ const Estadistica = () => {
                 <div>
                   <Bar
                     data={{
-                      labels: datosConsumos.topInsumos.map((item) => item.nombre),
+                      labels: datosConsumos.topInsumos.map(
+                        (item) => item.nombre,
+                      ),
                       datasets: [
                         {
                           label: "Cantidad Consumida",
-                          data: datosConsumos.topInsumos.map((item) => item.cantidad),
-                          backgroundColor: datosConsumos.topInsumos.map((item) => obtenerColorUnidad(item.unidad)),
+                          data: datosConsumos.topInsumos.map(
+                            (item) => item.cantidad,
+                          ),
+                          backgroundColor: datosConsumos.topInsumos.map(
+                            (item) => obtenerColorUnidad(item.unidad),
+                          ),
                         },
                       ],
                     }}
@@ -1498,7 +1368,8 @@ const Estadistica = () => {
                           callbacks: {
                             label: (context) => {
                               const valor = context.parsed.x;
-                              const insumo = datosConsumos.topInsumos[context.dataIndex];
+                              const insumo =
+                                datosConsumos.topInsumos[context.dataIndex];
                               return `Consumo: ${formatearNumero(valor)} ${insumo.unidad}`;
                             },
                           },
@@ -1517,25 +1388,58 @@ const Estadistica = () => {
                       },
                     }}
                   />
-                  
+
                   {/* Leyenda de colores */}
-                  <div className="mt-3 p-3 bg-light rounded" style={{ fontSize: "13px" }}>
-                    <strong className="d-block mb-2">Leyenda de Unidades de Medida:</strong>
+                  <div
+                    className="mt-3 p-3 bg-light rounded"
+                    style={{ fontSize: "13px" }}
+                  >
+                    <strong className="d-block mb-2">
+                      Leyenda de Unidades de Medida:
+                    </strong>
                     <div className="d-flex gap-3 flex-wrap">
                       <div className="d-flex align-items-center gap-2">
-                        <span style={{ width: "20px", height: "20px", backgroundColor: "#0d6efd", borderRadius: "3px" }}></span>
+                        <span
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            backgroundColor: "#0d6efd",
+                            borderRadius: "3px",
+                          }}
+                        ></span>
                         <span>Kilogramos (Kg)</span>
                       </div>
                       <div className="d-flex align-items-center gap-2">
-                        <span style={{ width: "20px", height: "20px", backgroundColor: "#198754", borderRadius: "3px" }}></span>
+                        <span
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            backgroundColor: "#198754",
+                            borderRadius: "3px",
+                          }}
+                        ></span>
                         <span>Litros (L)</span>
                       </div>
                       <div className="d-flex align-items-center gap-2">
-                        <span style={{ width: "20px", height: "20px", backgroundColor: "#fd7e14", borderRadius: "3px" }}></span>
+                        <span
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            backgroundColor: "#fd7e14",
+                            borderRadius: "3px",
+                          }}
+                        ></span>
                         <span>Gramos (g)</span>
                       </div>
                       <div className="d-flex align-items-center gap-2">
-                        <span style={{ width: "20px", height: "20px", backgroundColor: "#dc3545", borderRadius: "3px" }}></span>
+                        <span
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            backgroundColor: "#dc3545",
+                            borderRadius: "3px",
+                          }}
+                        ></span>
                         <span>Mililitros (ml)</span>
                       </div>
                     </div>

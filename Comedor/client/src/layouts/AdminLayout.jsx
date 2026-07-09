@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "../components/admin/Sidebar";
 import Navbar from "../components/Navbar";
+// 1. Unificamos la importación con minúscula (buena práctica en JS)
+import LayoutStyle from "../styles/Layouts.module.css";
 
 const AdminLayout = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -11,7 +13,6 @@ const AdminLayout = ({ children }) => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  // Determinar la página actual basada en la URL
   const getCurrentPage = () => {
     const path = location.pathname;
     if (path.includes("/dashboard")) return "dashboard";
@@ -28,22 +29,26 @@ const AdminLayout = ({ children }) => {
   };
 
   return (
-    <div className="admin-layout">
+    <div className={LayoutStyle.layout}>
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={toggleSidebar}
         currentPage={getCurrentPage()}
       />
+
+      {/* 2. Corregido: Si está colapsado, aplica LayoutStyle.mainCollapsed tal como está en tu CSS */}
       <div
-        className={`main-content ${
-          sidebarCollapsed ? "sidebar-collapsed" : ""
+        className={`${LayoutStyle.mainContent} ${
+          sidebarCollapsed ? LayoutStyle.mainCollapsed : ""
         }`}
       >
         <Navbar
           onToggleSidebar={toggleSidebar}
           sidebarCollapsed={sidebarCollapsed}
         />
-        <main className="content-area">{children}</main>
+
+        {/* 3. Ajustado para asegurar que no pierda los márgenes internos que tenías */}
+        <main className={LayoutStyle.contentArea}>{children}</main>
       </div>
     </div>
   );

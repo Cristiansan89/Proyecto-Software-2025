@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import InsumoForm from "../../components/admin/InsumoForm";
 import { formatNumeroAR } from "../../utils/formatNumero";
 import insumoService from "../../services/insumoService";
@@ -11,6 +12,9 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const ListaInsumos = () => {
   const [insumos, setInsumos] = useState([]);
@@ -19,8 +23,9 @@ const ListaInsumos = () => {
   const [selectedInsumo, setSelectedInsumo] = useState(null);
   const [modalMode, setModalMode] = useState("create"); // 'create', 'edit', 'view'
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
+  const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
@@ -51,7 +56,7 @@ const ListaInsumos = () => {
       insumo.unidadMedida.toLowerCase().includes(searchTerm.toLowerCase()) ||
       insumo.categoria.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "todos"
+      statusFilter === ""
         ? insumo.estado === "Activo"
         : insumo.estado === statusFilter;
     return matchesSearch && matchesStatus;
@@ -62,11 +67,40 @@ const ListaInsumos = () => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, insumos]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredInsumos.length / pageSize));
-  const paginatedInsumos = filteredInsumos.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  // Paginación
+  const totalPages = Math.ceil(filteredInsumos.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentInsumos = filteredInsumos.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    if (page < 1) page = 1;
+    setCurrentPage(page);
+  };
+
+  const getPaginationNumbers = () => {
+    if (totalPages <= 10) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    // Si hay más de 10 páginas, mostrar 10 números
+    let start = currentPage - 5;
+    let end = currentPage + 5;
+
+    // Ajustar si está cerca del inicio
+    if (start < 1) {
+      start = 1;
+      end = 10;
+    }
+
+    // Ajustar si está cerca del final
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, totalPages - 9);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
 
   const handleCreate = () => {
     setSelectedInsumo(null);
@@ -197,6 +231,11 @@ const ListaInsumos = () => {
     setSelectedInsumo(null);
   };
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
+  };
+
   const getStockStatus = (insumo) => {
     const minimo = Number(insumo.stockMinimo);
     const actual = Number(insumo.stockActual);
@@ -233,314 +272,309 @@ const ListaInsumos = () => {
 
   if (loading) {
     return (
-      <div>
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "400px" }}
-        >
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Insumos...</p>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-boxes me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-boxes"></i>
             Gestión de Insumos
           </h1>
-          <p className="page-subtitle">
+          <p className={ContenidoStyle.pageSubtitle}>
             Administra los insumos disponibles en el comedor
           </p>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-primary-new" onClick={handleCreate}>
-            <i className="fas fa-plus me-2"></i> Nuevo Insumo
+        <div className={ContenidoStyle.headerActions}>
+          <button
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
+            onClick={handleCreate}
+          >
+            <i className="fas fa-plus"></i> Nuevo Insumo
           </button>
         </div>
       </div>
 
-      <div className="tab-content">
-        {/* Filtros y Búsqueda */}
-        <div className="page-header mb-3">
-          <div className="header-left">
-            <div className="search-filters">
-              <div className="search-bar">
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Buscar por nombre, descripción, unidad o categoría..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="filter-actions">
-                <select
-                  className="filter-select"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="todos">Todos los estados</option>
-                  <option value="Activo">Activos</option>
-                  <option value="Inactivo">Inactivos</option>
-                </select>
+      <div className={ContenidoStyle.tabContent}>
+        <div className={ContenidoStyle.headerLeft}>
+          <div className={ContenidoStyle.searchFilters}>
+            <div className={ContenidoStyle.searchBar}>
+              <input
+                type="text"
+                className={ContenidoStyle.searchInput}
+                placeholder="Buscar por nombre, descripción, unidad o categoría..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className={ContenidoStyle.filterActions}>
+              <select
+                className={ContenidoStyle.filterSelect}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">Todos los estados</option>
+                <option value="Activo">Activos</option>
+                <option value="Inactivo">Inactivos</option>
+              </select>
+              <div className="mt-2">
+                {(searchTerm || statusFilter) && (
+                  <button
+                    className="btn btn-outline-secondary btn-sm me-2"
+                    onClick={clearFilters}
+                    title="Limpiar filtros"
+                  >
+                    <i className="fas fa-times"></i>
+                    Limpiar
+                  </button>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Selector de tamaño de página y Paginación */}
-            <div className="page-size-selector mt-3">
-              <span className="text-dark">Registros por página</span>
+          {/* Selector de tamaño de página y Paginación */}
+          <div className={TablaStyle.paginationInfoBar}>
+            <div className={TablaStyle.paginationInfo}>
+              Mostrando {startIndex + 1} a{" "}
+              {Math.min(endIndex, filteredInsumos.length)} de{" "}
+              {filteredInsumos.length} insumos
+            </div>
+            <div className={TablaStyle.itemsPerPage}>
+              <label>
+                <strong>Registros por página:</strong>
+              </label>
               <select
-                className="form-select"
-                style={{ width: "60px" }}
-                value={pageSize}
+                value={itemsPerPage}
                 onChange={(e) => {
-                  setPageSize(Number(e.target.value));
+                  setItemsPerPage(parseInt(e.target.value, 10));
                   setCurrentPage(1);
                 }}
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
                 <option value={20}>20</option>
+                <option value={50}>50</option>
               </select>
-              <span className="ms-2 text-muted">
-                Total {filteredInsumos.length} registros
-              </span>
             </div>
           </div>
         </div>
 
         {/* Tabla de Insumos */}
-        <div className="table-container">
-          {loading ? (
-            <div className="loading-spinner">
-              <i className="fas fa-spinner fa-spin"></i>
-              <p>Cargando insumos...</p>
+        <div className={TablaStyle.tableContainer}>
+          {currentInsumos.length === 0 ? (
+            <div className={TablaStyle.emptyState}>
+              <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+              <h5>No se encontraron insumos</h5>
+              <p>No hay insumos que coincidan con tu búsqueda.</p>
             </div>
           ) : (
-            <div className="table-container">
-              <table className="table table-striped data-table table-sm">
-                <thead>
-                  <tr>
-                    <th style={{ fontSize: "0.75rem" }}>#</th>
-                    <th style={{ fontSize: "0.75rem" }}>Insumo</th>
-                    <th style={{ fontSize: "0.75rem" }}>Descripción</th>
-                    <th style={{ fontSize: "0.75rem" }}>Categoría</th>
-                    <th style={{ fontSize: "0.75rem" }}>Unidad</th>
-                    <th style={{ fontSize: "0.75rem" }}>Stock Mín.</th>
-                    <th style={{ fontSize: "0.75rem" }}>Stock Actual</th>
-                    <th style={{ fontSize: "0.75rem" }}>Stock Máx.</th>
-                    <th style={{ fontSize: "0.75rem" }}>Estado</th>
-                    <th style={{ fontSize: "0.75rem" }}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedInsumos.length === 0 ? (
-                    <tr>
-                      <td colSpan={12}>
-                        <div className="empty-state">
-                          <i className="fas fa-search empty-icon"></i>
-                          <h5>No se encontraron insumos</h5>
-                          <p>No hay insumos que coincidan con tu búsqueda.</p>
+            <table className={`${TablaStyle.tableData} table table-striped`}>
+              <thead className={TablaStyle.tableHeaderFixed}>
+                <tr>
+                  <th>#</th>
+                  <th>Insumo</th>
+                  <th>Descripción</th>
+                  <th>Categoría</th>
+                  <th>Unidad</th>
+                  <th>Stock Mín.</th>
+                  <th>Stock Actual</th>
+                  <th>Stock Máx.</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentInsumos.map((insumo, index) => {
+                  const stockStatus = getStockStatus(insumo);
+                  return (
+                    <tr key={insumo.idInsumo || index}>
+                      <td>
+                        <strong>
+                          {(currentPage - 1) * pageSize + index + 1}
+                        </strong>
+                      </td>
+                      <td
+                        title={insumo.nombreInsumo}
+                        style={{ fontSize: "0.75rem" }}
+                      >
+                        {insumo.nombreInsumo || "-"}
+                      </td>
+                      <td
+                        title={insumo.descripcion}
+                        style={{ fontSize: "0.75rem" }}
+                      >
+                        {insumo.descripcion}
+                      </td>
+                      <td style={{ fontSize: "0.75rem" }}>
+                        {insumo.categoria}
+                      </td>
+                      <td style={{ fontSize: "0.75rem" }}>
+                        {insumo.unidadMedida || ""}
+                      </td>
+                      <td style={{ fontSize: "0.75rem" }}>
+                        {formatStockActual(insumo.stockMinimo)}
+                      </td>
+                      <td style={{ fontSize: "0.75rem" }}>
+                        <span className={`fw-bold ${stockStatus.color}`}>
+                          {formatStockActual(insumo.stockActual)}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: "0.75rem" }}>
+                        {formatStockActual(insumo.stockMaximo)}
+                      </td>
+                      <td style={{ fontSize: "0.75rem" }}>
+                        <span
+                          className={`${TablaStyle.statusBadge} ${
+                            insumo.estado.toLowerCase() === "activo"
+                              ? TablaStyle.activo
+                              : TablaStyle.inactivo
+                          }`}
+                        >
+                          {insumo.estado || ""}
+                        </span>
+                      </td>
+                      <td>
+                        <div className={TablaStyle.actionButtons}>
+                          <button
+                            className={`${TablaStyle.btnAction} ${TablaStyle.btnView}`}
+                            onClick={() => handleView(insumo)}
+                            title="Ver detalles"
+                          >
+                            <i className="fas fa-eye"></i>
+                          </button>
+                          <button
+                            className={`${TablaStyle.btnAction} ${TablaStyle.btnEdit}`}
+                            onClick={() => handleEdit(insumo)}
+                            title="Editar"
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                          <button
+                            className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
+                            onClick={() => handleDelete(insumo)}
+                            title="Eliminar"
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                          <button
+                            className={`${TablaStyle.btnAction} ${
+                              insumo.estado === "Activo"
+                                ? TablaStyle.btnDisable
+                                : TablaStyle.btnEnable
+                            }`}
+                            onClick={() =>
+                              handleChangeStatus(
+                                insumo,
+                                insumo.estado === "Activo"
+                                  ? "Inactivo"
+                                  : "Activo",
+                              )
+                            }
+                            title={
+                              insumo.estado === "Activo"
+                                ? "Desactivar"
+                                : "Activar"
+                            }
+                          >
+                            <i
+                              className={`fas ${
+                                insumo.estado === "Activo"
+                                  ? "fa-times"
+                                  : "fa-check"
+                              }`}
+                            ></i>
+                          </button>
                         </div>
                       </td>
                     </tr>
-                  ) : (
-                    paginatedInsumos.map((insumo, index) => {
-                      const stockStatus = getStockStatus(insumo);
-                      return (
-                        <tr key={insumo.idInsumo || index}>
-                          <td style={{ fontSize: "0.75rem" }}>
-                            <strong>
-                              {(currentPage - 1) * pageSize + index + 1}
-                            </strong>
-                          </td>
-                          <td
-                            className="truncate-cell"
-                            title={insumo.nombreInsumo}
-                            style={{ fontSize: "0.75rem" }}
-                          >
-                            {insumo.nombreInsumo || "-"}
-                          </td>
-                          <td
-                            className="truncate-cell"
-                            title={insumo.descripcion}
-                            style={{ fontSize: "0.75rem" }}
-                          >
-                            {insumo.descripcion || "Sin descripción"}
-                          </td>
-                          <td style={{ fontSize: "0.75rem" }}>
-                            {insumo.categoria || ""}
-                          </td>
-                          <td style={{ fontSize: "0.75rem" }}>
-                            {insumo.unidadMedida || ""}
-                          </td>
-                          <td style={{ fontSize: "0.75rem" }}>
-                            {formatStockActual(insumo.stockMinimo)}
-                          </td>
-                          <td style={{ fontSize: "0.75rem" }}>
-                            <span className={`fw-bold ${stockStatus.color}`}>
-                              {formatStockActual(insumo.stockActual)}
-                            </span>
-                          </td>
-                          <td style={{ fontSize: "0.75rem" }}>
-                            {formatStockActual(insumo.stockMaximo)}
-                          </td>
-                          <td style={{ fontSize: "0.75rem" }}>
-                            <span
-                              className={`status-badge-insumo ${String(
-                                insumo.estado || "",
-                              ).toLowerCase()}`}
-                            >
-                              {insumo.estado || ""}
-                            </span>
-                          </td>
-                          <td>
-                            <div
-                              className="action-buttons"
-                              style={{ gap: "2px" }}
-                            >
-                              <button
-                                className="btn-action btn-view"
-                                onClick={() => handleView(insumo)}
-                                title="Ver detalles"
-                                style={{
-                                  padding: "4px 6px",
-                                  fontSize: "0.75rem",
-                                }}
-                              >
-                                <i className="fas fa-eye"></i>
-                              </button>
-                              <button
-                                className="btn-action btn-edit"
-                                onClick={() => handleEdit(insumo)}
-                                title="Editar"
-                                style={{
-                                  padding: "4px 6px",
-                                  fontSize: "0.75rem",
-                                }}
-                              >
-                                <i className="fas fa-edit"></i>
-                              </button>
-                              <button
-                                className="btn-action btn-delete"
-                                onClick={() => handleDelete(insumo)}
-                                title="Eliminar"
-                                style={{
-                                  padding: "4px 6px",
-                                  fontSize: "0.75rem",
-                                }}
-                              >
-                                <i className="fas fa-trash"></i>
-                              </button>
-                              <button
-                                className={`btn-action ${
-                                  insumo.estado === "Activo"
-                                    ? "btn-delete"
-                                    : "btn-assign"
-                                }`}
-                                onClick={() =>
-                                  handleChangeStatus(
-                                    insumo,
-                                    insumo.estado === "Activo"
-                                      ? "Inactivo"
-                                      : "Activo",
-                                  )
-                                }
-                                title={
-                                  insumo.estado === "Activo"
-                                    ? "Desactivar"
-                                    : "Activar"
-                                }
-                                style={{
-                                  padding: "4px 6px",
-                                  fontSize: "0.75rem",
-                                }}
-                              >
-                                <i
-                                  className={`fas ${
-                                    insumo.estado === "Activo"
-                                      ? "fa-times"
-                                      : "fa-check"
-                                  }`}
-                                ></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-              {totalPages > 1 && (
-                <div className="table-footer">
-                  <div className="pagination">
-                    <button
-                      className="pagination-btn"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <i className="fas fa-chevron-left"></i>
-                    </button>
-                    <div className="pagination-info">
-                      Página {currentPage} de {totalPages} (
-                      {filteredInsumos.length} registros)
-                    </div>
-                    <button
-                      className="pagination-btn"
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={currentPage === totalPages}
-                    >
-                      <i className="fas fa-chevron-right"></i>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className={TablaStyle.pagination}>
+            <button
+              className={TablaStyle.paginationButton}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+            {getPaginationNumbers().map((page) => (
+              <button
+                key={page}
+                className={`${TablaStyle.paginationButton} ${currentPage === page ? TablaStyle.active : ""}`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              className={TablaStyle.paginationButton}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content insumo-modal">
-            <div className="modal-header">
-              <h3 className="modal-title">
-                <i className="fas fa-box me-2"></i>
-                {modalMode === "create"
-                  ? "Nuevo Insumo"
-                  : modalMode === "edit"
-                    ? "Editar Insumo"
-                    : "Detalles del Insumo"}
-              </h3>
-              <button
-                type="button"
-                className="modal-close"
-                onClick={handleCancel}
-              >
-                <i className="fas fa-times"></i>
-              </button>
+      {showModal &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-box me-2"></i>
+                    {modalMode === "create"
+                      ? "Nuevo Insumo"
+                      : modalMode === "edit"
+                        ? "Editar Insumo"
+                        : "Detalles del Insumo"}
+                  </h5>
+                  <button
+                    type="button"
+                    className={FormularioStyle.modalClose}
+                    onClick={handleCancel}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <InsumoForm
+                    insumo={selectedInsumo}
+                    mode={modalMode}
+                    onSave={handleSave}
+                    onCancel={handleCancel}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="modal-body">
-              <InsumoForm
-                insumo={selectedInsumo}
-                mode={modalMode}
-                onSave={handleSave}
-                onCancel={handleCancel}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
+
+      {showModal &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

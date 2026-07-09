@@ -1,3 +1,6 @@
+import PedidoStyle from "../../styles/Pedido.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+
 const PedidoVista = ({ detallesPedido, onClose }) => {
   const convertirCantidad = (cantidad, unidad) => {
     const cantidadNum = Number(cantidad) || 0;
@@ -10,28 +13,34 @@ const PedidoVista = ({ detallesPedido, onClose }) => {
       <div>
         {/* Información del Pedido */}
         <div className="card mb-4">
-          <div className="info-pedido">
-            <div className="info-fila">
-              <span className="info-label">Proveedor:</span>
-              <span className="info-valor">{detallesPedido.razonSocial}</span>
+          <div className={PedidoStyle.infoPedido}>
+            <div className={PedidoStyle.infoFila}>
+              <span className={PedidoStyle.infoLabel}>Proveedor:</span>
+              <span className={PedidoStyle.infoValor}>
+                {detallesPedido.razonSocial}
+              </span>
             </div>
-            <div className="info-fila">
-              <span className="info-label">Email:</span>
-              <span className="info-valor">{detallesPedido.mail}</span>
+            <div className={PedidoStyle.infoFila}>
+              <span className={PedidoStyle.infoLabel}>Email:</span>
+              <span className={PedidoStyle.infoValor}>
+                {detallesPedido.mail}
+              </span>
             </div>
-            <div className="info-fila">
-              <span className="info-label">Teléfono:</span>
-              <span className="info-valor">{detallesPedido.telefono}</span>
+            <div className={PedidoStyle.infoFila}>
+              <span className={PedidoStyle.infoLabel}>Teléfono:</span>
+              <span className={PedidoStyle.infoValor}>
+                {detallesPedido.telefono}
+              </span>
             </div>
-            <div className="info-fila">
-              <span className="info-label">Pedido Nº:</span>
-              <span className="info-valor">
+            <div className={PedidoStyle.infoFila}>
+              <span className={PedidoStyle.infoLabel}>Pedido Nº:</span>
+              <span className={PedidoStyle.infoValor}>
                 {detallesPedido.id_pedido_uuid.substring(0, 8).toUpperCase()}
               </span>
             </div>
-            <div className="info-fila">
-              <span className="info-label">Fecha Emisión:</span>
-              <span className="info-valor">
+            <div className={PedidoStyle.infoFila}>
+              <span className={PedidoStyle.infoLabel}>Fecha Emisión:</span>
+              <span className={PedidoStyle.infoValor}>
                 {new Date(detallesPedido.fechaEmision).toLocaleDateString(
                   "es-ES",
                 )}
@@ -41,10 +50,12 @@ const PedidoVista = ({ detallesPedido, onClose }) => {
         </div>
 
         {/* Tabla de Insumos */}
-        <div className="tabla-insumos-detalles">
-          <h3 className="page-title">Insumos Confirmados/Rechazados</h3>
+        <div className={PedidoStyle.tablaInsumos}>
+          <h3 className={PedidoStyle.pageTitle}>
+            Insumos Confirmados/Rechazados
+          </h3>
           {detallesPedido.detalles && detallesPedido.detalles.length > 0 ? (
-            <table className="tabla-detalles">
+            <table className={PedidoStyle.tablaDetalles}>
               <thead>
                 <tr>
                   <th>Insumo</th>
@@ -60,8 +71,10 @@ const PedidoVista = ({ detallesPedido, onClose }) => {
                     key={detalle.id_detallePedido_hex}
                     className={`fila-${detalle.estadoConfirmacion.toLowerCase()}`}
                   >
-                    <td className="insumo-nombre">{detalle.nombreInsumo}</td>
-                    <td className="cantidad-valor">
+                    <td className={PedidoStyle.nameInsumo}>
+                      {detalle.nombreInsumo}
+                    </td>
+                    <td className={PedidoStyle.cantidadValor}>
                       {convertirCantidad(
                         detalle.cantidadSolicitada,
                         detalle.unidadMedida,
@@ -70,10 +83,10 @@ const PedidoVista = ({ detallesPedido, onClose }) => {
                     <td>{detalle.unidadMedida}</td>
                     <td>
                       <span
-                        className={`estado-insumo ${
+                        className={`${PedidoStyle.estadoInsumo} ${
                           detalle.estadoConfirmacion === "Disponible"
-                            ? "disponible"
-                            : "no-disponible"
+                            ? PedidoStyle.disponible
+                            : PedidoStyle.noDisponible
                         }`}
                       >
                         {detalle.estadoConfirmacion === "Disponible"
@@ -81,7 +94,7 @@ const PedidoVista = ({ detallesPedido, onClose }) => {
                           : "✗ No Disponible"}
                       </span>
                     </td>
-                    <td className="fecha-confirmacion">
+                    <td className={PedidoStyle.fechaConfirmacion}>
                       {detalle.fechaConfirmacion
                         ? new Date(
                             detalle.fechaConfirmacion,
@@ -93,37 +106,45 @@ const PedidoVista = ({ detallesPedido, onClose }) => {
               </tbody>
             </table>
           ) : (
-            <p className="sin-detalles">No hay detalles de confirmación</p>
+            <p className={PedidoStyle.sinDetalles}>
+              No hay detalles de confirmación
+            </p>
           )}
         </div>
 
         {/* Resumen */}
-        <div className="resumen-confirmacion">
-          <div className="resumen-item">
-            <span className="resumen-label">Confirmados:</span>
-            <span className="resumen-valor confirmado">
+        <div className={PedidoStyle.resumenConfirmacion}>
+          <div className={PedidoStyle.itemResumen}>
+            <span className={PedidoStyle.labelResumen}>Confirmados:</span>
+            <span
+              className={`${PedidoStyle.valorResumen} ${PedidoStyle.confirmado}`}
+            >
               {detallesPedido.insumosConfirmados}
             </span>
           </div>
-          <div className="resumen-item">
-            <span className="resumen-label">Rechazados:</span>
-            <span className="resumen-valor rechazado">
+          <div className={PedidoStyle.itemResumen}>
+            <span className={PedidoStyle.labelResumen}>Rechazados:</span>
+            <span
+              className={`${PedidoStyle.valorResumen} ${PedidoStyle.rechazado}`}
+            >
               {detallesPedido.insumosRechazados}
             </span>
           </div>
-          <div className="resumen-item">
-            <span className="resumen-label">Pendientes:</span>
-            <span className="resumen-valor pendiente">
+          <div className={PedidoStyle.itemResumen}>
+            <span className={PedidoStyle.labelResumen}>Pendientes:</span>
+            <span
+              className={`${PedidoStyle.valorResumen} ${PedidoStyle.pendiente}`}
+            >
               {detallesPedido.insumosPendientes}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="form-actions">
+      <div className={ComponenteStyle.formActions}>
         <button
           type="button"
-          className="btn btn-secondary me-2"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel} me-2`}
           onClick={onClose}
         >
           <i className="fas fa-times"></i>

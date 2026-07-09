@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { ForgotPassword } from "../../components/auth/ForgotPassword";
 import { ChangePassword } from "../../components/auth/ChangePassword";
+import LoginStyle from "../../styles/Login.module.css";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -79,16 +80,16 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="card login-card">
-        <div className="card-header-login login-header text-center py-4">
-          <div className="login-logo">
+    <div className={LoginStyle.loginContainer}>
+      <div className={LoginStyle.loginCard}>
+        <div className={LoginStyle.loginHeader}>
+          <div className={LoginStyle.loginLogo}>
             <i className="fas fa-utensils"></i>
           </div>
           <h3 className="mb-0">Sistema de Comedor</h3>
         </div>
 
-        <div className="card-body p-3">
+        <div className={LoginStyle.cardBody}>
           <form onSubmit={handleSubmit}>
             {error && (
               <div
@@ -107,13 +108,13 @@ const Login = () => {
             )}
 
             <div className="mb-2">
-              <label htmlFor="nombreUsuario" className="form-label fw-semibold">
+              <label htmlFor="nombreUsuario" className={LoginStyle.formLabel}>
                 <i className="fas fa-user me-2 text-primary"></i>
                 Nombre de Usuario
               </label>
               <input
                 type="text"
-                className="form-control"
+                className={LoginStyle.formControl}
                 id="nombreUsuario"
                 name="nombreUsuario"
                 value={formData.nombreUsuario}
@@ -126,13 +127,13 @@ const Login = () => {
             </div>
 
             <div className="mb-3">
-              <label htmlFor="contrasena" className="form-label fw-semibold">
+              <label htmlFor="contrasena" className={LoginStyle.formLabel}>
                 <i className="fas fa-lock me-2 text-primary"></i>
                 Contraseña
               </label>
               <input
                 type="password"
-                className="form-control"
+                className={LoginStyle.formControl}
                 id="contrasena"
                 name="contrasena"
                 value={formData.contrasena}

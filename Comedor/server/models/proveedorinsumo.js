@@ -15,7 +15,7 @@ export class ProveedorInsumoModel {
                  FROM ProveedorInsumo pi
                  JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor
                  JOIN Insumos i ON pi.id_insumo = i.id_insumo
-                 ORDER BY pr.razonSocial, i.nombreInsumo;`
+                 ORDER BY pr.razonSocial, i.nombreInsumo;`,
       );
       return relaciones;
     } catch (error) {
@@ -39,7 +39,7 @@ export class ProveedorInsumoModel {
                  JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor
                  JOIN Insumos i ON pi.id_insumo = i.id_insumo
                  WHERE pi.id_proveedor = UUID_TO_BIN(?) AND pi.id_insumo = ?;`,
-        [id_proveedor, id_insumo]
+        [id_proveedor, id_insumo],
       );
       if (relaciones.length === 0) return null;
       return relaciones[0];
@@ -58,14 +58,14 @@ export class ProveedorInsumoModel {
     } = input;
 
     try {
+      // Usar INSERT ... ON DUPLICATE KEY UPDATE para upsert
+      // Si la relación no existe: insertar con calificacion='Bueno' y estado='Activo'
+      // Si existe: SOLO reactivar (estado='Activo') sin modificar la calificacion
       await connection.query(
-        `INSERT INTO ProveedorInsumo (
-                    id_proveedor, 
-                    id_insumo, 
-                    calificacion,
-                    estado
-                ) VALUES (UUID_TO_BIN(?), ?, ?, ?);`,
-        [id_proveedor, id_insumo, calificacion, estado]
+        `INSERT INTO ProveedorInsumo (id_insumo, id_proveedor, calificacion, estado)
+                 VALUES (?, UUID_TO_BIN(?), ?, ?)
+                 ON DUPLICATE KEY UPDATE estado = 'Activo';`,
+        [id_insumo, id_proveedor, calificacion, estado],
       );
 
       return this.getById({ id_proveedor, id_insumo });
@@ -80,12 +80,14 @@ export class ProveedorInsumoModel {
 
   static async delete({ id_proveedor, id_insumo }) {
     try {
-      await connection.query(
-        `DELETE FROM ProveedorInsumo
+      // Borrado lógico: marcar estado = 'Inactivo' sin eliminar la fila
+      const [result] = await connection.query(
+        `UPDATE ProveedorInsumo
+                 SET estado = 'Inactivo'
                  WHERE id_proveedor = UUID_TO_BIN(?) AND id_insumo = ?;`,
-        [id_proveedor, id_insumo]
+        [id_proveedor, id_insumo],
       );
-      return true;
+      return result.affectedRows > 0;
     } catch (error) {
       console.error("Error al eliminar relación proveedor-insumo:", error);
       return false;
@@ -116,7 +118,7 @@ export class ProveedorInsumoModel {
         `UPDATE ProveedorInsumo
                  SET ${updates.join(", ")}
                  WHERE id_proveedor = UUID_TO_BIN(?) AND id_insumo = ?;`,
-        values
+        values,
       );
 
       return this.getById({ id_proveedor, id_insumo });
@@ -142,7 +144,7 @@ export class ProveedorInsumoModel {
                  LEFT JOIN Inventarios inv ON i.id_insumo = inv.id_insumo
                  WHERE pi.id_proveedor = UUID_TO_BIN(?)
                  ORDER BY i.nombreInsumo;`,
-        [id_proveedor]
+        [id_proveedor],
       );
       return insumos;
     } catch (error) {
@@ -170,7 +172,7 @@ export class ProveedorInsumoModel {
                  ORDER BY 
                     FIELD(pi.calificacion, 'Excelente', 'Bueno', 'Regular', 'Malo'),
                     pr.razonSocial;`,
-        [id_insumo]
+        [id_insumo],
       );
       return proveedores;
     } catch (error) {
@@ -199,7 +201,7 @@ export class ProveedorInsumoModel {
                  ORDER BY 
                     FIELD(pi.calificacion, 'Excelente', 'Bueno', 'Regular', 'Malo'),
                     pr.razonSocial;`,
-        [id_insumo]
+        [id_insumo],
       );
       return proveedores;
     } catch (error) {
@@ -224,7 +226,7 @@ export class ProveedorInsumoModel {
                  JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor
                  JOIN Insumos i ON pi.id_insumo = i.id_insumo
                  WHERE pi.estado = 'Activo' AND pr.estado = 'activo'
-                 ORDER BY pr.razonSocial, i.nombreInsumo;`
+                 ORDER BY pr.razonSocial, i.nombreInsumo;`,
       );
       return relaciones;
     } catch (error) {
@@ -240,12 +242,30 @@ export class ProveedorInsumoModel {
         `UPDATE ProveedorInsumo
                  SET estado = ?
                  WHERE id_proveedor = UUID_TO_BIN(?) AND id_insumo = ?;`,
-        [estado, id_proveedor, id_insumo]
+        [estado, id_proveedor, id_insumo],
       );
       return this.getById({ id_proveedor, id_insumo });
     } catch (error) {
       console.error("Error al cambiar estado de la relación:", error);
       throw new Error("Error al cambiar estado de la relación");
+    }
+  }
+
+  // Método para actualizar la calificación solo si la relación está activa
+  static async setCalificacion({ id_proveedor, id_insumo, calificacion }) {
+    try {
+      const [result] = await connection.query(
+        `UPDATE ProveedorInsumo
+                 SET calificacion = ?
+                 WHERE id_proveedor = UUID_TO_BIN(?) AND id_insumo = ? AND estado = 'Activo';`,
+        [calificacion, id_proveedor, id_insumo],
+      );
+
+      if (result.affectedRows === 0) return null; // No existe o no está activo
+      return this.getById({ id_proveedor, id_insumo });
+    } catch (error) {
+      console.error("Error al actualizar calificación:", error);
+      throw new Error("Error al actualizar calificación");
     }
   }
 
@@ -261,7 +281,7 @@ export class ProveedorInsumoModel {
                  FROM ProveedorInsumo pi
                  WHERE pi.estado = 'Activo'
                  GROUP BY pi.calificacion
-                 ORDER BY FIELD(pi.calificacion, 'Excelente', 'Bueno', 'Regular', 'Malo');`
+                 ORDER BY FIELD(pi.calificacion, 'Excelente', 'Bueno', 'Regular', 'Malo');`,
       );
       return estadisticas;
     } catch (error) {
@@ -292,7 +312,7 @@ export class ProveedorInsumoModel {
                    AND pr.estado = 'activo'
                  GROUP BY pi.id_proveedor, pr.razonSocial, pr.CUIT, pr.telefono, pr.mail
                  ORDER BY insumosDisponibles DESC, calificacionPromedio DESC;`,
-        insumos
+        insumos,
       );
       return proveedores;
     } catch (error) {
@@ -313,7 +333,7 @@ export class ProveedorInsumoModel {
                  FROM Insumos i
                  LEFT JOIN ProveedorInsumo pi ON i.id_insumo = pi.id_insumo AND pi.estado = 'Activo'
                  WHERE pi.id_insumo IS NULL
-                 ORDER BY i.categoria, i.nombreInsumo;`
+                 ORDER BY i.categoria, i.nombreInsumo;`,
       );
       return insumos;
     } catch (error) {
@@ -340,7 +360,7 @@ export class ProveedorInsumoModel {
                  JOIN Proveedores pr ON pi.id_proveedor = pr.id_proveedor
                  WHERE pi.id_proveedor = UUID_TO_BIN(?)
                  GROUP BY pi.id_proveedor, pr.razonSocial;`,
-        [id_proveedor]
+        [id_proveedor],
       );
       return resumen.length > 0 ? resumen[0] : null;
     } catch (error) {

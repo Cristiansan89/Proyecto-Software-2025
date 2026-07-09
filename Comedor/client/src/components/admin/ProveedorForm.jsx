@@ -10,6 +10,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
   // Función para formatear el CUIT
@@ -26,12 +27,12 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
     } else if (limitedDigits.length <= 10) {
       return `${limitedDigits.slice(0, 2)}-${limitedDigits.slice(
         2,
-        limitedDigits.length - 1
+        limitedDigits.length - 1,
       )}-${limitedDigits.slice(-1)}`;
     } else {
       return `${limitedDigits.slice(0, 2)}-${limitedDigits.slice(
         2,
-        10
+        10,
       )}-${limitedDigits.slice(10)}`;
     }
   };
@@ -245,7 +246,7 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
       if (error.response?.status === 409) {
         setServerError(
           error.response?.data?.message ||
-            "Ya existe un proveedor con estos datos"
+            "Ya existe un proveedor con estos datos",
         );
       } else if (error.response?.data?.message) {
         showInfoError("Información", `Error: ${error.response.data.message}`);
@@ -255,14 +256,14 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
           .join("\n");
         showInfoError(
           "Información",
-          `Errores de validación:\n${errorMessages}`
+          `Errores de validación:\n${errorMessages}`,
         );
       } else if (error.message) {
         showError("Error", `Error: ${error.message}`);
       } else {
         showError(
           "Error",
-          "Error al guardar el proveedor. Por favor, inténtelo de nuevo."
+          "Error al guardar el proveedor. Por favor, inténtelo de nuevo.",
         );
       }
     } finally {
@@ -274,439 +275,425 @@ const ProveedorForm = ({ proveedor, mode, onSave, onCancel }) => {
   const isCreateMode = mode === "create";
 
   return (
-    <div className="proveedor-form">
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          {/* Información Básica */}
-          <div>
-            <h5 className="section-title">Información del Proveedor</h5>
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>
+        Información del Proveedor
+      </h4>
 
-            <div className="form-group">
-              <label htmlFor="razonSocial" className="form-label required ">
-                Razón Social
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="razonSocial"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          Razón Social
+        </label>
+        <input
+          type="text"
+          id="razonSocial"
+          name="razonSocial"
+          className={`${ComponenteStyle.formControl} ${errors.razonSocial ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.razonSocial}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+          placeholder="Ingrese la razón social del proveedor"
+          maxLength="100"
+        />
+        {errors.razonSocial && (
+          <div className={ComponenteStyle.invalidFeedback}>
+            {errors.razonSocial}
+          </div>
+        )}
+      </div>
+
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="CUIT"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          CUIT
+        </label>
+        <input
+          type="text"
+          id="CUIT"
+          name="CUIT"
+          className={`${ComponenteStyle.formControl} ${errors.CUIT ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.CUIT}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+          placeholder="Ingrese el CUIT del proveedor 30-12345678-9"
+          maxLength="13"
+        />
+        {errors.CUIT && (
+          <div className={ComponenteStyle.invalidFeedback}>{errors.CUIT}</div>
+        )}
+      </div>
+
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="direccion" className={ComponenteStyle.formLabel}>
+          Dirección
+        </label>
+        <textarea
+          id="direccion"
+          name="direccion"
+          className={`${ComponenteStyle.formControl} ${errors.direccion ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.direccion}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+          placeholder="Ingrese la dirección completa del proveedor (opcional)"
+          rows="3"
+          maxLength="100"
+        />
+        {errors.direccion && (
+          <div className={ComponenteStyle.invalidFeedback}>
+            {errors.direccion}
+          </div>
+        )}
+      </div>
+
+      <div className={ComponenteStyle.formRow}>
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="telefono" className={ComponenteStyle.formLabel}>
+            Teléfono
+          </label>
+          <input
+            type="tel"
+            id="telefono"
+            name="telefono"
+            className={`${ComponenteStyle.formControl} ${errors.telefono ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.telefono}
+            onChange={handleInputChange}
+            disabled={isViewMode}
+            maxLength="13"
+            inputMode="tel"
+            placeholder="Teléfono"
+          />
+          {errors.telefono && (
+            <div className={ComponenteStyle.invalidFeedback}>
+              {errors.telefono}
+            </div>
+          )}
+          <small className={`${ComponenteStyle.formText} text-muted`}>
+            <i className="fas fa-info-circle me-1"></i>
+            Ingrese el número de teléfono luego del +54 con la caracteristica de
+            área sin 15.
+          </small>
+        </div>
+
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="mail"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Email
+          </label>
+          <input
+            type="email"
+            id="mail"
+            name="mail"
+            className={`${ComponenteStyle.formControl} ${errors.mail ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.mail}
+            onChange={handleInputChange}
+            disabled={isViewMode}
+            placeholder="proveedor@empresa.com"
+            maxLength="100"
+          />
+          {errors.mail && (
+            <div className={ComponenteStyle.invalidFeedback}>{errors.mail}</div>
+          )}
+        </div>
+      </div>
+
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="estado"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          Estado
+        </label>
+        <select
+          id="estado"
+          name="estado"
+          className={`${ComponenteStyle.formControl} ${errors.estado ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.estado}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+        >
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+        {errors.estado && (
+          <div className={ComponenteStyle.invalidFeedback}>{errors.estado}</div>
+        )}
+      </div>
+
+      {/* Sección para crear usuario - Solo visible en modo create */}
+      {mode === "create" && (
+        <div>
+          {/* Datos de Usuario */}
+          <h4 className={ComponenteStyle.sectionTitle}>
+            <i className="fas fa-user me-2"></i>
+            Cuenta de Usuario del Proveedor
+          </h4>
+          <div
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning}`}
+            role="alert"
+          >
+            <i className="fas fa-info-circle me-2"></i>
+            <strong className="me-1">Nota:</strong> El email y teléfono se
+            tomarán de la información del proveedor
+          </div>
+
+          <div className={ComponenteStyle.formRow}>
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="nombreUsuario"
+                className={`${ComponenteStyle.formLabel} required`}
+              >
+                Nombre de Usuario
               </label>
               <input
                 type="text"
-                id="razonSocial"
-                name="razonSocial"
-                className={`form-control ${
-                  errors.razonSocial ? "is-invalid" : ""
+                id="nombreUsuario"
+                name="nombreUsuario"
+                className={`${ComponenteStyle.formControl} ${
+                  userErrors.nombreUsuario ? ComponenteStyle.isInvalid : ""
                 }`}
-                value={formData.razonSocial}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-                placeholder="Ingrese la razón social del proveedor"
-                maxLength="100"
+                value={userFormData.nombreUsuario}
+                onChange={handleUserInputChange}
+                disabled={mode === "view"}
+                placeholder="Nombre de usuario único"
               />
-              {errors.razonSocial && (
-                <div className="invalid-feedback">{errors.razonSocial}</div>
+              {userErrors.nombreUsuario && (
+                <div className={ComponenteStyle.invalidFeedback}>
+                  {userErrors.nombreUsuario}
+                </div>
               )}
             </div>
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="CUIT" className="form-label required ">
-                CUIT
+          <div className={ComponenteStyle.formRow}>
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="password"
+                className={`${ComponenteStyle.formLabel} required`}
+              >
+                Contraseña
               </label>
               <input
-                type="text"
-                id="CUIT"
-                name="CUIT"
-                className={`form-control ${errors.CUIT ? "is-invalid" : ""}`}
-                value={formData.CUIT}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-                placeholder="Ingrese el CUIT del proveedor 30-12345678-9"
-                maxLength="13"
-              />
-              {errors.CUIT && (
-                <div className="invalid-feedback">{errors.CUIT}</div>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="direccion" className="form-label ">
-                Dirección
-              </label>
-              <textarea
-                id="direccion"
-                name="direccion"
-                className={`form-control ${
-                  errors.direccion ? "is-invalid" : ""
+                type="password"
+                id="password"
+                name="password"
+                className={`${ComponenteStyle.formControl} ${
+                  userErrors.password ? ComponenteStyle.isInvalid : ""
                 }`}
-                value={formData.direccion}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-                placeholder="Ingrese la dirección completa del proveedor (opcional)"
-                rows="3"
-                maxLength="100"
+                value={userFormData.password}
+                onChange={handleUserInputChange}
+                disabled={mode === "view"}
+                placeholder="Mínimo 6 caracteres"
               />
-              {errors.direccion && (
-                <div className="invalid-feedback">{errors.direccion}</div>
+              {userErrors.password && (
+                <div className={ComponenteStyle.invalidFeedback}>
+                  {userErrors.password}
+                </div>
               )}
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="telefono" className="form-label ">
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  id="telefono"
-                  name="telefono"
-                  className={`form-control ${
-                    errors.telefono ? "is-invalid" : ""
-                  }`}
-                  value={formData.telefono}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  maxLength="13"
-                  inputMode="tel"
-                  placeholder="Teléfono"
-                />
-                {errors.telefono && (
-                  <div className="invalid-feedback">{errors.telefono}</div>
-                )}
-                <small className="form-text text-muted">
-                  <i className="fas fa-info-circle me-1"></i>
-                  Ingrese el número de teléfono luego del +54 con la
-                  caracteristica de área sin 15.
-                </small>
-              </div>
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="confirmPassword"
+                className={`${ComponenteStyle.formLabel} required`}
+              >
+                Confirmar Contraseña
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                className={`${ComponenteStyle.formControl}  ${
+                  userErrors.confirmPassword ? ComponenteStyle.isInvalid : ""
+                }`}
+                value={userFormData.confirmPassword}
+                onChange={handleUserInputChange}
+                disabled={mode === "view"}
+                placeholder="Confirme la contraseña"
+              />
+              {userErrors.confirmPassword && (
+                <div className={ComponenteStyle.invalidFeedback}>
+                  {userErrors.confirmPassword}
+                </div>
+              )}
+            </div>
+          </div>
 
-              <div className="form-group">
-                <label htmlFor="mail" className="form-label required ">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="mail"
-                  name="mail"
-                  className={`form-control ${errors.mail ? "is-invalid" : ""}`}
-                  value={formData.mail}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  placeholder="proveedor@empresa.com"
-                  maxLength="100"
-                />
-                {errors.mail && (
-                  <div className="invalid-feedback">{errors.mail}</div>
-                )}
-              </div>
+          <div className={ComponenteStyle.formRow}>
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="mailUsuario"
+                className={`${ComponenteStyle.formLabel} required`}
+              >
+                Email del Usuario
+              </label>
+              <input
+                type="email"
+                id="mailUsuario"
+                name="mail"
+                className={ComponenteStyle.formControl}
+                value={userFormData.mail}
+                onChange={() => {}}
+                disabled={true}
+                placeholder="Se toma del email del proveedor"
+              />
+              <small className={`${ComponenteStyle.formText} text-muted`}>
+                Se actualiza automáticamente con el email del proveedor
+              </small>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="estado" className="form-label required ">
-                Estado
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="telefonoUsuario"
+                className={ComponenteStyle.formLabel}
+              >
+                Teléfono del Usuario
+              </label>
+              <input
+                type="tel"
+                id="telefonoUsuario"
+                name="telefono"
+                className={ComponenteStyle.formControl}
+                value={userFormData.telefono}
+                onChange={() => {}}
+                disabled={true}
+                placeholder="Se toma del teléfono del proveedor"
+              />
+              <small className={`${ComponenteStyle.formText} text-muted`}>
+                Se actualiza automáticamente con el teléfono del proveedor
+              </small>
+            </div>
+          </div>
+
+          <div className={ComponenteStyle.formRow}>
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="estadoUsuario"
+                className={`${ComponenteStyle.formLabel} required`}
+              >
+                Estado del Usuario
               </label>
               <select
-                id="estado"
+                id="estadoUsuario"
                 name="estado"
-                className={`form-control ${errors.estado ? "is-invalid" : ""}`}
-                value={formData.estado}
-                onChange={handleInputChange}
-                disabled={isViewMode}
+                className={ComponenteStyle.formControl}
+                value={userFormData.estado}
+                onChange={handleUserInputChange}
+                disabled={mode === "view"}
               >
                 <option value="Activo">Activo</option>
                 <option value="Inactivo">Inactivo</option>
               </select>
-              {errors.estado && (
-                <div className="invalid-feedback">{errors.estado}</div>
-              )}
             </div>
-
-            {/* Sección para crear usuario - Solo visible en modo create */}
-            {mode === "create" && (
-              <div>
-                {/* Datos de Usuario */}
-                <h5 className="section-title mt-5">
-                  Cuenta de Usuario del Proveedor
-                </h5>
-                <div className="alert alert-warning" role="alert">
-                  <i className="fas fa-info-circle me-2"></i>
-                  <strong className="me-1">Nota:</strong> El email y teléfono se
-                  tomarán de la información del proveedor
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label
-                      htmlFor="nombreUsuario"
-                      className="form-label required"
-                    >
-                      Nombre de Usuario
-                    </label>
-                    <input
-                      type="text"
-                      id="nombreUsuario"
-                      name="nombreUsuario"
-                      className={`form-control ${
-                        userErrors.nombreUsuario ? "is-invalid" : ""
-                      }`}
-                      value={userFormData.nombreUsuario}
-                      onChange={handleUserInputChange}
-                      disabled={mode === "view"}
-                      placeholder="Nombre de usuario único"
-                    />
-                    {userErrors.nombreUsuario && (
-                      <div className="invalid-feedback">
-                        {userErrors.nombreUsuario}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="password" className="form-label required">
-                      Contraseña
-                    </label>
-                    <input
-                      type="password"
-                      id="password"
-                      name="password"
-                      className={`form-control ${
-                        userErrors.password ? "is-invalid" : ""
-                      }`}
-                      value={userFormData.password}
-                      onChange={handleUserInputChange}
-                      disabled={mode === "view"}
-                      placeholder="Mínimo 6 caracteres"
-                    />
-                    {userErrors.password && (
-                      <div className="invalid-feedback">
-                        {userErrors.password}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label
-                      htmlFor="confirmPassword"
-                      className="form-label required"
-                    >
-                      Confirmar Contraseña
-                    </label>
-                    <input
-                      type="password"
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      className={`form-control ${
-                        userErrors.confirmPassword ? "is-invalid" : ""
-                      }`}
-                      value={userFormData.confirmPassword}
-                      onChange={handleUserInputChange}
-                      disabled={mode === "view"}
-                      placeholder="Confirme la contraseña"
-                    />
-                    {userErrors.confirmPassword && (
-                      <div className="invalid-feedback">
-                        {userErrors.confirmPassword}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label
-                      htmlFor="mailUsuario"
-                      className="form-label required"
-                    >
-                      Email del Usuario
-                    </label>
-                    <input
-                      type="email"
-                      id="mailUsuario"
-                      name="mail"
-                      className="form-control"
-                      value={userFormData.mail}
-                      onChange={() => {}}
-                      disabled={true}
-                      placeholder="Se toma del email del proveedor"
-                    />
-                    <small className="form-text text-muted">
-                      Se actualiza automáticamente con el email del proveedor
-                    </small>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="telefonoUsuario" className="form-label">
-                      Teléfono del Usuario
-                    </label>
-                    <input
-                      type="tel"
-                      id="telefonoUsuario"
-                      name="telefono"
-                      className="form-control"
-                      value={userFormData.telefono}
-                      onChange={() => {}}
-                      disabled={true}
-                      placeholder="Se toma del teléfono del proveedor"
-                    />
-                    <small className="form-text text-muted">
-                      Se actualiza automáticamente con el teléfono del proveedor
-                    </small>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label
-                      htmlFor="estadoUsuario"
-                      className="form-label required"
-                    >
-                      Estado del Usuario
-                    </label>
-                    <select
-                      id="estadoUsuario"
-                      name="estado"
-                      className="form-control"
-                      value={userFormData.estado}
-                      onChange={handleUserInputChange}
-                      disabled={mode === "view"}
-                    >
-                      <option value="Activo">Activo</option>
-                      <option value="Inactivo">Inactivo</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
+        </div>
+      )}
 
-          {/* Información adicional en modo vista */}
-          {isViewMode && proveedor && (
-            <div className="mt-4">
-              <div className="separar-secciones-info"></div>
-              <h5 className="section-title">
-                <i className="fas fa-info-circle me-2"></i>
-                Información Adicional
-              </h5>
-
-              <div className="info-card">
-                <div className="info-row">
-                  <span className="info-label">CUIT:</span>
-                  <span className="info-value">{proveedor.CUIT}</span>
-                </div>
-                {proveedor.fechaAlta && (
-                  <div className="info-row">
-                    <span className="info-label">Fecha de Registro:</span>
-                    <span className="info-value">
-                      {(() => {
-                        const fecha = proveedor.fechaAlta;
-                        const fechaConZona = typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha) 
-                          ? fecha + "T00:00:00Z" 
-                          : fecha;
-                        return new Date(fechaConZona).toLocaleDateString();
-                      })()}
-                    </span>
-                  </div>
-                )}
-                {proveedor.fechaModificacion && (
-                  <div className="info-row">
-                    <span className="info-label">Última Modificación:</span>
-                    <span className="info-value">
-                      {(() => {
-                        const fecha = proveedor.fechaModificacion;
-                        const fechaConZona = typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha) 
-                          ? fecha + "T00:00:00Z" 
-                          : fecha;
-                        return new Date(fechaConZona).toLocaleDateString();
-                      })()}
-                    </span>
-                  </div>
-                )}
-                <div className="info-row">
-                  <span className="info-label">Total de Insumos:</span>
-                  <span className="info-value">
-                    {proveedor.insumos?.length || 0} insumos asignados
-                  </span>
-                </div>
-              </div>
-
-              {/* Lista de insumos asignados */}
-              {proveedor.insumos && proveedor.insumos.length > 0 && (
-                <div className="">
-                  <h6 className="info-title">Insumos Asignados:</h6>
-                  <div className="insumos-assigned-list">
-                    {proveedor.insumos.map((insumo, index) => (
-                      <div key={index} className="insumo-assigned-item">
-                        <div className="insumo-info">
-                          <i className="fas fa-box me-2"></i>
-                          <span className="insumo-name">
-                            {insumo.nombreInsumo}
-                          </span>
-                        </div>
-                        <div className="calificacion-info">
-                          <span
-                            className={`badge ${
-                              insumo.calificacion === "Excelente"
-                                ? "bg-success"
-                                : insumo.calificacion === "Aceptable"
-                                ? "bg-warning"
-                                : "bg-danger"
-                            }`}
-                          >
-                            {insumo.calificacion}
-                          </span>
-                        </div>
+      {/* Información adicional en modo vista */}
+      {isViewMode && (
+        <div className="mt-4">
+          {/* Lista de insumos asignados */}
+          {proveedor.insumos && proveedor.insumos.length > 0 && (
+            <div className={`${ComponenteStyle.formRow} mt-4`}>
+              <h6 className={ComponenteStyle.sectionTitle}>
+                <i className="fas fa-check-circle me-2"></i>Insumos Asignados:
+              </h6>
+              <div
+                className={`${ComponenteStyle.insumoList} ${ComponenteStyle.assignedList}`}
+              >
+                {proveedor.insumos.map((insumo, index) => (
+                  <div
+                    key={index}
+                    className={`${ComponenteStyle.insumoItem} ${ComponenteStyle.assignedItem}`}
+                  >
+                    <div className={ComponenteStyle.insumoInfo}>
+                      <div className={ComponenteStyle.insumoName}>
+                        <i className="fas fa-box me-2"></i>
+                        {insumo.nombreInsumo}
                       </div>
-                    ))}
+                      <div className={ComponenteStyle.insumoDetails}>
+                        <span className={ComponenteStyle.categoriaBadge}>
+                          {insumo.categoria}
+                        </span>
+                        <span className={ComponenteStyle.unidadMedida}>
+                          {insumo.unidadMedida}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={ComponenteStyle.calificacionInfo}>
+                      <span
+                        className={`badge ${
+                          insumo.calificacion === "Excelente"
+                            ? "bg-success"
+                            : insumo.calificacion === "Aceptable"
+                              ? "bg-warning"
+                              : "bg-danger"
+                        }`}
+                      >
+                        {insumo.calificacion}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           )}
         </div>
+      )}
 
-        {/* Alerta de error del servidor */}
-        {serverError && (
-          <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            {serverError}
-          </div>
-        )}
+      {/* Alerta de error del servidor */}
+      {serverError && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          {serverError}
+        </div>
+      )}
 
-        {/* Botones */}
-        <div className="form-actions">
+      {/* Botones */}
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
           <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
             disabled={loading}
           >
-            <i className="fas fa-times"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save"></i>
+                {isCreateMode
+                  ? "Crear Proveedor y Usuario"
+                  : "Actualizar Proveedor"}
+              </>
+            )}
           </button>
-
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary me-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  {isCreateMode
-                    ? "Crear Proveedor y Usuario"
-                    : "Actualizar Proveedor"}
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </form>
-    </div>
+        )}
+      </div>
+    </form>
   );
 };
 

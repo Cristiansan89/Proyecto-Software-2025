@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import pedidoService from "../../services/pedidoService";
 import { showError, showSuccess } from "../../utils/alertService";
-import "../../styles/ProveedorPedidos.css";
+import ConfirmacionesStyle from "../../styles/Confirmaciones.module.css";
 
 const ProveedorPedidos = () => {
   const { user } = useAuth();
@@ -41,16 +41,19 @@ const ProveedorPedidos = () => {
   ];
 
   return (
-    <div className="proveedor-pedidos">
-      <div className="header">
+    <div className={ConfirmacionesStyle.proveedorPedidos}>
+      <div className={ConfirmacionesStyle.header}>
         <h1>Mis Pedidos</h1>
-        <button className="btn-refrescar" onClick={cargarPedidos}>
+        <button
+          className={ConfirmacionesStyle.btnRefrescar}
+          onClick={cargarPedidos}
+        >
           🔄 Refrescar
         </button>
       </div>
 
       {/* Filtros */}
-      <div className="filtros">
+      <div className={ConfirmacionesStyle.filtros}>
         <label>Filtrar por estado:</label>
         <select
           value={filtroEstado}
@@ -67,14 +70,14 @@ const ProveedorPedidos = () => {
 
       {/* Tabla de pedidos */}
       {loading ? (
-        <div className="loading">Cargando pedidos...</div>
+        <div className={ConfirmacionesStyle.loading}>Cargando pedidos...</div>
       ) : pedidosFiltrados.length === 0 ? (
-        <div className="sin-datos">
+        <div className={ConfirmacionesStyle.sinDatos}>
           <p>No hay pedidos para mostrar</p>
         </div>
       ) : (
-        <div className="tabla-contenedor">
-          <table className="tabla-pedidos">
+        <div className={ConfirmacionesStyle.tablaContenedor}>
+          <table className={ConfirmacionesStyle.tablaPedidos}>
             <thead>
               <tr>
                 <th>ID Pedido</th>
@@ -88,38 +91,58 @@ const ProveedorPedidos = () => {
             <tbody>
               {pedidosFiltrados.map((pedido) => (
                 <tr key={pedido.id_pedido}>
-                  <td className="id-pedido">#{pedido.id_pedido}</td>
-                  <td>{(() => {
-                    const fecha = pedido.fechaPedido;
-                    if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-                      const [año, mes, día] = fecha.split('-').map(Number);
-                      return new Date(año, mes - 1, día).toLocaleDateString();
-                    }
-                    return new Date(fecha).toLocaleDateString();
-                  })()}</td>
+                  <td className={ConfirmacionesStyle.idPedido}>
+                    #{pedido.id_pedido}
+                  </td>
+                  <td>
+                    {(() => {
+                      const fecha = pedido.fechaPedido;
+                      if (
+                        typeof fecha === "string" &&
+                        /^\d{4}-\d{2}-\d{2}$/.test(fecha)
+                      ) {
+                        const [año, mes, día] = fecha.split("-").map(Number);
+                        return new Date(año, mes - 1, día).toLocaleDateString();
+                      }
+                      return new Date(fecha).toLocaleDateString();
+                    })()}
+                  </td>
                   <td>
                     {pedido.fechaEntregaEsperada
                       ? (() => {
-                        const fecha = pedido.fechaEntregaEsperada;
-                        if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-                          const [año, mes, día] = fecha.split('-').map(Number);
-                          return new Date(año, mes - 1, día).toLocaleDateString();
-                        }
-                        return new Date(fecha).toLocaleDateString();
-                      })()
+                          const fecha = pedido.fechaEntregaEsperada;
+                          if (
+                            typeof fecha === "string" &&
+                            /^\d{4}-\d{2}-\d{2}$/.test(fecha)
+                          ) {
+                            const [año, mes, día] = fecha
+                              .split("-")
+                              .map(Number);
+                            return new Date(
+                              año,
+                              mes - 1,
+                              día,
+                            ).toLocaleDateString();
+                          }
+                          return new Date(fecha).toLocaleDateString();
+                        })()
                       : "N/A"}
                   </td>
                   <td>
                     <span
-                      className={`estado-badge estado-${pedido.id_estadoPedido}`}
+                      className={`${ConfirmacionesStyle.badgeEstado} ${ConfirmacionesStyle[`estado-${pedido.id_estadoPedido}`]}`}
                     >
                       {estados.find((e) => e.id === pedido.id_estadoPedido)
                         ?.nombre || "Desconocido"}
                     </span>
                   </td>
-                  <td className="cantidad">{pedido.cantidadInsumos || 0}</td>
+                  <td className={ConfirmacionesStyle.cantidad}>
+                    {pedido.cantidadInsumos || 0}
+                  </td>
                   <td>
-                    <button className="btn-ver-detalles">Ver detalles</button>
+                    <button className={ConfirmacionesStyle.btnVerDetalles}>
+                      Ver detalles
+                    </button>
                   </td>
                 </tr>
               ))}

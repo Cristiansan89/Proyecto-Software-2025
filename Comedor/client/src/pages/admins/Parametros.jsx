@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import ParametrosForm from "../../components/admin/ParametrosForm";
 import Swal from "sweetalert2";
-// import ConfiguracionServiciosAutomaticos from "../../components/ConfigServiciosAuto";
-import "../../styles/Parametros.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const Parametros = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [parametros, setParametros] = useState([]);
+  const [showModal, setShowModal] = useState(false);
   const [filtros, setFiltros] = useState({
     busqueda: "",
     estado: "",
@@ -162,6 +165,7 @@ const Parametros = () => {
         });
       }
     }
+    setShowModal(false);
   };
 
   const handleEditar = (parametro) => {
@@ -175,6 +179,7 @@ const Parametros = () => {
     setServerError(null);
     setMensaje(null);
     setModalParametro(true);
+    setShowModal(true);
   };
 
   const handleEliminar = async (parametro) => {
@@ -227,6 +232,7 @@ const Parametros = () => {
     setServerError(null);
     setMensaje(null);
     setModalParametro(true);
+    setShowModal(true);
   };
 
   const handleCerrarModal = () => {
@@ -240,6 +246,15 @@ const Parametros = () => {
       estado: "Activo",
     });
     setMensaje(null);
+    setShowModal(false);
+  };
+
+  const clearFilters = () => {
+    setFiltros((prev) => ({
+      ...prev,
+      busqueda: "",
+      estado: "",
+    }));
   };
 
   // Filtrar parámetros
@@ -260,7 +275,7 @@ const Parametros = () => {
   const parametrosOrdenados = parametrosFiltrados.slice().sort((a, b) => {
     const idA = a.id_parametro || 0;
     const idB = b.id_parametro || 0;
-    return idB - idA; // Descendente: último ID primero
+    return idA - idB; // Descendente: último ID primero
   });
 
   // Reset page when filters change
@@ -271,252 +286,283 @@ const Parametros = () => {
   // Paginación
   const totalPages = Math.ceil(parametrosOrdenados.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
-  const parametrosPaginados = parametrosOrdenados.slice(
-    startIndex,
-    startIndex + pageSize,
-  );
+  const endIndex = startIndex + pageSize;
+  const currentParametros = parametrosOrdenados.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    if (page < 1) page = 1;
+    setCurrentPage(page);
+  };
+
+  const getPaginationNumbers = () => {
+    if (totalPages <= 10) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    // Si hay más de 10 páginas, mostrar 10 números
+    let start = currentPage - 5;
+    let end = currentPage + 5;
+
+    // Ajustar si está cerca del inicio
+    if (start < 1) {
+      start = 1;
+      end = 10;
+    }
+
+    // Ajustar si está cerca del final
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, totalPages - 9);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
 
   if (loading) {
     return (
-      <div className="container mt-5 text-center">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Parámetros del Sistema...</p>
       </div>
     );
   }
 
   return (
-    <div className="container-fluid parametros-container pt-1">
-      {/* Tabs para navegación */}
-      {/* Pestaña de Parámetros */}
-      {true && (
-        <div role="tabpanel">
-          <div className="page-header mb-3">
-            <div className="header-left">
-              <h2 className="page-title-sub">Gestión de Parámetros</h2>
-            </div>
-            <div className="header-actions">
-              <button className="btn btn-primary-new" onClick={handleNuevo}>
-                <i className="fas fa-plus"></i>
-                Nuevo Parámetro
-              </button>
-            </div>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h2 className={ContenidoStyle.pageTitle}>Gestión de Parámetros</h2>
+        </div>
+        <div className={ContenidoStyle.headerActions}>
+          <button
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
+            onClick={handleNuevo}
+          >
+            <i className="fas fa-plus me-1"></i>
+            Nuevo Parámetro
+          </button>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className={ContenidoStyle.headerLeft}>
+        <div className={ContenidoStyle.searchFilters}>
+          <div className={ContenidoStyle.searchBar}>
+            <input
+              type="text"
+              className={ContenidoStyle.searchInput}
+              placeholder="Buscar parámetro..."
+              value={filtros.busqueda}
+              onChange={(e) =>
+                setFiltros((prev) => ({
+                  ...prev,
+                  busqueda: e.target.value,
+                }))
+              }
+            />
           </div>
-
-          <div className="card">
-            <div className="card-header bg-light">
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Buscar parámetro..."
-                    value={filtros.busqueda}
-                    onChange={(e) =>
-                      setFiltros((prev) => ({
-                        ...prev,
-                        busqueda: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="col-md-3">
-                  <select
-                    className="form-select"
-                    value={filtros.estado}
-                    onChange={(e) =>
-                      setFiltros((prev) => ({
-                        ...prev,
-                        estado: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Todos los estados</option>
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
-                  </select>
-                </div>
-                <div className="col-md-3">
-                  <div className="d-flex align-items-center gap-2">
-                    <label className="form-label mb-0 text-nowrap">
-                      <small>Registros:</small>
-                    </label>
-                    <select
-                      className="form-select form-select-sm"
-                      value={pageSize}
-                      onChange={(e) => {
-                        setPageSize(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="card-body">
-              {parametrosPaginados.length === 0 ? (
-                <div colSpan={12}>
-                  <div className="empty-state">
-                    <i className="fas fa-search empty-icon"></i>
-                    <h5>No se encontraron parámetros</h5>
-                    <p>No hay parámetros que coincidan con tu búsqueda.</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="table-container">
-                  <table className="table table-striped data-table">
-                    <thead className="table-header-fixed">
-                      <tr>
-                        <th width="2%">#</th>
-                        <th width="25%">Nombre</th>
-                        <th width="28%">Valor</th>
-                        <th width="15%">Tipo</th>
-                        <th width="15%">Estado</th>
-                        <th width="15%">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parametrosPaginados.map((param) => (
-                        <tr key={param.id_parametro}>
-                          <td>
-                            <strong>{param.id_parametro}</strong>
-                          </td>
-                          <td className="fw-500">{param.nombreParametro}</td>
-                          <td>
-                            <code className="bg-light p-2 rounded">
-                              {param.valor}
-                            </code>
-                          </td>
-                          <td>
-                            <span className="badge bg-info">
-                              {param.tipoParametro || "Texto"}
-                            </span>
-                          </td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                param.estado === "Activo"
-                                  ? "bg-success"
-                                  : "bg-danger"
-                              }`}
-                            >
-                              {param.estado}
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-warning me-2"
-                              onClick={() => handleEditar(param)}
-                              title="Editar"
-                            >
-                              <i className="fas fa-edit"></i>
-                            </button>
-                            <button
-                              className="btn btn-sm btn-danger"
-                              onClick={() => handleEliminar(param)}
-                              title="Eliminar"
-                            >
-                              <i className="fas fa-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {totalPages > 1 && (
-              <div className="card-footer bg-light">
-                <div className="row align-items-center">
-                  <div className="col-md-6">
-                    <small className="text-muted">
-                      Mostrando {startIndex + 1} a{" "}
-                      {Math.min(
-                        startIndex + pageSize,
-                        parametrosOrdenados.length,
-                      )}{" "}
-                      de {parametrosOrdenados.length} parámetros
-                    </small>
-                  </div>
-                  <div className="col-md-6">
-                    <nav>
-                      <ul className="pagination justify-content-end mb-0">
-                        <li
-                          className={`page-item ${
-                            currentPage === 1 ? "disabled" : ""
-                          }`}
-                        >
-                          <button
-                            className="page-link"
-                            onClick={() =>
-                              setCurrentPage((prev) => Math.max(prev - 1, 1))
-                            }
-                          >
-                            Anterior
-                          </button>
-                        </li>
-                        {[...Array(totalPages)].map((_, i) => (
-                          <li
-                            key={i + 1}
-                            className={`page-item ${
-                              currentPage === i + 1 ? "active" : ""
-                            }`}
-                          >
-                            <button
-                              className="page-link"
-                              onClick={() => setCurrentPage(i + 1)}
-                            >
-                              {i + 1}
-                            </button>
-                          </li>
-                        ))}
-                        <li
-                          className={`page-item ${
-                            currentPage === totalPages ? "disabled" : ""
-                          }`}
-                        >
-                          <button
-                            className="page-link"
-                            onClick={() =>
-                              setCurrentPage((prev) =>
-                                Math.min(prev + 1, totalPages),
-                              )
-                            }
-                          >
-                            Siguiente
-                          </button>
-                        </li>
-                      </ul>
-                    </nav>
-                  </div>
-                </div>
-              </div>
+          <div className={ContenidoStyle.filterActions}>
+            <select
+              className={ContenidoStyle.filterSelect}
+              value={filtros.estado}
+              onChange={(e) =>
+                setFiltros((prev) => ({
+                  ...prev,
+                  estado: e.target.value,
+                }))
+              }
+            >
+              <option value="">Todos los estados</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+            {(filtros.busqueda || filtros.estado) && (
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={clearFilters}
+              >
+                <i className="fas fa-times"></i> Limpiar
+              </button>
             )}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Componente del formulario modal */}
-      <ParametrosForm
-        modalParametro={modalParametro}
-        editandoId={editandoId}
-        formData={formData}
-        onCerrarModal={handleCerrarModal}
-        onGuardar={handleGuardar}
-        onInputChange={handleInputChange}
-        onInputChangeName={handleInputChangeName}
-        serverError={serverError}
-        onServerErrorClear={() => setServerError(null)}
-      />
+      <div className={TablaStyle.paginationInfoBar}>
+        <div className={TablaStyle.paginationInfo}>
+          Mostrando {startIndex + 1} a{" "}
+          {Math.min(endIndex, currentParametros.length)} de{" "}
+          {currentParametros.length} parámetros
+        </div>
+        <div className={TablaStyle.itemsPerPage}>
+          <label>
+            <strong>Registros por página:</strong>
+          </label>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(parseInt(e.target.value, 10));
+              setCurrentPage(1);
+            }}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
+        </div>
+      </div>
+
+      <div className={TablaStyle.tableContainer}>
+        {currentParametros.length === 0 ? (
+          <div colSpan={12}>
+            <div className={TablaStyle.emptyState}>
+              <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+              <h5>No se encontraron parámetros</h5>
+              <p>No hay parámetros que coincidan con tu búsqueda.</p>
+            </div>
+          </div>
+        ) : (
+          <table className={`${TablaStyle.tableData} table table-striped`}>
+            <thead className={TablaStyle.tableHeaderFixed}>
+              <tr>
+                <th width="2%">#</th>
+                <th width="25%">Nombre</th>
+                <th width="28%">Valor</th>
+                <th width="15%">Tipo</th>
+                <th width="15%">Estado</th>
+                <th width="15%">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentParametros.map((param, index) => (
+                <tr key={param.id_parametro || `param-${index}`}>
+                  <td>
+                    <strong>{param.id_parametro}</strong>
+                  </td>
+                  <td className="fw-500">{param.nombreParametro}</td>
+                  <td>
+                    <code
+                      className={`${ContenidoStyle.badge} bg-warning text-black`}
+                    >
+                      {param.valor}
+                    </code>
+                  </td>
+                  <td>
+                    <span className={`${ContenidoStyle.badge} bg-info`}>
+                      {param.tipoParametro || "Texto"}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`${TablaStyle.statusBadge} ${
+                        param.estado.toLowerCase() === "activo"
+                          ? TablaStyle.activo
+                          : TablaStyle.inactivo
+                      }`}
+                    >
+                      {param.estado}
+                    </span>
+                  </td>
+                  <td>
+                    <div className={TablaStyle.actionButtons}>
+                      <button
+                        className={`${TablaStyle.btnAction} ${TablaStyle.btnView}`}
+                        onClick={() => handleEditar(param)}
+                        title="Editar"
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
+                        onClick={() => handleEliminar(param)}
+                        title="Eliminar"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className={TablaStyle.pagination}>
+            <button
+              className={TablaStyle.paginationButton}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+            {getPaginationNumbers().map((page) => (
+              <button
+                key={page}
+                className={`${TablaStyle.paginationButton} ${currentPage === page ? TablaStyle.active : ""}`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              className={TablaStyle.paginationButton}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Modal para crear nuevo parametros */}
+      {showModal &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-user-plus me-2"></i>
+                    Nuevo Parámetro
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={handleCerrarModal}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <ParametrosForm
+                    modalParametro={modalParametro}
+                    editandoId={editandoId}
+                    formData={formData}
+                    onCerrarModal={handleCerrarModal}
+                    onGuardar={handleGuardar}
+                    onInputChange={handleInputChange}
+                    onInputChangeName={handleInputChangeName}
+                    serverError={serverError}
+                    onServerErrorClear={() => setServerError(null)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {showModal &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

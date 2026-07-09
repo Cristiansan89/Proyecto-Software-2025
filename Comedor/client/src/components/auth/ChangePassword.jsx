@@ -1,5 +1,6 @@
 import { useState } from "react";
-import "../../styles/ChangePassword.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 export function ChangePassword({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -81,7 +82,7 @@ export function ChangePassword({ onClose, onSuccess }) {
             currentPassword: formData.currentPassword,
             newPassword: formData.newPassword,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -105,80 +106,106 @@ export function ChangePassword({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="change-password-overlay">
-      <div className="change-password-modal">
-        <div className="change-password-header">
-          <h2>Cambiar Contraseña</h2>
-          <button className="close-btn" onClick={onClose}>
-            &times;
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="change-password-form">
-          <div className="change-password__input-group">
-            <label htmlFor="currentPassword">Contraseña Actual</label>
-            <input
-              type="password"
-              id="currentPassword"
-              name="currentPassword"
-              value={formData.currentPassword}
-              onChange={handleInputChange}
-              placeholder="Ingrese su contraseña actual"
-              disabled={loading}
-            />
+    <div className={`modal fade show d-block ${FormularioStyle.modal}`}>
+      <div className={FormularioStyle.modalDialog}>
+        <div className={FormularioStyle.modalContent}>
+          <div className={FormularioStyle.modalHeader}>
+            <h5 className={FormularioStyle.modalTitle}>
+              <i className="fas fa-lock"></i> Cambiar Contraseña
+            </h5>
+            <button className={FormularioStyle.modalClose} onClick={onClose}>
+              <i className="fas fa-times"></i>
+            </button>
           </div>
 
-          <div className="change-password__input-group">
-            <label htmlFor="newPassword">Nueva Contraseña</label>
-            <input
-              type="password"
-              id="newPassword"
-              name="newPassword"
-              value={formData.newPassword}
-              onChange={handleInputChange}
-              placeholder="Ingrese su nueva contraseña"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="change-password__input-group">
-            <label htmlFor="confirmPassword">Confirmar Nueva Contraseña</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              placeholder="Confirme su nueva contraseña"
-              disabled={loading}
-            />
-          </div>
-
-          {message && (
-            <div className={`message ${isError ? "error" : "success"}`}>
-              {message}
+          <form
+            onSubmit={handleSubmit}
+            className={ComponenteStyle.formFormulario}
+          >
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="currentPassword"
+                className={ComponenteStyle.formLabel}
+              >
+                Contraseña Actual
+              </label>
+              <input
+                type="password"
+                id="currentPassword"
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleInputChange}
+                placeholder="Ingrese su contraseña actual"
+                disabled={loading}
+                className={ComponenteStyle.formControl}
+              />
             </div>
-          )}
 
-          <div className="form-actions">
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-custom btn-primary"
-            >
-              {loading ? "Cambiando..." : "Cambiar Contraseña"}
-            </button>
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="newPassword"
+                className={ComponenteStyle.formLabel}
+              >
+                Nueva Contraseña
+              </label>
+              <input
+                type="password"
+                id="newPassword"
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleInputChange}
+                placeholder="Ingrese su nueva contraseña"
+                disabled={loading}
+                className={ComponenteStyle.formControl}
+              />
+            </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="btn-custom btn-secondary"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="confirmPassword"
+                className={ComponenteStyle.formLabel}
+              >
+                Confirmar Nueva Contraseña
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                placeholder="Confirme su nueva contraseña"
+                disabled={loading}
+                className={ComponenteStyle.formControl}
+              />
+            </div>
+
+            {message && (
+              <div className={`message ${isError ? "error" : "success"}`}>
+                {message}
+              </div>
+            )}
+
+            <div className={ComponenteStyle.formActions}>
+              <button
+                dddd
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+              >
+                <i className="fas fa-times"></i> Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+              >
+                <i className="fas fa-save"></i>
+                {loading ? "Cambiando..." : "Cambiar Contraseña"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

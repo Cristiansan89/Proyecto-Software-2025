@@ -10,6 +10,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -49,7 +50,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
     if (!formData.idTurno) return;
 
     const turnoSeleccionado = turnos.find(
-      (t) => t.idTurno === parseInt(formData.idTurno)
+      (t) => t.idTurno === parseInt(formData.idTurno),
     );
     if (!turnoSeleccionado) return;
 
@@ -91,7 +92,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
       showError(
         "Error",
         "Error al asignar el turno: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
       );
     }
   };
@@ -105,7 +106,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
       "Desasignar Turno",
       "¿Está seguro de que desea quitar este turno del servicio?",
       "Sí, desasignar",
-      "Cancelar"
+      "Cancelar",
     );
 
     // 2. Si el usuario confirma, procedemos
@@ -122,7 +123,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
         showError(
           "Error",
           "Error al desasignar el turno: " +
-            (error.response?.data?.message || error.message)
+            (error.response?.data?.message || error.message),
         );
       }
     }
@@ -151,7 +152,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
     if (name === "nombre" || name === "descripcion") {
       const shouldMostrarTurnos = checkMostrarTurnos(
         name === "nombre" ? value : newFormData.nombre,
-        name === "descripcion" ? value : newFormData.descripcion
+        name === "descripcion" ? value : newFormData.descripcion,
       );
       setMostrarTurnos(shouldMostrarTurnos);
     }
@@ -227,16 +228,12 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
       } else {
         savedServicio = await servicioService.update(
           servicio.idServicio,
-          servicioData
+          servicioData,
         );
       }
 
       onSave(savedServicio);
     } catch (error) {
-      console.error("Error completo:", error);
-      console.error("Error response data:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-
       let errorMessage = "";
 
       // Intentar extraer el mensaje de error de diferentes estructuras
@@ -250,8 +247,6 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
         errorMessage = error.message;
       }
 
-      console.log("Mensaje de error extraído:", errorMessage);
-
       // Verificar si es un error de duplicidad
       if (
         errorMessage.toLowerCase().includes("existe") &&
@@ -262,7 +257,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
         setServerError(errorMessage);
       } else {
         setServerError(
-          "Error al guardar el servicio. Por favor, inténtelo de nuevo."
+          "Error al guardar el servicio. Por favor, inténtelo de nuevo.",
         );
       }
     } finally {
@@ -289,7 +284,7 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
       // Verificar si se deben mostrar los turnos al cargar
       const shouldMostrarTurnos = checkMostrarTurnos(
         newFormData.nombre,
-        newFormData.descripcion
+        newFormData.descripcion,
       );
       setMostrarTurnos(shouldMostrarTurnos);
 
@@ -305,272 +300,277 @@ const ServicioForm = ({ servicio, mode, onSave, onCancel }) => {
   }, [servicio, mode]);
 
   return (
-    <div className="servicio-form">
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          {/* Información del Servicio */}
-          <div>
-            <h5 className="section-title">Información del Servicio</h5>
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>
+        Información del Servicio
+      </h4>
 
-            <div className="form-group">
-              <label htmlFor="nombre" className="form-label required mt-3">
-                Nombre del Servicio
-              </label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                className={`form-control ${errors.nombre ? "is-invalid" : ""}`}
-                value={formData.nombre}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-                placeholder="Ej: Desayuno, Almuerzo, Merienda"
-                maxLength="100"
-              />
-              {errors.nombre && (
-                <div className="invalid-feedback">{errors.nombre}</div>
-              )}
-            </div>
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="nombre"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          Nombre del Servicio
+        </label>
+        <input
+          type="text"
+          id="nombre"
+          name="nombre"
+          className={`${ComponenteStyle.formControl} ${errors.nombre ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.nombre}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+          placeholder="Ej: Desayuno, Almuerzo, Merienda"
+          maxLength="100"
+        />
+        {errors.nombre && (
+          <div className={ComponenteStyle.invalidFeedback}>{errors.nombre}</div>
+        )}
+      </div>
 
-            <div className="form-group">
-              <label htmlFor="descripcion" className="form-label required mt-3">
-                Descripción
-              </label>
-              <textarea
-                id="descripcion"
-                name="descripcion"
-                className={`form-control ${
-                  errors.descripcion ? "is-invalid" : ""
-                }`}
-                value={formData.descripcion}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-                placeholder="Describe brevemente el servicio"
-                rows="3"
-                maxLength="100"
-              />
-              {errors.descripcion && (
-                <div className="invalid-feedback">{errors.descripcion}</div>
-              )}
-              <small className="form-text text-muted">
-                {formData.descripcion.length}/100 caracteres
-              </small>
-            </div>
-
-            {/* Gestión de Turnos */}
-            {(mostrarTurnos || mode !== "create") && (
-              <div className="form-group">
-                <label className="form-label mt-3">
-                  <i className="fas fa-clock me-2"></i>
-                  Gestión de Turnos
-                  {isCreateMode && <span className="text-danger ms-1">*</span>}
-                </label>
-
-                {/* Mostrar mensaje de error si no hay turnos en modo create */}
-                {errors.turnos && (
-                  <div className="alert alert-danger mt-2 mb-3">
-                    <i className="fas fa-exclamation-circle me-2"></i>
-                    {errors.turnos}
-                  </div>
-                )}
-
-                {/* Mostrar turnos ya asignados o seleccionados */}
-                {((mode !== "create" && turnosAsignados.length > 0) ||
-                  (mode === "create" && turnosSeleccionados.length > 0)) && (
-                  <div className="mb-3">
-                    <h6>
-                      {mode === "create"
-                        ? "Turnos Seleccionados:"
-                        : "Turnos Asignados:"}
-                    </h6>
-                    <div className="row">
-                      {(mode === "create"
-                        ? turnosSeleccionados
-                        : turnosAsignados
-                      ).map((turno) => (
-                        <div key={turno.idTurno} className="col-md-6 mb-2">
-                          <div className="card card-body p-2 d-flex flex-row justify-content-between align-items-center">
-                            <span>
-                              <strong>
-                                {mode === "create"
-                                  ? turno.nombre
-                                  : turno.nombreTurno}
-                              </strong>
-                              <br />
-                              <small className="text-muted">
-                                {turno.horaInicio} - {turno.horaFin}
-                              </small>
-                            </span>
-                            {!isViewMode && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() =>
-                                  mode === "create"
-                                    ? handleQuitarTurnoCreate(turno.idTurno)
-                                    : handleDesasignarTurno(turno.idTurno)
-                                }
-                                title={
-                                  mode === "create"
-                                    ? "Quitar turno"
-                                    : "Desasignar turno"
-                                }
-                              >
-                                <i className="fas fa-times"></i>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Asignar nuevo turno */}
-                {!isViewMode && mostrarTurnos && (
-                  <div className="row">
-                    <div className="col-md-8">
-                      <select
-                        id="idTurno"
-                        name="idTurno"
-                        className="form-control"
-                        value={formData.idTurno}
-                        onChange={handleInputChange}
-                      >
-                        <option value="">
-                          {mode === "create"
-                            ? "Seleccione un turno para agregar"
-                            : "Seleccione un turno para asignar"}
-                        </option>
-                        {turnos
-                          .filter((turno) => {
-                            if (mode === "create") {
-                              return !turnosSeleccionados.some(
-                                (ts) => ts.idTurno === turno.idTurno
-                              );
-                            } else {
-                              return !turnosAsignados.some(
-                                (ta) => ta.idTurno === turno.idTurno
-                              );
-                            }
-                          })
-                          .map((turno) => (
-                            <option key={turno.idTurno} value={turno.idTurno}>
-                              {turno.nombre} ({turno.horaInicio} -{" "}
-                              {turno.horaFin})
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                    <div className="col-md-4">
-                      <button
-                        type="button"
-                        className="btn btn-outline-success"
-                        onClick={
-                          mode === "create"
-                            ? handleAgregarTurnoCreate
-                            : handleAsignarTurno
-                        }
-                        disabled={!formData.idTurno}
-                      >
-                        <i className="fas fa-plus"></i>{" "}
-                        {mode === "create" ? "Agregar" : "Asignar"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {mode === "create" && mostrarTurnos && (
-                  <div className="alert alert-info">
-                    <i className="fas fa-info-circle me-2"></i>
-                    Seleccione los turnos que desea asignar a este servicio. Se
-                    crearán automáticamente al guardar.
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Mensaje cuando no se muestran turnos en modo create */}
-            {mode === "create" && !mostrarTurnos && (
-              <div className="form-group">
-                <label className="form-label mt-3">
-                  <i className="fas fa-clock me-2"></i>
-                  Gestión de Turnos
-                </label>
-                <div className="alert alert-secondary">
-                  <i className="fas fa-info-circle me-2"></i>
-                  Complete el nombre y descripción del servicio para ver los
-                  turnos disponibles.
-                </div>
-              </div>
-            )}
-
-            {/* Estado */}
-            <div className="form-group">
-              <label htmlFor="estado" className="form-label mt-3">
-                Estado
-              </label>
-              <select
-                id="estado"
-                name="estado"
-                className="form-control"
-                value={formData.estado}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-              >
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Mostrar error del servidor (solo para errores que no sean de nombre duplicado) */}
-        {serverError && (
-          <div
-            className="alert alert-danger alert-dismissible fade show mb-3"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error al guardar:</strong>
-            {serverError}
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="descripcion"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          Descripción
+        </label>
+        <textarea
+          id="descripcion"
+          name="descripcion"
+          className={`${ComponenteStyle.formControl} ${errors.descripcion ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.descripcion}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+          placeholder="Describe brevemente el servicio"
+          rows="3"
+          maxLength="100"
+        />
+        {errors.descripcion && (
+          <div className={ComponenteStyle.invalidFeedback}>
+            {errors.descripcion}
           </div>
         )}
+        <small className={`${ComponenteStyle.formText} text-muted`}>
+          {formData.descripcion.length}/100 caracteres
+        </small>
+      </div>
 
-        {/* Botones */}
-        <div className="form-actions mt-4">
-          <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
-            disabled={loading}
-          >
-            <i className="fas fa-times"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
-          </button>
+      {/* Gestión de Turnos */}
+      {(mostrarTurnos || mode !== "create") && (
+        <div className={ComponenteStyle.formGroup}>
+          <label className={ComponenteStyle.formLabel}>
+            <i className="fas fa-clock me-2"></i>
+            Gestión de Turnos
+            {isCreateMode && <span className="text-danger ms-1">*</span>}
+          </label>
 
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary me-2"
-              disabled={loading}
+          {/* Mostrar mensaje de error si no hay turnos en modo create */}
+          {errors.turnos && (
+            <div
+              className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger}`}
             >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  {isCreateMode ? "Crear Servicio" : "Actualizar Servicio"}
-                </>
-              )}
-            </button>
+              <i className="fas fa-exclamation-circle me-2"></i>
+              {errors.turnos}
+            </div>
+          )}
+
+          {/* Mostrar turnos ya asignados o seleccionados */}
+          {((mode !== "create" && turnosAsignados.length > 0) ||
+            (mode === "create" && turnosSeleccionados.length > 0)) && (
+            <div className="mb-3">
+              <h6>
+                {mode === "create"
+                  ? "Turnos Seleccionados:"
+                  : "Turnos Asignados:"}
+              </h6>
+              <div className="row">
+                {(mode === "create"
+                  ? turnosSeleccionados
+                  : turnosAsignados
+                ).map((turno) => (
+                  <div key={turno.idTurno} className="col-md-6 mb-2">
+                    <div className="card card-body p-2 d-flex flex-row justify-content-between align-items-center">
+                      <span>
+                        <strong>
+                          {mode === "create" ? turno.nombre : turno.nombreTurno}
+                        </strong>
+                        <br />
+                        <small className="text-muted">
+                          {turno.horaInicio} - {turno.horaFin}
+                        </small>
+                      </span>
+                      {!isViewMode && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() =>
+                            mode === "create"
+                              ? handleQuitarTurnoCreate(turno.idTurno)
+                              : handleDesasignarTurno(turno.idTurno)
+                          }
+                          title={
+                            mode === "create"
+                              ? "Quitar turno"
+                              : "Desasignar turno"
+                          }
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Asignar nuevo turno */}
+          {!isViewMode && mostrarTurnos && (
+            <div className="row">
+              <div className="col-md-8">
+                <select
+                  id="idTurno"
+                  name="idTurno"
+                  className={ComponenteStyle.formControl}
+                  value={formData.idTurno}
+                  onChange={handleInputChange}
+                >
+                  <option value="">
+                    {mode === "create"
+                      ? "Seleccione un turno para agregar"
+                      : "Seleccione un turno para asignar"}
+                  </option>
+                  {turnos
+                    .filter((turno) => {
+                      if (mode === "create") {
+                        return !turnosSeleccionados.some(
+                          (ts) => ts.idTurno === turno.idTurno,
+                        );
+                      } else {
+                        return !turnosAsignados.some(
+                          (ta) => ta.idTurno === turno.idTurno,
+                        );
+                      }
+                    })
+                    .map((turno) => (
+                      <option key={turno.idTurno} value={turno.idTurno}>
+                        {turno.nombre} ({turno.horaInicio} - {turno.horaFin})
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div className="col-md-4">
+                <button
+                  type="button"
+                  className="btn btn-outline-success"
+                  onClick={
+                    mode === "create"
+                      ? handleAgregarTurnoCreate
+                      : handleAsignarTurno
+                  }
+                  disabled={!formData.idTurno}
+                >
+                  <i className="fas fa-plus"></i>{" "}
+                  {mode === "create" ? "Agregar" : "Asignar"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === "create" && mostrarTurnos && (
+            <div
+              className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo}`}
+            >
+              <i className="fas fa-info-circle me-2"></i>
+              Seleccione los turnos que desea asignar a este servicio. Se
+              crearán automáticamente al guardar.
+            </div>
           )}
         </div>
-      </form>
-    </div>
+      )}
+
+      {/* Mensaje cuando no se muestran turnos en modo create */}
+      {mode === "create" && !mostrarTurnos && (
+        <div className={ComponenteStyle.formGroup}>
+          <label className={ComponenteStyle.formLabel}>
+            <i className="fas fa-clock me-2"></i>
+            Gestión de Turnos
+          </label>
+          <div
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertSecondary}`}
+          >
+            <i className="fas fa-info-circle me-2"></i>
+            Complete el nombre y descripción del servicio para ver los turnos
+            disponibles.
+          </div>
+        </div>
+      )}
+
+      {/* Estado */}
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="estado" className={ComponenteStyle.formLabel}>
+          Estado
+        </label>
+        <select
+          id="estado"
+          name="estado"
+          className={ComponenteStyle.formControl}
+          value={formData.estado}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+        >
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
+
+      {/* Mostrar error del servidor (solo para errores que no sean de nombre duplicado) */}
+      {serverError && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error al guardar:</strong>
+          {serverError}
+        </div>
+      )}
+
+      {/* Botones */}
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
+          <button
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save"></i>
+                {isCreateMode ? "Crear Servicio" : "Actualizar Servicio"}
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </form>
   );
 };
 

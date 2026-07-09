@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
-import "../../styles/Parametros.css";
 import { showWarning } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ParametroStyle from "../../styles/Parametros.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const GeneracionAutomatica = () => {
   const { user } = useAuth();
@@ -189,7 +191,7 @@ const GeneracionAutomatica = () => {
       );
 
       setMensaje({
-        tipo: "success",
+        tipo: "Success",
         texto: "Configuración de generación automática guardada correctamente",
       });
 
@@ -210,6 +212,8 @@ const GeneracionAutomatica = () => {
         texto: "Error al guardar la configuración",
       });
     } finally {
+      // Limpiar mensaje después de 5 segundos
+      setTimeout(() => setMensaje(null), 5000);
       setSaving(false);
     }
   };
@@ -298,195 +302,203 @@ const GeneracionAutomatica = () => {
     return minutos;
   };
 
-
   if (loading) {
     return (
-      <div className="text-center my-4">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Configuración Automática...</p>
       </div>
     );
   }
-
   return (
-    <div className="container-fluid">
-      <form onSubmit={handleGuardar}>
-        {mensaje && (
-          <div
-            className={`alert alert-${mensaje.tipo} alert-dismissible fade show`}
-            role="alert"
-          >
-            {mensaje.texto}
-            <button
-              type="button"
-              className="btn-close"
-              onClick={() => setMensaje(null)}
-            ></button>
-          </div>
-        )}
+    <form onSubmit={handleGuardar}>
+      {mensaje && (
+        <div
+          className={`${ParametroStyle.alert} ${
+            ParametroStyle[
+              `alert${mensaje.tipo.charAt(0).toUpperCase() + mensaje.tipo.slice(1).toLowerCase()}`
+            ]
+          } alert-dismissible fade show mb-3`}
+          role="alert"
+        >
+          {/* Si quieres agregar un icono dinámico según el tipo antes del texto */}
+          <i
+            className={`fas ${
+              mensaje.tipo.toLowerCase() === "success"
+                ? "fa-check-circle"
+                : "fa-exclamation-circle"
+            } me-2`}
+          ></i>
+          {mensaje.texto}
+        </div>
+      )}
 
-               {/* Sección: Finalización Automática */}
-        <div className="card mb-4">
-          <div className="card-header bg-light text-dark">
-            <h5 className="mb-0">
-              <i className="fas fa-calendar-check me-2"></i>
-              Finalización Automática de Planificaciones
-            </h5>
-          </div>
-          <div className="card-body">
-            <div className="mb-3">
-              <div className="form-check">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="finalizacionAutomatica"
-                  checked={configuracion.finalizacionAutomaticaHabilitado}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "finalizacionAutomaticaHabilitado",
-                      e.target.checked,
-                    )
-                  }
-                />
-                <label
-                  className="form-check-label"
-                  htmlFor="finalizacionAutomatica"
-                >
-                  <strong>Habilitar finalización automática</strong> de
-                  planificaciones cuando alcancen su fecha final
-                </label>
-              </div>
-              <small className="text-muted d-block mt-2">
+      {/* Sección: Finalización Automática */}
+      <div className={ParametroStyle.card}>
+        <div className={`${ParametroStyle.cardHeader} bg-light text-dark`}>
+          <h5 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-calendar-check me-2"></i>
+            Finalización Automática de Planificaciones
+          </h5>
+        </div>
+        <div className={ParametroStyle.cardBody}>
+          <div className="col-md-6 mx-3">
+            <div className="form-check form-switch">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="finalizacionAutomatica"
+                checked={configuracion.finalizacionAutomaticaHabilitado}
+                onChange={(e) =>
+                  handleInputChange(
+                    "finalizacionAutomaticaHabilitado",
+                    e.target.checked,
+                  )
+                }
+              />
+              <label
+                className={ParametroStyle.formCheckLabel}
+                htmlFor="finalizacionAutomatica"
+              >
+                <strong>Habilitar finalización automática</strong>
+              </label>
+              <small className="text-muted d-block mt-2 mx-2">
                 Cuando está habilitado, las planificaciones se finalizarán
                 automáticamente en la fecha final a la hora configurada
               </small>
             </div>
-
-            {configuracion.finalizacionAutomaticaHabilitado && (
-              <>
-                <div className="row mb-3">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      <strong>Hora de Finalización</strong>
-                    </label>
-                    <div className="d-flex gap-2 align-items-center">
-                      <select
-                        className="form-select"
-                        style={{ maxWidth: "80px" }}
-                        value={
-                          configuracion.finalizacionAutomaticaHora?.split(
-                            ":",
-                          )[0] || "20"
-                        }
-                        onChange={(e) =>
-                          handleInputChange(
-                            "finalizacionAutomaticaHora",
-                            `${e.target.value}:${
-                              configuracion.finalizacionAutomaticaHora?.split(
-                                ":",
-                              )[1] || "00"
-                            }`,
-                          )
-                        }
-                      >
-                        {obtenerHorasFinalizacion().map((hora) => (
-                          <option key={hora.valor} value={hora.valor}>
-                            {hora.label}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="fw-bold">:</span>
-                      <select
-                        className="form-select"
-                        style={{ maxWidth: "80px" }}
-                        value={
-                          configuracion.finalizacionAutomaticaHora?.split(
-                            ":",
-                          )[1] || "00"
-                        }
-                        onChange={(e) =>
-                          handleInputChange(
-                            "finalizacionAutomaticaHora",
-                            `${
-                              configuracion.finalizacionAutomaticaHora?.split(
-                                ":",
-                              )[0] || "20"
-                            }:${e.target.value}`,
-                          )
-                        }
-                      >
-                        {obtenerMinutosDisponibles().map((minuto) => (
-                          <option key={minuto.valor} value={minuto.valor}>
-                            {minuto.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <small className="text-muted">
-                      Hora a la que se finalizarán las planificaciones
-                    </small>
-                  </div>
-                </div>
-
-                <div className="alert alert-warning">
-                  <i className="fas fa-exclamation-triangle me-2"></i>
-                  <strong>Nota:</strong> La finalización se ejecutará
-                  diariamente a la hora configurada. Si hay una planificación
-                  activa cuya fecha final coincide con el día actual, será
-                  finalizada automáticamente.
-                </div>
-              </>
-            )}
           </div>
-        </div>
 
-        {/* Sección: Generación de Insumos Semanales */}
-        <div className="card mb-4">
-          <div className="card-header bg-light text-dark">
-            <h5 className="mb-0">
-              <i className="fas fa-boxes me-2"></i>
-              Generación Automática de Insumos Semanales
-            </h5>
-          </div>
-          <div className="card-body">
-            <div className="mb-4">
-              <div className="form-check form-switch">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="insumosSemanalesHabilitado"
-                  checked={configuracion.insumosSemanalesHabilitado}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "insumosSemanalesHabilitado",
-                      e.target.checked,
-                    )
-                  }
-                />
-                <label
-                  className="form-check-label"
-                  htmlFor="insumosSemanalesHabilitado"
-                >
-                  <strong>Habilitar Generación Automática de Insumos</strong>
-                  <br />
-                  <small className="text-muted">
-                    Genera automáticamente la lista de insumos en el día y hora
-                    especificada
-                  </small>
-                </label>
-              </div>
-            </div>
-
-            {configuracion.insumosSemanalesHabilitado && (
-              <>
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      <strong>Día de la Semana</strong>
-                    </label>
+          {configuracion.finalizacionAutomaticaHabilitado && (
+            <>
+              <div
+                className={`${ParametroStyle.row} ${ParametroStyle.automatica}`}
+              >
+                <div className="col-md-6 mx-3">
+                  <label className={ParametroStyle.formCheckLabel}>
+                    <strong>Hora de Finalización</strong>
+                  </label>
+                  <div className="d-flex gap-2 align-items-center mt-2 mb-2">
                     <select
-                      className="form-select"
+                      className={ComponenteStyle.formSelect}
+                      style={{ maxWidth: "80px" }}
+                      value={
+                        configuracion.finalizacionAutomaticaHora?.split(
+                          ":",
+                        )[0] || "20"
+                      }
+                      onChange={(e) =>
+                        handleInputChange(
+                          "finalizacionAutomaticaHora",
+                          `${e.target.value}:${
+                            configuracion.finalizacionAutomaticaHora?.split(
+                              ":",
+                            )[1] || "00"
+                          }`,
+                        )
+                      }
+                    >
+                      {obtenerHorasFinalizacion().map((hora) => (
+                        <option key={hora.valor} value={hora.valor}>
+                          {hora.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="fw-bold">:</span>
+                    <select
+                      className={ComponenteStyle.formSelect}
+                      style={{ maxWidth: "80px" }}
+                      value={
+                        configuracion.finalizacionAutomaticaHora?.split(
+                          ":",
+                        )[1] || "00"
+                      }
+                      onChange={(e) =>
+                        handleInputChange(
+                          "finalizacionAutomaticaHora",
+                          `${
+                            configuracion.finalizacionAutomaticaHora?.split(
+                              ":",
+                            )[0] || "20"
+                          }:${e.target.value}`,
+                        )
+                      }
+                    >
+                      {obtenerMinutosDisponibles().map((minuto) => (
+                        <option key={minuto.valor} value={minuto.valor}>
+                          {minuto.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <small className="text-muted">
+                    Hora a la que se finalizarán las planificaciones
+                  </small>
+                </div>
+              </div>
+
+              <div
+                className={`${ParametroStyle.alert} ${ParametroStyle.alertWarning} mt-3`}
+              >
+                <i className="fas fa-exclamation-triangle me-2"></i>
+                <strong>Nota:</strong> La finalización se ejecutará diariamente
+                a la hora configurada. Si hay una planificación activa cuya
+                fecha final coincide con el día actual, será finalizada
+                automáticamente.
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Sección: Generación de Insumos Semanales */}
+      <div className={`${ParametroStyle.card}`}>
+        <div className={`${ParametroStyle.cardHeader} bg-light text-dark`}>
+          <h5 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-boxes me-2"></i>
+            Generación Automática de Insumos Semanales
+          </h5>
+        </div>
+        <div className={`${ParametroStyle.cardBody}`}>
+          <div className="form-check form-switch mx-3">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="insumosSemanalesHabilitado"
+              checked={configuracion.insumosSemanalesHabilitado}
+              onChange={(e) =>
+                handleInputChange(
+                  "insumosSemanalesHabilitado",
+                  e.target.checked,
+                )
+              }
+            />
+            <label
+              className={ParametroStyle.formCheckLabel}
+              htmlFor="insumosSemanalesHabilitado"
+            >
+              <strong>Habilitar Generación Automática de Insumos</strong>
+              <br />
+              <small className="text-muted">
+                Genera automáticamente la lista de insumos en el día y hora
+                especificada
+              </small>
+            </label>
+          </div>
+
+          {configuracion.insumosSemanalesHabilitado && (
+            <>
+              <div
+                className={`${ParametroStyle.row} ${ParametroStyle.automatica}`}
+              >
+                <div className="col-md-5 mx-3">
+                  <label className={ParametroStyle.formCheckLabel}>
+                    <strong>Día de la Semana</strong>
+                  </label>
+                  <div className="mx-2 mt-2">
+                    <select
+                      style={{ maxWidth: "130px" }}
+                      className={ComponenteStyle.formSelect}
                       value={configuracion.insumosSemanalesDia}
                       onChange={(e) =>
                         handleInputChange("insumosSemanalesDia", e.target.value)
@@ -498,18 +510,22 @@ const GeneracionAutomatica = () => {
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div className="mx-2 mt-2">
                     <small className="text-muted">
                       Día en que se generarán los insumos
                     </small>
                   </div>
+                </div>
 
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      <strong>Hora</strong>
-                    </label>
+                <div className="col-md-5 mx-3">
+                  <label className={ParametroStyle.formCheckLabel}>
+                    <strong>Hora</strong>
+                  </label>
+                  <div className="mx-2 mt-2">
                     <div className="d-flex gap-2 align-items-center">
                       <select
-                        className="form-select"
+                        className={ComponenteStyle.formSelect}
                         style={{ maxWidth: "80px" }}
                         value={
                           configuracion.insumosSemanalesHora?.split(":")[0] ||
@@ -536,8 +552,8 @@ const GeneracionAutomatica = () => {
                       <span className="fw-bold">:</span>
 
                       <select
-                        className="form-select"
                         style={{ maxWidth: "80px" }}
+                        className={ComponenteStyle.formSelect}
                         value={
                           configuracion.insumosSemanalesHora?.split(":")[1] ||
                           "00"
@@ -560,98 +576,103 @@ const GeneracionAutomatica = () => {
                         ))}
                       </select>
                     </div>
-
+                  </div>
+                  <div className="mx-2 mt-2">
                     <small className="text-muted">
                       Hora en la que se ejecutará la generación (formato 24h)
                     </small>
                   </div>
                 </div>
-
-                <div className="mb-3">
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="insumosNotificacion"
-                      checked={configuracion.insumosSemanalesNotificacion}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "insumosSemanalesNotificacion",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <label
-                      className="form-check-label"
-                      htmlFor="insumosNotificacion"
-                    >
-                      <strong>Enviar notificación</strong> cuando se generen los
-                      insumos
-                    </label>
-                  </div>
-                </div>
-
-                <div className="alert alert-info">
-                  <i className="fas fa-info-circle me-2"></i>
-                  <strong>Próxima ejecución:</strong>{" "}
-                  {
-                    diasSemana.find(
-                      (d) => d.valor === configuracion.insumosSemanalesDia,
-                    )?.label
-                  }{" "}
-                  a las {configuracion.insumosSemanalesHora}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Sección: Generación de Pedidos Automáticos */}
-        <div className="card mb-4">
-          <div className="card-header bg-light text-dark">
-            <h5 className="mb-0">
-              <i className="fas fa-shopping-cart me-2"></i>
-              Generación Automática de Pedidos
-            </h5>
-          </div>
-          <div className="card-body">
-            <div className="mb-4">
-              <div className="form-check form-switch">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="pedidosAutomaticosHabilitado"
-                  checked={configuracion.pedidosAutomaticosHabilitado}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "pedidosAutomaticosHabilitado",
-                      e.target.checked,
-                    )
-                  }
-                />
-                <label
-                  className="form-check-label"
-                  htmlFor="pedidosAutomaticosHabilitado"
-                >
-                  <strong>Habilitar Generación Automática de Pedidos</strong>
-                  <br />
-                  <small className="text-muted">
-                    Genera automáticamente pedidos basados en los insumos
-                    requeridos
-                  </small>
-                </label>
               </div>
-            </div>
 
-            {configuracion.pedidosAutomaticosHabilitado && (
-              <>
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      <strong>Día de la Semana</strong>
-                    </label>
+              <div className="mb-3 mt-4 mx-2">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="insumosNotificacion"
+                    checked={configuracion.insumosSemanalesNotificacion}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "insumosSemanalesNotificacion",
+                        e.target.checked,
+                      )
+                    }
+                  />
+                  <label
+                    className={ParametroStyle.formCheckLabel}
+                    htmlFor="insumosNotificacion"
+                  >
+                    <strong>Enviar notificación</strong> cuando se generen los
+                    insumos
+                  </label>
+                </div>
+              </div>
+
+              <div
+                className={`${ParametroStyle.alert} ${ParametroStyle.alertInfo} mt-3`}
+              >
+                <i className="fas fa-info-circle me-2"></i>
+                <strong>Próxima ejecución:</strong>{" "}
+                {
+                  diasSemana.find(
+                    (d) => d.valor === configuracion.insumosSemanalesDia,
+                  )?.label
+                }{" "}
+                a las {configuracion.insumosSemanalesHora}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Sección: Generación de Pedidos Automáticos */}
+      <div className={`${ParametroStyle.card}`}>
+        <div className={`${ParametroStyle.cardHeader} bg-light text-dark`}>
+          <h5 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-shopping-cart me-2"></i>
+            Generación Automática de Pedidos
+          </h5>
+        </div>
+        <div className={`${ParametroStyle.cardBody}`}>
+          <div className="form-check form-switch mx-3">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id="pedidosAutomaticosHabilitado"
+              checked={configuracion.pedidosAutomaticosHabilitado}
+              onChange={(e) =>
+                handleInputChange(
+                  "pedidosAutomaticosHabilitado",
+                  e.target.checked,
+                )
+              }
+            />
+            <label
+              className={ParametroStyle.formCheckLabel}
+              htmlFor="pedidosAutomaticosHabilitado"
+            >
+              <strong>Habilitar Generación Automática de Pedidos</strong>
+              <br />
+              <small className="text-muted">
+                Genera automáticamente pedidos basados en los insumos requeridos
+              </small>
+            </label>
+          </div>
+
+          {configuracion.pedidosAutomaticosHabilitado && (
+            <>
+              <div
+                className={`${ParametroStyle.row} ${ParametroStyle.automatica}`}
+              >
+                <div className="col-md-5 mx-3">
+                  <label className={ParametroStyle.formCheckLabel}>
+                    <strong>Día de la Semana</strong>
+                  </label>
+                  <div className="mx-2 mt-2">
                     <select
-                      className="form-select"
+                      style={{ maxWidth: "130px" }}
+                      className={ComponenteStyle.formSelect}
                       value={configuracion.pedidosAutomaticosDia}
                       onChange={(e) =>
                         handleInputChange(
@@ -666,18 +687,22 @@ const GeneracionAutomatica = () => {
                         </option>
                       ))}
                     </select>
+                  </div>{" "}
+                  <div className="mx-2 mt-2">
                     <small className="text-muted">
                       Día en que se generarán los pedidos
                     </small>
                   </div>
+                </div>
 
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      <strong>Hora</strong>
-                    </label>
+                <div className="col-md-5 mx-3">
+                  <label className={ParametroStyle.formCheckLabel}>
+                    <strong>Hora</strong>
+                  </label>
+                  <div className="mt-2 mx-2">
                     <div className="d-flex gap-2 align-items-center">
                       <select
-                        className="form-select"
+                        className={ComponenteStyle.formSelect}
                         style={{ maxWidth: "80px" }}
                         value={
                           configuracion.pedidosAutomaticosHora?.split(":")[0] ||
@@ -702,7 +727,7 @@ const GeneracionAutomatica = () => {
                       </select>
                       <span className="fw-bold">:</span>
                       <select
-                        className="form-select"
+                        className={ComponenteStyle.formSelect}
                         style={{ maxWidth: "80px" }}
                         value={
                           configuracion.pedidosAutomaticosHora?.split(":")[1] ||
@@ -726,20 +751,29 @@ const GeneracionAutomatica = () => {
                         ))}
                       </select>
                     </div>
+                  </div>
+                  <div className="mx-2 mt-2">
                     <small className="text-muted">
                       Hora en la que se ejecutará la generación
                     </small>
                   </div>
                 </div>
+              </div>
 
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label htmlFor="cantidadReintentos" className="form-label">
-                      <strong>Cantidad de Reintentos</strong>
-                    </label>
+              <div
+                className={`${ParametroStyle.row} ${ParametroStyle.automatica}`}
+              >
+                <div className="col-md-5 mx-3">
+                  <label
+                    htmlFor="cantidadReintentos"
+                    className={ParametroStyle.formCheckLabel}
+                  >
+                    <strong>Cantidad de Reintentos</strong>
+                  </label>
+                  <div className="mx-2 mt-2">
                     <input
                       type="number"
-                      className="form-control"
+                      className={ParametroStyle.formControl}
                       id="cantidadReintentos"
                       min="1"
                       max="10"
@@ -751,18 +785,25 @@ const GeneracionAutomatica = () => {
                         )
                       }
                     />
+                  </div>{" "}
+                  <div className="mx-2 mt-2">
                     <small className="text-muted">
                       Número de veces que se reintentará si falla
                     </small>
                   </div>
+                </div>
 
-                  <div className="col-md-6">
-                    <label htmlFor="intervaloReintentos" className="form-label">
-                      <strong>Intervalo entre Reintentos (minutos)</strong>
-                    </label>
+                <div className="col-md-5 mx-3">
+                  <label
+                    htmlFor="intervaloReintentos"
+                    className={ParametroStyle.formCheckLabel}
+                  >
+                    <strong>Intervalo entre Reintentos (minutos)</strong>
+                  </label>
+                  <div className="mx-2 mt-2">
                     <input
                       type="number"
-                      className="form-control"
+                      className={ParametroStyle.formControl}
                       id="intervaloReintentos"
                       min="1"
                       max="60"
@@ -774,66 +815,71 @@ const GeneracionAutomatica = () => {
                         )
                       }
                     />
+                  </div>
+                  <div className="mx-2 mt-2">
                     <small className="text-muted">
                       Minutos de espera entre cada reintento
                     </small>
                   </div>
                 </div>
+              </div>
 
-                <div className="mb-3">
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="pedidosNotificacion"
-                      checked={configuracion.pedidosAutomaticosNotificacion}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "pedidosAutomaticosNotificacion",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <label
-                      className="form-check-label"
-                      htmlFor="pedidosNotificacion"
-                    >
-                      <strong>Enviar notificación</strong> cuando se generen los
-                      pedidos
-                    </label>
-                  </div>
+              <div className="mb-3 mt-4 mx-2">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="pedidosNotificacion"
+                    checked={configuracion.pedidosAutomaticosNotificacion}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "pedidosAutomaticosNotificacion",
+                        e.target.checked,
+                      )
+                    }
+                  />
+                  <label
+                    className={ParametroStyle.formCheckLabel}
+                    htmlFor="pedidosNotificacion"
+                  >
+                    <strong>Enviar notificación</strong> cuando se generen los
+                    pedidos
+                  </label>
                 </div>
+              </div>
 
-                <div className="alert alert-info">
-                  <i className="fas fa-info-circle me-2"></i>
-                  <strong>Próxima ejecución:</strong>{" "}
-                  {
-                    diasSemana.find(
-                      (d) => d.valor === configuracion.pedidosAutomaticosDia,
-                    )?.label
-                  }{" "}
-                  a las {configuracion.pedidosAutomaticosHora}
-                </div>
-              </>
-            )}
-          </div>
+              <div
+                className={`${ParametroStyle.alert} ${ParametroStyle.alertSuccess} mt-3`}
+              >
+                <i className="fas fa-info-circle me-2"></i>
+                <strong>Próxima ejecución:</strong>{" "}
+                {
+                  diasSemana.find(
+                    (d) => d.valor === configuracion.pedidosAutomaticosDia,
+                  )?.label
+                }{" "}
+                a las {configuracion.pedidosAutomaticosHora}
+              </div>
+            </>
+          )}
         </div>
+      </div>
 
-        <div className="card mb-4 bg-light">
-          <div className="card-header bg-light">
-            <h5 className="mb-0">
-              <i className="fas fa-list-check me-2"></i>
-              Resumen de Configuración
-            </h5>
-          </div>
-          <div className="card-body">
-            <div className="row">
-              <div className="col-md-4">
-                <div className="mb-2">
-                  <strong>Finalización Automática:</strong>
-                  <br />
+      <div className={`${ParametroStyle.card}`}>
+        <div className={`${ParametroStyle.cardHeader} bg-light text-dark`}>
+          <h5 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-list-check me-2"></i>
+            Resumen de Configuración
+          </h5>
+        </div>
+        <div className={`${ParametroStyle.cardBody}`}>
+          <div className={`${ParametroStyle.row} ${ParametroStyle.automatica}`}>
+            <div className="col-md-4">
+              <div className="mb-2">
+                <strong>Finalización Automática</strong>
+                <div className="mt-3">
                   <span
-                    className={`badge ${
+                    className={`${ParametroStyle.badge} ${
                       configuracion.finalizacionAutomaticaHabilitado
                         ? "bg-success"
                         : "bg-danger"
@@ -843,24 +889,25 @@ const GeneracionAutomatica = () => {
                       ? "Habilitado"
                       : "Deshabilitado"}
                   </span>
-                  {configuracion.finalizacionAutomaticaHabilitado && (
-                    <div className="small mt-2">
-                      🕐 {configuracion.finalizacionAutomaticaHora}
-                      <br />
-                      <span className="text-muted">
-                        Diariamente en la hora indicada
-                      </span>
-                    </div>
-                  )}
                 </div>
+                {configuracion.finalizacionAutomaticaHabilitado && (
+                  <div className="small mt-3">
+                    🕐 {configuracion.finalizacionAutomaticaHora}
+                    <br />
+                    <span className="text-muted">
+                      Diariamente en la hora indicada
+                    </span>
+                  </div>
+                )}
               </div>
+            </div>
 
-              <div className="col-md-4">
-                <div className="mb-2">
-                  <strong>Insumos Semanales:</strong>
-                  <br />
+            <div className="col-md-4">
+              <div className="mb-2">
+                <strong>Insumos Semanales</strong>
+                <div className="mt-3">
                   <span
-                    className={`badge ${
+                    className={`${ParametroStyle.badge} ${
                       configuracion.insumosSemanalesHabilitado
                         ? "bg-success"
                         : "bg-danger"
@@ -870,27 +917,28 @@ const GeneracionAutomatica = () => {
                       ? "Habilitado"
                       : "Deshabilitado"}
                   </span>
-                  {configuracion.insumosSemanalesHabilitado && (
-                    <div className="small mt-2">
-                      📅{" "}
-                      {
-                        diasSemana.find(
-                          (d) => d.valor === configuracion.insumosSemanalesDia,
-                        )?.label
-                      }
-                      <br />
-                      🕐 {configuracion.insumosSemanalesHora}
-                    </div>
-                  )}
                 </div>
+                {configuracion.insumosSemanalesHabilitado && (
+                  <div className="small mt-3">
+                    📅{" "}
+                    {
+                      diasSemana.find(
+                        (d) => d.valor === configuracion.insumosSemanalesDia,
+                      )?.label
+                    }
+                    <br />
+                    🕐 {configuracion.insumosSemanalesHora}
+                  </div>
+                )}
               </div>
+            </div>
 
-              <div className="col-md-4">
-                <div className="mb-2">
-                  <strong>Pedidos Automáticos:</strong>
-                  <br />
+            <div className="col-md-4">
+              <div className="mb-2">
+                <strong>Pedidos Automáticos</strong>
+                <div className="mt-3">
                   <span
-                    className={`badge ${
+                    className={`${ParametroStyle.badge} ${
                       configuracion.pedidosAutomaticosHabilitado
                         ? "bg-success"
                         : "bg-danger"
@@ -900,50 +948,49 @@ const GeneracionAutomatica = () => {
                       ? "Habilitado"
                       : "Deshabilitado"}
                   </span>
-                  {configuracion.pedidosAutomaticosHabilitado && (
-                    <div className="small mt-2">
-                      📅{" "}
-                      {
-                        diasSemana.find(
-                          (d) =>
-                            d.valor === configuracion.pedidosAutomaticosDia,
-                        )?.label
-                      }
-                      <br />
-                      🕐 {configuracion.pedidosAutomaticosHora}
-                      <br />
-                      🔄 {configuracion.cantidadReintentosPedidos} reintentos
-                      cada {configuracion.intervaloReintentosPedidos} min
-                    </div>
-                  )}
                 </div>
+                {configuracion.pedidosAutomaticosHabilitado && (
+                  <div className="small mt-3">
+                    📅{" "}
+                    {
+                      diasSemana.find(
+                        (d) => d.valor === configuracion.pedidosAutomaticosDia,
+                      )?.label
+                    }
+                    <br />
+                    🕐 {configuracion.pedidosAutomaticosHora}
+                    <br />
+                    🔄 {configuracion.cantidadReintentosPedidos} reintentos cada{" "}
+                    {configuracion.intervaloReintentosPedidos} min
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Botones de acción */}
-        <div className="form-actions">
-          <button
-            type="submit"
-            className="btn btn-primary me-2"
-            disabled={saving}
-          >
-            <i className="fas fa-save"></i>
-            {saving ? "Guardando..." : "Guardar Configuración"}
-          </button>
-          <button
-            type="button"
-            className="btn btn-warning"
-            onClick={() => cargarConfiguracion()}
-            disabled={saving}
-          >
-            <i className="fas fa-redo"></i>
-            Recargar
-          </button>
-        </div>
-      </form>
-    </div>
+      {/* Botones de acción */}
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel} `}
+          onClick={() => cargarConfiguracion()}
+          disabled={saving}
+        >
+          <i className="fas fa-redo"></i>
+          Recargar
+        </button>
+        <button
+          type="submit"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate} `}
+          disabled={saving}
+        >
+          <i className="fas fa-save"></i>
+          {saving ? "Guardando..." : "Guardar"}
+        </button>
+      </div>
+    </form>
   );
 };
 

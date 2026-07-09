@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',
   plugins: [react()],
   server: {
     host: "0.0.0.0", // Escuchar en todas las interfaces
@@ -13,7 +14,8 @@ export default defineConfig({
       "127.0.0.1",
       // "spleeny-slouchily-brenda.ngrok-free.dev",
       //"vincent-intercalary-unhealthily.ngrok-free.dev",
-      "gift-emission-hurled.ngrok-free.dev"
+      //"gift-emission-hurled.ngrok-free.dev",
+      "lushly-tabby-craftwork.ngrok-free.dev"
     ],
     // Headers para evitar caché a través de ngrok
     headers: {
@@ -26,6 +28,7 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
+        secure: false,
         rewrite: (path) => path,
       },
     },

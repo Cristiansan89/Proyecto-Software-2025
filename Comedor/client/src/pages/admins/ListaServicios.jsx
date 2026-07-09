@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import ServicioForm from "../../components/admin/ServicioForm";
 import servicioService from "../../services/servicioService";
 import servicioTurnoService from "../../services/servicioTurnoService";
@@ -11,16 +12,19 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const ListaServicios = () => {
   const [servicios, setServicios] = useState([]);
   const [servicioTurnos, setServicioTurnos] = useState({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState("create"); // 'create', 'edit', 'view'
+  const [modalMode, setModalMode] = useState("create");
   const [selectedServicio, setSelectedServicio] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
+  const [statusFilter, setStatusFilter] = useState("");
 
   // Cargar servicios al montar el componente
   useEffect(() => {
@@ -70,7 +74,7 @@ const ListaServicios = () => {
       servicio.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       servicio.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "todos" || servicio.estado === statusFilter;
+      statusFilter === "" || servicio.estado === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -182,225 +186,254 @@ const ListaServicios = () => {
     setSelectedServicio(null);
   };
 
+  const handleSearchTerm = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleStatusFilter = (e) => {
+    setStatusFilter(e.target.value);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
+  };
+
   if (loading) {
     return (
-      <div className="loading-spinner">
+      <div className={ContenidoStyle.loadingContainer}>
         <i className="fas fa-spinner fa-spin"></i>
-        <p>Cargando servicios...</p>
+        <p>Cargando Servicios...</p>
       </div>
     );
   }
 
   return (
-    <div className="servicios-container mt-1">
-      <div>
-        <div className="page-header mb-3">
-          <div className="header-left">
-            <h2 className="page-title-sub">Gestionar Servicios</h2>
-          </div>
-          <div className="header-actions">
-            <button className="btn btn-primary-new" onClick={handleCreate}>
-              <i className="fas fa-plus"></i>
-              Nuevo Servicio
-            </button>
-          </div>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h2 className={ContenidoStyle.pageTitle}>Gestionar Servicios</h2>
         </div>
-
-        {/* Filtros */}
-        <div className="page-header mb-3">
-          <div className="header-left">
-            <div className="search-filters">
-              <div className="search-bar">
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Buscar servicios..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="filter-actions">
-                <select
-                  className="filter-select"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="todos">Todos los estados</option>
-                  <option value="Activo">Activos</option>
-                  <option value="Inactivo">Inactivos</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabla de servicios */}
-        <div className="table-container">
-          {filteredServicios.length === 0 ? (
-            <div colSpan={12}>
-              <div className="empty-state">
-                <i className="fas fa-search empty-icon"></i>
-                <h5>No se encontraron servicios</h5>
-                <p>No hay servicios que coincidan con tu búsqueda.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="scrollable-table">
-              <div className="table-body-scroll">
-                <table className="table table-striped data-table">
-                  <thead className="table-header-fixed">
-                    <tr>
-                      <th>#</th>
-                      <th>Nombre</th>
-                      <th>Descripción</th>
-                      <th>Turno</th>
-                      <th>Estado</th>
-                      <th>Fecha Alta</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedServicios.map((servicio) => (
-                      <tr key={servicio.idServicio}>
-                        <td>
-                          <strong>{servicio.idServicio}</strong>
-                        </td>
-                        <td>
-                          <div className="servicio-name">
-                            <i className="fas fa-utensils"></i>
-                            <strong>{servicio.nombre}</strong>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="servicio-description">
-                            {servicio.descripcion}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="servicio-turno">
-                            {servicioTurnos[servicio.idServicio] &&
-                            servicioTurnos[servicio.idServicio].length > 0 ? (
-                              <div className="turnos-list">
-                                {servicioTurnos[servicio.idServicio].map(
-                                  (turno) => (
-                                    <span
-                                      key={turno.idTurno}
-                                      className="turno-badge"
-                                      title={`${turno.nombreTurno}: ${turno.horaInicio} - ${turno.horaFin}`}
-                                    >
-                                      {turno.nombreTurno}
-                                    </span>
-                                  ),
-                                )}
-                              </div>
-                            ) : (
-                              <span className="no-turnos">
-                                Sin turnos asignados
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <span
-                            className={`status-badge ${servicio.estado.toLowerCase()}`}
-                          >
-                            {servicio.estado}
-                          </span>
-                        </td>
-                        <td>
-                          {servicio.fechaAlta
-                            ? new Date(servicio.fechaAlta).toLocaleDateString()
-                            : "-"}
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              className="btn-action btn-view"
-                              onClick={() => handleView(servicio)}
-                              title="Ver detalles"
-                            >
-                              <i className="fas fa-eye"></i>
-                            </button>
-                            <button
-                              className="btn-action btn-edit"
-                              onClick={() => handleEdit(servicio)}
-                              title="Editar"
-                            >
-                              <i className="fas fa-edit"></i>
-                            </button>
-                            <button
-                              className="btn-action btn-delete"
-                              onClick={() => handleDelete(servicio)}
-                              title="Eliminar"
-                            >
-                              <i className="fas fa-trash"></i>
-                            </button>
-                            <button
-                              className={`btn-action ${
-                                servicio.estado === "Activo"
-                                  ? "btn-delete"
-                                  : "btn-assign"
-                              }`}
-                              onClick={() =>
-                                handleChangeStatus(
-                                  servicio,
-                                  servicio.estado === "Activo"
-                                    ? "Inactivo"
-                                    : "Activo",
-                                )
-                              }
-                              title={
-                                servicio.estado === "Activo"
-                                  ? "Desactivar"
-                                  : "Activar"
-                              }
-                            >
-                              <i
-                                className={`fas ${
-                                  servicio.estado === "Activo"
-                                    ? "fa-times"
-                                    : "fa-check"
-                                }`}
-                              ></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+        <div className={ContenidoStyle.headerActions}>
+          <button
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
+            onClick={handleCreate}
+          >
+            <i className="fas fa-plus me-1"></i>
+            Nuevo Servicio
+          </button>
         </div>
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content configuracion-modal">
-            <div className="modal-header">
-              <h4>
-                <i className="fas fa-utensils me-2"></i>
-                {modalMode === "create" && "Crear Nuevo Servicio"}
-                {modalMode === "edit" && "Editar Servicio"}
-                {modalMode === "view" && "Ver Servicio"}
-              </h4>
-              <button className="modal-close" onClick={handleCancel}>
-                <i className="fas fa-times"></i>
+      {/* Filtros */}
+      <div className={ContenidoStyle.headerLeft}>
+        <div className={ContenidoStyle.searchFilters}>
+          <div className={ContenidoStyle.searchBar}>
+            <input
+              type="text"
+              className={ContenidoStyle.searchInput}
+              placeholder="Buscar servicios..."
+              value={searchTerm}
+              onChange={handleSearchTerm}
+            />
+          </div>
+          <div className={ContenidoStyle.filterActions}>
+            <select
+              className={ContenidoStyle.filterSelect}
+              value={statusFilter}
+              onChange={handleStatusFilter}
+            >
+              <option value="">Todos los estados</option>
+              <option value="Activo">Activos</option>
+              <option value="Inactivo">Inactivos</option>
+            </select>
+            {(searchTerm || statusFilter) && (
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={clearFilters}
+              >
+                <i className="fas fa-times"></i> Limpiar
               </button>
-            </div>
-            <div className="modal-body">
-              <ServicioForm
-                servicio={selectedServicio}
-                mode={modalMode}
-                onSave={handleSave}
-                onCancel={handleCancel}
-              />
-            </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Tabla de servicios */}
+      <div className={TablaStyle.tableContainer}>
+        {filteredServicios.length === 0 ? (
+          <div colSpan={12}>
+            <div className={TablaStyle.emptyState}>
+              <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+              <h5>No se encontraron servicios</h5>
+              <p>No hay servicios que coincidan con tu búsqueda.</p>
+            </div>
+          </div>
+        ) : (
+          <table className={`${TablaStyle.tableData} table table-striped`}>
+            <thead className={TablaStyle.tableHeaderFixed}>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Turno</th>
+                <th>Estado</th>
+                <th>Fecha Alta</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedServicios.map((servicio) => (
+                <tr key={servicio.idServicio}>
+                  <td>
+                    <strong>{servicio.idServicio}</strong>
+                  </td>
+                  <td>
+                    <div className={TablaStyle.titleTable}>
+                      <i className="fas fa-utensils"></i>
+                      <strong>{servicio.nombre}</strong>
+                    </div>
+                  </td>
+                  <td>
+                    <div className={TablaStyle.titleDescripcion}>
+                      {servicio.descripcion}
+                    </div>
+                  </td>
+                  <td>
+                    <div className={TablaStyle.turnoBadge}>
+                      {servicioTurnos[servicio.idServicio] &&
+                      servicioTurnos[servicio.idServicio].length > 0 ? (
+                        <div>
+                          {servicioTurnos[servicio.idServicio].map((turno) => (
+                            <span
+                              key={turno.idTurno}
+                              title={`${turno.nombreTurno}: ${turno.horaInicio} - ${turno.horaFin}`}
+                            >
+                              {turno.nombreTurno}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className={TablaStyle.noTurnos}>
+                          Sin turnos asignados
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      className={`${TablaStyle.statusBadge} ${servicio.estado.toLowerCase() === "activo" ? TablaStyle.activo : TablaStyle.inactivo}`}
+                    >
+                      {servicio.estado}
+                    </span>
+                  </td>
+                  <td>
+                    {servicio.fechaAlta
+                      ? new Date(servicio.fechaAlta).toLocaleDateString()
+                      : "-"}
+                  </td>
+                  <td>
+                    <div className={TablaStyle.actionButtons}>
+                      <button
+                        className={`${TablaStyle.btnAction} ${TablaStyle.btnView}`}
+                        onClick={() => handleView(servicio)}
+                        title="Ver detalles"
+                      >
+                        <i className="fas fa-eye"></i>
+                      </button>
+                      <button
+                        className={`${TablaStyle.btnAction} ${TablaStyle.btnEdit}`}
+                        onClick={() => handleEdit(servicio)}
+                        title="Editar"
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
+                        onClick={() => handleDelete(servicio)}
+                        title="Eliminar"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                      <button
+                        className={`${TablaStyle.btnAction} ${
+                          servicio.estado === "Activo"
+                            ? TablaStyle.btnDisable
+                            : TablaStyle.btnEnable
+                        }`}
+                        onClick={() =>
+                          handleChangeStatus(
+                            servicio,
+                            servicio.estado === "Activo"
+                              ? "Inactivo"
+                              : "Activo",
+                          )
+                        }
+                        title={
+                          servicio.estado === "Activo"
+                            ? "Desactivar"
+                            : "Activar"
+                        }
+                      >
+                        <i
+                          className={`fas ${
+                            servicio.estado === "Activo"
+                              ? "fa-times"
+                              : "fa-check"
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Modal */}
+      {showModal &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-utensils me-2"></i>
+                    {modalMode === "create" && "Crear Nuevo Servicio"}
+                    {modalMode === "edit" && "Editar Servicio"}
+                    {modalMode === "view" && "Ver Servicio"}
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={handleCancel}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <ServicioForm
+                    servicio={selectedServicio}
+                    mode={modalMode}
+                    onSave={handleSave}
+                    onCancel={handleCancel}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {showModal &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

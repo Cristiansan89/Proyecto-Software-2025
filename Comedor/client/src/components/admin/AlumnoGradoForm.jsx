@@ -11,6 +11,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -28,7 +29,7 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
   const [cicloInput, setCicloInput] = useState(
     alumnoGrado?.cicloLectivo ||
       alumnoGrado?.ciclo_lectivo ||
-      new Date().getFullYear()
+      new Date().getFullYear(),
   );
   const isEditMode = mode === "edit";
 
@@ -208,12 +209,12 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
           .join("\n");
         showInfoError(
           "Información",
-          `Errores de validación:\n${errorMessages}`
+          `Errores de validación:\n${errorMessages}`,
         );
       } else {
         showError(
           "Error",
-          "Error al guardar la asignación. Por favor, inténtelo de nuevo."
+          "Error al guardar la asignación. Por favor, inténtelo de nuevo.",
         );
       }
     } finally {
@@ -224,187 +225,184 @@ const AlumnoGradoForm = ({ alumnoGrado, mode, onSave, onCancel }) => {
   const isViewMode = mode === "view";
   const isCreateMode = mode === "create";
 
-  if (loadingOptions) {
-    return (
-      <div className="loading-spinner">
-        <i className="fas fa-spinner fa-spin"></i>
-        <p>Cargando datos...</p>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          <div>
-            <h5 className="section-title">Asignación de Alumno a Grado</h5>
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>Asignación de Alumno a Grado
+      </h4>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="idPersona" className="form-label required ">
-                  Alumno
-                </label>
-                {isCreateMode ? (
-                  <Select
-                    isDisabled={isViewMode}
-                    isClearable
-                    options={alumnos
-                      .filter((a) => a.id !== null && a.id !== undefined)
-                      .map((alumno) => ({
-                        value: alumno.id,
-                        label: `${alumno.nombre} ${alumno.apellido} - DNI: ${alumno.dni}`,
-                      }))}
-                    value={
-                      alumnos
-                        .filter((a) => a.id !== null && a.id !== undefined)
-                        .map((alumno) => ({
-                          value: alumno.id,
-                          label: `${alumno.nombre} ${alumno.apellido} - DNI: ${alumno.dni}`,
-                        }))
-                        .find(
-                          (o) => String(o.value) === String(formData.idPersona)
-                        ) || null
-                    }
-                    onChange={(opt) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        idPersona: opt ? opt.value : "",
-                      }))
-                    }
-                    placeholder="Buscar y seleccionar alumno..."
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={
-                      alumnos.find(
-                        (a) => String(a.id) === String(formData.idPersona)
-                      )
-                        ? `${
-                            alumnos.find(
-                              (a) => String(a.id) === String(formData.idPersona)
-                            ).nombre
-                          } ${
-                            alumnos.find(
-                              (a) => String(a.id) === String(formData.idPersona)
-                            ).apellido
-                          } - DNI: ${
-                            alumnos.find(
-                              (a) => String(a.id) === String(formData.idPersona)
-                            ).dni
-                          }`
-                        : `${alumnoGrado?.nombre || ""} ${
-                            alumnoGrado?.apellido || ""
-                          }`
-                    }
-                    readOnly
-                  />
-                )}
-                {errors.idPersona && (
-                  <div className="invalid-feedback">{errors.idPersona}</div>
-                )}
-                {formData.idPersona && (
-                  <small className="form-text text-muted">
-                    <i className="fas fa-info-circle me-1"></i>
-                    Solo se muestran alumnos disponibles para el ciclo lectivo
-                    actual
-                  </small>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="nombreGrado" className="form-label required ">
-                  Grado
-                </label>
-                <Select
-                  isDisabled={isViewMode}
-                  isClearable
-                  options={grados.map((grado) => ({
-                    value: grado.nombreGrado,
-                    label: grado.nombreGrado,
-                  }))}
-                  value={
-                    grados
-                      .map((grado) => ({
-                        value: grado.nombreGrado,
-                        label: grado.nombreGrado,
-                      }))
-                      .find((o) => o.value === formData.nombreGrado) || null
-                  }
-                  onChange={(opt) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      nombreGrado: opt ? opt.value : "",
-                    }))
-                  }
-                  placeholder="Seleccionar Grado..."
-                />
-                {errors.nombreGrado && (
-                  <div className="invalid-feedback">{errors.nombreGrado}</div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="cicloLectivo" className="form-label required ">
-                Ciclo Lectivo
-              </label>
-              <input
-                type="number"
-                id="cicloLectivo"
-                name="cicloLectivo"
-                className={`form-control ${
-                  errors.cicloLectivo ? "is-invalid" : ""
-                }`}
-                value={cicloInput}
-                onChange={handleInputChange}
-                disabled={isViewMode || isEditMode}
-                min="2020"
-                max="2030"
-              />
-              {errors.cicloLectivo && (
-                <div className="invalid-feedback">{errors.cicloLectivo}</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Botones */}
-        <div className="form-actions mt-4">
-          <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
-            disabled={loading}
+      <div className={ComponenteStyle.formRow}>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="idPersona"
+            className={`${ComponenteStyle.formLabel} required`}
           >
-            <i className="fas fa-times"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
-          </button>
-
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary me-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  {isCreateMode ? "Asignar Alumno" : "Actualizar Asignación"}
-                </>
-              )}
-            </button>
+            Alumno
+          </label>
+          {isCreateMode ? (
+            <Select
+              isDisabled={isViewMode}
+              isClearable
+              options={alumnos
+                .filter((a) => a.id !== null && a.id !== undefined)
+                .map((alumno) => ({
+                  value: alumno.id,
+                  label: `${alumno.nombre} ${alumno.apellido} - DNI: ${alumno.dni}`,
+                }))}
+              value={
+                alumnos
+                  .filter((a) => a.id !== null && a.id !== undefined)
+                  .map((alumno) => ({
+                    value: alumno.id,
+                    label: `${alumno.nombre} ${alumno.apellido} - DNI: ${alumno.dni}`,
+                  }))
+                  .find(
+                    (o) => String(o.value) === String(formData.idPersona),
+                  ) || null
+              }
+              onChange={(opt) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  idPersona: opt ? opt.value : "",
+                }))
+              }
+              placeholder="Buscar y seleccionar alumno..."
+            />
+          ) : (
+            <input
+              type="text"
+              className={ComponenteStyle.formControl}
+              value={
+                alumnos.find((a) => String(a.id) === String(formData.idPersona))
+                  ? `${
+                      alumnos.find(
+                        (a) => String(a.id) === String(formData.idPersona),
+                      ).nombre
+                    } ${
+                      alumnos.find(
+                        (a) => String(a.id) === String(formData.idPersona),
+                      ).apellido
+                    } - DNI: ${
+                      alumnos.find(
+                        (a) => String(a.id) === String(formData.idPersona),
+                      ).dni
+                    }`
+                  : `${alumnoGrado?.nombre || ""} ${
+                      alumnoGrado?.apellido || ""
+                    }`
+              }
+              readOnly
+            />
+          )}
+          {errors.idPersona && (
+            <div className={ComponenteStyle.invalidFeedback}>
+              {errors.idPersona}
+            </div>
+          )}
+          {formData.idPersona && (
+            <small className={`${ComponenteStyle.formText} text-muted`}>
+              <i className="fas fa-info-circle me-1"></i>
+              Solo se muestran alumnos disponibles para el ciclo lectivo actual
+            </small>
           )}
         </div>
-      </form>
-    </div>
+
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="nombreGrado"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Grado
+          </label>
+          <Select
+            isDisabled={isViewMode}
+            isClearable
+            options={grados.map((grado) => ({
+              value: grado.nombreGrado,
+              label: grado.nombreGrado,
+            }))}
+            value={
+              grados
+                .map((grado) => ({
+                  value: grado.nombreGrado,
+                  label: grado.nombreGrado,
+                }))
+                .find((o) => o.value === formData.nombreGrado) || null
+            }
+            onChange={(opt) =>
+              setFormData((prev) => ({
+                ...prev,
+                nombreGrado: opt ? opt.value : "",
+              }))
+            }
+            placeholder="Seleccionar Grado..."
+          />
+          {errors.nombreGrado && (
+            <div className={ComponenteStyle.invalidFeedback}>
+              {errors.nombreGrado}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="cicloLectivo"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          Ciclo Lectivo
+        </label>
+        <input
+          type="number"
+          id="cicloLectivo"
+          name="cicloLectivo"
+          className={`${ComponenteStyle.formControl} ${errors.cicloLectivo ? ComponenteStyle.isInvalid : ""}`}
+          value={cicloInput}
+          onChange={handleInputChange}
+          disabled={isViewMode || isEditMode}
+          min="2020"
+          max="2030"
+        />
+        {errors.cicloLectivo && (
+          <div className={ComponenteStyle.invalidFeedback}>
+            {errors.cicloLectivo}
+          </div>
+        )}
+      </div>
+
+      {/* Botones */}
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
+          <button
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save"></i>
+                {isCreateMode ? "Asignar Alumno" : "Actualizar Asignación"}
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </form>
   );
 };
 

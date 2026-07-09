@@ -208,6 +208,55 @@ export class UsuarioModel {
                   ) VALUES (?, ?, ?, ?, ?, ?);`,
           [idPersona, nombreUsuario, hashedPassword, mail, telefono, estado],
         );
+
+        // Asignar rol basado en la Persona (Alumno, Docente, etc.)
+        try {
+          const [personas] = await connection.query(
+            `SELECT nombreRol FROM Personas WHERE id_persona = ? LIMIT 1;`,
+            [idPersona],
+          );
+
+          if (personas.length > 0) {
+            const nombreRol = personas[0].nombreRol;
+            const [newUser] = await connection.query(
+              `SELECT BIN_TO_UUID(id_usuario) as idUsuario 
+                       FROM Usuarios 
+                       WHERE nombreUsuario = ?;`,
+              [nombreUsuario],
+            );
+
+            const usuarioCreado = newUser[0];
+
+            const [roles] = await connection.query(
+              `SELECT id_rol FROM Roles WHERE nombreRol = ? LIMIT 1;`,
+              [nombreRol],
+            );
+
+            if (roles.length > 0) {
+              const idRol = roles[0].id_rol;
+              await connection.query(
+                `INSERT INTO UsuariosRoles (id_usuario, id_rol, estado) 
+                 VALUES (UUID_TO_BIN(?), ?, 'Activo')
+                 ON DUPLICATE KEY UPDATE estado = 'Activo';`,
+                [usuarioCreado.idUsuario, idRol],
+              );
+              console.log("✅ Rol asignado al usuario de Persona:", {
+                nombreUsuario,
+                nombreRol,
+                idRol,
+              });
+            } else {
+              console.warn(
+                `⚠️ Advertencia: Rol '${nombreRol}' no encontrado en Roles`,
+              );
+            }
+          }
+        } catch (roleError) {
+          console.warn(
+            "Advertencia: No se pudo asignar rol a usuario de persona:",
+            roleError.message,
+          );
+        }
       }
 
       const [newUser] = await connection.query(
@@ -469,6 +518,82 @@ export class UsuarioModel {
       return true;
     } catch (error) {
       return false;
+    }
+  }
+
+  // Reparar usuarios existentes sin rol asignado
+  static async repairMissingRoles() {
+    try {
+      console.log("🔧 Iniciando reparación de usuarios sin rol...");
+
+      // 1. Obtener usuarios vinculados a Personas sin rol asignado
+      const [usuariosSinRol] = await connection.query(
+        `SELECT 
+           BIN_TO_UUID(u.id_usuario) as idUsuario,
+           u.nombreUsuario,
+           u.id_persona as idPersona,
+           p.nombreRol
+         FROM Usuarios u
+         LEFT JOIN Personas p ON u.id_persona = p.id_persona
+         LEFT JOIN UsuariosRoles ur ON u.id_usuario = ur.id_usuario AND ur.estado = 'Activo'
+         WHERE u.id_persona IS NOT NULL 
+           AND ur.id_usuario IS NULL
+           AND p.nombreRol IS NOT NULL;`,
+      );
+
+      if (usuariosSinRol.length === 0) {
+        console.log("✅ No hay usuarios sin rol para reparar.");
+        return { reparados: 0, errores: 0 };
+      }
+
+      console.log(`📋 Encontrados ${usuariosSinRol.length} usuarios sin rol`);
+
+      let reparados = 0;
+      let errores = 0;
+
+      // 2. Para cada usuario, asignar su rol basado en la Persona
+      for (const usuario of usuariosSinRol) {
+        try {
+          const [roles] = await connection.query(
+            `SELECT id_rol FROM Roles WHERE nombreRol = ? LIMIT 1;`,
+            [usuario.nombreRol],
+          );
+
+          if (roles.length > 0) {
+            const idRol = roles[0].id_rol;
+            await connection.query(
+              `INSERT INTO UsuariosRoles (id_usuario, id_rol, estado) 
+               VALUES (UUID_TO_BIN(?), ?, 'Activo')
+               ON DUPLICATE KEY UPDATE estado = 'Activo';`,
+              [usuario.idUsuario, idRol],
+            );
+
+            console.log(
+              `✅ Rol '${usuario.nombreRol}' asignado a ${usuario.nombreUsuario}`,
+            );
+            reparados++;
+          } else {
+            console.warn(
+              `⚠️ Rol '${usuario.nombreRol}' no encontrado para ${usuario.nombreUsuario}`,
+            );
+            errores++;
+          }
+        } catch (error) {
+          console.error(
+            `❌ Error al asignar rol a ${usuario.nombreUsuario}:`,
+            error.message,
+          );
+          errores++;
+        }
+      }
+
+      console.log(
+        `📊 Reparación completada: ${reparados} reparados, ${errores} errores`,
+      );
+      return { reparados, errores };
+    } catch (error) {
+      console.error("❌ Error en repairMissingRoles:", error.message);
+      throw error;
     }
   }
 }

@@ -1,0 +1,375 @@
+.card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.cardHeader {
+  padding: 15px 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px 8px 0 0;
+
+  h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+}
+
+.cardBody {
+  padding: 20px;
+  background-color: #fff;
+  border-top: 1px solid #dee2e6;
+}
+
+.formCheck {
+  padding: 10px 0;
+}
+
+.formCheckInput {
+  width: 2.5rem;
+  height: 1.3rem;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  background-color: #e9ecef;
+  border: 1px solid #dee2e6;
+
+  &:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #f8f9fa;
+  }
+}
+
+.formCheckLabel {
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.formLabel {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 10px;
+  margin-right: 10px;
+  margin-left: 10px;
+}
+
+.inputGroupText {
+  background-color: #dee2e6;
+  border-left: none;
+  border: 1px solid #dee2e6;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  width: 2rem;
+  height: 42px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.formControl {
+  &:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  }
+
+  &:disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.formText {
+  font-size: 0.875rem;
+  margin-top: 5px;
+  display: block;
+  margin-left: 10px;
+}
+
+.badge {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-left: 10px;
+  color: #fff;
+}
+
+.btn {
+  padding: 10px 20px;
+  font-weight: 500;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btnPrimary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+
+  &:hover:not(:disabled) {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+  }
+}
+
+.btnSecondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+
+  &:hover:not(:disabled) {
+    background-color: #5c636a;
+    border-color: #565e64;
+  }
+}
+
+.alert {
+  border: none;
+  border-radius: 5px;
+  padding: 15px 20px;
+}
+
+.alertSuccess {
+  background-color: #d1e7dd;
+  color: #0f5132;
+  border-left: 4px solid #198754;
+}
+
+.alertError {
+  background-color: #f8d7da;
+  color: #842029;
+  border-left: 4px solid #dc3545;
+}
+
+.alertWarning {
+  background-color: #fff3cd;
+  color: #664d03;
+  border-left: 4px solid #ffc107;
+}
+
+.alertInfo {
+  background-color: #cfe2ff;
+  color: #084298;
+  border-left: 4px solid #0d6efd;
+}
+
+.btnClose {
+  padding: 5px;
+  background: linear-gradient(135deg, #8c35ff 20%, #2000f0 100%);
+  color: #fff;
+
+  &:hover:not(disabled) {
+    background: linear-gradient(135deg, #8c35ff 20%, #2000f0 100%);
+    color: black;
+    font-weight: 700;
+    transform: translateY(-2px);
+  }
+}
+
+.bgLight {
+  background-color: #f8f9fa !important;
+}
+
+.textMuted {
+  color: #6c757d !important;
+}
+
+.textDark {
+  color: #212529 !important;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: 20px;
+
+  &.automatica {
+    margin-left: 35px;
+    margin-top: 20px;
+  }
+}
+
+.bgDanger {
+  background-color: #dc3545 !important;
+}
+
+.bgWarning {
+  background-color: #ffc107 !important;
+}
+
+.bgInfo {
+  background-color: #0dcaf0 !important;
+}
+
+.bgSecondary {
+  background-color: #6c757d !important;
+}
+
+.bgPrimary {
+  background-color: #0d6efd !important;
+}
+
+.bgSuccess {
+  background-color: #198754 !important;
+}
+
+/* Spinner */
+.spinnerBorder {
+  color: #0d6efd;
+}
+
+.visuallyHidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: row;
+  padding-left: 10px;
+  padding-right: 10px;
+  align-items: stretch;
+  position: relative;
+  flex-wrap: wrap;
+
+  input[type="number"] {
+    height: 42px;
+    padding: 0.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border: 1px solid #ced4da;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    transition:
+      border-color 0.15s ease-in-out,
+      box-shadow 0.15s ease-in-out;
+  }
+}
+
+.formGroup {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+  }
+}
+
+.instructions {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9ff;
+  border-left: 4px solid #667eea;
+  border-radius: 4px;
+
+  h4 {
+    margin-top: 0;
+    color: #333;
+    font-size: 14px;
+  }
+
+  ol {
+    margin: 10px 0;
+    padding-left: 20px;
+  }
+
+  li {
+    margin: 8px 0;
+    color: #555;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  code {
+    background: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: "Monaco", "Menlo", monospace;
+    font-size: 12px;
+    color: #d73a49;
+    border: 1px solid #e1e4e8;
+  }
+
+  a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}
+
+.tips {
+  margin-top: 15px;
+  padding: 10px 0;
+  border-top: 1px solid #ddd;
+
+  strong {
+    color: #333;
+  }
+
+  ul {
+    margin: 8px 0;
+    padding-left: 20px;
+  }
+
+  li {
+    margin: 6px 0;
+    font-size: 13px;
+    color: #555;
+  }
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.infoItem {
+  padding: 15px;
+  background: #f8f9ff;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+
+  strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 14px;
+  }
+
+  p {
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+    word-break: break-all;
+  }
+}

@@ -8,7 +8,9 @@ import CocineraMovimiento from "./CocineraMovimiento";
 import MovimientosForm from "../../components/cocinera/MovimientosForm";
 import RecepcionInsumo from "../../components/cocinera/RecepcionInsumo";
 import API from "../../services/api";
-import "../../styles/ControlInventario.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const ControlInventario = () => {
   const { isAuthenticated, user } = useAuth();
@@ -58,7 +60,7 @@ const ControlInventario = () => {
       //console.error("Error al cargar datos:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los datos de inventario. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los datos de inventario. Por favor, intente nuevamente más tarde.",
       );
     }
   };
@@ -72,7 +74,7 @@ const ControlInventario = () => {
       //console.error("Error al cargar alertas:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar las alertas de inventario. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar las alertas de inventario. Por favor, intente nuevamente más tarde.",
       );
     }
   };
@@ -85,7 +87,7 @@ const ControlInventario = () => {
       //console.error("Error al marcar alerta como vista:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al marcar la alerta como vista. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al marcar la alerta como vista. Por favor, intente nuevamente más tarde.",
       );
     }
   };
@@ -102,42 +104,38 @@ const ControlInventario = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Si no está autenticado, no renderizar
   if (!isAuthenticated) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "50vh" }}
-      >
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando el Control de Inventario...</p>
       </div>
     );
   }
 
   return (
-    <div className="control-inventario">
-      {/* Header */}
-      <div className="page-header mb-4">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-warehouse me-2"></i>
-            Control de Inventario
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-warehouse"></i>
+            Control y Movimientos de Inventario
           </h1>
-          <p>Gestión completa de inventario y movimientos</p>
+          <p className={ContenidoStyle.pageSubtitle}>
+            Gestión completa de inventario y movimientos
+          </p>
         </div>
-        <div className="header-actions">
+        <div className={ContenidoStyle.headerActions}>
           <div className="d-flex gap-2">
             <button
-              className="btn btn-success"
+              className={`${ContenidoStyle.btn} btn-success`}
               onClick={() => setModalMovimiento(true)}
             >
               <i className="fas fa-plus me-2"></i>
               Registrar Movimiento
             </button>
             <button
-              className="btn btn-primary"
+              className={`${ContenidoStyle.btn} btn-primary`}
               onClick={() => setModalRecepcion(true)}
             >
               <i className="fas fa-truck-loading me-2"></i>
@@ -153,7 +151,7 @@ const ControlInventario = () => {
           {alertas.map((alerta) => (
             <div
               key={alerta.id_alerta}
-              className="alert alert-warning alert-dismissible fade show"
+              className={`${ComponenteStyle.alert} ${alertWarning} alert-dismissible fade show`}
               role="alert"
             >
               <div className="d-flex justify-content-between align-items-start">
@@ -169,7 +167,10 @@ const ControlInventario = () => {
                     </strong>{" "}
                     {alerta.unidadMedida}
                     <br />
-                    Nivel mínimo: <strong>{parseFloat(alerta.stockMinimo || 0).toFixed(3)}</strong>{" "}
+                    Nivel mínimo:{" "}
+                    <strong>
+                      {parseFloat(alerta.stockMinimo || 0).toFixed(3)}
+                    </strong>{" "}
                     {alerta.unidadMedida}
                   </p>
                 </div>
@@ -191,82 +192,96 @@ const ControlInventario = () => {
       {/* Modal de Movimiento */}
       {modalMovimiento &&
         createPortal(
-          <div className="modal-overlay">
-            <div className="modal-content movimiento-modal">
-              <div className="modal-header">
-                <h3 className="modal-title">
-                  <i className="fas fa-plus-circle me-2"></i>
-                  Registrar Movimiento de Inventario
-                </h3>
-                <button
-                  className="modal-close text-white"
-                  onClick={() => setModalMovimiento(false)}
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-              <div className="modal-body">
-                <MovimientosForm
-                  isOpen={modalMovimiento}
-                  onClose={() => setModalMovimiento(false)}
-                  inventarios={inventarios}
-                  tiposMerma={tiposMerma}
-                  onMovimientoRegistrado={manejarMovimientoRegistrado}
-                />
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* Modal de Recepción de Insumos */}
-      {modalRecepcion &&
-        createPortal(
-          <div className="modal-overlay">
-            <div className="modal-content movimiento-modal">
-              <div className="modal-header">
-                <h3 className="modal-title">
-                  <i className="fas fa-truck-loading me-2"></i>
-                  Registrar Recepción de Pedido
-                </h3>
-                <button
-                  className="modal-close text-white"
-                  onClick={() => setModalRecepcion(false)}
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-              <div className="modal-body">
-                <RecepcionInsumo
-                  isOpen={modalRecepcion}
-                  onClose={() => setModalRecepcion(false)}
-                  onRecepcionRegistrada={manejarMovimientoRegistrado}
-                />
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-plus-circle me-2"></i>
+                    Registrar Movimiento de Inventario
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={() => setModalMovimiento(false)}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <MovimientosForm
+                    isOpen={modalMovimiento}
+                    onClose={() => setModalMovimiento(false)}
+                    inventarios={inventarios}
+                    tiposMerma={tiposMerma}
+                    onMovimientoRegistrado={manejarMovimientoRegistrado}
+                  />
+                </div>
               </div>
             </div>
           </div>,
           document.body,
         )}
 
+      {/* Modal de Recepción de Insumos */}
+      {modalRecepcion &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-truck-loading me-2"></i>
+                    Registrar Recepción de Pedido
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={() => setModalRecepcion(false)}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <RecepcionInsumo
+                    isOpen={modalRecepcion}
+                    onClose={() => setModalRecepcion(false)}
+                    onRecepcionRegistrada={manejarMovimientoRegistrado}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {modalMovimiento &&
+        modalRecepcion &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
+
       {/* Pestañas de navegación */}
-      <div className="navigation-tabs mb-4">
-        <div className="tabs-header d-flex gap-2">
+      <div className={ContenidoStyle.navigationTabs}>
+        <div className={ContenidoStyle.tabsHeader}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              className={`tab-button ${
-                activeTab === tab.id ? "active" : ""
-              } btn`}
+              className={`${ContenidoStyle.tabsButton} ${
+                activeTab === tab.id ? ContenidoStyle.active : ""
+              }`}
               onClick={() => handleTabChange(tab.id)}
             >
-              <i className={`${tab.icon} me-1`}></i>
+              <i className={tab.icon}></i>
               {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="tab-content">
+      <div className={ContenidoStyle.tabContent}>
         {tabs.find((tab) => tab.id === activeTab)?.component}
       </div>
     </div>

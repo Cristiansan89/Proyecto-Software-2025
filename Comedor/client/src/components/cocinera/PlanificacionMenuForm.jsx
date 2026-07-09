@@ -11,6 +11,8 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
 
 const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
   const { user } = useAuth();
@@ -42,6 +44,13 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
     const offset = d.getTimezoneOffset();
     const localDate = new Date(d.getTime() + offset * 60 * 1000);
     return localDate.toISOString().split("T")[0];
+  };
+
+  // Función para formatear fecha a DD/MM/AAAA
+  const formatDateDisplay = (date) => {
+    if (!date) return "";
+    const [year, month, day] = date.split("-");
+    return `${day}/${month}/${year}`;
   };
 
   // Inicializar formulario cuando se abre el modal
@@ -83,7 +92,7 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
     try {
       const dataDiners =
         await planificacionMenuService.calcularComensalesPorFecha(
-          formData.fechaInicio
+          formData.fechaInicio,
         );
 
       setDinersCalculated(dataDiners);
@@ -104,7 +113,7 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
       }
       showError(
         "Error",
-        "Error al calcular comensales automáticamente: " + error.message
+        "Error al calcular comensales automáticamente: " + error.message,
       );
     } finally {
       setCalculatingDiners(false);
@@ -144,9 +153,15 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
           comensalesEstimados: parseInt(formData.comensalesEstimados) || 0,
         };
         console.log("Enviando datos:", { ...dataToSend, estado: estadoCambio });
-        await planificacionMenuService.update(planificacion.id_planificacion, dataToSend);
+        await planificacionMenuService.update(
+          planificacion.id_planificacion,
+          dataToSend,
+        );
         if (estadoCambio !== planificacion.estado) {
-          await planificacionMenuService.cambiarEstado(planificacion.id_planificacion, estadoCambio);
+          await planificacionMenuService.cambiarEstado(
+            planificacion.id_planificacion,
+            estadoCambio,
+          );
         }
         showSuccess("Planificación actualizada correctamente");
       }
@@ -172,84 +187,89 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
   const isViewMode = mode === "view";
 
   return (
-    <div>
-      <form onSubmit={handleSubmit} id="planificacionForm">
-        <div className="row">
-          <div className="col-md-6 mb-3">
-            <label htmlFor="fechaInicio" className="form-label">
-              Fecha de Inicio
-            </label>
-            <input
-              type="date"
-              className="form-control"
-              id="fechaInicio"
-              name="fechaInicio"
-              value={formData.fechaInicio}
-              onChange={handleInputChange}
-              required
-              readOnly={isViewMode}
-            />
-          </div>
-          <div className="col-md-6 mb-3">
-            <label htmlFor="fechaFin" className="form-label">
-              Fecha de Fin
-            </label>
-            <input
-              type="date"
-              className="form-control"
-              id="fechaFin"
-              name="fechaFin"
-              value={formData.fechaFin}
-              onChange={handleInputChange}
-              required
-              readOnly={isViewMode}
-            />
-          </div>
+    <form onSubmit={handleSubmit} id="planificacionForm">
+      <div className="row">
+        <div className="col-md-6 mb-3">
+          <label htmlFor="fechaInicio" className={ComponenteStyle.formLabel}>
+            Fecha de Inicio
+          </label>
+          <input
+            type="date"
+            className={ComponenteStyle.formControl}
+            id="fechaInicio"
+            name="fechaInicio"
+            value={formData.fechaInicio}
+            onChange={handleInputChange}
+            required
+            readOnly={isViewMode}
+          />
+        </div>
+        <div className="col-md-6 mb-3">
+          <label htmlFor="fechaFin" className={ComponenteStyle.formLabel}>
+            Fecha de Fin
+          </label>
+          <input
+            type="date"
+            className={ComponenteStyle.formControl}
+            id="fechaFin"
+            name="fechaFin"
+            value={formData.fechaFin}
+            onChange={handleInputChange}
+            required
+            readOnly={isViewMode}
+          />
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-md-6 mb-3">
+          <label htmlFor="estado" className={ComponenteStyle.formLabel}>
+            Estado
+          </label>
+          <select
+            className={ComponenteStyle.formControl}
+            id="estado"
+            name="estado"
+            value={formData.estado || "Pendiente"}
+            onChange={handleInputChange}
+            required
+            disabled={isViewMode}
+          >
+            <option value="">-- Seleccionar estado --</option>
+            {estados.map((estado) => (
+              <option key={estado.value} value={estado.value}>
+                {estado.label}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="row">
-          <div className="col-md-6 mb-3">
-            <label htmlFor="estado" className="form-label">
-              Estado
-            </label>
-            <select
-              className="form-control"
-              id="estado"
-              name="estado"
-              value={formData.estado || "Pendiente"}
+        <div className="col-md-6 mb-3">
+          <label
+            htmlFor="comensalesEstimados"
+            className={ComponenteStyle.formLabel}
+          >
+            Comensales Estimados
+          </label>
+          <div className="d-flex align-items-center gap-2">
+            <input
+              type="number"
+              className={ComponenteStyle.formControl}
+              id="comensalesEstimados"
+              name="comensalesEstimados"
+              value={formData.comensalesEstimados}
               onChange={handleInputChange}
-              required
-              disabled={isViewMode}
-            >
-              <option value="">-- Seleccionar estado --</option>
-              {estados.map((estado) => (
-                <option key={estado.value} value={estado.value}>
-                  {estado.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-md-6 mb-3">
-            <label htmlFor="comensalesEstimados" className="form-label">
-              Comensales Estimados
-            </label>
-            <div className="d-flex align-items-center gap-2">
-              <input
-                type="number"
-                className="form-control"
-                id="comensalesEstimados"
-                name="comensalesEstimados"
-                value={formData.comensalesEstimados}
-                onChange={handleInputChange}
-                placeholder="Ingrese cantidad de comensales"
-                readOnly={mode !== "create"}
-                min="0"
-              />
-              {mode === "create" && (
+              placeholder="Ingrese cantidad de comensales"
+              readOnly={mode !== "create"}
+              min="0"
+            />
+            {mode === "create" && (
+              <div
+                className={`${ComponenteStyle.formActions} border-0 mt-0 p-0`}
+              >
                 <button
                   type="button"
-                  className="btn btn-success d-flex align-items-center gap-2"
+                  className={`${ComponenteStyle.btn} ${ComponenteStyle.btnSuccess} d-flex align-items-center gap-2`}
                   onClick={calculateDinersAutomatically}
                   disabled={calculatingDiners || !formData.fechaInicio}
                   title="Calcular automáticamente según matrícula actual"
@@ -270,105 +290,105 @@ const PlanificacionMenuForm = ({ planificacion, mode, onSave, onCancel }) => {
                     </>
                   )}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Detalles del cálculo de comensales */}
-        {showDinersDetail && dinersCalculated && (
-          <div className="card mb-3">
-            <div className="card-header">
-              <h6 className="mb-0 text-black">
-                <i className="fas fa-chart-bar me-2"></i>
-                Detalle del Cálculo de Comensales Estimados
-                <small className="text-muted ms-2">
-                  ({dinersCalculated.fecha})
-                </small>
-              </h6>
-            </div>
-            <div className="card-body">
-              <div className="row">
-                {dinersCalculated.servicios?.map((servicio, index) => (
-                  <div key={index} className="col-md-4 mb-3">
-                    <div className="border rounded p-3">
-                      <h6 className="text-primary">
-                        <i className="fas fa-utensils me-1"></i>
-                        {servicio.nombreServicio}
-                      </h6>
-                      <p className="mb-1">
-                        <strong>Total: {servicio.totalComensales}</strong>
-                      </p>
-                      {servicio.turnos?.map((turno, tIndex) => (
-                        <div key={tIndex} className="small text-muted">
-                          <strong>{turno.turno}:</strong> {turno.comensales}{" "}
-                          estudiantes
-                          <div className="ms-2">
-                            {turno.grados?.map((grado, gIndex) => (
-                              <div key={gIndex} className="text-xs">
-                                • {grado.grado}: {grado.cantidadEstudiantes}
-                              </div>
-                            ))}
-                          </div>
+      {/* Detalles del cálculo de comensales */}
+      {showDinersDetail && dinersCalculated && (
+        <div className={`${ContenidoStyle.card} mt-3`}>
+          <div className={ContenidoStyle.cardHeader}>
+            <h6 className="mb-0 text-black">
+              <i className="fas fa-chart-bar me-2"></i>
+              Detalle del Cálculo de Comensales Estimados
+              <small className="text-muted ms-2">
+                ({formatDateDisplay(dinersCalculated.fecha)})
+              </small>
+            </h6>
+          </div>
+          <div className={ContenidoStyle.cardBody}>
+            <div className="row">
+              {dinersCalculated.servicios?.map((servicio, index) => (
+                <div key={index} className="col-md-4 mb-3">
+                  <div className="border rounded p-3">
+                    <h6 className="text-primary">
+                      <i className="fas fa-utensils me-1"></i>
+                      {servicio.nombreServicio}
+                    </h6>
+                    <p className="mb-1">
+                      <strong>Total: {servicio.totalComensales}</strong>
+                    </p>
+                    {servicio.turnos?.map((turno, tIndex) => (
+                      <div key={tIndex} className="small text-muted">
+                        <strong>{turno.turno}:</strong> {turno.comensales}{" "}
+                        estudiantes
+                        <div className="ms-2">
+                          {turno.grados?.map((grado, gIndex) => (
+                            <div key={gIndex} className="text-xs">
+                              • {grado.grado}: {grado.cantidadEstudiantes}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-
-              <div className="alert alert-info mt-3">
-                <div>
-                  <i className="fas fa-info-circle me-2"></i>
-                  <strong>Total de comensales para el día:</strong>{" "}
-                  <strong>{dinersCalculated.resumen?.totalDia}</strong>
-                  <small className="d-block mt-1 me-2">
-                    Este cálculo se basa en la matrícula actual de estudiantes
-                    por grado y turno.
-                  </small>
                 </div>
+              ))}
+            </div>
+
+            <div
+              className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo} mt-3`}
+            >
+              <div>
+                <i className="fas fa-info-circle me-2"></i>
+                <strong>Total de comensales para el día:</strong>{" "}
+                <strong>{dinersCalculated.resumen?.totalDia}</strong>
+                <small className="d-block mt-1 me-2">
+                  Este cálculo se basa en la matrícula actual de estudiantes por
+                  grado y turno.
+                </small>
               </div>
             </div>
           </div>
-        )}
-
-        <div className="form-actions mt-4">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={onCancel}
-          >
-            <i className="fas fa-times me-2"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
-          </button>
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save me-2"></i>
-                  {mode === "create"
-                    ? "Crear Planificación"
-                    : "Guardar Cambios"}
-                </>
-              )}
-            </button>
-          )}
         </div>
-      </form>
-    </div>
+      )}
+
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+        >
+          <i className="fas fa-times me-2"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+        {!isViewMode && (
+          <button
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save me-2"></i>
+                {mode === "create" ? "Crear Planificación" : "Guardar Cambios"}
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </form>
   );
 };
 

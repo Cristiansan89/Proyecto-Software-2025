@@ -8,6 +8,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const UsuarioForm = ({ usuario, mode, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -130,190 +131,207 @@ const UsuarioForm = ({ usuario, mode, onCancel }) => {
   const isViewMode = mode === "view";
 
   return (
-    <div className="persona-form">
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          <h5 className="section-title">Información del Usuario</h5>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="nombreUsuario" className="form-label required ">
-                Nombre de Usuario
-              </label>
-              <input
-                type="text"
-                id="nombreUsuario"
-                name="nombreUsuario"
-                className={`form-control ${
-                  errors.nombreUsuario ? "is-invalid" : ""
-                }`}
-                value={formData.nombreUsuario || ""}
-                onChange={handleChange}
-                placeholder="Nombre de usuario único"
-                disabled={isViewMode}
-              />
-              {errors.nombreUsuario && (
-                <div className="invalid-feedback">{errors.nombreUsuario}</div>
-              )}
-              {!formData.nombreUsuario &&
-                formData.nombre &&
-                formData.apellido && (
-                  <small className="form-text text-muted">
-                    <i className="fas fa-info-circle me-1"></i>
-                    El nombre de usuario se generará como:{" "}
-                    {generateUsername(formData.nombre, formData.apellido)}
-                  </small>
-                )}
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>
+        Información del Servicio
+      </h4>
+      <div className={ComponenteStyle.formRow}>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="nombreUsuario"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Nombre de Usuario
+          </label>
+          <input
+            type="text"
+            id="nombreUsuario"
+            name="nombreUsuario"
+            className={`${ComponenteStyle.formControl} ${
+              errors.nombreUsuario ? ComponenteStyle.isInvalid : ""
+            }`}
+            value={formData.nombreUsuario || ""}
+            onChange={handleChange}
+            placeholder="Nombre de usuario único"
+            disabled={isViewMode}
+          />
+          {errors.nombreUsuario && (
+            <div className={`${ComponenteStyle.invalidFeedback}`}>
+              {errors.nombreUsuario}
             </div>
-
-            <div className="form-group">
-              <label htmlFor="userEmail" className="form-label required ">
-                Email de Usuario
-              </label>
-              <input
-                type="email"
-                id="userEmail"
-                name="mail"
-                className={`form-control ${errors.mail ? "is-invalid" : ""}`}
-                value={formData.mail}
-                onChange={handleChange}
-                placeholder="Email para la cuenta de usuario"
-                disabled={isViewMode}
-              />
-              {errors.mail && (
-                <div className="invalid-feedback">{errors.mail}</div>
-              )}
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="userTelefono" className="form-label required ">
-                Teléfono de Usuario
-              </label>
-              <input
-                type="text"
-                id="userTelefono"
-                name="telefono"
-                className={`form-control ${
-                  errors.telefono ? "is-invalid" : ""
-                }`}
-                value={formData.telefono}
-                onChange={handleChange}
-                maxLength="13"
-                inputMode="tel"
-                placeholder="Teléfono para la cuenta de usuario"
-                disabled={isViewMode}
-              />
-              {errors.telefono && (
-                <div className="invalid-feedback">{errors.telefono}</div>
-              )}
-              <small className="form-text text-muted">
-                <i className="fas fa-info-circle me-1"></i>
-                Ingrese el número de teléfono luego del +54 con la
-                caracteristica de área sin 15.
-              </small>
-            </div>
-            <div className="form-group">
-              <label htmlFor="estadoUsuario" className="form-label ">
-                Estado de Usuario
-              </label>
-              <select
-                id="estadoUsuario"
-                name="estado"
-                className="form-control"
-                value={formData.estado}
-                onChange={handleChange}
-                disabled={isViewMode}
-              >
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-              </select>
-              <small className="form-text text-muted">
-                La fecha de última actividad se actualizará automáticamente
-              </small>
-            </div>
-          </div>
-
-          {!isViewMode && (
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="password" className="form-label ">
-                  Nueva Contraseña (opcional)
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  className={`form-control ${
-                    errors.password ? "is-invalid" : ""
-                  }`}
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Dejar vacío para mantener actual"
-                />
-                {errors.password && (
-                  <div className="invalid-feedback">{errors.password}</div>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="confirmPassword" className="form-label ">
-                  Confirmar Contraseña
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  className={`form-control ${
-                    errors.confirmPassword ? "is-invalid" : ""
-                  }`}
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirme la contraseña"
-                />
-                {errors.confirmPassword && (
-                  <div className="invalid-feedback">
-                    {errors.confirmPassword}
-                  </div>
-                )}
-              </div>
-            </div>
+          )}
+          {!formData.nombreUsuario && formData.nombre && formData.apellido && (
+            <small className={`${ComponenteStyle.formText} text-muted`}>
+              <i className="fas fa-info-circle me-1"></i>
+              El nombre de usuario se generará como:{" "}
+              {generateUsername(formData.nombre, formData.apellido)}
+            </small>
           )}
         </div>
 
-        <div className="form-actions mt-4">
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="userEmail"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Email de Usuario
+          </label>
+          <input
+            type="email"
+            id="userEmail"
+            name="mail"
+            className={`${ComponenteStyle.formControl} ${errors.mail ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.mail}
+            onChange={handleChange}
+            placeholder="Email para la cuenta de usuario"
+            disabled={isViewMode}
+          />
+          {errors.mail && (
+            <div className={`${ComponenteStyle.invalidFeedback}`}>
+              {errors.mail}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={ComponenteStyle.formRow}>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="userTelefono"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Teléfono de Usuario
+          </label>
+          <input
+            type="text"
+            id="userTelefono"
+            name="telefono"
+            className={`${ComponenteStyle.formControl} ${errors.telefono ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.telefono}
+            onChange={handleChange}
+            maxLength="13"
+            inputMode="tel"
+            placeholder="Teléfono para la cuenta de usuario"
+            disabled={isViewMode}
+          />
+          {errors.telefono && (
+            <div className={`${ComponenteStyle.invalidFeedback}`}>
+              {errors.telefono}
+            </div>
+          )}
+          <small className={`${ComponenteStyle.formText} text-muted`}>
+            <i className="fas fa-info-circle me-1"></i>
+            Ingrese el número de teléfono luego del +54 con la caracteristica de
+            área sin 15.
+          </small>
+        </div>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="estadoUsuario"
+            className={`${ComponenteStyle.formLabel}`}
+          >
+            Estado de Usuario
+          </label>
+          <select
+            id="estadoUsuario"
+            name="estado"
+            className={`${ComponenteStyle.formControl}`}
+            value={formData.estado}
+            onChange={handleChange}
+            disabled={isViewMode}
+          >
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+          <small className={`${ComponenteStyle.formText} text-muted`}>
+            La fecha de última actividad se actualizará automáticamente
+          </small>
+        </div>
+      </div>
+
+      {!isViewMode && (
+        <div className={ComponenteStyle.formRow}>
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="password"
+              className={`${ComponenteStyle.formLabel}`}
+            >
+              Nueva Contraseña (opcional)
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              className={`${ComponenteStyle.formControl} ${errors.password ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Dejar vacío para mantener actual"
+            />
+            {errors.password && (
+              <div className={`${ComponenteStyle.invalidFeedback}`}>
+                {errors.password}
+              </div>
+            )}
+          </div>
+
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="confirmPassword"
+              className={`${ComponenteStyle.formLabel}`}
+            >
+              Confirmar Contraseña
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              className={`${ComponenteStyle.formControl} ${errors.confirmPassword ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirme la contraseña"
+            />
+            {errors.confirmPassword && (
+              <div className={`${ComponenteStyle.invalidFeedback}`}>
+                {errors.confirmPassword}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
           <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
             disabled={loading}
           >
-            <i className="fas fa-times"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save"></i>
+                Actualizar Usuario
+              </>
+            )}
           </button>
-
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary me-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  Actualizar Usuario
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </form>
-    </div>
+        )}
+      </div>
+    </form>
   );
 };
 

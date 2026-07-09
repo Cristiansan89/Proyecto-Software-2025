@@ -18,7 +18,7 @@ export class ProveedorModel {
                 fechaModificacion,
                 estado
              FROM Proveedores
-             ORDER BY razonSocial;`
+             ORDER BY razonSocial;`,
     );
     return proveedores;
   }
@@ -37,7 +37,7 @@ export class ProveedorModel {
                 estado
              FROM Proveedores
              WHERE id_proveedor = UUID_TO_BIN(?);`,
-      [id]
+      [id],
     );
     if (proveedores.length === 0) return null;
 
@@ -54,7 +54,7 @@ export class ProveedorModel {
                   u.estado
                FROM Usuarios u
                WHERE u.id_proveedor = UUID_TO_BIN(?);`,
-        [id]
+        [id],
       );
 
       if (usuarios.length > 0) {
@@ -65,7 +65,7 @@ export class ProveedorModel {
       // Continuar sin obtener el usuario
       console.warn(
         "Advertencia: No se pudo obtener usuario del proveedor:",
-        error.message
+        error.message,
       );
     }
 
@@ -87,7 +87,7 @@ export class ProveedorModel {
       // Validación manual de duplicados
       const [existingByCUIT] = await connection.query(
         `SELECT id_proveedor FROM Proveedores WHERE CUIT = ? LIMIT 1;`,
-        [CUIT]
+        [CUIT],
       );
 
       if (existingByCUIT.length > 0) {
@@ -96,7 +96,7 @@ export class ProveedorModel {
 
       const [existingByRazonSocial] = await connection.query(
         `SELECT id_proveedor FROM Proveedores WHERE razonSocial = ? LIMIT 1;`,
-        [razonSocial]
+        [razonSocial],
       );
 
       if (existingByRazonSocial.length > 0) {
@@ -112,7 +112,7 @@ export class ProveedorModel {
                     mail,
                     estado
                 ) VALUES (?, ?, ?, ?, ?, ?);`,
-        [razonSocial, CUIT, direccion, telefono, mail, estado]
+        [razonSocial, CUIT, direccion, telefono, mail, estado],
       );
 
       const [newProveedor] = await connection.query(
@@ -120,12 +120,12 @@ export class ProveedorModel {
                  FROM Proveedores 
                  WHERE razonSocial = ? AND CUIT = ?
                  ORDER BY fechaAlta DESC LIMIT 1;`,
-        [razonSocial, CUIT]
+        [razonSocial, CUIT],
       );
 
       if (!newProveedor || newProveedor.length === 0) {
         throw new Error(
-          "No se pudo obtener el ID del proveedor creado. Intente nuevamente."
+          "No se pudo obtener el ID del proveedor creado. Intente nuevamente.",
         );
       }
 
@@ -153,7 +153,7 @@ export class ProveedorModel {
           // Log del error pero no fallar la creación del proveedor
           console.error(
             "Error al crear usuario para proveedor:",
-            userError.message
+            userError.message,
           );
         }
       }
@@ -173,7 +173,7 @@ export class ProveedorModel {
       const [exists] = await connection.query(
         `SELECT id_proveedor FROM Proveedores
                  WHERE id_proveedor = UUID_TO_BIN(?) LIMIT 1;`,
-        [id]
+        [id],
       );
 
       if (!exists || exists.length === 0) {
@@ -185,13 +185,13 @@ export class ProveedorModel {
         await connection.query(
           `DELETE FROM Usuarios
                    WHERE id_proveedor = UUID_TO_BIN(?);`,
-          [id]
+          [id],
         );
       } catch (userError) {
         // Si hay un error al eliminar usuarios, continuar (puede que no haya usuarios o la columna no exista)
         console.warn(
           "Advertencia: No se pudieron eliminar usuarios del proveedor:",
-          userError.message
+          userError.message,
         );
       }
 
@@ -199,7 +199,7 @@ export class ProveedorModel {
       const [result] = await connection.query(
         `DELETE FROM Proveedores
                  WHERE id_proveedor = UUID_TO_BIN(?);`,
-        [id]
+        [id],
       );
 
       return result.affectedRows > 0;
@@ -215,7 +215,7 @@ export class ProveedorModel {
       `SELECT COUNT(*) as count
        FROM ProveedorInsumo
        WHERE id_proveedor = UUID_TO_BIN(?) AND estado = 'Activo';`,
-      [id]
+      [id],
     );
     return result[0].count > 0;
   }
@@ -228,7 +228,7 @@ export class ProveedorModel {
       if (CUIT) {
         const [existingByCUIT] = await connection.query(
           `SELECT BIN_TO_UUID(id_proveedor) as idProveedor FROM Proveedores WHERE CUIT = ? AND id_proveedor != UUID_TO_BIN(?) LIMIT 1;`,
-          [CUIT, id]
+          [CUIT, id],
         );
 
         if (existingByCUIT.length > 0) {
@@ -239,7 +239,7 @@ export class ProveedorModel {
       if (razonSocial) {
         const [existingByRazonSocial] = await connection.query(
           `SELECT BIN_TO_UUID(id_proveedor) as idProveedor FROM Proveedores WHERE razonSocial = ? AND id_proveedor != UUID_TO_BIN(?) LIMIT 1;`,
-          [razonSocial, id]
+          [razonSocial, id],
         );
 
         if (existingByRazonSocial.length > 0) {
@@ -284,7 +284,7 @@ export class ProveedorModel {
         `UPDATE Proveedores
                  SET ${updates.join(", ")}
                  WHERE id_proveedor = UUID_TO_BIN(?);`,
-        values
+        values,
       );
 
       return this.getById({ id });
@@ -310,7 +310,7 @@ export class ProveedorModel {
              JOIN Insumos i ON pi.id_insumo = i.id_insumo
              WHERE BIN_TO_UUID(pi.id_proveedor) = ? AND pi.estado = 'Activo'
              ORDER BY i.nombreInsumo;`,
-      [id]
+      [id],
     );
     return insumos;
   }
@@ -318,12 +318,13 @@ export class ProveedorModel {
   // Asignar insumos a un proveedor
   static async asignarInsumos({ idProveedor, insumos }) {
     try {
-      // Si no hay insumos a asignar, eliminar todas las asignaciones actuales
+      // Si no hay insumos a asignar, desactivar (borrado lógico) todas las asignaciones actuales
       if (!insumos || insumos.length === 0) {
         await connection.query(
-          `DELETE FROM ProveedorInsumo 
+          `UPDATE ProveedorInsumo
+                   SET estado = 'Inactivo'
                    WHERE id_proveedor = UUID_TO_BIN(?);`,
-          [idProveedor]
+          [idProveedor],
         );
         return true;
       }
@@ -333,7 +334,7 @@ export class ProveedorModel {
         `UPDATE ProveedorInsumo 
                  SET estado = 'Inactivo'
                  WHERE id_proveedor = UUID_TO_BIN(?);`,
-        [idProveedor]
+        [idProveedor],
       );
 
       // Luego insertar o reactivar las nuevas asignaciones
@@ -345,7 +346,7 @@ export class ProveedorModel {
           `SELECT COUNT(*) as count
                      FROM ProveedorInsumo
                      WHERE id_insumo = ? AND id_proveedor = UUID_TO_BIN(?);`,
-          [idInsumo, idProveedor]
+          [idInsumo, idProveedor],
         );
 
         if (existing[0].count > 0) {
@@ -354,14 +355,14 @@ export class ProveedorModel {
             `UPDATE ProveedorInsumo
                          SET calificacion = ?, estado = 'Activo'
                          WHERE id_insumo = ? AND id_proveedor = UUID_TO_BIN(?);`,
-            [calificacion, idInsumo, idProveedor]
+            [calificacion, idInsumo, idProveedor],
           );
         } else {
           // Crear nueva relación
           await connection.query(
             `INSERT INTO ProveedorInsumo (id_insumo, id_proveedor, calificacion, estado)
                          VALUES (?, UUID_TO_BIN(?), ?, 'Activo');`,
-            [idInsumo, idProveedor, calificacion]
+            [idInsumo, idProveedor, calificacion],
           );
         }
       }
@@ -388,7 +389,7 @@ export class ProveedorModel {
              FROM Proveedores p
              LEFT JOIN ProveedorInsumo pi ON p.id_proveedor = pi.id_proveedor AND pi.estado = 'Activo'
              GROUP BY p.id_proveedor
-             ORDER BY p.razonSocial;`
+             ORDER BY p.razonSocial;`,
     );
 
     // Para cada proveedor, obtener sus insumos y usuario
@@ -408,7 +409,7 @@ export class ProveedorModel {
                     u.estado
                  FROM Usuarios u
                  WHERE u.id_proveedor = UUID_TO_BIN(?);`,
-          [proveedor.idProveedor]
+          [proveedor.idProveedor],
         );
 
         if (usuarios.length > 0) {
@@ -418,7 +419,7 @@ export class ProveedorModel {
         // Si falla, significa que la columna id_proveedor no existe en la BD
         console.warn(
           "Advertencia: No se pudo obtener usuario del proveedor:",
-          error.message
+          error.message,
         );
       }
     }
@@ -441,7 +442,7 @@ export class ProveedorModel {
                 p.estado
              FROM Proveedores p
              WHERE p.estado = 'Activo'
-             ORDER BY p.razonSocial;`
+             ORDER BY p.razonSocial;`,
     );
 
     // Para cada proveedor, obtener sus insumos y usuario
@@ -461,7 +462,7 @@ export class ProveedorModel {
                     u.estado
                  FROM Usuarios u
                  WHERE u.id_proveedor = UUID_TO_BIN(?);`,
-          [proveedor.idProveedor]
+          [proveedor.idProveedor],
         );
 
         if (usuarios.length > 0) {
@@ -471,7 +472,7 @@ export class ProveedorModel {
         // Si falla, significa que la columna id_proveedor no existe en la BD
         console.warn(
           "Advertencia: No se pudo obtener usuario del proveedor:",
-          error.message
+          error.message,
         );
       }
     }

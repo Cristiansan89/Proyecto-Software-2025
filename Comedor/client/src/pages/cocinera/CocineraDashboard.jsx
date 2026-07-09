@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import "../../../src/styles/CocineraDashboard.css";
 import API from "../../services/api.js";
 import consumosService from "../../services/consumosService";
 import asistenciasService from "../../services/asistenciasService";
 import pedidoService from "../../services/pedidoService";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import formatCantidad from "../../utils/formatCantidad";
+import DashboardStyle from "../../../src/styles/Dashboard.module.css";
+import ContenidoStyle from "../../../src/styles/ContenidoPage.module.css";
 
 const CocineraDashboard = () => {
   const { user } = useAuth();
@@ -47,7 +48,7 @@ const CocineraDashboard = () => {
 
       const docentes =
         docentesRes.data?.filter(
-          (persona) => persona.nombreRol === "Docente"
+          (persona) => persona.nombreRol === "Docente",
         ) || [];
       const grados =
         gradosRes.data?.filter((grado) => grado.estado === "Activo") || [];
@@ -57,10 +58,10 @@ const CocineraDashboard = () => {
 
       // Filtrar planificaciones de hoy y mañana
       const planificacionesHoy = (planificacionRes.data || []).filter(
-        (p) => p.fecha && p.fecha.split("T")[0] === hoy
+        (p) => p.fecha && p.fecha.split("T")[0] === hoy,
       );
       const planificacionesMañana = (planificacionRes.data || []).filter(
-        (p) => p.fecha && p.fecha.split("T")[0] === manana
+        (p) => p.fecha && p.fecha.split("T")[0] === manana,
       );
 
       // Obtener datos reales de hoy
@@ -71,7 +72,7 @@ const CocineraDashboard = () => {
       try {
         // Consumos de hoy
         const consumosRes = await consumosService.obtenerConsumos(
-          `fechaInicio=${hoy}&fechaFin=${hoy}`
+          `fechaInicio=${hoy}&fechaFin=${hoy}`,
         );
         if (consumosRes.success && consumosRes.data) {
           consumosHoyCount = consumosRes.data.length;
@@ -89,7 +90,7 @@ const CocineraDashboard = () => {
         if (asistenciasRes.success && asistenciasRes.data) {
           asistenciasHoyCount = asistenciasRes.data.reduce(
             (sum, reg) => sum + (reg.cantidadPresentes || 0),
-            0
+            0,
           );
         }
       } catch (error) {
@@ -102,7 +103,7 @@ const CocineraDashboard = () => {
         const pedidosRes = await pedidoService.getAll();
         if (pedidosRes.data) {
           pedidosPendientes = pedidosRes.data.filter(
-            (p) => p.estadoPedido === "Pendiente"
+            (p) => p.estadoPedido === "Pendiente",
           ).length;
         }
       } catch (error) {
@@ -115,7 +116,7 @@ const CocineraDashboard = () => {
       const proximosServiciosData = generarProximosServicios(
         servicios,
         manana,
-        planificacionesMañana
+        planificacionesMañana,
       );
 
       setEstadisticas({
@@ -146,14 +147,14 @@ const CocineraDashboard = () => {
 
     return horariosDelDia.map((horario) => {
       const servicio = servicios.find((s) =>
-        s.nombre.toLowerCase().includes(horario.nombre.toLowerCase())
+        s.nombre.toLowerCase().includes(horario.nombre.toLowerCase()),
       );
 
       // Buscar planificaciones para este servicio
       const planificacionesDelServicio = planificaciones.filter(
         (p) =>
           p.idServicio === servicio?.idServicio ||
-          p.id_servicio === servicio?.id_servicio
+          p.id_servicio === servicio?.id_servicio,
       );
 
       // Construir descripción con grado + servicio + receta
@@ -184,8 +185,8 @@ const CocineraDashboard = () => {
           ahora > horaServicio
             ? "completado"
             : ahora.getTime() < horaServicio.getTime() - 30 * 60 * 1000
-            ? "pendiente"
-            : "en_curso",
+              ? "pendiente"
+              : "en_curso",
         descripcion: detallesServicio,
       };
     });
@@ -194,7 +195,7 @@ const CocineraDashboard = () => {
   const generarProximosServicios = (
     servicios,
     fechaManana,
-    planificaciones = []
+    planificaciones = [],
   ) => {
     return [
       { nombre: "Desayuno", hora: "08:30", icono: "🥐" },
@@ -236,11 +237,9 @@ const CocineraDashboard = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-        <p className="mt-3">Cargando dashboard...</p>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Dashboard...</p>
       </div>
     );
   }
@@ -257,28 +256,28 @@ const CocineraDashboard = () => {
       </div>
 
       {/* Tarjetas de estadísticas */}
-      <div className="dashboard-stats-cocinera">
-        <div className="stat-card bg-primary">
-          <div className="stat-info">
+      <div className={DashboardStyle.dashboardStats}>
+        <div className={DashboardStyle.statCard + " bg-primary"}>
+          <div className={DashboardStyle.statInfo}>
             <h3>{estadisticas.docentesTotal}</h3>
             <p>Docentes Registrados</p>
           </div>
         </div>
-        <div className="stat-card bg-success">
-          <div className="stat-info">
+        <div className={DashboardStyle.statCard + " bg-success"}>
+          <div className={DashboardStyle.statInfo}>
             <h3>{estadisticas.gradosActivos}</h3>
             <p>Grados Activos</p>
           </div>
         </div>
-        <div className="stat-card bg-warning">
-          <div className="stat-info">
+        <div className={DashboardStyle.statCard + " bg-warning"}>
+          <div className={DashboardStyle.statInfo}>
             <h3>{estadisticas.serviciosHoy}</h3>
             <p>Servicios Hoy</p>
           </div>
         </div>
 
-        <div className="stat-card bg-info">
-          <div className="stat-info">
+        <div className={DashboardStyle.statCard + " bg-info"}>
+          <div className={DashboardStyle.statInfo}>
             <h3>{estadisticas.asistenciasHoy}</h3>
             <p>Asistencias Hoy</p>
           </div>
@@ -304,30 +303,28 @@ const CocineraDashboard = () => {
               </small>
             </div>
             <div className="card-body">
-              <div className="servicios-timeline">
+              <div>
                 {serviciosHoy.map((servicio) => (
                   <div
                     key={servicio.id}
-                    className={`timeline-item estado-${servicio.estado}`}
+                    className={`${DashboardStyle.timelineItem} estado-${servicio.estado}`}
                   >
-                    <div className="timeline-marker">
-                      <span className="servicio-icono">{servicio.icono}</span>
+                    <div>
+                      <span>{servicio.icono}</span>
                     </div>
-                    <div className="timeline-content">
+                    <div className={DashboardStyle.timelineContent}>
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
                           <h5>{servicio.nombre}</h5>
-                          <p className="hora-servicio">
+                          <p>
                             <i className="fas fa-clock me-2"></i>
                             {servicio.hora}
                           </p>
-                          <p className="descripcion-servicio">
-                            {servicio.descripcion}
-                          </p>
+                          <p>{servicio.descripcion}</p>
                         </div>
                         <span
                           className={`badge bg-${getEstadoColor(
-                            servicio.estado
+                            servicio.estado,
                           )}`}
                         >
                           {getEstadoTexto(servicio.estado)}
@@ -376,13 +373,17 @@ const CocineraDashboard = () => {
                           </td>
                           <td>
                             <span className="badge bg-info text-dark">
-                              {formatCantidad(consumo.cantidadUtilizada, consumo.unidadMedida)} {consumo.unidadMedida}
+                              {formatCantidad(
+                                consumo.cantidadUtilizada,
+                                consumo.unidadMedida,
+                              )}{" "}
+                              {consumo.unidadMedida}
                             </span>
                           </td>
                           <td className="text-muted">
                             <small>
                               {new Date(
-                                consumo.fechaHoraGeneracion
+                                consumo.fechaHoraGeneracion,
                               ).toLocaleTimeString("es-ES")}
                             </small>
                           </td>
@@ -413,10 +414,7 @@ const CocineraDashboard = () => {
             </div>
             <div className="card-body">
               {proximosServicios.map((servicio) => (
-                <div
-                  key={servicio.id}
-                  className="proximo-servicio mb-3 pb-3 border-bottom"
-                >
+                <div key={servicio.id} className="mb-3 pb-3 border-bottom">
                   <div className="d-flex align-items-center">
                     <span className="servicio-icono me-3 fs-4">
                       {servicio.icono}

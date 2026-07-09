@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import RecetaForm from "../../components/cocinera/RecetaForm";
-import "../../styles/CocineraRecetas.css";
 import {
   showSuccess,
   showError,
@@ -12,6 +11,8 @@ import {
   showConfirm,
 } from "../../utils/alertService";
 import formatCantidad from "../../utils/formatCantidad";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const CocineraRecetas = () => {
   const { user } = useAuth();
@@ -42,7 +43,7 @@ const CocineraRecetas = () => {
         (response.data || []).map(async (receta) => {
           try {
             const ingredientesRes = await API.get(
-              `/recetas/${receta.id_receta}/insumos`
+              `/recetas/${receta.id_receta}/insumos`,
             );
 
             // La API devuelve una receta con propiedad 'insumos'
@@ -55,14 +56,14 @@ const CocineraRecetas = () => {
           } catch (error) {
             showError(
               "Error",
-              `No se pudieron cargar los ingredientes para la receta "${receta.nombreReceta}"`
+              `No se pudieron cargar los ingredientes para la receta "${receta.nombreReceta}"`,
             );
             return {
               ...receta,
               ingredientes: [],
             };
           }
-        })
+        }),
       );
 
       setRecetas(recetasConIngredientes);
@@ -100,15 +101,15 @@ const CocineraRecetas = () => {
       // Actualizar la receta con sus ingredientes
       setRecetas((prev) =>
         prev.map((receta) =>
-          receta.id_receta === recetaId ? { ...receta, ingredientes } : receta
-        )
+          receta.id_receta === recetaId ? { ...receta, ingredientes } : receta,
+        ),
       );
 
       // También actualizar en filteredRecetas si es necesario
       setFilteredRecetas((prev) =>
         prev.map((receta) =>
-          receta.id_receta === recetaId ? { ...receta, ingredientes } : receta
-        )
+          receta.id_receta === recetaId ? { ...receta, ingredientes } : receta,
+        ),
       );
     } catch (error) {
       showError("Error", "No se pudieron cargar los ingredientes de la receta");
@@ -117,8 +118,8 @@ const CocineraRecetas = () => {
         prev.map((receta) =>
           receta.id_receta === recetaId
             ? { ...receta, ingredientes: [] }
-            : receta
-        )
+            : receta,
+        ),
       );
     }
   };
@@ -134,7 +135,9 @@ const CocineraRecetas = () => {
           receta.nombreReceta
             .toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
-          receta.instrucciones.toLowerCase().includes(searchQuery.toLowerCase())
+          receta.instrucciones
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -152,7 +155,7 @@ const CocineraRecetas = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentRecetas = filteredRecetas.slice(
     indexOfFirstItem,
-    indexOfLastItem
+    indexOfLastItem,
   );
   const totalPages = Math.ceil(filteredRecetas.length / itemsPerPage);
 
@@ -191,7 +194,7 @@ const CocineraRecetas = () => {
       "Eliminar Receta",
       `¿Está seguro de que desea eliminar la receta "${receta.nombreReceta}"? Esta acción no se puede deshacer.`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     if (confirmed) {
@@ -214,11 +217,10 @@ const CocineraRecetas = () => {
         if (statusCode === 409 && errorCode === "RECIPE_IN_USE") {
           showError(
             "Receta en Uso",
-            `${errorData.message || "Esta receta no puede ser eliminada porque está siendo utilizada en planificaciones activas."}`
+            `${errorData.message || "Esta receta no puede ser eliminada porque está siendo utilizada en planificaciones activas."}`,
           );
         } else {
-          const msg =
-            errorData?.message || "Error al eliminar la receta";
+          const msg = errorData?.message || "Error al eliminar la receta";
           showError("Error", msg);
         }
       } finally {
@@ -233,11 +235,9 @@ const CocineraRecetas = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-        <p className="mt-3">Cargando recetas...</p>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Recetas...</p>
       </div>
     );
   }
@@ -245,13 +245,27 @@ const CocineraRecetas = () => {
   // Mostrar formulario si está activo
   if (showForm) {
     return (
-      <div className="receta-form-container">
-        <div className="form-header">
-          <button className="btn btn-secondary mb-3" onClick={closeForm}>
+      <div>
+        <div
+          className={`${ComponenteStyle.formActions} border-0 mt-0 pt-0`}
+          style={{ justifyContent: "flex-start" }}
+        >
+          <button
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnVolver}`}
+            onClick={closeForm}
+          >
             <i className="fas fa-arrow-left me-2"></i>
             Volver a la lista
           </button>
-          <h2>
+          <h2
+            style={{
+              flexGrow: 1,
+              textAlign: "center",
+              marginRight: "140px",
+              marginBottom: "30px",
+              marginTop: "none",
+            }}
+          >
             {formMode === "create" && "Crear Nueva Receta"}
             {formMode === "edit" && "Editar Receta"}
             {formMode === "view" && "Ver Receta"}
@@ -270,67 +284,63 @@ const CocineraRecetas = () => {
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-book-open me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-book-open"></i>
             Gestión de Recetas
           </h1>
-          <p className="page-subtitle">
+          <p className={ContenidoStyle.pageSubtitle}>
             Administra las recetas del comedor escolar
           </p>
         </div>
-        <div className="header-actions">
+        <div className={ContenidoStyle.headerActions}>
           <button
-            className="btn btn-primary"
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
             onClick={() => openForm("create")}
           >
-            <i className="fas fa-plus me-2"></i>
+            <i className="fas fa-plus"></i>
             Nueva Receta
           </button>
         </div>
       </div>
 
       {/* Filtros y búsqueda */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="row align-items-center">
-            <div className="col-md-8">
-              <div className="search-bar">
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Buscar por nombre o instrucciones..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
-            </div>
-            <div className="col-md-3">
-              <select
-                className="form-select"
-                value={filterEstado}
-                onChange={handleFilterEstado}
-              >
-                <option value="">Todos los estados</option>
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-              </select>
-            </div>
-            <div className="col-md-1">
-              {(searchQuery || filterEstado) && (
-                <button
-                  className="btn btn-outline-secondary w-100"
-                  onClick={clearFilters}
-                  title="Limpiar filtros"
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              )}
-            </div>
+
+      <div className={ContenidoStyle.headerLeft}>
+        <div className={ContenidoStyle.searchFilters}>
+          <div className={ContenidoStyle.searchBar}>
+            <input
+              type="text"
+              className={ContenidoStyle.searchInput}
+              placeholder="Buscar por nombre o instrucciones..."
+              value={searchQuery}
+              onChange={handleSearch}
+            />
           </div>
+          <div className={ContenidoStyle.filterActions}>
+            <select
+              className={ContenidoStyle.filterSelect}
+              value={filterEstado}
+              onChange={handleFilterEstado}
+            >
+              <option value="">Todos los estados</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+
+            {(searchQuery || filterEstado) && (
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={clearFilters}
+                title="Limpiar filtros"
+              >
+                <i className="fas fa-times"></i>
+                Limpiar
+              </button>
+            )}
+          </div>{" "}
         </div>
       </div>
 
@@ -355,11 +365,11 @@ const CocineraRecetas = () => {
           )}
         </div>
       ) : (
-        <>
+        <div>
           <div className="row">
             {currentRecetas.map((receta, index) => (
               <div key={receta.id_receta} className="col-lg-3 col-md-6 mb-4">
-                <div className="card">
+                <div className={ContenidoStyle.card}>
                   <div className="p-0">
                     <div
                       className="accordion"
@@ -486,12 +496,12 @@ const CocineraRecetas = () => {
                                       <span className="text-muted">
                                         {formatCantidad(
                                           ingrediente.cantidadPorPorcion,
-                                          ingrediente.unidadPorPorcion
+                                          ingrediente.unidadPorPorcion,
                                         )}{" "}
                                         {ingrediente.unidadPorPorcion}
                                       </span>
                                     </div>
-                                  )
+                                  ),
                                 )}
                               </div>
                             ) : (
@@ -587,7 +597,7 @@ const CocineraRecetas = () => {
 
                   {Array.from(
                     { length: totalPages },
-                    (_, index) => index + 1
+                    (_, index) => index + 1,
                   ).map((page) => (
                     <li
                       key={page}
@@ -621,7 +631,7 @@ const CocineraRecetas = () => {
               </nav>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

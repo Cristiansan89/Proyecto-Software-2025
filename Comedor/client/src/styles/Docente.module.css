@@ -1,0 +1,391 @@
+/* ===========================================
+                ESTILO LAYOUTS
+==============================================*/
+
+/* Responsive para docente layout */
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 0;
+  }
+
+  .contentArea {
+    margin: var(--content-offset-top) var(--content-offset-right)
+      var(--content-offset-bottom) var(--content-offset-left);
+  }
+}
+
+@media (max-width: 992px) {
+  .content-area {
+    padding: 1rem;
+  }
+}
+
+/* Botones de acción mejorados */
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btnAction {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.btnView {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #138496, #117a8b);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+  }
+}
+
+.btnEdit {
+  background: linear-gradient(135deg, #ffc107, #e0a800);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #e0a800, #d39e00);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+  }
+}
+
+.btnDelete {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  }
+}
+
+.btnEnable {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #20c997, #17a2b8);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  }
+}
+
+.btnDisable {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+  }
+}
+
+.btnAssign {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
+}
+
+/* ==========================================
+   ESTILOS ESPECÍFICOS DEL DASHBOARD DOCENTE
+   ========================================== */
+
+.docenteDashboard {
+  padding: 1rem;
+}
+
+.dashboardHeader {
+  margin-bottom: 2rem;
+}
+
+.dashboardHeader h1 {
+  color: #2c3e50;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.dashboardStatsDocente {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Información del grado asignado */
+.gradoInfoCard {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 2rem;
+  border-left: 4px solid #667eea;
+}
+
+.gradoInfoHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.gradoIcon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.gradoDetalles h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.gradoMeta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.gradoMeta span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Horarios del Día (Lista de cronogramas) */
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scheduleItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.scheduleTime {
+  min-width: 80px;
+  font-weight: 600;
+  color: #667eea;
+  font-size: 0.85rem;
+}
+
+.scheduleSubject {
+  flex: 1;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.scheduleStatus {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Manejo correcto de selectores compuestos en CSS Modules */
+.scheduleStatusGlobal {
+  composes: scheduleStatus;
+}
+:global(.upcoming) {
+  background: rgba(255, 193, 7, 0.2);
+  color: #856404;
+}
+:global(.current) {
+  background: rgba(40, 167, 69, 0.2);
+  color: #155724;
+}
+:global(.completed) {
+  background: rgba(108, 117, 125, 0.2);
+  color: #495057;
+}
+
+/* Estados vacíos */
+.emptyState {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.emptyState i {
+  font-size: 2.5rem;
+  color: #dee2e6;
+  margin-bottom: 0.5rem;
+}
+
+/* Tarjeta de ayuda */
+.helpCard {
+  height: 100%;
+}
+
+.helpSteps {
+  padding-left: 1.2rem;
+  margin: 0;
+}
+
+.helpSteps li {
+  margin-bottom: 0.75rem;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.helpSteps li:last-child {
+  margin-bottom: 0;
+}
+
+/* Clase base compartida por todas las tarjetas */
+.statsCard {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  text-align: center;
+  padding: 15px; /* Aumentado un poco para que respire más el número */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white; /* Color por defecto */
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* Modificadores de color específicos */
+.asistencias {
+  background: linear-gradient(135deg, #5009d3 20%, #7231e9 100%);
+}
+
+.inasistencias {
+  background: linear-gradient(135deg, #d3093c 20%, #ff3769c5 100%);
+}
+
+.desayuno {
+  background: linear-gradient(135deg, #0978d3 20%, #1897ffc4 100%);
+}
+
+.siDesayuno {
+  background: linear-gradient(135deg, #87afcf 20%, #7cc0f7c4 100%);
+}
+
+.noDesayuno {
+  background: linear-gradient(135deg, #afb8c0 20%, #3c6b91 100%);
+}
+
+.almuerzo {
+  background: linear-gradient(135deg, #ffda09 20%, #887b32d8 100%);
+}
+
+.siAlmuerzo {
+  background: linear-gradient(135deg, #efff09 20%, #eefa40 100%);
+  color: rgb(0, 0, 0);
+  text-shadow: none; /* Quitamos sombra para mejor lectura sobre amarillo */
+}
+
+.noAlmuerzo {
+  background: linear-gradient(135deg, #7e833b 20%, #aab608 100%);
+}
+
+.merienda {
+  background: linear-gradient(135deg, #ff7a09 20%, #ff9e5dc4 100%);
+}
+
+.siMerienda {
+  background: linear-gradient(135deg, #ffaf69 20%, #ffd3b6 100%);
+  color: #333;
+  text-shadow: none;
+}
+
+.noMerienda {
+  background: linear-gradient(135deg, #d36b09 20%, #4e3c0ac5 100%);
+}
+
+.alumnos {
+  background: linear-gradient(135deg, #096ed3 0%, #54a1ee 100%);
+}
+
+.masculino {
+  background: linear-gradient(135deg, #5009d3 0%, #7231e9 100%);
+}
+
+.femenino {
+  background: linear-gradient(135deg, #f70ab0 0%, #f03dba 100%);
+}
+
+.inactivo {
+  background: linear-gradient(135deg, #ff2631d3 0%, #ff3c46c0 100%);
+}
+
+.alumnosDashboard {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.serviciosDashboard {
+  background: linear-gradient(135deg, #36ff09 0%, #6df345c4 100%);
+}
+
+.fechaHoy {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.badge-status-alumno {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: unset;
+  align-items: center;
+}
+
+.badge-status-alumno.activo {
+  background: greenyellow;
+  color: #0000009d;
+  border: 1px solid #c3e6cb00;
+}
+
+.badge-status-alumno.inactivo {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}

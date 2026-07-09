@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
 import Select from "react-select";
 import { showSuccess, showError, showWarning } from "../../utils/alertService";
 import { formatNumeroAR } from "../../utils/formatNumero";
 import { formatDate } from "../../utils/dateUtils";
-import "../../styles/CocineraInventario.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import CocineraStyle from "../../styles/CocineraInventario.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
 
 const CocineraInventario = () => {
   const { user } = useAuth();
@@ -27,8 +31,8 @@ const CocineraInventario = () => {
   });
   const [tiposMerma, setTiposMerma] = useState([]);
   const [alertasInventario, setAlertasInventario] = useState([]);
-  const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState({
     key: "id_insumo",
     direction: "asc",
@@ -141,6 +145,16 @@ const CocineraInventario = () => {
     return cats;
   };
 
+  const clearFilters = () => {
+    setFiltros({
+      categoria: "",
+      estado: "",
+      busqueda: "",
+    });
+
+    setCurrentPage(1);
+  };
+
   const obtenerEstadoStock = (inventario) => {
     const cantidad = parseFloat(inventario.cantidadActual);
     const stockMaximo = parseFloat(inventario.stockMaximo);
@@ -167,7 +181,28 @@ const CocineraInventario = () => {
       return { estado: "bueno", color: "info", texto: "Bueno" };
     }
     // Excelente: > 70%
-    return { estado: "excelente", color: "success", texto: "Excelente" };
+    return { estado: "excelente", color: "excelente", texto: "Excelente" };
+  };
+
+  const handleFilterSearch = (e) => {
+    setFiltros({
+      ...filtros,
+      busqueda: e.target.value,
+    });
+  };
+
+  const handleFilterCategoria = (e) => {
+    setFiltros({
+      ...filtros,
+      categoria: e.target.value,
+    });
+  };
+
+  const handleFilterEstado = (e) => {
+    setFiltros({
+      ...filtros,
+      estado: e.target.value,
+    });
   };
 
   const registrarMovimiento = async () => {
@@ -272,17 +307,6 @@ const CocineraInventario = () => {
     }),
   };
 
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-        <p className="mt-3">Cargando inventario...</p>
-      </div>
-    );
-  }
-
   const inventariosFiltrados = obtenerInventarioFiltrado();
   const categorias = obtenerCategorias();
   const ultimosMovimientos = obtenerUltimosMovimientos();
@@ -309,21 +333,32 @@ const CocineraInventario = () => {
     return sortConfig.direction === "asc" ? comparison : -comparison;
   });
 
-  // Aplicar paginación
-  const totalPages = Math.ceil(inventariosOrdenados.length / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
+  // Paginación
+  const totalPages = Math.ceil(inventariosOrdenados.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
   const inventariosPaginados = inventariosOrdenados.slice(startIndex, endIndex);
 
+  if (loading) {
+    return (
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Inventarios...</p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-warehouse me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-warehouse"></i>
             Control de Inventario
           </h1>
-          <p>Gestión de insumos y stock del comedor</p>
+          <p className={ContenidoStyle.pageSubtitle}>
+            Gestión de insumos y stock del comedor
+          </p>
         </div>
       </div>
 
@@ -350,22 +385,28 @@ const CocineraInventario = () => {
             >
               <div className="accordion-body">
                 <div className="row">
-                  {alertasInventario.map((alerta, index) => (
-                    <div key={index} className="col-md-6 col-lg-4 mb-2">
-                      <div
-                        className={`alerta-inventario alerta-inventario-${
-                          alerta.tipo === "critico"
-                            ? "danger"
-                            : alerta.tipo === "agotado"
-                              ? "dark"
-                              : "warning"
-                        }`}
-                      >
-                        <strong>{alerta.insumo}</strong>
-                        <small>{formatNumeroAR(alerta.cantidad)} {alerta.unidad} ({alerta.porcentaje.toFixed(1)}% del stock máximo)</small>
+                  {alertasInventario.map((alerta, index) => {
+                    const alertaTypeClass =
+                      alerta.tipo === "critico"
+                        ? CocineraStyle.alertaDanger
+                        : alerta.tipo === "agotado"
+                          ? CocineraStyle.alertaDark
+                          : CocineraStyle.alertaWarning;
+
+                    return (
+                      <div key={index} className="col-md-6 col-lg-4 mb-2">
+                        <div
+                          className={`${CocineraStyle.alertaInventario} ${alertaTypeClass}`}
+                        >
+                          <strong>{alerta.insumo}</strong>
+                          <small>
+                            {formatNumeroAR(alerta.cantidad)} {alerta.unidad} (
+                            {alerta.porcentaje.toFixed(1)}% del stock máximtto)
+                          </small>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -374,183 +415,171 @@ const CocineraInventario = () => {
       )}
 
       <div className="row">
-        {/* Panel principal */}
         <div className="col-lg-9">
-          {/* Filtros */}
-          <div className="card mb-4">
-            <div className="card-body">
-              <div className="row align-items-end">
-                <div className="col-md-4">
-                  <label className="form-label">Buscar Insumo</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Nombre del Insumo..."
-                    value={filtros.busqueda}
-                    onChange={(e) =>
-                      setFiltros({
-                        ...filtros,
-                        busqueda: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label">Categoría</label>
-                  <select
-                    className="form-select"
-                    value={filtros.categoria}
-                    onChange={(e) =>
-                      setFiltros({
-                        ...filtros,
-                        categoria: e.target.value,
-                      })
-                    }
+          <div className={ContenidoStyle.headerLeft}>
+            <div className={ContenidoStyle.searchFilters}>
+              <div className={ContenidoStyle.searchBar}>
+                <input
+                  type="text"
+                  className={ComponenteStyle.formControl}
+                  placeholder="Nombre del Insumo..."
+                  value={filtros.busqueda}
+                  onChange={handleFilterSearch}
+                />
+              </div>
+              <div className={ContenidoStyle.filterActions}>
+                <select
+                  className={ContenidoStyle.filterSelect}
+                  value={filtros.categoria}
+                  onChange={handleFilterCategoria}
+                >
+                  <option value="">Todas las categorías</option>
+                  {categorias.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className={ContenidoStyle.filterSelect}
+                  value={filtros.estado}
+                  onChange={handleFilterEstado}
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="critico">Stock Crítico</option>
+                  <option value="bajo">Stock Bajo</option>
+                  <option value="normal">Stock Normal</option>
+                </select>
+                {(filtros.busqueda || filtros.categoria || filtros.estado) && (
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={clearFilters}
+                    title="Limpiar filtros"
                   >
-                    <option value="">Todas las categorías</option>
-                    {categorias.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label">Estado de stock</label>
-                  <select
-                    className="form-select"
-                    value={filtros.estado}
-                    onChange={(e) =>
-                      setFiltros({
-                        ...filtros,
-                        estado: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Todos los estados</option>
-                    <option value="critico">Stock Crítico</option>
-                    <option value="bajo">Stock Bajo</option>
-                    <option value="normal">Stock Normal</option>
-                  </select>
-                </div>
+                    <i className="fas fa-times"></i>
+                    Limpiar
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
           {/* Lista de inventario */}
-          <div className="card">
-            <div className="card-header">
-              <h4>
-                <i className="fas fa-clipboard-list me-2"></i>
-                Inventario Actual
-              </h4>
-              <div></div>
-            </div>
-            <div className="card-body">
-              {/* Selector de tamaño de página y Paginación */}
-              <div className="page-size-selector d-flex align-items-center gap-2 ml-2 mb-2">
-                <label className="mb-0">
-                  <strong>
-                    <i>Registros por página</i>:
-                  </strong>
+          <div className={ContenidoStyle.card}>
+            <div
+              className={`${ContenidoStyle.cardHeader} ${ContenidoStyle.headerInventario} pb-0 pt-2`}
+            >
+              <h5>
+                <i className="fas fa-clipboard-list me-1"></i>
+                Registro de Inventario
+              </h5>
+
+              <div className={ContenidoStyle.headerRight}>
+                <label className="mx-2">
+                  <span>Registros por página:</span>
                 </label>
                 <select
-                  className="form-select"
-                  style={{ width: "60px" }}
-                  value={pageSize}
+                  value={itemsPerPage}
                   onChange={(e) => {
-                    setPageSize(Number(e.target.value));
+                    setItemsPerPage(Number(e.target.value));
                     setCurrentPage(1);
                   }}
                 >
                   <option value={5}>5</option>
                   <option value={10}>10</option>
                   <option value={20}>20</option>
+                  <option value={50}>50</option>
                 </select>
-                <span className="ms-2 text-muted">
-                  Total: {inventariosOrdenados.length} registros
-                </span>
               </div>
+            </div>
+
+            <div className={TablaStyle.tableContainer}>
               {inventariosFiltrados.length === 0 ? (
-                <div className="text-center py-4">
-                  <i className="fas fa-search fa-2x text-muted mb-3"></i>
-                  <div colSpan={12}>
-                    <div className="empty-state">
-                      <i className="fas fa-search empty-icon"></i>
-                      <h5>No se encontraron insumos</h5>
-                      <p>No hay insumos que coincidan con tu búsqueda.</p>
-                    </div>
+                <div>
+                  <div className={TablaStyle.emptyState}>
+                    <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+                    <h5>No se encontraron insumos</h5>
+                    <p>No hay insumos que coincidan con tu búsqueda.</p>
                   </div>
                 </div>
               ) : (
-                <div className="table-container">
-                  <table className="table table-striped data-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Insumo</th>
-                        <th>Categoría</th>
-                        <th>Stock Actual</th>
-                        <th>Stock Mínimo</th>
-                        <th>Estado</th>
-                        <th>Última Actualización</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {inventariosPaginados.map((inventario) => {
-                        const estadoStock = obtenerEstadoStock(inventario);
-                        // Calcular porcentaje respecto al stock maximo
-                        const porcentajeDelMinimo =
-                          (parseFloat(inventario.cantidadActual) * 100) /
-                          parseFloat(inventario.stockMaximo);
-                        return (
-                          <tr key={inventario.id_insumo}>
-                            <td>
-                              <strong>{inventario.id_insumo}</strong>
-                            </td>
-                            <td>
-                              <div>
-                                <strong>
-                                  {inventario.nombreInsumo ||
-                                    "Insumo no encontrado"}
-                                </strong>
-                                {inventario.descripcion && (
-                                  <small className="text-muted d-block">
-                                    {inventario.descripcion}
-                                  </small>
-                                )}
-                              </div>
-                            </td>
-                            <td>
-                              <span className="badge bg-secondary">
-                                {inventario.categoria || "Sin categoría"}
-                              </span>
-                            </td>
-                            <td>
-                              <strong>
-                                {formatNumeroAR(inventario.cantidadActual)}{" "}
-                                {inventario.unidadMedida}
-                              </strong>
-                            </td>
-                            <td className="text-danger">
-                              <strong>
-                                {formatNumeroAR(inventario.nivelMinimoAlerta)}{" "}
-                                {inventario.unidadMedida}
-                              </strong>
-                            </td>
-                            <td>
-                              <div>
+                <div className={TablaStyle.scrollableTable}>
+                  <div className={TablaStyle.tableBodyScroll}>
+                    <table
+                      className={`${TablaStyle.tableData} table table-striped`}
+                    >
+                      <thead className={TablaStyle.tableHeaderFixed}>
+                        <tr>
+                          <th>#</th>
+                          <th>Insumo</th>
+                          <th>Categoría</th>
+                          <th>Stock Actual</th>
+                          <th>Stock Mínimo</th>
+                          <th>Estado</th>
+                          <th>Nivel</th>
+                          <th>Última Actualización</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inventariosPaginados.map((inventario) => {
+                          const estadoStock = obtenerEstadoStock(inventario);
+                          // Calcular porcentaje respecto al stock maximo
+                          const porcentajeDelMinimo =
+                            (parseFloat(inventario.cantidadActual) * 100) /
+                            parseFloat(inventario.stockMaximo);
+                          return (
+                            <tr key={inventario.id_insumo}>
+                              <td>
+                                <strong>{inventario.id_insumo}</strong>
+                              </td>
+                              <td>
+                                <div>
+                                  <strong>
+                                    {inventario.nombreInsumo ||
+                                      "Insumo no encontrado"}
+                                  </strong>
+                                  {inventario.descripcion && (
+                                    <small className="text-muted d-block">
+                                      {inventario.descripcion}
+                                    </small>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
                                 <span
-                                  className={`badge bg-${estadoStock.color}`}
+                                  className={`${ComponenteStyle.badge} bg-secondary text-white fw-bold`}
                                 >
-                                  {estadoStock.texto}
+                                  {inventario.categoria || "Sin categoría"}
                                 </span>
+                              </td>
+                              <td>
+                                <strong>
+                                  {formatNumeroAR(inventario.cantidadActual)}{" "}
+                                  {inventario.unidadMedida}
+                                </strong>
+                              </td>
+                              <td className="text-danger">
+                                <strong>
+                                  {formatNumeroAR(inventario.nivelMinimoAlerta)}{" "}
+                                  {inventario.unidadMedida}
+                                </strong>
+                              </td>
+                              <td>
+                                <div>
+                                  <span
+                                    className={`${ComponenteStyle.badge} ${estadoStock.color === "excelente" ? ComponenteStyle.bgTeal : `bg-${estadoStock.color}`} text-white fw-bold`}
+                                  >
+                                    {estadoStock.texto}
+                                  </span>
+                                </div>
+                              </td>
+                              <td>
                                 <div
                                   className="progress mt-1"
                                   style={{ height: "6px" }}
                                 >
                                   <div
-                                    className={`progress-bar bg-${estadoStock.color}`}
+                                    className={`progress-bar ${estadoStock.color === "excelente" ? ComponenteStyle.bgTeal : `bg-${estadoStock.color}`}`}
                                     style={{
                                       width: `${Math.min(
                                         porcentajeDelMinimo,
@@ -563,44 +592,42 @@ const CocineraInventario = () => {
                                   {porcentajeDelMinimo.toFixed(1)}% del nivel
                                   mínimo
                                 </small>
-                              </div>
-                            </td>
-                            <td className="text-center">
-                              {formatDate(inventario.fechaUltimaActualizacion)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  {totalPages > 1 && (
-                    <div className="table-footer">
-                      <div className="pagination">
-                        <button
-                          className="pagination-btn"
-                          onClick={() =>
-                            setCurrentPage((p) => Math.max(1, p - 1))
-                          }
-                          disabled={currentPage === 1}
-                        >
-                          <i className="fas fa-chevron-left"></i>
-                        </button>
-                        <div className="pagination-info">
-                          Página {currentPage} de {totalPages} (
-                          {inventariosOrdenados.length} registros)
-                        </div>
-                        <button
-                          className="pagination-btn"
-                          onClick={() =>
-                            setCurrentPage((p) => Math.min(totalPages, p + 1))
-                          }
-                          disabled={currentPage === totalPages}
-                        >
-                          <i className="fas fa-chevron-right"></i>
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                              </td>
+                              <td className="text-center">
+                                {formatDate(
+                                  inventario.fechaUltimaActualizacion,
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {totalPages > 1 && (
+                <div className={TablaStyle.pagination}>
+                  <button
+                    className={TablaStyle.paginationBtn}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <i className="fas fa-chevron-left"></i>
+                  </button>
+                  <div className={TablaStyle.paginationInfo}>
+                    Página {currentPage} de {totalPages}
+                  </div>
+                  <button
+                    className={TablaStyle.paginationBtn}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    <i className="fas fa-chevron-right"></i>
+                  </button>
                 </div>
               )}
             </div>
@@ -610,46 +637,65 @@ const CocineraInventario = () => {
         {/* Panel lateral */}
         <div className="col-lg-3 ml-lg-4">
           {/* Accordion de Estadísticas */}
-          <div className="accordion ml-2" id="accordionEstadisticas">
-            <div className="accordion-item">
+          <div className="accordion ms-2" id="accordionEstadisticas">
+            {" "}
+            {/* Corregido ml-2 a ms-2 */}
+            <div className="accordion-item shadow-sm">
+              {" "}
+              {/* shadow-sm le da profundidad visual */}
               <h2 className="accordion-header" id="headingEst">
                 <button
-                  className="accordion-button"
+                  className="accordion-button fw-bold text-secondary"
                   type="button"
                   data-bs-toggle="collapse"
                   data-bs-target="#collapseEst"
                   aria-expanded="true"
                   aria-controls="collapseEst"
                 >
-                  <i className="fas fa-chart-pie me-2"></i>
+                  <i className="fas fa-chart-pie me-2 text-primary"></i>
                   Estadísticas
                 </button>
               </h2>
-
               <div
                 id="collapseEst"
-                className="accordion-collapse collapse"
+                className="accordion-collapse collapse show" /* Se añade 'show' para que por defecto empiece abierto */
                 aria-labelledby="headingEst"
                 data-bs-parent="#accordionEstadisticas"
               >
-                <div className="accordion-body">
-                  <div className="stat-item mb-2">
-                    <div className="stat-icon bg-primary">
+                <div className="accordion-body p-2">
+                  {" "}
+                  {/* p-2 optimiza el espacio de las tarjetas internas */}
+                  {/* Total Insumos */}
+                  <div className="d-flex align-items-center border rounded p-2 mb-2 bg-light">
+                    <div
+                      className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                      style={{ width: "40px", height: "40px" }}
+                    >
                       <i className="fas fa-boxes"></i>
                     </div>
-                    <div className="stat-content">
-                      <h6>Total Insumos</h6>
-                      <h5>{inventarios.length}</h5>
+                    <div>
+                      <p className="text-muted small mb-0 fw-medium">
+                        Total Insumos
+                      </p>
+                      <h5 className="mb-0 fw-bold">{inventarios.length}</h5>
                     </div>
                   </div>
-
-                  <div className="stat-item mb-2">
-                    <div className="stat-icon bg-danger">
+                  {/* Stock Crítico */}
+                  <div
+                    className="d-flex align-items-center border border-danger-subtle rounded p-2 mb-2 bg-danger- Hail-subtle"
+                    style={{ backgroundColor: "#fff5f5" }}
+                  >
+                    <div
+                      className="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center me-3"
+                      style={{ width: "40px", height: "40px" }}
+                    >
                       <i className="fas fa-exclamation-triangle"></i>
                     </div>
-                    <div className="stat-content">
-                      <h6>Stock Crítico</h6>
-                      <h5>
+                    <div>
+                      <p className="text-danger small mb-0 fw-medium">
+                        Stock Crítico
+                      </p>
+                      <h5 className="mb-0 fw-bold text-danger">
                         {
                           alertasInventario.filter((a) => a.tipo === "critico")
                             .length
@@ -657,14 +703,22 @@ const CocineraInventario = () => {
                       </h5>
                     </div>
                   </div>
-
-                  <div className="stat-item mb-2">
-                    <div className="stat-icon bg-warning">
+                  {/* Stock Bajo */}
+                  <div
+                    className="d-flex align-items-center border border-warning-subtle rounded p-2 mb-2"
+                    style={{ backgroundColor: "#fffdf5" }}
+                  >
+                    <div
+                      className="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center me-3"
+                      style={{ width: "40px", height: "40px" }}
+                    >
                       <i className="fas fa-minus-circle"></i>
                     </div>
-                    <div className="stat-content">
-                      <h6>Stock Bajo</h6>
-                      <h5>
+                    <div>
+                      <p className="text-warning-emphasis small mb-0 fw-medium">
+                        Stock Bajo
+                      </p>
+                      <h5 className="mb-0 fw-bold text-warning-emphasis">
                         {
                           alertasInventario.filter((a) => a.tipo === "bajo")
                             .length
@@ -672,14 +726,19 @@ const CocineraInventario = () => {
                       </h5>
                     </div>
                   </div>
-
-                  <div className="stat-item mb-2">
-                    <div className="stat-icon bg-info">
+                  {/* Categorías */}
+                  <div className="d-flex align-items-center border rounded p-2 bg-light">
+                    <div
+                      className="rounded-circle bg-info text-white d-flex align-items-center justify-content-center me-3"
+                      style={{ width: "40px", height: "40px" }}
+                    >
                       <i className="fas fa-tags"></i>
                     </div>
-                    <div className="stat-content">
-                      <h6>Categorías</h6>
-                      <h5>{categorias.length}</h5>
+                    <div>
+                      <p className="text-muted small mb-0 fw-medium">
+                        Categorías
+                      </p>
+                      <h5 className="mb-0 fw-bold">{categorias.length}</h5>
                     </div>
                   </div>
                 </div>
@@ -688,35 +747,37 @@ const CocineraInventario = () => {
           </div>
 
           {/* Últimos movimientos */}
-          <div className="accordion ml-2 mt-3" id="accordionMovimientos">
-            <div className="accordion-item">
+          <div className="accordion ms-2 mt-3" id="accordionMovimientos">
+            {" "}
+            {/* Corregido ml-2 a ms-2 */}
+            <div className="accordion-item shadow-sm">
               <h2 className="accordion-header" id="headingMov">
                 <button
-                  className="accordion-button"
+                  className="accordion-button fw-bold text-secondary"
                   type="button"
                   data-bs-toggle="collapse"
                   data-bs-target="#collapseMov"
                   aria-expanded="true"
                   aria-controls="collapseMov"
                 >
-                  <i className="fas fa-history me-2"></i>
+                  <i className="fas fa-history me-2 text-success"></i>
                   Últimos Movimientos
                 </button>
               </h2>
 
               <div
                 id="collapseMov"
-                className="accordion-collapse collapse"
+                className="accordion-collapse collapse show" /* Empezar abierto */
                 aria-labelledby="headingMov"
                 data-bs-parent="#accordionMovimientos"
               >
-                <div className="accordion-body">
+                <div className="accordion-body p-3">
                   {ultimosMovimientos.length === 0 ? (
-                    <p className="text-muted text-center">
+                    <p className="text-muted text-center small my-3">
                       No hay movimientos recientes
                     </p>
                   ) : (
-                    <div className="movimientos-list">
+                    <div className="d-flex flex-column gap-3">
                       {ultimosMovimientos.map((mov, index) => {
                         const insumo = inventarios.find(
                           (inv) =>
@@ -725,16 +786,20 @@ const CocineraInventario = () => {
                         );
 
                         return (
-                          <div key={index} className="movimiento-item">
-                            <div className="movimiento-header">
+                          <div
+                            key={index}
+                            className={`pb-2 ${index !== ultimosMovimientos.length - 1 ? "border-bottom" : ""}`}
+                          >
+                            <div className="d-flex justify-content-between align-items-center mb-1">
                               <span
-                                className={`badge bg-${
+                                className={`${ComponenteStyle.badge} bg-${
                                   mov.tipoMovimiento === "Entrada"
                                     ? "success"
                                     : mov.tipoMovimiento === "Salida"
                                       ? "danger"
                                       : "warning"
-                                }`}
+                                } text-white`}
+                                style={{ fontSize: "0.75rem" }}
                               >
                                 {mov.tipoMovimiento === "Entrada"
                                   ? "↗️ Entrada"
@@ -742,16 +807,18 @@ const CocineraInventario = () => {
                                     ? "↙️ Salida"
                                     : "🗑️ Merma"}
                               </span>
-                              <small className="text-muted mx-2">
+                              <small
+                                className="text-muted"
+                                style={{ fontSize: "0.75rem" }}
+                              >
                                 {formatDate(mov.fechaHora)}
                               </small>
                             </div>
-                            <div className="movimiento-content mb-2">
-                              <strong>
+                            <div className="ps-1">
+                              <div className="fw-semibold text-dark small">
                                 {insumo?.nombreInsumo || "Insumo desconocido"}
-                              </strong>
-                              <br />
-                              <span>
+                              </div>
+                              <span className="text-muted small">
                                 {formatNumeroAR(mov.cantidadMovimiento)}{" "}
                                 {insumo?.unidadMedida}
                               </span>
@@ -769,215 +836,240 @@ const CocineraInventario = () => {
       </div>
 
       {/* Modal de nuevo movimiento */}
-      {modalMovimiento && (
-        <div
-          className="modal fade show"
-          style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  Registrar Movimiento de Inventario
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setModalMovimiento(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                {/* Debug info */}
-                <div className="alert alert-info mb-3">
-                  <small>
-                    <strong>Debug:</strong> Inventarios: {inventarios.length},
-                    Opciones: {opcionesInsumos.length}, Tipos de merma:{" "}
-                    {tiposMerma.length}
-                    <br />
-                    Estado loading: {loading ? "Sí" : "No"}
-                  </small>
+      {modalMovimiento &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    Registrar Movimiento de Inventario
+                  </h5>
+                  <button
+                    type="button"
+                    className={FormularioStyle.modalClose}
+                    onClick={() => setModalMovimiento(false)}
+                  ></button>
                 </div>
-                <div className="mb-3">
-                  <label className="form-label">Insumo *</label>
-                  {opcionesInsumos.length === 0 && (
-                    <div className="alert alert-warning">
-                      🔄 Cargando inventario... ({inventarios.length} items
-                      disponibles)
-                    </div>
-                  )}
-                  <Select
-                    options={opcionesInsumos}
-                    value={
-                      opcionesInsumos.find(
-                        (opt) => opt.value == nuevoMovimiento.id_insumo,
-                      ) || null
-                    }
-                    onChange={(selectedOption) => {
-                      setNuevoMovimiento({
-                        ...nuevoMovimiento,
-                        id_insumo: selectedOption ? selectedOption.value : "",
-                      });
-                    }}
-                    placeholder={`Buscar y seleccionar insumo... (${opcionesInsumos.length} disponibles)`}
-                    isSearchable
-                    isClearable
-                    styles={customSelectStyles}
-                    formatOptionLabel={(option) => (
-                      <div>
-                        <div style={{ fontWeight: "bold" }}>
-                          {option.data.nombreInsumo}
-                        </div>
-                        <div style={{ fontSize: "0.875rem", color: "#6c757d" }}>
-                          Unidad: {option.data.unidadMedida} | Categoría:{" "}
-                          {option.data.categoria || "Sin categoría"}
-                          {option.data.inventario &&
-                            ` | Stock: ${parseFloat(
-                              option.data.inventario.cantidadActual || 0,
-                            ).toFixed(3)}`}
-                        </div>
+                <div className={FormularioStyle.modalBody}>
+                  {/* Debug info */}
+                  <div
+                    className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo} mb-3`}
+                  >
+                    <small>
+                      <strong>Debug:</strong> Inventarios: {inventarios.length},
+                      Opciones: {opcionesInsumos.length}, Tipos de merma:{" "}
+                      {tiposMerma.length}
+                      <br />
+                      Estado loading: {loading ? "Sí" : "No"}
+                    </small>
+                  </div>
+                  <div className="mb-3">
+                    <label className={ComponenteStyle.formLabel}>
+                      Insumo *
+                    </label>
+                    {opcionesInsumos.length === 0 && (
+                      <div
+                        className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo}`}
+                      >
+                        🔄 Cargando inventario... ({inventarios.length} items
+                        disponibles)
                       </div>
                     )}
-                    noOptionsMessage={() => "No se encontraron insumos"}
-                    loadingMessage={() => "Cargando insumos..."}
-                  />
-                  {nuevoMovimiento.id_insumo && (
-                    <small className="form-text text-muted">
-                      {(() => {
-                        const inventarioSeleccionado = inventarios.find(
-                          (inv) => inv.id_insumo == nuevoMovimiento.id_insumo,
-                        );
-                        if (inventarioSeleccionado) {
-                          return `Stock actual: ${parseFloat(
-                            inventarioSeleccionado.cantidadActual,
-                          ).toFixed(3)} ${
-                            inventarioSeleccionado.unidadMedida
-                          } | Categoría: ${
-                            inventarioSeleccionado.categoria || "Sin categoría"
-                          }`;
-                        }
-                        return "";
-                      })()}
-                    </small>
-                  )}
-                </div>{" "}
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Tipo de movimiento</label>
                     <Select
-                      options={opcionesTiposMovimiento}
-                      value={opcionesTiposMovimiento.find(
-                        (opt) => opt.value === nuevoMovimiento.tipoMovimiento,
-                      )}
-                      onChange={(selectedOption) => {
-                        setNuevoMovimiento({
-                          ...nuevoMovimiento,
-                          tipoMovimiento: selectedOption.value,
-                          id_tipoMerma: "", // Reset merma when changing type
-                        });
-                      }}
-                      isSearchable={false}
-                      styles={customSelectStyles}
-                    />
-                  </div>
-
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Cantidad *</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={nuevoMovimiento.cantidadMovimiento}
-                      onChange={(e) =>
-                        setNuevoMovimiento({
-                          ...nuevoMovimiento,
-                          cantidadMovimiento: e.target.value,
-                        })
-                      }
-                      min="0"
-                      step="0.001"
-                      required
-                    />
-                  </div>
-                </div>
-                {nuevoMovimiento.tipoMovimiento === "Merma" && (
-                  <div className="mb-3">
-                    <label className="form-label">Tipo de Merma *</label>
-                    <Select
-                      options={opcionesTiposMerma}
+                      options={opcionesInsumos}
                       value={
-                        opcionesTiposMerma.find(
-                          (opt) => opt.value == nuevoMovimiento.id_tipoMerma,
+                        opcionesInsumos.find(
+                          (opt) => opt.value == nuevoMovimiento.id_insumo,
                         ) || null
                       }
                       onChange={(selectedOption) => {
                         setNuevoMovimiento({
                           ...nuevoMovimiento,
-                          id_tipoMerma: selectedOption
-                            ? selectedOption.value
-                            : "",
+                          id_insumo: selectedOption ? selectedOption.value : "",
                         });
                       }}
-                      placeholder="Seleccionar tipo de merma..."
+                      placeholder={`Buscar y seleccionar insumo... (${opcionesInsumos.length} disponibles)`}
                       isSearchable
                       isClearable
                       styles={customSelectStyles}
+                      formatOptionLabel={(option) => (
+                        <div>
+                          <div style={{ fontWeight: "bold" }}>
+                            {option.data.nombreInsumo}
+                          </div>
+                          <div
+                            style={{ fontSize: "0.875rem", color: "#6c757d" }}
+                          >
+                            Unidad: {option.data.unidadMedida} | Categoría:{" "}
+                            {option.data.categoria || "Sin categoría"}
+                            {option.data.inventario &&
+                              ` | Stock: ${parseFloat(
+                                option.data.inventario.cantidadActual || 0,
+                              ).toFixed(3)}`}
+                          </div>
+                        </div>
+                      )}
+                      noOptionsMessage={() => "No se encontraron insumos"}
+                      loadingMessage={() => "Cargando insumos..."}
+                    />
+                    {nuevoMovimiento.id_insumo && (
+                      <small
+                        className={`${ComponenteStyle.formText} text-muted`}
+                      >
+                        {(() => {
+                          const inventarioSeleccionado = inventarios.find(
+                            (inv) => inv.id_insumo == nuevoMovimiento.id_insumo,
+                          );
+                          if (inventarioSeleccionado) {
+                            return `Stock actual: ${parseFloat(
+                              inventarioSeleccionado.cantidadActual,
+                            ).toFixed(3)} ${
+                              inventarioSeleccionado.unidadMedida
+                            } | Categoría: ${
+                              inventarioSeleccionado.categoria ||
+                              "Sin categoría"
+                            }`;
+                          }
+                          return "";
+                        })()}
+                      </small>
+                    )}
+                  </div>{" "}
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className={ComponenteStyle.formLabel}>
+                        Tipo de movimiento
+                      </label>
+                      <Select
+                        options={opcionesTiposMovimiento}
+                        value={opcionesTiposMovimiento.find(
+                          (opt) => opt.value === nuevoMovimiento.tipoMovimiento,
+                        )}
+                        onChange={(selectedOption) => {
+                          setNuevoMovimiento({
+                            ...nuevoMovimiento,
+                            tipoMovimiento: selectedOption.value,
+                            id_tipoMerma: "", // Reset merma when changing type
+                          });
+                        }}
+                        isSearchable={false}
+                        styles={customSelectStyles}
+                      />
+                    </div>
+
+                    <div className="col-md-6 mb-3">
+                      <label className={ComponenteStyle.formLabel}>
+                        Cantidad *
+                      </label>
+                      <input
+                        type="number"
+                        className={ComponenteStyle.formControl}
+                        value={nuevoMovimiento.cantidadMovimiento}
+                        onChange={(e) =>
+                          setNuevoMovimiento({
+                            ...nuevoMovimiento,
+                            cantidadMovimiento: e.target.value,
+                          })
+                        }
+                        min="0"
+                        step="0.001"
+                        required
+                      />
+                    </div>
+                  </div>
+                  {nuevoMovimiento.tipoMovimiento === "Merma" && (
+                    <div className="mb-3">
+                      <label className={ComponenteStyle.formLabel}>
+                        Tipo de Merma *
+                      </label>
+                      <Select
+                        options={opcionesTiposMerma}
+                        value={
+                          opcionesTiposMerma.find(
+                            (opt) => opt.value == nuevoMovimiento.id_tipoMerma,
+                          ) || null
+                        }
+                        onChange={(selectedOption) => {
+                          setNuevoMovimiento({
+                            ...nuevoMovimiento,
+                            id_tipoMerma: selectedOption
+                              ? selectedOption.value
+                              : "",
+                          });
+                        }}
+                        placeholder="Seleccionar tipo de merma..."
+                        isSearchable
+                        isClearable
+                        styles={customSelectStyles}
+                      />
+                    </div>
+                  )}
+                  <div className="mb-3">
+                    <label className={ComponenteStyle.formLabel}>
+                      {nuevoMovimiento.tipoMovimiento === "Entrada"
+                        ? "Observaciones (proveedor, factura, etc.)"
+                        : nuevoMovimiento.tipoMovimiento === "Salida"
+                          ? "Observaciones (destino, receta, etc.)"
+                          : "Descripción de la merma"}
+                    </label>
+                    <textarea
+                      className={ComponenteStyle.formControl}
+                      rows="3"
+                      value={nuevoMovimiento.comentarioMovimiento}
+                      onChange={(e) =>
+                        setNuevoMovimiento({
+                          ...nuevoMovimiento,
+                          comentarioMovimiento: e.target.value,
+                        })
+                      }
+                      placeholder={
+                        nuevoMovimiento.tipoMovimiento === "Entrada"
+                          ? "Proveedor, número de factura, lote..."
+                          : nuevoMovimiento.tipoMovimiento === "Salida"
+                            ? "Para qué receta, consumo directo..."
+                            : "Detalles sobre la causa de la merma..."
+                      }
                     />
                   </div>
-                )}
-                <div className="mb-3">
-                  <label className="form-label">
-                    {nuevoMovimiento.tipoMovimiento === "Entrada"
-                      ? "Observaciones (proveedor, factura, etc.)"
-                      : nuevoMovimiento.tipoMovimiento === "Salida"
-                        ? "Observaciones (destino, receta, etc.)"
-                        : "Descripción de la merma"}
-                  </label>
-                  <textarea
-                    className="form-control"
-                    rows="3"
-                    value={nuevoMovimiento.comentarioMovimiento}
-                    onChange={(e) =>
-                      setNuevoMovimiento({
-                        ...nuevoMovimiento,
-                        comentarioMovimiento: e.target.value,
-                      })
+                </div>
+                <div className={ComponenteStyle.formActions}>
+                  <button
+                    type="button"
+                    className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+                    onClick={() => setModalMovimiento(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+                    onClick={registrarMovimiento}
+                    disabled={
+                      !nuevoMovimiento.id_insumo ||
+                      !nuevoMovimiento.cantidadMovimiento ||
+                      (nuevoMovimiento.tipoMovimiento === "Merma" &&
+                        !nuevoMovimiento.id_tipoMerma)
                     }
-                    placeholder={
-                      nuevoMovimiento.tipoMovimiento === "Entrada"
-                        ? "Proveedor, número de factura, lote..."
-                        : nuevoMovimiento.tipoMovimiento === "Salida"
-                          ? "Para qué receta, consumo directo..."
-                          : "Detalles sobre la causa de la merma..."
-                    }
-                  />
+                  >
+                    <i className="fas fa-save me-2"></i>
+                    Registrar {nuevoMovimiento.tipoMovimiento}
+                  </button>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setModalMovimiento(false)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={registrarMovimiento}
-                  disabled={
-                    !nuevoMovimiento.id_insumo ||
-                    !nuevoMovimiento.cantidadMovimiento ||
-                    (nuevoMovimiento.tipoMovimiento === "Merma" &&
-                      !nuevoMovimiento.id_tipoMerma)
-                  }
-                >
-                  <i className="fas fa-save me-2"></i>
-                  Registrar {nuevoMovimiento.tipoMovimiento}
-                </button>
-              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
+
+      {modalMovimiento &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

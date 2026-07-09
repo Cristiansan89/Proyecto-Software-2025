@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const PermisoForm = ({
   permiso,
@@ -112,7 +113,7 @@ const PermisoForm = ({
         (p) =>
           p.nombrePermiso.toLowerCase() ===
             formData.nombrePermiso.toLowerCase() &&
-          (mode === "create" || p.idPermiso !== permiso?.idPermiso)
+          (mode === "create" || p.idPermiso !== permiso?.idPermiso),
       );
       if (permisoDuplicado) {
         newErrors.nombrePermiso = `El permiso "${formData.nombrePermiso}" ya existe en el sistema`;
@@ -181,8 +182,8 @@ const PermisoForm = ({
         </div>
       )}
       <div className="form-grid">
-        <div className="form-group">
-          <label htmlFor="nombrePermiso" className="form-label">
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="nombrePermiso" className={ComponenteStyle.formLabel}>
             Nombre del Permiso *
           </label>
           <input
@@ -191,7 +192,7 @@ const PermisoForm = ({
             name="nombrePermiso"
             value={formData.nombrePermiso}
             onChange={handleChange}
-            className={`form-control ${errors.nombrePermiso ? "error" : ""}`}
+            className={`${ComponenteStyle.formControl} ${errors.nombrePermiso ? "error" : ""}`}
             placeholder="Ingrese el nombre del permiso"
             maxLength={100}
             readOnly={isReadOnly}
@@ -199,8 +200,11 @@ const PermisoForm = ({
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="descripcionPermiso" className="form-label">
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="descripcionPermiso"
+            className={ComponenteStyle.formLabel}
+          >
             Descripción del Permiso *
           </label>
           <textarea
@@ -208,7 +212,7 @@ const PermisoForm = ({
             name="descripcionPermiso"
             value={formData.descripcionPermiso}
             onChange={handleChange}
-            className={`form-control ${
+            className={`${ComponenteStyle.formControl} ${
               errors.descripcionPermiso ? "error" : ""
             }`}
             placeholder="Ingrese la descripción del permiso..."
@@ -222,8 +226,8 @@ const PermisoForm = ({
           )}
         </div>
 
-        <div className="form-group">
-          <label htmlFor="modulo" className="form-label">
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="modulo" className={ComponenteStyle.formLabel}>
             Módulo del Sistema *
           </label>
           <select
@@ -231,7 +235,7 @@ const PermisoForm = ({
             name="modulo"
             value={formData.modulo}
             onChange={handleChange}
-            className={`form-select ${errors.modulo ? "error" : ""}`}
+            className={`${ComponenteStyle.formSelect} ${errors.modulo ? "error" : ""}`}
             disabled={isReadOnly}
             required
           >
@@ -246,8 +250,8 @@ const PermisoForm = ({
           )}
         </div>
 
-        <div className="form-group">
-          <label htmlFor="accion" className="form-label">
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="accion" className={ComponenteStyle.formLabel}>
             Acción *
           </label>
           <select
@@ -255,7 +259,7 @@ const PermisoForm = ({
             name="accion"
             value={formData.accion}
             onChange={handleChange}
-            className={`form-select ${errors.accion ? "error" : ""}`}
+            className={`${ComponenteStyle.formSelect} ${errors.accion ? "error" : ""}`}
             disabled={isReadOnly}
             required
           >
@@ -271,8 +275,8 @@ const PermisoForm = ({
         </div>
 
         {mode !== "create" && (
-          <div className="form-group">
-            <label htmlFor="estado" className="form-label">
+          <div className={ComponenteStyle.formGroup}>
+            <label htmlFor="estado" className={ComponenteStyle.formLabel}>
               Estado
             </label>
             <select
@@ -280,7 +284,7 @@ const PermisoForm = ({
               name="estado"
               value={formData.estado}
               onChange={handleChange}
-              className="form-select"
+              className={ComponenteStyle.formSelect}
               disabled={isReadOnly}
             >
               <option value="Activo">Activo</option>
@@ -305,16 +309,19 @@ const PermisoForm = ({
       )}
 
       {!isReadOnly && (
-        <div className="form-actions">
+        <div className={ComponenteStyle.formActions}>
           <button
             type="button"
             onClick={onCancel}
-            className="btn btn-secondary"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
           >
             <i className="fas fa-times mr-1"></i>
             Cancelar
           </button>
-          <button type="submit" className="btn btn-primary">
+          <button
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+          >
             <i className="fas fa-save mr-1"></i>
             {mode === "create" ? "Crear Permiso" : "Actualizar Permiso"}
           </button>

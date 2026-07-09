@@ -11,7 +11,12 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
-import { formatNumeroAR, parsearDecimalAR, sanitizarInputDecimal } from "../../utils/formatNumero";
+import {
+  formatNumeroAR,
+  parsearDecimalAR,
+  sanitizarInputDecimal,
+} from "../../utils/formatNumero";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const MovimientosForm = ({
   isOpen,
@@ -162,7 +167,7 @@ const MovimientosForm = ({
         if (cantidad > stockMaximoInsumo) {
           showError(
             "Cantidad excedida",
-            `La cantidad (${formatNumeroAR(cantidad)}) no puede exceder el stock máximo permitido (${formatNumeroAR(stockMaximoInsumo)})`
+            `La cantidad (${formatNumeroAR(cantidad)}) no puede exceder el stock máximo permitido (${formatNumeroAR(stockMaximoInsumo)})`,
           );
           return;
         }
@@ -196,7 +201,9 @@ const MovimientosForm = ({
       const movimientoData = {
         id_insumo: parseInt(nuevoMovimiento.id_insumo),
         tipoMovimiento: nuevoMovimiento.tipoMovimiento,
-        cantidadMovimiento: parsearDecimalAR(nuevoMovimiento.cantidadMovimiento),
+        cantidadMovimiento: parsearDecimalAR(
+          nuevoMovimiento.cantidadMovimiento,
+        ),
         comentarioMovimiento: nuevoMovimiento.comentarioMovimiento,
         id_usuario: user.idUsuario || user.id_usuario,
         id_tipoMerma:
@@ -206,13 +213,21 @@ const MovimientosForm = ({
       };
 
       // Registrar movimiento de inventario y capturar respuesta con ID
-      const respuestaMovimiento = await API.post("/movimientos-inventarios", movimientoData);
+      const respuestaMovimiento = await API.post(
+        "/movimientos-inventarios",
+        movimientoData,
+      );
       const idMovimiento = respuestaMovimiento.data?.id_movimiento;
-      
+
       if (idMovimiento) {
-        console.log("[MovimientosForm] Movimiento creado con ID:", idMovimiento);
+        console.log(
+          "[MovimientosForm] Movimiento creado con ID:",
+          idMovimiento,
+        );
       } else {
-        console.warn("[Auditoría] Advertencia: No se capturó ID del movimiento registrado");
+        console.warn(
+          "[Auditoría] Advertencia: No se capturó ID del movimiento registrado",
+        );
       }
 
       // Si es entrada y se seleccionó proveedor, actualizar calificación
@@ -233,7 +248,7 @@ const MovimientosForm = ({
           if (proveedorInsumoData) {
             const idProvedor = proveedorInsumoData.id_proveedor;
             const idInsumo = nuevoMovimiento.id_insumo;
-            
+
             if (!idProvedor || !idInsumo) {
               console.warn(
                 "[MovimientosForm] No se puede actualizar calificación: ID Proveedor =",
@@ -319,300 +334,315 @@ const MovimientosForm = ({
 
   return (
     <form onSubmit={registrarMovimiento} id="movimientoForm">
-      <div className="mb-3">
-        <label className="form-label">Insumo *</label>
-        {opcionesInsumos.length === 0 && (
-          <div className="alert alert-warning">
-            🔄 Cargando inventario... ({inventarios.length} items disponibles)
-          </div>
-        )}
-        <Select
-          options={opcionesInsumos}
-          value={
-            opcionesInsumos.find(
-              (opt) => opt.value == nuevoMovimiento.id_insumo,
-            ) || null
-          }
-          onChange={(selectedOption) => {
-            setNuevoMovimiento({
-              ...nuevoMovimiento,
-              id_insumo: selectedOption ? selectedOption.value : "",
-            });
-            // Guardar la unidad de medida y stock máximo del insumo seleccionado
-            if (selectedOption) {
-              setUnidadMedidaInsumo(selectedOption.data.unidadMedida);
-              setStockMaximoInsumo(selectedOption.data.inventario?.stockMaximo || null);
-            } else {
-              setUnidadMedidaInsumo("");
-              setStockMaximoInsumo(null);
-            }
-          }}
-          placeholder={`Buscar y seleccionar insumo... (${opcionesInsumos.length} disponibles)`}
-          isSearchable
-          isClearable
-          isDisabled={loading}
-          styles={customSelectStyles}
-          formatOptionLabel={(option) => {
-            const stockFormato = option.data.inventario
-              ? formatNumeroAR(option.data.inventario.cantidadActual || 0)
-              : "0,000";
-            return (
-              <div>
-                <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
-                  {option.data.nombreInsumo}
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.875rem",
-                    color: "#6c757d",
-                    display: "grid",
-                    gap: "4px",
-                  }}
-                >
-                  <div>
-                    <strong>Unidad:</strong> {option.data.unidadMedida} |{" "}
-                    <strong>Categoría:</strong>{" "}
-                    {option.data.categoria || "Sin categoría"}
-                  </div>
-                  {option.data.inventario && (
-                    <div>
-                      <strong>Stock Disponible:</strong>{" "}
-                      <span style={{ color: "#28a745", fontWeight: "bold" }}>
-                        {stockFormato} {option.data.unidadMedida}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          }}
-          noOptionsMessage={() => "No se encontraron insumos"}
-          loadingMessage={() => "Cargando insumos..."}
-        />
-        {nuevoMovimiento.id_insumo && (
-          <small className="form-text text-muted">
-            {(() => {
-              const inventarioSeleccionado = inventarios.find(
-                (inv) => inv.id_insumo == nuevoMovimiento.id_insumo,
-              );
-              if (inventarioSeleccionado) {
-                const stockFormato = formatNumeroAR(inventarioSeleccionado.cantidadActual);
-                return `Stock actual: ${stockFormato} ${inventarioSeleccionado.unidadMedida}`;
-              }
-              return "";
-            })()}
-          </small>
-        )}
-      </div>
-
-      <div className="row g-3">
-        <div className="col-md-4 mb-3">
-          <label className="form-label">Tipo de movimiento</label>
-          <Select
-            options={opcionesTiposMovimiento}
-            value={opcionesTiposMovimiento.find(
-              (opt) => opt.value === nuevoMovimiento.tipoMovimiento,
-            )}
-            onChange={(selectedOption) => {
-              setNuevoMovimiento({
-                ...nuevoMovimiento,
-                tipoMovimiento: selectedOption.value,
-                id_tipoMerma: "", // Reset tipo de merma cuando cambia el tipo de movimiento
-              });
-            }}
-            isSearchable={false}
-            isDisabled={loading}
-            styles={customSelectStyles}
-          />
-        </div>
-        <div className="col-md-2 mb-3 mx-0">
-          <label className="form-label">Unidad de Medida</label>
-          <div className="d-block">
-            {unidadMedidaInsumo && (
-              <span className="input-group-text bg-light font-weight-bold">
-                <strong>{unidadMedidaInsumo}</strong>
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="col-md-3 mb-3 mx-2">
-          <label className="form-label">Cantidad *</label>
-          <div className="input">
-            <input
-              type="text"
-              inputMode="decimal"
-              className="form-control"
-              value={nuevoMovimiento.cantidadMovimiento}
-              onChange={(e) =>
-                setNuevoMovimiento({
-                  ...nuevoMovimiento,
-                  cantidadMovimiento: sanitizarInputDecimal(e.target.value),
-                })
-              }
-              placeholder="0,000"
-              required
-              disabled={loading}
-            />
-          </div>
-          {nuevoMovimiento.tipoMovimiento === "Entrada" && stockMaximoInsumo && (
-            <small className="form-text text-muted">
-              Máximo permitido: {formatNumeroAR(stockMaximoInsumo)}
-            </small>
+      <div className={ComponenteStyle.formGrid}>
+        <div className={ComponenteStyle.formGroup}>
+          <label className={ComponenteStyle.formLabel}>Insumo *</label>
+          {opcionesInsumos.length === 0 && (
+            <div
+              className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning}`}
+            >
+              🔄 Cargando inventario... ({inventarios.length} items disponibles)
+            </div>
           )}
-        </div>
-      </div>
-
-      {nuevoMovimiento.tipoMovimiento === "Merma" && (
-        <div className="mb-3">
-          <label className="form-label">Tipo de Merma *</label>
           <Select
-            options={opcionesTiposMerma}
+            options={opcionesInsumos}
             value={
-              opcionesTiposMerma.find(
-                (opt) => opt.value == nuevoMovimiento.id_tipoMerma,
+              opcionesInsumos.find(
+                (opt) => opt.value == nuevoMovimiento.id_insumo,
               ) || null
             }
             onChange={(selectedOption) => {
               setNuevoMovimiento({
                 ...nuevoMovimiento,
-                id_tipoMerma: selectedOption ? selectedOption.value : "",
+                id_insumo: selectedOption ? selectedOption.value : "",
               });
+              // Guardar la unidad de medida y stock máximo del insumo seleccionado
+              if (selectedOption) {
+                setUnidadMedidaInsumo(selectedOption.data.unidadMedida);
+                setStockMaximoInsumo(
+                  selectedOption.data.inventario?.stockMaximo || null,
+                );
+              } else {
+                setUnidadMedidaInsumo("");
+                setStockMaximoInsumo(null);
+              }
             }}
-            placeholder="Seleccionar tipo de merma..."
+            placeholder={`Buscar y seleccionar insumo... (${opcionesInsumos.length} disponibles)`}
             isSearchable
             isClearable
             isDisabled={loading}
             styles={customSelectStyles}
-          />
-        </div>
-      )}
-
-      {/* Selector de Proveedor - Solo para Entrada */}
-      {nuevoMovimiento.tipoMovimiento === "Entrada" && (
-        <>
-          {cargandoProveedores && (
-            <div className="mb-3">
-              <div className="alert alert-info">
-                <span
-                  className="spinner-border spinner-border-sm me-2"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                Cargando proveedores...
-              </div>
-            </div>
-          )}
-
-          {!cargandoProveedores && proveedoresDelInsumo.length > 0 && (
-            <>
-              <div className="mb-3">
-                <label className="form-label">
-                  <i className="fas fa-building me-2 text-primary"></i>
-                  Proveedor *
-                </label>
-                <Select
-                  options={proveedoresDelInsumo.map((p) => ({
-                    value: p.id_proveedor || p.idProveedor,
-                    label:
-                      p.nombreProveedor ||
-                      p.nombre ||
-                      p.razonSocial ||
-                      `Proveedor (${p.id_proveedor || p.idProveedor})`,
-                    data: p,
-                  }))}
-                  value={proveedorSeleccionado}
-                  onChange={(selectedOption) => {
-                    setProveedorSeleccionado(selectedOption);
-                    setCalificacionSeleccionada("");
-                  }}
-                  placeholder="Seleccionar proveedor..."
-                  isSearchable
-                  isClearable
-                  isDisabled={loading || cargandoProveedores}
-                  styles={customSelectStyles}
-                />
-              </div>
-
-              {/* Selector de Calificación - Solo si hay proveedor seleccionado */}
-              {proveedorSeleccionado && (
-                <div className="mb-3">
-                  <label className="form-label">
-                    <i className="fas fa-star me-2 text-warning"></i>
-                    Calificar Proveedor *
-                  </label>
-                  <div className="d-flex gap-3">
-                    {opcionesCalificacion.map((opcion) => (
-                      <div key={opcion.value} className="form-check">
-                        <input
-                          className="form-check-input"
-                          type="radio"
-                          name="calificacion"
-                          id={`cal_${opcion.value}`}
-                          value={opcion.value}
-                          checked={calificacionSeleccionada === opcion.value}
-                          onChange={(e) =>
-                            setCalificacionSeleccionada(e.target.value)
-                          }
-                          disabled={loading}
-                        />
-                        <label
-                          className="form-check-label"
-                          htmlFor={`cal_${opcion.value}`}
-                        >
-                          {opcion.label}
-                        </label>
+            formatOptionLabel={(option) => {
+              const stockFormato = option.data.inventario
+                ? formatNumeroAR(option.data.inventario.cantidadActual || 0)
+                : "0,000";
+              return (
+                <div>
+                  <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
+                    {option.data.nombreInsumo}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.875rem",
+                      color: "#6c757d",
+                      display: "grid",
+                      gap: "4px",
+                    }}
+                  >
+                    <div>
+                      <strong>Unidad:</strong> {option.data.unidadMedida} |{" "}
+                      <strong>Categoría:</strong>{" "}
+                      {option.data.categoria || "Sin categoría"}
+                    </div>
+                    {option.data.inventario && (
+                      <div>
+                        <strong>Stock Disponible:</strong>{" "}
+                        <span style={{ color: "#28a745", fontWeight: "bold" }}>
+                          {stockFormato} {option.data.unidadMedida}
+                        </span>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
-              )}
-            </>
+              );
+            }}
+            noOptionsMessage={() => "No se encontraron insumos"}
+            loadingMessage={() => "Cargando insumos..."}
+          />
+          {nuevoMovimiento.id_insumo && (
+            <small className={`${ComponenteStyle.formText} text-muted`}>
+              {(() => {
+                const inventarioSeleccionado = inventarios.find(
+                  (inv) => inv.id_insumo == nuevoMovimiento.id_insumo,
+                );
+                if (inventarioSeleccionado) {
+                  const stockFormato = formatNumeroAR(
+                    inventarioSeleccionado.cantidadActual,
+                  );
+                  return `Stock actual: ${stockFormato} ${inventarioSeleccionado.unidadMedida}`;
+                }
+                return "";
+              })()}
+            </small>
           )}
+        </div>
 
-          {!cargandoProveedores &&
-            proveedoresDelInsumo.length === 0 &&
-            nuevoMovimiento.id_insumo && (
-              <div className="alert alert-warning" role="alert">
-                <i className="fas fa-info-circle me-2"></i>
-                No hay proveedores registrados para este insumo
+        <div className="row">
+          <div className="col-md-4 mb-3">
+            <label className={ComponenteStyle.formLabel}>
+              Tipo de movimiento
+            </label>
+            <Select
+              options={opcionesTiposMovimiento}
+              value={opcionesTiposMovimiento.find(
+                (opt) => opt.value === nuevoMovimiento.tipoMovimiento,
+              )}
+              onChange={(selectedOption) => {
+                setNuevoMovimiento({
+                  ...nuevoMovimiento,
+                  tipoMovimiento: selectedOption.value,
+                  id_tipoMerma: "", // Reset tipo de merma cuando cambia el tipo de movimiento
+                });
+              }}
+              isSearchable={false}
+              isDisabled={loading}
+              styles={customSelectStyles}
+            />
+          </div>
+          <div className="col-md-3 mb-3">
+            <label className={ComponenteStyle.formLabel}>U. de Medida</label>
+            <div className="d-block">
+              {unidadMedidaInsumo && (
+                <span className="input-group-text bg-light font-weight-bold">
+                  <strong>{unidadMedidaInsumo}</strong>
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="col-md-3 mb-3">
+            <label className={ComponenteStyle.formLabel}>Cantidad *</label>
+            <div className="input">
+              <input
+                type="text"
+                inputMode="decimal"
+                className={ComponenteStyle.formControl}
+                value={nuevoMovimiento.cantidadMovimiento}
+                onChange={(e) =>
+                  setNuevoMovimiento({
+                    ...nuevoMovimiento,
+                    cantidadMovimiento: sanitizarInputDecimal(e.target.value),
+                  })
+                }
+                placeholder="0,000"
+                required
+                disabled={loading}
+              />
+            </div>
+            {nuevoMovimiento.tipoMovimiento === "Entrada" &&
+              stockMaximoInsumo && (
+                <small className={`${ComponenteStyle.formText} text-muted`}>
+                  Máximo permitido: {formatNumeroAR(stockMaximoInsumo)}
+                </small>
+              )}
+          </div>
+        </div>
+
+        {nuevoMovimiento.tipoMovimiento === "Merma" && (
+          <div className="mb-3">
+            <label className={ComponenteStyle.formLabel}>Tipo de Merma *</label>
+            <Select
+              options={opcionesTiposMerma}
+              value={
+                opcionesTiposMerma.find(
+                  (opt) => opt.value == nuevoMovimiento.id_tipoMerma,
+                ) || null
+              }
+              onChange={(selectedOption) => {
+                setNuevoMovimiento({
+                  ...nuevoMovimiento,
+                  id_tipoMerma: selectedOption ? selectedOption.value : "",
+                });
+              }}
+              placeholder="Seleccionar tipo de merma..."
+              isSearchable
+              isClearable
+              isDisabled={loading}
+              styles={customSelectStyles}
+            />
+          </div>
+        )}
+
+        {/* Selector de Proveedor - Solo para Entrada */}
+        {nuevoMovimiento.tipoMovimiento === "Entrada" && (
+          <>
+            {cargandoProveedores && (
+              <div className="mb-3">
+                <div
+                  className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo}`}
+                >
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  Cargando proveedores...
+                </div>
               </div>
             )}
-        </>
-      )}
 
-      <div className="mb-3">
-        <label className="form-label">
-          {nuevoMovimiento.tipoMovimiento === "Entrada"
-            ? "Observaciones (proveedor, factura, etc.)"
-            : nuevoMovimiento.tipoMovimiento === "Salida"
-              ? "Observaciones (destino, receta, etc.)"
-              : "Descripción de la merma"}
-        </label>
-        <textarea
-          className="form-control"
-          rows="3"
-          value={nuevoMovimiento.comentarioMovimiento}
-          onChange={(e) =>
-            setNuevoMovimiento({
-              ...nuevoMovimiento,
-              comentarioMovimiento: e.target.value,
-            })
-          }
-          placeholder={
-            nuevoMovimiento.tipoMovimiento === "Entrada"
-              ? "Proveedor, número de factura, lote..."
+            {!cargandoProveedores && proveedoresDelInsumo.length > 0 && (
+              <>
+                <div className="mb-3">
+                  <label className={ComponenteStyle.formLabel}>
+                    <i className="fas fa-building me-2 text-primary"></i>
+                    Proveedor *
+                  </label>
+                  <Select
+                    options={proveedoresDelInsumo.map((p) => ({
+                      value: p.id_proveedor || p.idProveedor,
+                      label:
+                        p.nombreProveedor ||
+                        p.nombre ||
+                        p.razonSocial ||
+                        `Proveedor (${p.id_proveedor || p.idProveedor})`,
+                      data: p,
+                    }))}
+                    value={proveedorSeleccionado}
+                    onChange={(selectedOption) => {
+                      setProveedorSeleccionado(selectedOption);
+                      setCalificacionSeleccionada("");
+                    }}
+                    placeholder="Seleccionar proveedor..."
+                    isSearchable
+                    isClearable
+                    isDisabled={loading || cargandoProveedores}
+                    styles={customSelectStyles}
+                  />
+                </div>
+
+                {/* Selector de Calificación - Solo si hay proveedor seleccionado */}
+                {proveedorSeleccionado && (
+                  <div className="mb-3">
+                    <label className={ComponenteStyle.formLabel}>
+                      <i className="fas fa-star me-2 text-warning"></i>
+                      Calificar Proveedor *
+                    </label>
+                    <div className="d-flex gap-3">
+                      {opcionesCalificacion.map((opcion) => (
+                        <div key={opcion.value} className="form-check">
+                          <input
+                            className="form-check-input"
+                            type="radio"
+                            name="calificacion"
+                            id={`cal_${opcion.value}`}
+                            value={opcion.value}
+                            checked={calificacionSeleccionada === opcion.value}
+                            onChange={(e) =>
+                              setCalificacionSeleccionada(e.target.value)
+                            }
+                            disabled={loading}
+                          />
+                          <label
+                            className={ComponenteStyle.formCheckLabel}
+                            htmlFor={`cal_${opcion.value}`}
+                          >
+                            {opcion.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {!cargandoProveedores &&
+              proveedoresDelInsumo.length === 0 &&
+              nuevoMovimiento.id_insumo && (
+                <div
+                  className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning}`}
+                  role="alert"
+                >
+                  <i className="fas fa-info-circle me-2"></i>
+                  No hay proveedores registrados para este insumo
+                </div>
+              )}
+          </>
+        )}
+
+        <div className="mb-3">
+          <label className={ComponenteStyle.formLabel}>
+            {nuevoMovimiento.tipoMovimiento === "Entrada"
+              ? "Observaciones (proveedor, factura, etc.)"
               : nuevoMovimiento.tipoMovimiento === "Salida"
-                ? "Para qué receta, consumo directo..."
-                : "Detalles sobre la causa de la merma..."
-          }
-          disabled={loading}
-        />
+                ? "Observaciones (destino, receta, etc.)"
+                : "Descripción de la merma"}
+          </label>
+          <textarea
+            className={ComponenteStyle.formControl}
+            rows="3"
+            value={nuevoMovimiento.comentarioMovimiento}
+            onChange={(e) =>
+              setNuevoMovimiento({
+                ...nuevoMovimiento,
+                comentarioMovimiento: e.target.value,
+              })
+            }
+            placeholder={
+              nuevoMovimiento.tipoMovimiento === "Entrada"
+                ? "Proveedor, número de factura, lote..."
+                : nuevoMovimiento.tipoMovimiento === "Salida"
+                  ? "Para qué receta, consumo directo..."
+                  : "Detalles sobre la causa de la merma..."
+            }
+            disabled={loading}
+          />
+        </div>
       </div>
-
-      <div className="form-actions mt-4">
+      <div className={ComponenteStyle.formActions}>
         <button
           type="button"
-          className="btn btn-secondary"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
           onClick={onClose}
           disabled={loading}
         >
@@ -621,7 +651,7 @@ const MovimientosForm = ({
         </button>
         <button
           type="button"
-          className="btn btn-primary"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
           onClick={registrarMovimiento}
           disabled={
             loading ||

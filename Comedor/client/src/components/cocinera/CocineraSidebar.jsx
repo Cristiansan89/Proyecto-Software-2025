@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import StylesLayouts from "../../styles/Layouts.module.css";
 
 const CocineraSidebar = ({ collapsed }) => {
   const location = useLocation();
@@ -74,22 +75,28 @@ const CocineraSidebar = ({ collapsed }) => {
   };
 
   return (
-    <div className={`sidebar cocinera-sidebar ${collapsed ? "collapsed" : ""}`}>
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
+    <div
+      className={`${StylesLayouts.sidebar} ${collapsed ? StylesLayouts.sidebarCollapsed : ""}`}
+    >
+      <div className={`${StylesLayouts.sidebarHeader}`}>
+        <div className={`${StylesLayouts.sidebarLogo}`}>
           <i className="fa-solid fa-kitchen-set"></i>
           {!collapsed && <span>Panel Cocinera</span>}
         </div>
       </div>
-      <div className="sidebar-menu">
+      <div className={`${StylesLayouts.sidebarMenu}`}>
         {menuItems.map((item) => (
-          <div key={item.id} className="menu-item-group">
+          <div key={item.id} className={`${StylesLayouts.menuGroup}`}>
             <Link
               to={item.path}
-              className={`menu-item ${isActive(item.path) ? "active" : ""}`}
+              className={`${StylesLayouts.menuItem} ${isActive(item.path) ? StylesLayouts.active : ""}`}
             >
               <i className={item.icon}></i>
-              {!collapsed && <span className="menu-label">{item.label}</span>}
+              {!collapsed && (
+                <span className={`${StylesLayouts.menuLabel}`}>
+                  {item.label}
+                </span>
+              )}
             </Link>
           </div>
         ))}

@@ -10,6 +10,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -129,7 +130,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
             // Si habilita cuenta, generar nombre de usuario si tenemos nombre y apellido
             const nombreUsuario = generateUsername(
               newData.nombre,
-              newData.apellido
+              newData.apellido,
             );
             setUserFormData((prevUser) => ({
               ...prevUser,
@@ -319,7 +320,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
     try {
       // Preparar datos para enviar al backend
       const rolSeleccionadoActual = roles.find(
-        (r) => r.idRol == formData.idRol
+        (r) => r.idRol == formData.idRol,
       );
       const personaData = {
         nombre: formData.nombre.trim(),
@@ -339,7 +340,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
       } else {
         savedPersona = await personaService.update(
           persona.idPersona,
-          personaData
+          personaData,
         );
       }
 
@@ -382,7 +383,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
       } else {
         showError(
           "Error",
-          "Error al guardar la persona. Por favor, inténtelo de nuevo."
+          "Error al guardar la persona. Por favor, inténtelo de nuevo.",
         );
       }
     } finally {
@@ -394,487 +395,510 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   const isCreateMode = mode === "create";
 
   return (
-    <div className="persona-form">
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          {/* Información Personal */}
-          <div>
-            <h4 className="section-title">Información Personal</h4>
-
-            <div className="form-group">
-              <label htmlFor="idRol" className="form-label required">
-                Rol de la Persona
-              </label>
-              <select
-                id="idRol"
-                name="idRol"
-                className={`form-control ${errors.idRol ? "is-invalid" : ""}`}
-                value={formData.idRol}
-                onChange={handleInputChange}
-                disabled={isViewMode || loadingRoles}
-              >
-                <option value="">
-                  {loadingRoles ? "Cargando roles..." : "Seleccionar Rol"}
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>
+        Información Personal
+      </h4>
+      <div className={ComponenteStyle.formGrid}>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="idRol"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Rol de la Persona
+          </label>
+          <select
+            id="idRol"
+            name="idRol"
+            className={`${ComponenteStyle.formControl} ${errors.idRol ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.idRol}
+            onChange={handleInputChange}
+            disabled={isViewMode || loadingRoles}
+          >
+            <option value="">
+              {loadingRoles ? "Cargando roles..." : "Seleccionar Rol"}
+            </option>
+            {roles
+              .filter((rol) => rol.nombreRol?.toLowerCase() !== "proveedor")
+              .map((rol) => (
+                <option key={rol.idRol} value={rol.idRol}>
+                  {rol.nombreRol}
                 </option>
-                {roles
-                  .filter((rol) => rol.nombreRol?.toLowerCase() !== "proveedor")
-                  .map((rol) => (
-                    <option key={rol.idRol} value={rol.idRol}>
-                      {rol.nombreRol}
-                    </option>
-                  ))}
-              </select>
+              ))}
+          </select>
 
-              {rolSeleccionado && (
+          {rolSeleccionado && (
+            <small className="form-text text-muted">
+              <i className="fas fa-info-circle me-1"></i>
+              {rolSeleccionado.descripcionRol}
+              {rolSeleccionado.habilitaCuentaUsuario === "Si" && (
+                <span className="text-success ms-2">
+                  <i className="fas fa-user-check"></i> Incluye cuenta de
+                  usuario
+                </span>
+              )}
+            </small>
+          )}
+        </div>
+
+        <div className={ComponenteStyle.formRow}>
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="nombre"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Nombre
+            </label>
+            <input
+              type="text"
+              id="nombre"
+              name="nombre"
+              className={`${ComponenteStyle.formControl} ${errors.nombre ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.nombre}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+              placeholder="Ingrese el nombre"
+            />
+          </div>
+
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="apellido"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Apellido
+            </label>
+            <input
+              type="text"
+              id="apellido"
+              name="apellido"
+              className={`${ComponenteStyle.formControl} ${errors.apellido ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.apellido}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+              placeholder="Ingrese el apellido"
+            />
+          </div>
+        </div>
+
+        <div className={ComponenteStyle.formRow}>
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="dni"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Número de Documento
+            </label>
+            <input
+              type="text"
+              id="dni"
+              name="dni"
+              className={`${ComponenteStyle.formControl} ${errors.dni ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.dni}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+              placeholder="Ingrese el número de documento"
+            />
+          </div>
+
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="fechaNacimiento"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Fecha de Nacimiento
+            </label>
+            <input
+              type="date"
+              id="fechaNacimiento"
+              name="fechaNacimiento"
+              className={`${ComponenteStyle.formControl} ${
+                errors.fechaNacimiento ? ComponenteStyle.isInvalid : ""
+              }`}
+              value={formData.fechaNacimiento}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+              max={new Date().toISOString().split("T")[0]}
+            />
+          </div>
+        </div>
+
+        <div className={ComponenteStyle.formRow}>
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="genero"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Género
+            </label>
+            <select
+              id="genero"
+              name="genero"
+              className={`${ComponenteStyle.formControl} ${errors.genero ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.genero}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+            >
+              <option value="">Seleccionar Género</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Femenina">Femenina</option>
+              <option value="Otros">Otros</option>
+            </select>
+          </div>
+
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="estado"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Estado
+            </label>
+            <select
+              id="estado"
+              name="estado"
+              className={`${ComponenteStyle.formControl} ${errors.estado ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.estado}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+            >
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Formulario de Usuario - Solo para roles que habilitan cuenta */}
+      {habilitaCuentaUsuario && !isViewMode && (
+        <div>
+          <h4 className={ComponenteStyle.sectionTitle}>
+            <i className="fas fa-user-shield me-2"></i>
+            Cuenta de Usuario
+          </h4>
+          <div className={ComponenteStyle.formGrid}>
+            <div className={ComponenteStyle.formRow}>
+              <div className={ComponenteStyle.formGroup}>
+                <label
+                  htmlFor="nombreUsuario"
+                  className={`${ComponenteStyle.formLabel} required`}
+                >
+                  Nombre de Usuario
+                </label>
+                <input
+                  type="text"
+                  id="nombreUsuario"
+                  name="nombreUsuario"
+                  className={`${ComponenteStyle.formControl} ${
+                    userErrors.nombreUsuario ? ComponenteStyle.isInvalid : ""
+                  }`}
+                  value={userFormData.nombreUsuario || ""}
+                  onChange={handleUserInputChange}
+                  placeholder={
+                    formData.nombre && formData.apellido
+                      ? "Se genera automáticamente: nombre.apellido"
+                      : "Complete nombre y apellido primero"
+                  }
+                />
+
+                {!userFormData.nombreUsuario &&
+                  formData.nombre &&
+                  formData.apellido && (
+                    <small className="form-text text-muted">
+                      <i className="fas fa-info-circle me-1"></i>
+                      El nombre de usuario se generará como:{" "}
+                      {generateUsername(formData.nombre, formData.apellido)}
+                    </small>
+                  )}
+              </div>
+
+              <div className={ComponenteStyle.formGroup}>
+                <label
+                  htmlFor="userEmail"
+                  className={`${ComponenteStyle.formLabel} required`}
+                >
+                  Email de Usuario
+                </label>
+                <input
+                  type="email"
+                  id="userEmail"
+                  name="email"
+                  className={`${ComponenteStyle.formControl} ${
+                    userErrors.email ? ComponenteStyle.isInvalid : ""
+                  }`}
+                  value={userFormData.email}
+                  onChange={handleUserInputChange}
+                  placeholder="Email para la cuenta de usuario"
+                />
+              </div>
+            </div>
+
+            <div className={ComponenteStyle.formRow}>
+              <div className={ComponenteStyle.formGroup}>
+                <label
+                  htmlFor="userTelefono"
+                  className={`${ComponenteStyle.formLabel} required`}
+                >
+                  Teléfono de Usuario
+                </label>
+                <input
+                  type="text"
+                  id="userTelefono"
+                  name="telefono"
+                  className={`${ComponenteStyle.formControl} ${
+                    userErrors.telefono ? ComponenteStyle.isInvalid : ""
+                  }`}
+                  value={userFormData.telefono}
+                  onChange={handleUserInputChange}
+                  maxLength="13"
+                  inputMode="tel"
+                  placeholder="Teléfono para la cuenta de usuario"
+                />
+
                 <small className="form-text text-muted">
                   <i className="fas fa-info-circle me-1"></i>
-                  {rolSeleccionado.descripcionRol}
-                  {rolSeleccionado.habilitaCuentaUsuario === "Si" && (
-                    <span className="text-success ms-2">
-                      <i className="fas fa-user-check"></i> Incluye cuenta de
-                      usuario
-                    </span>
-                  )}
+                  Ingrese el número de teléfono luego del +54 con la
+                  caracteristica de área sin 15.
                 </small>
-              )}
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="nombre" className="form-label required">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  id="nombre"
-                  name="nombre"
-                  className={`form-control ${
-                    errors.nombre ? "is-invalid" : ""
-                  }`}
-                  value={formData.nombre}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  placeholder="Ingrese el nombre"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="apellido" className="form-label required">
-                  Apellido
-                </label>
-                <input
-                  type="text"
-                  id="apellido"
-                  name="apellido"
-                  className={`form-control ${
-                    errors.apellido ? "is-invalid" : ""
-                  }`}
-                  value={formData.apellido}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  placeholder="Ingrese el apellido"
-                />
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="dni" className="form-label required">
-                  Número de Documento
-                </label>
-                <input
-                  type="text"
-                  id="dni"
-                  name="dni"
-                  className={`form-control ${errors.dni ? "is-invalid" : ""}`}
-                  value={formData.dni}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  placeholder="Ingrese el número de documento"
-                />
-              </div>
-
-              <div className="form-group">
+            <div className={ComponenteStyle.formRow}>
+              <div className={ComponenteStyle.formGroup}>
                 <label
-                  htmlFor="fechaNacimiento"
-                  className="form-label required"
+                  htmlFor="password"
+                  className={`${ComponenteStyle.formLabel} required`}
                 >
-                  Fecha de Nacimiento
+                  Contraseña
                 </label>
                 <input
-                  type="date"
-                  id="fechaNacimiento"
-                  name="fechaNacimiento"
-                  className={`form-control ${
-                    errors.fechaNacimiento ? "is-invalid" : ""
+                  type="password"
+                  id="password"
+                  name="password"
+                  className={`${ComponenteStyle.formControl} ${
+                    userErrors.password ? ComponenteStyle.isInvalid : ""
                   }`}
-                  value={formData.fechaNacimiento}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  max={new Date().toISOString().split("T")[0]}
+                  value={userFormData.password}
+                  onChange={handleUserInputChange}
+                  placeholder="Contraseña (mínimo 6 caracteres)"
+                />
+              </div>
+
+              <div className={ComponenteStyle.formGroup}>
+                <label
+                  htmlFor="confirmPassword"
+                  className={`${ComponenteStyle.formLabel} required`}
+                >
+                  Confirmar Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  className={`${ComponenteStyle.formControl} ${
+                    userErrors.confirmPassword ? ComponenteStyle.isInvalid : ""
+                  }`}
+                  value={userFormData.confirmPassword}
+                  onChange={handleUserInputChange}
+                  placeholder="Confirme la contraseña"
                 />
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="genero" className="form-label required">
-                  Género
-                </label>
-                <select
-                  id="genero"
-                  name="genero"
-                  className={`form-control ${
-                    errors.genero ? "is-invalid" : ""
-                  }`}
-                  value={formData.genero}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
+            <div className={ComponenteStyle.formRow}>
+              <div className={ComponenteStyle.formGroup}>
+                <label
+                  htmlFor="estadoUsuario"
+                  className={`${ComponenteStyle.formLabel}`}
                 >
-                  <option value="">Seleccionar Género</option>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Femenina">Femenina</option>
-                  <option value="Otros">Otros</option>
-                </select>
-              </div>
-              {/* Estado */}
-
-              <div className="form-group">
-                <label htmlFor="estado" className="form-label required">
-                  Estado
+                  Estado de Usuario
                 </label>
                 <select
-                  id="estado"
+                  id="estadoUsuario"
                   name="estado"
-                  className="form-control"
-                  value={formData.estado}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
+                  className={`${ComponenteStyle.formControl} ${errors.estado ? "is-invalid" : ""}`}
+                  value={userFormData.estado}
+                  onChange={handleUserInputChange}
                 >
                   <option value="Activo">Activo</option>
                   <option value="Inactivo">Inactivo</option>
                 </select>
+                <small className={ComponenteStyle.formText}>
+                  La fecha de última actividad se actualizará automáticamente
+                </small>
               </div>
             </div>
           </div>
-
-          {/* Formulario de Usuario - Solo para roles que habilitan cuenta */}
-          {habilitaCuentaUsuario && !isViewMode && (
-            <div className="mt-4">
-              <h5 className="section-title">
-                <i className="fas fa-user-shield me-2"></i>
-                Cuenta de Usuario
-              </h5>
-              <div className="form-row">
-                <div className="form-group">
-                  <label
-                    htmlFor="nombreUsuario"
-                    className="form-label required"
-                  >
-                    Nombre de Usuario
-                  </label>
-                  <input
-                    type="text"
-                    id="nombreUsuario"
-                    name="nombreUsuario"
-                    className={`form-control ${
-                      userErrors.nombreUsuario ? "is-invalid" : ""
-                    }`}
-                    value={userFormData.nombreUsuario || ""}
-                    onChange={handleUserInputChange}
-                    placeholder={
-                      formData.nombre && formData.apellido
-                        ? "Se genera automáticamente: nombre.apellido"
-                        : "Complete nombre y apellido primero"
-                    }
-                  />
-
-                  {!userFormData.nombreUsuario &&
-                    formData.nombre &&
-                    formData.apellido && (
-                      <small className="form-text text-muted">
-                        <i className="fas fa-info-circle me-1"></i>
-                        El nombre de usuario se generará como:{" "}
-                        {generateUsername(formData.nombre, formData.apellido)}
-                      </small>
-                    )}
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="userEmail" className="form-label required">
-                    Email de Usuario
-                  </label>
-                  <input
-                    type="email"
-                    id="userEmail"
-                    name="email"
-                    className={`form-control ${
-                      userErrors.email ? "is-invalid" : ""
-                    }`}
-                    value={userFormData.email}
-                    onChange={handleUserInputChange}
-                    placeholder="Email para la cuenta de usuario"
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="userTelefono" className="form-label required">
-                    Teléfono de Usuario
-                  </label>
-                  <input
-                    type="text"
-                    id="userTelefono"
-                    name="telefono"
-                    className={`form-control ${
-                      userErrors.telefono ? "is-invalid" : ""
-                    }`}
-                    value={userFormData.telefono}
-                    onChange={handleUserInputChange}
-                    maxLength="13"
-                    inputMode="tel"
-                    placeholder="Teléfono para la cuenta de usuario"
-                  />
-
-                  <small className="form-text text-muted">
-                    <i className="fas fa-info-circle me-1"></i>
-                    Ingrese el número de teléfono luego del +54 con la
-                    caracteristica de área sin 15.
-                  </small>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="password" className="form-label required">
-                    Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    className={`form-control ${
-                      userErrors.password ? "is-invalid" : ""
-                    }`}
-                    value={userFormData.password}
-                    onChange={handleUserInputChange}
-                    placeholder="Contraseña (mínimo 6 caracteres)"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label
-                    htmlFor="confirmPassword"
-                    className="form-label required"
-                  >
-                    Confirmar Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    className={`form-control ${
-                      userErrors.confirmPassword ? "is-invalid" : ""
-                    }`}
-                    value={userFormData.confirmPassword}
-                    onChange={handleUserInputChange}
-                    placeholder="Confirme la contraseña"
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="estadoUsuario" className="form-label">
-                    Estado de Usuario
-                  </label>
-                  <select
-                    id="estadoUsuario"
-                    name="estado"
-                    className="form-control"
-                    value={userFormData.estado}
-                    onChange={handleUserInputChange}
-                  >
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
-                  </select>
-                  <small className="form-text text-muted">
-                    La fecha de última actividad se actualizará automáticamente
-                  </small>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Información de Usuario - Solo en modo visualización para roles que habilitan cuenta */}
-          {habilitaCuentaUsuario && isViewMode && (
-            <div className="mt-2">
-              <h5 className="section-title">
-                <i className="fas fa-user-shield me-2"></i>
-                Información de Cuenta de Usuario
-              </h5>
-              <div className="alert alert-info">
-                <i className="fas fa-info-circle me-2"></i>
-                Esta persona tiene un rol que habilita cuenta de usuario. Para
-                ver los detalles específicos de la cuenta, consulte la sección
-                de gestión de usuarios.
-              </div>
-            </div>
-          )}
         </div>
+      )}
 
-        {/*Mensaje de errores*/}
-
-        {errors.idRol && (
+      {/* Información de Usuario - Solo en modo visualización para roles que habilitan cuenta */}
+      {habilitaCuentaUsuario && isViewMode && (
+        <div className="mt-2">
+          <h5 className={ComponenteStyle.sectionTitle}>
+            <i className="fas fa-user-shield me-2"></i>
+            Información de Cuenta de Usuario
+          </h5>
           <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo}`}
           >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {errors.idRol}
+            <i className="fas fa-info-circle me-2"></i>
+            Esta persona tiene un rol que habilita cuenta de usuario. Para ver
+            los detalles específicos de la cuenta, consulte la sección de
+            gestión de usuarios.
           </div>
-        )}
+        </div>
+      )}
 
-        {errors.nombre && (
-          <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {errors.nombre}
-          </div>
-        )}
+      {/*Mensaje de errores*/}
 
-        {errors.apellido && (
-          <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {errors.apellido}
-          </div>
-        )}
+      {errors.idRol && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {errors.idRol}
+        </div>
+      )}
 
-        {errors.dni && (
-          <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {errors.dni}
-          </div>
-        )}
+      {errors.nombre && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {errors.nombre}
+        </div>
+      )}
 
-        {errors.fechaNacimiento && (
-          <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {errors.fechaNacimiento}
-          </div>
-        )}
+      {errors.apellido && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {errors.apellido}
+        </div>
+      )}
 
-        {errors.genero && (
-          <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {errors.genero}
-          </div>
-        )}
+      {errors.dni && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {errors.dni}
+        </div>
+      )}
 
-        {userErrors.nombreUsuario && (
-          <div
-            className="alert alert-info alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {userErrors.nombreUsuario}
-          </div>
-        )}
+      {errors.fechaNacimiento && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {errors.fechaNacimiento}
+        </div>
+      )}
 
-        {userErrors.email && (
-          <div
-            className="alert alert-info alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {userErrors.email}
-          </div>
-        )}
+      {errors.genero && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {errors.genero}
+        </div>
+      )}
 
-        {userErrors.telefono && (
-          <div
-            className="alert alert-info alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {userErrors.telefono}
-          </div>
-        )}
+      {userErrors.nombreUsuario && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {userErrors.nombreUsuario}
+        </div>
+      )}
 
-        {userErrors.password && (
-          <div
-            className="alert alert-info alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {userErrors.password}
-          </div>
-        )}
+      {userErrors.email && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {userErrors.email}
+        </div>
+      )}
 
-        {userErrors.confirmPassword && (
-          <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
-          >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong>{" "}
-            {userErrors.confirmPassword}
-          </div>
-        )}
+      {userErrors.telefono && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {userErrors.telefono}
+        </div>
+      )}
 
-        {/* Botones */}
-        <div className="form-actions mt-4">
+      {userErrors.password && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {userErrors.password}
+        </div>
+      )}
+
+      {userErrors.confirmPassword && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {userErrors.confirmPassword}
+        </div>
+      )}
+
+      {/* Botones */}
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
           <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
             disabled={loading}
           >
-            <i className="fas fa-times"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save"></i>
+                {isCreateMode
+                  ? habilitaCuentaUsuario
+                    ? "Crear Persona y Usuario"
+                    : "Crear Persona"
+                  : "Actualizar Persona"}
+              </>
+            )}
           </button>
-
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary me-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  {isCreateMode
-                    ? habilitaCuentaUsuario
-                      ? "Crear Persona y Usuario"
-                      : "Crear Persona"
-                    : "Actualizar Persona"}
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </form>
-    </div>
+        )}
+      </div>
+    </form>
   );
 };
 

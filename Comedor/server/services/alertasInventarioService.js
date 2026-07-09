@@ -199,16 +199,15 @@ class AlertasInventarioService {
         const [itemsReceta] = await connection.query(
           `SELECT ir.id_insumo, 
                   jp.id_jornada,
-                  COALESCE(st.id_servicio, (SELECT id_servicio FROM Servicios WHERE estado='Activo' LIMIT 1)) as id_servicio,
+                  jp.id_servicio,
                   SUM(ir.cantidadPorPorcion) AS cantidadPorServicio
            FROM JornadaPlanificada jp
-           LEFT JOIN ServicioTurno st ON jp.id_turno = st.id_turno
            JOIN RecetaJornada rj ON jp.id_jornada = rj.id_jornada
            JOIN ItemsRecetas ir ON rj.id_receta = ir.id_receta
            WHERE jp.id_planificacion = UUID_TO_BIN(?)
              AND jp.diaSemana = ${placeholders}
              AND ir.id_insumo IS NOT NULL
-           GROUP BY ir.id_insumo, jp.id_jornada, id_servicio`,
+           GROUP BY ir.id_insumo, jp.id_jornada, jp.id_servicio`,
           [plan.id_planificacion, diaEnum]
         );
 

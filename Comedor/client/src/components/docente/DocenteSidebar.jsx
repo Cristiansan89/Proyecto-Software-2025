@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import StylesLayouts from "../../styles/Layouts.module.css";
 
 const DocenteSidebar = ({ collapsed }) => {
   const location = useLocation();
@@ -11,34 +12,28 @@ const DocenteSidebar = ({ collapsed }) => {
       path: "/docente/dashboard",
     },
     {
-      id: "asistencias",
-      label: "Asistencias",
-      icon: "fas fa-clipboard-check",
-      path: "/docente/asistencias",
-    },
-    {
-      id: "registro-asistencias",
-      label: "Registrar Asistencias",
-      icon: "fas fa-plus-circle",
-      path: "/docente/registro-asistencias",
-    },
-    {
       id: "alumnos",
       label: "Mis Alumnos",
       icon: "fas fa-users",
       path: "/docente/mis-alumnos",
     },
     {
-      id: "gestionasistencias",
-      label: "Gestión de Asistencias",
-      icon: "fas fa-calendar-check",
-      path: "/docente/gestionasistencias",
+      id: "asistencias",
+      label: "Asistencias",
+      icon: "fas fa-clipboard-check",
+      path: "/docente/asistencias",
     },
     {
       id: "horarios",
       label: "Horarios",
       icon: "fas fa-clock",
       path: "/docente/horarios",
+    },
+    {
+      id: "calendario",
+      label: "Calendario",
+      icon: "fas fa-calendar",
+      path: "/docente/calendario",
     },
   ];
 
@@ -50,22 +45,28 @@ const DocenteSidebar = ({ collapsed }) => {
   };
 
   return (
-    <div className={`sidebar docente-sidebar ${collapsed ? "collapsed" : ""}`}>
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
+    <div
+      className={`${StylesLayouts.sidebar} ${collapsed ? StylesLayouts.sidebarCollapsed : ""}`}
+    >
+      <div className={`${StylesLayouts.sidebarHeader}`}>
+        <div className={`${StylesLayouts.sidebarLogo}`}>
           <i className="fas fa-chalkboard-teacher"></i>
           {!collapsed && <span>Panel Docente</span>}
         </div>
       </div>
-      <div className="sidebar-menu">
+      <div className={`${StylesLayouts.sidebarMenu}`}>
         {menuItems.map((item) => (
-          <div key={item.id} className="menu-item-group">
+          <div key={item.id} className={`${StylesLayouts.menuGroup}`}>
             <Link
               to={item.path}
-              className={`menu-item ${isActive(item.path) ? "active" : ""}`}
+              className={`${StylesLayouts.menuItem} ${isActive(item.path) ? StylesLayouts.active : ""}`}
             >
               <i className={item.icon}></i>
-              {!collapsed && <span className="menu-label">{item.label}</span>}
+              {!collapsed && (
+                <span className={`${StylesLayouts.menuLabel}`}>
+                  {item.label}
+                </span>
+              )}
             </Link>
           </div>
         ))}

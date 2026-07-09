@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api.js";
-import "../../styles/ConfirmacionProveedor.css";
+import ConfirmacionsStyle from "../../styles/Confirmaciones.module.css";
 
 const ConfirmacionProveedor = () => {
   const { token } = useParams();
@@ -30,21 +30,10 @@ const ConfirmacionProveedor = () => {
       setLoading(true);
       setError("");
 
-      console.log("🔄 Iniciando carga de datos con token:", token);
       const response = await API.get(`/pedidos/confirmacion/${token}`);
-      console.log("📥 Respuesta recibida:", response.data);
 
       const { tokenData, pedido, proveedor, insumos, estadoPedido } =
         response.data;
-
-      console.log("📊 Datos extraídos:", {
-        tokenData: tokenData,
-        pedido: pedido,
-        proveedor: proveedor,
-        estadoPedido: estadoPedido,
-        insumosCount: insumos?.length || 0,
-        insumos: insumos,
-      });
 
       setDatosPedido({ tokenData, pedido, proveedor, insumos, estadoPedido });
 
@@ -59,22 +48,6 @@ const ConfirmacionProveedor = () => {
         };
       });
       setConfirmaciones(confirmacionesIniciales);
-
-      console.log("✅ Datos cargados exitosamente");
-      console.log(
-        "📊 Debug - Confirmaciones iniciales:",
-        confirmacionesIniciales,
-      );
-      console.log(
-        "📊 Debug - Insumos del pedido:",
-        insumos.map((i) => ({
-          id: i.id_detallePedido,
-          nombre: i.nombreInsumo,
-          cantidad: i.cantidadSolicitada,
-          unidad: i.unidadMedida,
-        })),
-      );
-      console.log("📊 Debug - Total insumos:", insumos.length);
     } catch (error) {
       console.error("❌ Error al cargar datos:", error);
       console.error("🔍 Error details:", {
@@ -188,9 +161,9 @@ const ConfirmacionProveedor = () => {
 
   if (loading) {
     return (
-      <div className="proveedor-container">
-        <div className="loading-proveedor">
-          <div className="spinner-proveedor"></div>
+      <div className={ConfirmacionesStyle.containerProveedor}>
+        <div className={ConfirmacionesStyle.loadingProveedor}>
+          <div className={ConfirmacionesStyle.spinnerProveedor}></div>
           <p>Cargando pedido...</p>
         </div>
       </div>
@@ -199,12 +172,15 @@ const ConfirmacionProveedor = () => {
 
   if (error && !datosPedido.insumos.length) {
     return (
-      <div className="proveedor-container">
-        <div className="error-proveedor">
-          <div className="error-icon">⚠️</div>
+      <div className={ConfirmacionesStyle.containerProveedor}>
+        <div className={ConfirmacionesStyle.errorProveedor}>
+          <div className={ConfirmacionesStyle.errorIcon}>⚠️</div>
           <h3>Error de Acceso</h3>
           <p>{error}</p>
-          <button className="btn-retry" onClick={cargarDatosPedido}>
+          <button
+            className={ConfirmacionesStyle.btnRetry}
+            onClick={cargarDatosPedido}
+          >
             Intentar Nuevamente
           </button>
         </div>
@@ -215,15 +191,18 @@ const ConfirmacionProveedor = () => {
   // Validar si el pedido ya fue procesado
   if (datosPedido.estadoPedido === "Confirmado") {
     return (
-      <div className="proveedor-container">
-        <div className="error-proveedor">
-          <div className="error-icon">✅</div>
+      <div className={ConfirmacionesStyle.containerProveedor}>
+        <div className={ConfirmacionesStyle.errorProveedor}>
+          <div className={ConfirmacionesStyle.errorIcon}>✅</div>
           <h3>Pedido Procesado</h3>
           <p>Este pedido ya fue confirmado anteriormente.</p>
-          <p className="info-procesado">
+          <p className={ConfirmacionesStyle.infoProcesado}>
             No es necesario realizar una nueva confirmación.
           </p>
-          <button className="btn-retry" onClick={() => window.close()}>
+          <button
+            className={ConfirmacionesStyle.btnRetry}
+            onClick={() => window.close()}
+          >
             Cerrar Ventana
           </button>
         </div>
@@ -237,8 +216,8 @@ const ConfirmacionProveedor = () => {
         const fecha = datosPedido.pedido.fechaEmision;
         // Parsear YYYY-MM-DD evitando problemas de zona horaria
         // Usar números en lugar de strings para evitar ambigüedad
-        if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-          const [año, mes, día] = fecha.split('-').map(Number);
+        if (typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+          const [año, mes, día] = fecha.split("-").map(Number);
           // Crear fecha local directamente sin conversión UTC
           const fechaLocal = new Date(año, mes - 1, día);
           return fechaLocal.toLocaleDateString("es-ES", {
@@ -269,23 +248,23 @@ const ConfirmacionProveedor = () => {
   });
 
   return (
-    <div className="proveedor-container">
+    <div className={ConfirmacionesStyle.containerProveedor}>
       {/* Header */}
-      <div className="header-proveedor ">
-        <div className="header-content">
+      <div className={ConfirmacionesStyle.headerProveedor}>
+        <div className={ConfirmacionesStyle.headerContent}>
           <h1>📦 Confirmación de Pedido</h1>
-          <div className="info-header">
-            <div className="info-item">
+          <div className={ConfirmacionesStyle.headerInfo}>
+            <div className={ConfirmacionesStyle.itemInfo}>
               <strong className="mt-2">
                 🏢 {datosPedido.proveedor?.razonSocial}
               </strong>
             </div>
-            <div className="info-item">
+            <div className={ConfirmacionesStyle.itemInfo}>
               <strong className="mt-2">
                 📋 Pedido: {datosPedido.pedido?.id_pedido?.slice(0, 8)}...
               </strong>
             </div>
-            <div className="info-item">
+            <div className={ConfirmacionesStyle.itemInfo}>
               <strong className="mt-2">📅 {fechaFormateada}</strong>
             </div>
           </div>
@@ -293,31 +272,46 @@ const ConfirmacionProveedor = () => {
       </div>
 
       {/* Estadísticas */}
-      <div className="stats-proveedor">
-        <div className="stat-item stat-disponible">
-          <span className="stat-number">{conteos.Disponible}</span>
-          <span className="stat-label">Disponibles</span>
+      <div className={ConfirmacionesStyle.statsProveedor}>
+        <div
+          className={`${ConfirmacionesStyle.statItem} ${ConfirmacionesStyle.statDisponible}`}
+        >
+          <span className={ConfirmacionesStyle.statNumber}>
+            {conteos.Disponible}
+          </span>
+          <span className={ConfirmacionesStyle.statLabel}>Disponibles</span>
         </div>
-        <div className="stat-item stat-nodisponible">
-          <span className="stat-number">{conteos["No Disponible"]}</span>
-          <span className="stat-label">No Disponibles</span>
+        <div
+          className={`${ConfirmacionesStyle.statItem} ${ConfirmacionesStyle.statNoDisponible}`}
+        >
+          <span className={ConfirmacionesStyle.statNumber}>
+            {conteos["No Disponible"]}
+          </span>
+          <span className={ConfirmacionesStyle.statLabel}>No Disponibles</span>
         </div>
-        <div className="stat-item stat-pendiente">
-          <span className="stat-number">{conteos.Pendiente}</span>
-          <span className="stat-label">Pendientes</span>
+        <div
+          className={`${ConfirmacionesStyle.statItem} ${ConfirmacionesStyle.statPendiente}`}
+        >
+          <span className={ConfirmacionesStyle.statNumber}>
+            {conteos.Pendiente}
+          </span>
+          <span className={ConfirmacionesStyle.statLabel}>Pendientes</span>
         </div>
       </div>
 
       {/* Lista de Insumos */}
-      <div className="insumos-lista">
+      <div className={ConfirmacionesStyle.listaInsumos}>
         {datosPedido.insumos.map((insumo) => (
-          <div key={insumo.id_detallePedido} className="insumo-card">
-            <div className="insumo-info">
+          <div
+            key={insumo.id_detallePedido}
+            className={ConfirmacionesStyle.cardInsumo}
+          >
+            <div className={ConfirmacionesStyle.infoInsumo}>
               <h3>{insumo.nombreInsumo}</h3>
-              <p className="insumo-codigo">
+              <p className={ConfirmacionesStyle.codeInsumo}>
                 Código: INS-{String(insumo.id_insumo).padStart(4, "0")}
               </p>
-              <p className="insumo-cantidad">
+              <p className={ConfirmacionesStyle.insumoCantidad}>
                 Solicitado:{" "}
                 <strong>
                   {(() => {
@@ -331,10 +325,10 @@ const ConfirmacionProveedor = () => {
             </div>
 
             {/* Opciones de Estado */}
-            <div className="opciones-estado">
+            <div className={ConfirmacionesStyle.opcionesEstado}>
               <button
                 type="button"
-                className={`opcion-btn opcion-disponible ${
+                className={`${ConfirmacionesStyle.btnOpcion} ${ConfirmacionesStyle.opcionDisponible} ${
                   confirmaciones[insumo.id_detallePedido]?.estado ===
                   "Disponible"
                     ? "active"
@@ -352,7 +346,7 @@ const ConfirmacionProveedor = () => {
               </button>
               <button
                 type="button"
-                className={`opcion-btn opcion-nodisponible ${
+                className={`${ConfirmacionesStyle.btnOpcion} ${ConfirmacionesStyle.opcionNoDisponible} ${
                   confirmaciones[insumo.id_detallePedido]?.estado ===
                   "No Disponible"
                     ? "active"
@@ -375,27 +369,27 @@ const ConfirmacionProveedor = () => {
 
       {/* Mensajes */}
       {error && (
-        <div className="mensaje-error">
+        <div className={ConfirmacionesStyle.mensajeError}>
           <p>{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="mensaje-success">
+        <div className={ConfirmacionesStyle.mensajeSuccess}>
           <p>{success}</p>
         </div>
       )}
 
       {/* Botón de Confirmar */}
-      <div className="footer-proveedor mt-4">
+      <div className={`${ConfirmacionesStyle.footerProveedor} mt-4`}>
         <button
-          className="btn-confirmar"
+          className={ConfirmacionesStyle.btnConfirmar}
           onClick={guardarConfirmaciones}
           disabled={guardando || conteos.Pendiente > 0}
         >
           {guardando ? (
             <>
-              <div className="spinner-btn"></div>
+              <div className={ConfirmacionesStyle.btnSpinner}></div>
               Enviando confirmación...
             </>
           ) : conteos.Pendiente > 0 ? (

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const ParametrosForm = ({
   modalParametro,
@@ -54,120 +55,106 @@ const ParametrosForm = ({
   if (!modalParametro) return null;
 
   return (
-    <div
-      className="modal d-block"
-      style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-    >
-      <div className="modal-dialog modal-lg">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h3 className="modal-title">
-              <i className="fas fa-cogs me-2"></i>
-              {editandoId ? "Editar Parámetro" : "Nuevo Parámetro"}
-            </h3>
-            <button className="modal-close text-white" onClick={onCerrarModal}>
-              <i className="fas fa-times"></i>
-            </button>
+    <form onSubmit={handleSubmit}>
+      <div className={ComponenteStyle.formGrid}>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="nombreParametro"
+            className={ComponenteStyle.formLabel}
+          >
+            Nombre del Parámetro <span className="text-danger">*</span>
+          </label>
+          <input
+            type="text"
+            className={ComponenteStyle.formControl}
+            id="nombreParametro"
+            name="nombreParametro"
+            value={formData.nombreParametro}
+            onChange={handleInputChangeName}
+            placeholder="Ej: HORA_PEDIDO_AUTOMATICO"
+            required
+          />
+        </div>
+
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="valor" className={ComponenteStyle.formLabel}>
+            Valor <span className="text-danger">*</span>
+          </label>
+          <textarea
+            className={ComponenteStyle.formControl}
+            id="valor"
+            name="valor"
+            value={formData.valor}
+            onChange={handleInputChange}
+            placeholder="Ingrese el valor del parámetro"
+            rows="3"
+            required
+          ></textarea>
+        </div>
+
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="tipoParametro" className={ComponenteStyle.formLabel}>
+            Tipo de Parámetro
+          </label>
+          <select
+            className={ComponenteStyle.formSelect}
+            id="tipoParametro"
+            name="tipoParametro"
+            value={formData.tipoParametro}
+            onChange={handleInputChange}
+          >
+            <option value="Texto">Texto</option>
+            <option value="Numero">Número</option>
+            <option value="Booleano">Booleano (Verdadero/Falso)</option>
+            <option value="Fecha">Fecha</option>
+          </select>
+        </div>
+
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="estado" className={ComponenteStyle.formLabel}>
+            Estado
+          </label>
+          <select
+            className={ComponenteStyle.formSelect}
+            id="estado"
+            name="estado"
+            value={formData.estado}
+            onChange={handleInputChange}
+          >
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+
+        {serverError && (
+          <div
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+            role="alert"
+          >
+            <i className="fas fa-exclamation-circle me-2"></i>
+            <strong className="me-1">Error:</strong> {serverError}
           </div>
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="mb-3">
-                <label htmlFor="nombreParametro" className="form-label">
-                  Nombre del Parámetro <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="nombreParametro"
-                  name="nombreParametro"
-                  value={formData.nombreParametro}
-                  onChange={handleInputChangeName}
-                  placeholder="Ej: HORA_PEDIDO_AUTOMATICO"
-                  required
-                />
-              </div>
+        )}
 
-              <div className="mb-3">
-                <label htmlFor="valor" className="form-label">
-                  Valor <span className="text-danger">*</span>
-                </label>
-                <textarea
-                  className="form-control"
-                  id="valor"
-                  name="valor"
-                  value={formData.valor}
-                  onChange={handleInputChange}
-                  placeholder="Ingrese el valor del parámetro"
-                  rows="3"
-                  required
-                ></textarea>
-              </div>
-
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label htmlFor="tipoParametro" className="form-label">
-                    Tipo de Parámetro
-                  </label>
-                  <select
-                    className="form-select"
-                    id="tipoParametro"
-                    name="tipoParametro"
-                    value={formData.tipoParametro}
-                    onChange={handleInputChange}
-                  >
-                    <option value="Texto">Texto</option>
-                    <option value="Numero">Número</option>
-                    <option value="Booleano">Booleano (Verdadero/Falso)</option>
-                    <option value="Fecha">Fecha</option>
-                  </select>
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label htmlFor="estado" className="form-label">
-                    Estado
-                  </label>
-                  <select
-                    className="form-select"
-                    id="estado"
-                    name="estado"
-                    value={formData.estado}
-                    onChange={handleInputChange}
-                  >
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
-                  </select>
-                </div>
-              </div>
-
-              {serverError && (
-                <div
-                  className="alert alert-danger alert-dismissible fade show"
-                  role="alert"
-                >
-                  <i className="fas fa-exclamation-circle me-2"></i>
-                  <strong className="me-1">Error:</strong> {serverError}
-                </div>
-              )}
-
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="btn btn-secondary me-2"
-                  onClick={onCerrarModal}
-                >
-                  <i className="fas fa-times"></i>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  <i className="fas fa-save"></i>
-                  {editandoId ? "Actualizar" : "Crear"} Parámetro
-                </button>
-              </div>
-            </div>
-          </form>
+        <div className={ComponenteStyle.formActions}>
+          <button
+            type="button"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+            onClick={onCerrarModal}
+          >
+            <i className="fas fa-times"></i>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+          >
+            <i className="fas fa-save"></i>
+            {editandoId ? "Actualizar" : "Crear"} Parámetro
+          </button>
         </div>
       </div>
-    </div>
+    </form>
   );
 };
 

@@ -51,8 +51,8 @@ const customSelectStyles = {
     backgroundColor: state.isSelected
       ? "#007bff"
       : state.isFocused
-      ? "#f8f9fa"
-      : base.backgroundColor,
+        ? "#f8f9fa"
+        : base.backgroundColor,
     cursor: "pointer",
     padding: "8px 12px",
   }),
@@ -74,8 +74,11 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   const formatearFecha = (fechaString) => {
     if (!fechaString) return "";
     // Si es solo fecha (YYYY-MM-DD), parsear directamente sin conversión UTC
-    if (typeof fechaString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaString)) {
-      const [año, mes, día] = fechaString.split('-').map(Number);
+    if (
+      typeof fechaString === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(fechaString)
+    ) {
+      const [año, mes, día] = fechaString.split("-").map(Number);
       // Crear fecha local directamente
       return new Date(año, mes - 1, día).toLocaleDateString("es-ES");
     }
@@ -140,12 +143,12 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   const cargarInsumosDelProveedor = async (idProveedor) => {
     try {
       setInsumosProveedor(
-        await proveedorInsumoService.getInsumosByProveedor(idProveedor)
+        await proveedorInsumoService.getInsumosByProveedor(idProveedor),
       );
     } catch (error) {
       showError(
         "Error",
-        "Error al cargar insumos del proveedor: " + error.message
+        "Error al cargar insumos del proveedor: " + error.message,
       );
       setInsumosProveedor([]);
     }
@@ -170,25 +173,28 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
     }
     if (
       editFormData.insumos.find(
-        (it) => it.id_insumo === nuevoInsumoEdit.id_insumo
+        (it) => it.id_insumo === nuevoInsumoEdit.id_insumo,
       )
     ) {
       showInfo("Este insumo ya está en la lista.", 4000);
       return;
     }
     const insumoData = insumosProveedor.find(
-      (i) => i.id_insumo === nuevoInsumoEdit.id_insumo
+      (i) => i.id_insumo === nuevoInsumoEdit.id_insumo,
     );
-    
+
     // Validar que no exceda el stock máximo
-    if (insumoData?.stockMaximo && nuevoInsumoEdit.cantidad > insumoData.stockMaximo) {
+    if (
+      insumoData?.stockMaximo &&
+      nuevoInsumoEdit.cantidad > insumoData.stockMaximo
+    ) {
       showWarning(
         "Cantidad excedida",
-        `La cantidad máxima permitida para este insumo es ${insumoData.stockMaximo} ${insumoData.unidadMedida || 'unidades'}`
+        `La cantidad máxima permitida para este insumo es ${insumoData.stockMaximo} ${insumoData.unidadMedida || "unidades"}`,
       );
       return;
     }
-    
+
     setEditFormData((prev) => ({
       ...prev,
       insumos: [
@@ -269,7 +275,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   // IDs ya en la lista para excluirlos del selector
   const idsEnLista = useMemo(
     () => new Set(necesidades.map((n) => n.id_insumo)),
-    [necesidades]
+    [necesidades],
   );
 
   const insumosNecesidadOptions = useMemo(
@@ -278,12 +284,10 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
         .filter((i) => !idsEnLista.has(i.idInsumo ?? i.id_insumo))
         .map((i) => ({
           value: i.idInsumo ?? i.id_insumo,
-          label: `${i.nombreInsumo}${
-            i.categoria ? ` (${i.categoria})` : ""
-          }`,
+          label: `${i.nombreInsumo}${i.categoria ? ` (${i.categoria})` : ""}`,
           data: i,
         })),
-    [todosInsumos, idsEnLista]
+    [todosInsumos, idsEnLista],
   );
 
   const agregarNecesidad = () => {
@@ -292,18 +296,21 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
       return;
     }
     const insumoData = todosInsumos.find(
-      (i) => (i.idInsumo ?? i.id_insumo) === nuevaNecesidad.id_insumo
+      (i) => (i.idInsumo ?? i.id_insumo) === nuevaNecesidad.id_insumo,
     );
-    
+
     // Validar que no exceda el stock máximo
-    if (insumoData?.stockMaximo && nuevaNecesidad.cantidad > insumoData.stockMaximo) {
+    if (
+      insumoData?.stockMaximo &&
+      nuevaNecesidad.cantidad > insumoData.stockMaximo
+    ) {
       showWarning(
         "Cantidad excedida",
-        `La cantidad máxima permitida para este insumo es ${insumoData.stockMaximo} ${insumoData.unidadMedida || 'unidades'}`
+        `La cantidad máxima permitida para este insumo es ${insumoData.stockMaximo} ${insumoData.unidadMedida || "unidades"}`,
       );
       return;
     }
-    
+
     setNecesidades((prev) => [
       ...prev,
       {
@@ -324,8 +331,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
     if (cant <= 0) return;
     setNecesidades((prev) =>
       prev.map((n) =>
-        n.id_insumo === id_insumo ? { ...n, cantidad: Number(cant) } : n
-      )
+        n.id_insumo === id_insumo ? { ...n, cantidad: Number(cant) } : n,
+      ),
     );
   };
 
@@ -346,8 +353,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
           const cantidadFaltante = Math.max(
             1,
             Math.ceil(
-              (item.nivelMinimoAlerta || 0) - (item.cantidadActual || 0)
-            )
+              (item.nivelMinimoAlerta || 0) - (item.cantidadActual || 0),
+            ),
           );
           nuevo.push({
             id_insumo: item.id_insumo,
@@ -363,7 +370,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
       if (importados > 0)
         showSuccess(
           "Importado",
-          `Se importaron ${importados} insumos con faltante de stock.`
+          `Se importaron ${importados} insumos con faltante de stock.`,
         );
       else showInfo("Todos los insumos del faltante ya están en la lista.");
     } catch {
@@ -385,13 +392,13 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
       for (const nec of necesidades) {
         try {
           const raw = await proveedorInsumoService.getProveedoresByInsumo(
-            nec.id_insumo
+            nec.id_insumo,
           );
           // La BD ya devuelve los proveedores ordenados por calidad (Excelente → Bueno → Regular → Malo)
           const activos = (raw || []).filter(
             (p) =>
               p.estadoProveedor?.toLowerCase() === "activo" &&
-              p.estadoRelacion?.toLowerCase() === "activo"
+              p.estadoRelacion?.toLowerCase() === "activo",
           );
           resultados.push({
             ...nec,
@@ -420,8 +427,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
       prev.map((a) =>
         a.id_insumo === id_insumo
           ? { ...a, proveedorAsignado: proveedor, asignacionAutomatica: false }
-          : a
-      )
+          : a,
+      ),
     );
 
   const sinProveedor = asignaciones.filter((a) => !a.proveedorAsignado);
@@ -442,14 +449,14 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
     const conProveedor = asignaciones.filter((a) => a.proveedorAsignado);
     if (conProveedor.length === 0) {
       showInfo(
-        "Ningún insumo tiene proveedor asignado. Asigne proveedores antes de continuar."
+        "Ningún insumo tiene proveedor asignado. Asigne proveedores antes de continuar.",
       );
       return;
     }
     if (sinProveedor.length > 0) {
       const confirmado = await showConfirm(
         "Insumos sin proveedor",
-        `${sinProveedor.length} insumo(s) no tienen proveedor asignado y serán excluidos. ¿Continuar de todas formas?`
+        `${sinProveedor.length} insumo(s) no tienen proveedor asignado y serán excluidos. ¿Continuar de todas formas?`,
       );
       if (!confirmado) return;
     }
@@ -467,7 +474,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
       });
       showSuccess(
         "Éxito",
-        `Se generaron ${ordenesPorProveedor.length} orden(es) de pedido exitosamente.`
+        `Se generaron ${ordenesPorProveedor.length} orden(es) de pedido exitosamente.`,
       );
       if (onSuccess) onSuccess();
       if (onClose) onClose();
@@ -481,7 +488,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
   // ─── RENDER – Modo Edición ────────────────────────────────────────────────
   if (isEditMode) {
     const proveedorSeleccionado = proveedoresDisponibles.find(
-      (p) => p.idProveedor === editFormData.id_proveedor
+      (p) => p.idProveedor === editFormData.id_proveedor,
     );
     return (
       <div className="card shadow-sm">
@@ -510,7 +517,10 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                 className="form-control"
                 value={editFormData.fecha}
                 onChange={(e) =>
-                  setEditFormData((prev) => ({ ...prev, fecha: e.target.value }))
+                  setEditFormData((prev) => ({
+                    ...prev,
+                    fecha: e.target.value,
+                  }))
                 }
               />
             </div>
@@ -528,7 +538,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
               readOnly
             />
             <small className="text-muted d-block mt-1">
-              <i className="fas fa-lock me-1"></i>El proveedor está bloqueado. No se puede modificar en la edición.
+              <i className="fas fa-lock me-1"></i>El proveedor está bloqueado.
+              No se puede modificar en la edición.
             </small>
           </div>
           {/* Agregar insumo */}
@@ -548,7 +559,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                       options={insumosProveedorOptions}
                       value={
                         insumosProveedorOptions.find(
-                          (o) => o.value === nuevoInsumoEdit.id_insumo
+                          (o) => o.value === nuevoInsumoEdit.id_insumo,
                         ) || null
                       }
                       onChange={(opt) =>
@@ -602,8 +613,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
             <div className="card mb-4 border-light">
               <div className="card-header bg-light text-dark">
                 <h6 className="mb-0">
-                  <i className="fas fa-list-check me-1"></i>Insumos en el
-                  Pedido ({editFormData.insumos.length})
+                  <i className="fas fa-list-check me-1"></i>Insumos en el Pedido
+                  ({editFormData.insumos.length})
                 </h6>
               </div>
               <div className="card-body p-0">
@@ -611,7 +622,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                   <thead className="table-light">
                     <tr>
                       <th>Insumo</th>
-                      <th >Cantidad</th>
+                      <th>Cantidad</th>
                       <th className="text-center">Unidad</th>
                       <th className="text-center" width="80">
                         Acciones
@@ -636,12 +647,12 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                                         ...it,
                                         cantidad: Number(e.target.value),
                                       }
-                                    : it
+                                    : it,
                                 ),
                               }))
                             }
                             min="1"
-                            style={{ width: "100px"}}
+                            style={{ width: "100px" }}
                           />
                         </td>
                         <td className="text-center">
@@ -657,7 +668,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                               setEditFormData((prev) => ({
                                 ...prev,
                                 insumos: prev.insumos.filter(
-                                  (it) => it.id_insumo !== item.id_insumo
+                                  (it) => it.id_insumo !== item.id_insumo,
                                 ),
                               }))
                             }
@@ -677,7 +688,9 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
             <div className="alert alert-success mb-4">
               <div className="d-flex align-items-center mb-2">
                 <i className="fas fa-check-circle text-success me-2 fs-5"></i>
-                <h6 className="mb-0 fw-bold">Resumen del Pedido: &nbsp;&nbsp;</h6>
+                <h6 className="mb-0 fw-bold">
+                  Resumen del Pedido: &nbsp;&nbsp;
+                </h6>
               </div>
               <div className="row g-3">
                 <div className="col-md-4">
@@ -752,8 +765,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                   paso === n
                     ? "bg-primary"
                     : paso > n
-                    ? "bg-success"
-                    : "bg-secondary opacity-50"
+                      ? "bg-success"
+                      : "bg-secondary opacity-50"
                 }`}
               >
                 {paso > n ? <i className="fas fa-check"></i> : n}
@@ -807,8 +820,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
             <div className="card mb-4 border-primary border-opacity-25">
               <div className="card-header bg-primary bg-opacity-10 text-dark">
                 <h6 className="mb-0">
-                  <i className="fas fa-box me-1 text-primary"></i>Agregar
-                  insumo a la lista
+                  <i className="fas fa-box me-1 text-primary"></i>Agregar insumo
+                  a la lista
                 </h6>
                 <small className="text-muted">
                   Selecciona el insumo que necesitas y la cantidad requerida
@@ -822,7 +835,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                       options={insumosNecesidadOptions}
                       value={
                         insumosNecesidadOptions.find(
-                          (o) => o.value === nuevaNecesidad.id_insumo
+                          (o) => o.value === nuevaNecesidad.id_insumo,
                         ) || null
                       }
                       onChange={(opt) =>
@@ -840,17 +853,21 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                     />
                   </div>
                   <div className="col-md-2">
-                    <label className="form-label fw-bold">Unidad de Medida</label>
+                    <label className="form-label fw-bold">
+                      Unidad de Medida
+                    </label>
                     <input
                       type="text"
                       className="form-control"
-                      value={todosInsumos.find(
-                        (i) =>
-                          (i.idInsumo ?? i.id_insumo) === nuevaNecesidad.id_insumo
-                      )?.unidadMedida || ""}
+                      value={
+                        todosInsumos.find(
+                          (i) =>
+                            (i.idInsumo ?? i.id_insumo) ===
+                            nuevaNecesidad.id_insumo,
+                        )?.unidadMedida || ""
+                      }
                       disabled={true}
                     />
-
                   </div>
 
                   <div className="col-md-2">
@@ -907,8 +924,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
               <div className="alert alert-info border-info">
                 <i className="fas fa-info-circle me-2"></i>
                 <strong>Tu lista está vacía.</strong> Agrega los insumos que
-                necesitas pedir, o importa el faltante de stock
-                automáticamente.
+                necesitas pedir, o importa el faltante de stock automáticamente.
               </div>
             ) : (
               <div className="card mb-4 border-light">
@@ -953,7 +969,7 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                                 onChange={(e) =>
                                   actualizarCantidadNecesidad(
                                     nec.id_insumo,
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 min="0.001"
@@ -1033,8 +1049,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
             <div className="card mb-4 border-light">
               <div className="card-header bg-light text-dark">
                 <h6 className="mb-0">
-                  <i className="fas fa-link me-1 text-primary"></i>Asignación
-                  de Proveedores por Insumo
+                  <i className="fas fa-link me-1 text-primary"></i>Asignación de
+                  Proveedores por Insumo
                 </h6>
                 <small className="text-muted">
                   El sistema asignó automáticamente el proveedor de mayor
@@ -1055,54 +1071,55 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                     </thead>
                     <tbody>
                       {asignaciones.map((a) => (
-                          <tr key={a.id_insumo} className="align-middle">
-                            <td className="fw-medium">{a.nombreInsumo}</td>
-                            <td className="text-center">
-                              <span className="badge bg-secondary">
-                                  {formatCantidad(a.cantidad, a.unidadMedida)} {a.unidadMedida || "un."}
-                                </span>
-                            </td>
-                            <td>
-                              {a.proveedorAsignado ? (
-                                <span className="fw-medium">
-                                  <i className="fas fa-truck text-success me-2"></i>
-                                  {a.proveedorAsignado.razonSocial}
-                                </span>
-                              ) : (
-                                <span className="text-danger fst-italic">
-                                  <i className="fas fa-times-circle me-1"></i>
-                                  Sin proveedor registrado
-                                </span>
-                              )}
-                            </td>
-                            <td className="text-center">
-                              {a.proveedorAsignado ? (
-                                <span
-                                  className={`badge bg-${
-                                    CALIFICACION_BADGE[
-                                      a.proveedorAsignado.calificacion
-                                    ] || "secondary"
-                                  }`}
-                                >
-                                  {a.proveedorAsignado.calificacion || "—"}
-                                </span>
-                              ) : (
-                                <span className="text-muted">—</span>
-                              )}
-                            </td>
-                            <td className="text-center">
-                              {!a.proveedorAsignado ? (
-                                <span className="badge bg-danger">
-                                  Sin proveedor
-                                </span>
-                              ) : (
-                                <span className="badge bg-success">
-                                  <i className="fas fa-magic me-1"></i>Auto
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
+                        <tr key={a.id_insumo} className="align-middle">
+                          <td className="fw-medium">{a.nombreInsumo}</td>
+                          <td className="text-center">
+                            <span className="badge bg-secondary">
+                              {formatCantidad(a.cantidad, a.unidadMedida)}{" "}
+                              {a.unidadMedida || "un."}
+                            </span>
+                          </td>
+                          <td>
+                            {a.proveedorAsignado ? (
+                              <span className="fw-medium">
+                                <i className="fas fa-truck text-success me-2"></i>
+                                {a.proveedorAsignado.razonSocial}
+                              </span>
+                            ) : (
+                              <span className="text-danger fst-italic">
+                                <i className="fas fa-times-circle me-1"></i>
+                                Sin proveedor registrado
+                              </span>
+                            )}
+                          </td>
+                          <td className="text-center">
+                            {a.proveedorAsignado ? (
+                              <span
+                                className={`badge bg-${
+                                  CALIFICACION_BADGE[
+                                    a.proveedorAsignado.calificacion
+                                  ] || "secondary"
+                                }`}
+                              >
+                                {a.proveedorAsignado.calificacion || "—"}
+                              </span>
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </td>
+                          <td className="text-center">
+                            {!a.proveedorAsignado ? (
+                              <span className="badge bg-danger">
+                                Sin proveedor
+                              </span>
+                            ) : (
+                              <span className="badge bg-success">
+                                <i className="fas fa-magic me-1"></i>Auto
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -1140,14 +1157,12 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
           <>
             <div className="alert alert-info mb-4">
               <i className="fas fa-info-circle me-2"></i>Se generará&nbsp;
-              <strong>
-                {ordenesPorProveedor.length} orden(es) de pedido
-              </strong>
-              , una por cada proveedor, para un total de&nbsp;
+              <strong>{ordenesPorProveedor.length} orden(es) de pedido</strong>,
+              una por cada proveedor, para un total de&nbsp;
               <strong>
                 {asignaciones.filter((a) => a.proveedorAsignado).length}
-              </strong>&nbsp;
-              insumo(s).
+              </strong>
+              &nbsp; insumo(s).
               {sinProveedor.length > 0 && (
                 <span className="text-warning ms-2">
                   ({sinProveedor.length} insumo(s) excluido(s) por no tener
@@ -1233,7 +1248,8 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
                         <tr key={a.id_insumo}>
                           <td>{a.nombreInsumo}</td>
                           <td className="text-center">
-                            {formatCantidad(a.cantidad, a.unidadMedida)} {a.unidadMedida || "un."}
+                            {formatCantidad(a.cantidad, a.unidadMedida)}{" "}
+                            {a.unidadMedida || "un."}
                           </td>
                           <td>
                             <small className="text-muted">
@@ -1290,6 +1306,3 @@ const PedidoFormSimple = ({ onClose, onSuccess, pedidoEditando = null }) => {
 };
 
 export default PedidoFormSimple;
-
-
-

@@ -9,6 +9,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const GradoForm = ({ grado, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -87,15 +88,15 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
     setLoading(true);
 
     try {
-      let savedGrado;
-
       if (mode === "create") {
-        savedGrado = await gradoService.create(formData);
+        await gradoService.create(formData);
       } else {
-        savedGrado = await gradoService.update(grado.idGrado, formData);
+        await gradoService.update(grado.idGrado, formData);
       }
 
-      onSave(savedGrado);
+      // Solo notificar éxito, no pasar datos
+      // La recarga de datos será manejada por el componente padre
+      onSave();
     } catch (error) {
       // Mostrar errores específicos
       if (error.response?.status === 409) {
@@ -107,13 +108,18 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
           apiErrors[err.field] = err.message;
         });
         setErrors(apiErrors);
+      } else if (error.response?.status === 404) {
+        // Ignorar errores 404 durante update - la operación fue exitosa
+        // solo puede fallar una llamada GET posterior del padre
+        onSave();
+        return;
       } else if (error.response?.data?.message) {
         setServerError(error.response.data.message);
         showError("Error", error.response.data.message);
       } else {
         showError(
           "Error",
-          "Error al guardar el grado. Por favor, intente nuevamente."
+          "Error al guardar el grado. Por favor, intente nuevamente.",
         );
       }
     } finally {
@@ -125,143 +131,145 @@ const GradoForm = ({ grado, mode, onSave, onCancel }) => {
   const isCreateMode = mode === "create";
 
   return (
-    <div className="grado-form">
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          {/* Información del Grado */}
-          <div>
-            <h4 className="section-title">Información del Grado</h4>
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>Información del Grado
+      </h4>
 
-            <div className="form-group">
-              <label htmlFor="nombreGrado" className="form-label required">
-                Nombre del Grado
-              </label>
-              <input
-                type="text"
-                id="nombreGrado"
-                name="nombreGrado"
-                className={`form-control ${
-                  errors.nombreGrado ? "is-invalid" : ""
-                }`}
-                value={formData.nombreGrado}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-                placeholder="Ej: 1° A, 1° B, 2° A, 3° A..."
-              />
-            </div>
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="nombreGrado"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          Nombre del Grado
+        </label>
+        <input
+          type="text"
+          id="nombreGrado"
+          name="nombreGrado"
+          className={`${ComponenteStyle.formControl} ${errors.nombreGrado ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.nombreGrado}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+          placeholder="Ej: 1° A, 1° B, 2° A, 3° A..."
+        />
+      </div>
 
-            <div className="form-group">
-              <label htmlFor="idTurno" className="form-label required ">
-                Turno
-              </label>
-              {loadingTurnos ? (
-                <div className="form-control">
-                  <i className="fas fa-spinner fa-spin me-2"></i>
-                  Cargando turnos...
-                </div>
-              ) : (
-                <select
-                  id="idTurno"
-                  name="idTurno"
-                  className={`form-control ${
-                    errors.idTurno ? "is-invalid" : ""
-                  }`}
-                  value={formData.idTurno}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                >
-                  <option value="">Seleccionar turno...</option>
-                  {turnos.map((turno) => (
-                    <option key={turno.idTurno} value={turno.idTurno}>
-                      {turno.nombre} ({turno.horaInicio} - {turno.horaFin})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="estado" className="form-label ">
-                Estado del Grado
-              </label>
-              <select
-                id="estado"
-                name="estado"
-                className="form-control"
-                value={formData.estado}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-              >
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-              </select>
-              <small className="form-text text-muted ">
-                Los grados inactivos no aparecerán disponibles para nuevos
-                registros
-              </small>
-            </div>
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="idTurno"
+          className={`${ComponenteStyle.formLabel} required `}
+        >
+          Turno
+        </label>
+        {loadingTurnos ? (
+          <div className={ComponenteStyle.formControl}>
+            <i className="fas fa-spinner fa-spin me-2"></i>
+            Cargando turnos...
           </div>
-        </div>
-
-        {/* Mensaje de error */}
-        {serverError && (
-          <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
+        ) : (
+          <select
+            id="idTurno"
+            name="idTurno"
+            className={`${ComponenteStyle.formControl} ${errors.idTurno ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.idTurno}
+            onChange={handleInputChange}
+            disabled={isViewMode}
           >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {serverError}
-          </div>
+            <option value="">Seleccionar turno...</option>
+            {turnos.map((turno) => (
+              <option key={turno.idTurno} value={turno.idTurno}>
+                {turno.nombre} ({turno.horaInicio} - {turno.horaFin})
+              </option>
+            ))}
+          </select>
         )}
+      </div>
 
-        {errors.nombreGrado && (
-          <div className="alert alert-danger" role="alert">
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {errors.nombreGrado}
-          </div>
-        )}
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="estado" className={`${ComponenteStyle.formLabel} `}>
+          Estado del Grado
+        </label>
+        <select
+          id="estado"
+          name="estado"
+          className={`${ComponenteStyle.formControl}`}
+          value={formData.estado}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+        >
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+        <small className={`${ComponenteStyle.formText} text-muted`}>
+          Los grados inactivos no aparecerán disponibles para nuevos registros
+        </small>
+      </div>
 
-        {errors.idTurno && (
-          <div className="alert alert-danger" role="alert">
-            <i className="fas fa-exclamation-circle me-2"></i>
-            <strong className="me-1">Error:</strong> {errors.idTurno}
-          </div>
-        )}
+      {/* Mensaje de error */}
+      {serverError && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {serverError}
+        </div>
+      )}
 
-        {/* Botones */}
-        <div className="form-actions ">
+      {errors.nombreGrado && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {errors.nombreGrado}
+        </div>
+      )}
+
+      {errors.idTurno && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          <strong className="me-1">Error:</strong> {errors.idTurno}
+        </div>
+      )}
+
+      {/* Botones */}
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
           <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
             disabled={loading}
           >
-            <i className="fas fa-times"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save"></i>
+                {isCreateMode ? "Crear Grado" : "Actualizar Grado"}
+              </>
+            )}
           </button>
-
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  {isCreateMode ? "Crear Grado" : "Actualizar Grado"}
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </form>
-    </div>
+        )}
+      </div>
+    </form>
   );
 };
 

@@ -1,13 +1,20 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api.js";
-import { showError } from "../../utils/alertService";
+import { showError, showSuccess } from "../../utils/alertService";
+import DocenteStyle from "../../styles/Docente.module.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
 
 const MisAlumnos = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [gradoDocente, setGradoDocente] = useState(null);
   const [alumnos, setAlumnos] = useState([]);
+  const [filteredAlumnos, setFilteredAlumnos] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterEstado, setFilterEstado] = useState("");
+  const [updatingAlumnoId, setUpdatingAlumnoId] = useState(null);
 
   useEffect(() => {
     const cargarGradoDocente = async () => {
@@ -17,7 +24,7 @@ const MisAlumnos = () => {
         //console.log('ID Persona:', user.idPersona || user.id_persona);
 
         const response = await API.get(
-          `/docente-grados?idPersona=${user.idPersona || user.id_persona}`
+          `/docente-grados/grados-by-docente?idPersona=${user.idPersona || user.id_persona}`,
         );
         //console.log('Respuesta docente-grados:', response.data);
         const gradosData = response.data || [];
@@ -30,7 +37,7 @@ const MisAlumnos = () => {
         //console.error('Error al cargar grado del docente:', error);
         showError(
           "Error",
-          "❌ Ocurrió un error al cargar la información del grado asignado. Por favor, intente nuevamente más tarde."
+          "❌ Ocurrió un error al cargar la información del grado asignado. Por favor, intente nuevamente más tarde.",
         );
       } finally {
         setLoading(false);
@@ -52,8 +59,8 @@ const MisAlumnos = () => {
         //console.log('Cargando alumnos para grado:', gradoDocente.nombreGrado);
         const response = await API.get(
           `/alumnos-grado?nombreGrado=${encodeURIComponent(
-            gradoDocente.nombreGrado
-          )}`
+            gradoDocente.nombreGrado,
+          )}`,
         );
         //console.log('Respuesta de alumnos:', response.data);
         setAlumnos(response.data || []);
@@ -61,7 +68,7 @@ const MisAlumnos = () => {
         //console.error('Error al cargar alumnos:', error);
         showError(
           "Error",
-          "❌ Ocurrió un error al cargar la información de los alumnos. Por favor, intente nuevamente más tarde."
+          "❌ Ocurrió un error al cargar la información de los alumnos. Por favor, intente nuevamente más tarde.",
         );
         setAlumnos([]);
       }
@@ -69,6 +76,34 @@ const MisAlumnos = () => {
 
     cargarAlumnos();
   }, [gradoDocente]);
+
+  // Filtrar alumnos
+  useEffect(() => {
+    let filtered = alumnos;
+
+    // Filtrar por búsqueda
+    if (searchQuery && searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase();
+      filtered = filtered.filter((alumno) => {
+        return (
+          (alumno.nombre &&
+            alumno.nombre.toLowerCase().includes(searchLower)) ||
+          (alumno.apellido &&
+            alumno.apellido.toLowerCase().includes(searchLower)) ||
+          (alumno.dni && alumno.dni.toLowerCase().includes(searchLower))
+        );
+      });
+    }
+
+    // Filtrar por estado
+    if (filterEstado && filterEstado !== "") {
+      filtered = filtered.filter(
+        (alumno) => alumno.estadoPersona === filterEstado,
+      );
+    }
+
+    setFilteredAlumnos(filtered);
+  }, [searchQuery, filterEstado, alumnos]);
 
   const calcularEdad = (fechaNacimiento) => {
     if (!fechaNacimiento) return "N/A";
@@ -87,158 +122,221 @@ const MisAlumnos = () => {
     return new Date(fecha).toLocaleDateString("es-ES");
   };
 
-  const getInitials = (nombre, apellido) => {
-    return `${nombre?.charAt(0) || ""}${
-      apellido?.charAt(0) || ""
-    }`.toUpperCase();
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleFilterEstado = (e) => {
+    setFilterEstado(e.target.value);
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterEstado("");
+  };
+
+  const toggleEstadoAlumno = async (alumno) => {
+    try {
+      setUpdatingAlumnoId(alumno.id_alumno || alumno.idAlumno);
+      const nuevoEstado =
+        alumno.estadoPersona === "Activo" ? "Inactivo" : "Activo";
+      const idPersona = alumno.id_persona || alumno.idPersona;
+
+      await API.patch(`/personas/${idPersona}/estado`, {
+        estado: nuevoEstado,
+      });
+
+      // Actualizar lista de alumnos - usar id_persona para comparación confiable
+      setAlumnos(
+        alumnos.map((a) =>
+          a.id_persona === idPersona || a.idPersona === idPersona
+            ? { ...a, estadoPersona: nuevoEstado }
+            : a,
+        ),
+      );
+
+      showSuccess(
+        "Éxito",
+        `Alumno ${nuevoEstado === "Activo" ? "activado" : "desactivado"} correctamente`,
+      );
+    } catch (error) {
+      showError(
+        "Error",
+        `Error al cambiar el estado del alumno: ${error.response?.data?.message || error.message}`,
+      );
+    } finally {
+      setUpdatingAlumnoId(null);
+    }
   };
 
   if (loading) {
     return (
-      <div className="mis-alumnos">
-        <div className="loading-container">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-          <p className="mt-3">Cargando información de alumnos...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="mis-alumnos">
-        <div className="card">
-          <div className="card-body text-center">
-            <i className="fas fa-user-slash fa-3x text-muted mb-3"></i>
-            <h4>No hay usuario autenticado</h4>
-            <p>Por favor, inicia sesión para ver esta página</p>
-          </div>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Datos de Alumnos...</p>
       </div>
     );
   }
 
   return (
-    <div className="mis-alumnos">
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-graduation-cap me-2"></i>
-            Mis Alumnos
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-graduation-cap"></i>
+            Mis Alumnos:{" "}
+            <em className="text-primary">{gradoDocente.nombreGrado}</em>
           </h1>
-          <p>Información de los alumnos a tu cargo</p>
+          <p className={ContenidoStyle.pageSubtitle}>
+            Información de los alumnos a tu cargo
+          </p>
         </div>
       </div>
 
       {!gradoDocente ? (
-        <div className="card">
-          <div className="card-body text-center">
-            <i className="fas fa-user-graduate fa-3x text-muted mb-3"></i>
+        <div className={ContenidoStyle.card}>
+          <div className={`${ContenidoStyle.cardBody} text-center`}>
+            <i className="fas fa-user-graduate text-muted mb-3"></i>
             <h4>No tienes un grado asignado</h4>
             <p>Contacta al administrador para que te asigne un grado</p>
           </div>
         </div>
       ) : (
-        <>
+        <div>
           {/* Información del Grado */}
-          <div className="card mb-4">
-            <div className="card-header">
-              <div className="d-flex justify-content-between align-items-center">
-                <div className="grado-info">
-                  <h4 className="mb-0">📚 {gradoDocente.nombreGrado}</h4>
-                </div>
-                <div className="grado-badges">
-                  <span className="badge bg-info me-2">
-                    Ciclo {new Date(gradoDocente.cicloLectivo).getFullYear()}
-                  </span>
-                  <span className="badge bg-success">
-                    {gradoDocente.tipoDocente || "Docente"}
-                  </span>
-                </div>
+          <div className="row">
+            <div className="col-md-3">
+              <div
+                className={`${DocenteStyle.statsCard} ${DocenteStyle.alumnos}`}
+              >
+                <div className="fs-3">{alumnos.length}</div>
+                <div>Total Alumnos</div>
               </div>
             </div>
-            <div className="card-body">
-              <div className="row">
-                <div className="col-md-3">
-                  <div className="stats-card">
-                    <div className="stats-number">{alumnos.length}</div>
-                    <div className="stats-label">Total Alumnos</div>
-                  </div>
+            <div className="col-md-3">
+              <div
+                className={`${DocenteStyle.statsCard} ${DocenteStyle.masculino}`}
+              >
+                <div className="fs-3">
+                  {
+                    alumnos.filter((alumno) => alumno.genero === "Masculino")
+                      .length
+                  }
                 </div>
-                <div className="col-md-3">
-                  <div className="stats-card">
-                    <div className="stats-number">
-                      {
-                        alumnos.filter(
-                          (alumno) => alumno.genero === "Masculino"
-                        ).length
-                      }
-                    </div>
-                    <div className="stats-label">Masculino</div>
-                  </div>
+                <div>Masculino</div>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div
+                className={`${DocenteStyle.statsCard} ${DocenteStyle.femenino}`}
+              >
+                <div className="fs-3">
+                  {
+                    alumnos.filter((alumno) => alumno.genero === "Femenina")
+                      .length
+                  }
                 </div>
-                <div className="col-md-3">
-                  <div className="stats-card">
-                    <div className="stats-number">
-                      {
-                        alumnos.filter((alumno) => alumno.genero === "Femenina")
-                          .length
-                      }
-                    </div>
-                    <div className="stats-label">Femenino</div>
-                  </div>
+                <div>Femenino</div>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div
+                className={`${DocenteStyle.statsCard} ${DocenteStyle.inactivo}`}
+              >
+                <div className="fs-3">
+                  {
+                    alumnos.filter(
+                      (alumno) => alumno.estadoPersona === "Inactivo",
+                    ).length
+                  }
                 </div>
-                <div className="col-md-3">
-                  <div className="stats-card">
-                    <div className="stats-number">
-                      {Math.round(
-                        alumnos.reduce(
-                          (sum, alumno) =>
-                            sum + (calcularEdad(alumno.fechaNacimiento) || 0),
-                          0
-                        ) / alumnos.length
-                      ) || 0}
-                    </div>
-                    <div className="stats-label">Edad Promedio</div>
-                  </div>
-                </div>
+                <div>Inactivos</div>
               </div>
             </div>
           </div>
 
           {/* Lista de Alumnos */}
-          <div className="card">
-            <div className="card-header">
-              <h4>📋 Lista de Alumnos</h4>
+          <div className={`${ContenidoStyle.tabContent} mt-4`}>
+            <div className={ContenidoStyle.headerLeft}>
+              <div className={ContenidoStyle.searchFilters}>
+                <div className={ContenidoStyle.searchBar}>
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre, apellido o documento..."
+                    value={searchQuery}
+                    onChange={handleSearch}
+                    className={ContenidoStyle.searchInput}
+                  />
+                </div>
+
+                <div className={ContenidoStyle.filterActions}>
+                  <select
+                    className={ContenidoStyle.filterSelect}
+                    value={filterEstado}
+                    onChange={handleFilterEstado}
+                  >
+                    <option value="">Todos los estados</option>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+
+                  {(searchQuery || filterEstado) && (
+                    <button
+                      className="btn btn-outline-secondary btn-sm"
+                      onClick={clearFilters}
+                      title="Limpiar filtros"
+                    >
+                      <i className="fas fa-times"></i>
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="card-body">
-              {alumnos.length === 0 ? (
-                <div className="text-center py-5">
-                  <i className="fas fa-users fa-3x text-muted mb-3"></i>
-                  <h5>No hay alumnos registrados</h5>
-                  <p className="text-muted">
-                    No se encontraron alumnos para este grado
-                  </p>
+
+            {/* Lista de alumnos del grado */}
+            <div className={TablaStyle.tableContainer}>
+              {filteredAlumnos.length === 0 ? (
+                <div className={TablaStyle.emptyState}>
+                  <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+                  <h5>No se encontraron Alumno del Grados</h5>
+                  <p>No hay Alumnos que coincidan con tu búsqueda.</p>
                 </div>
               ) : (
-                <>
-                  {/* Vista de Grid - Desktop */}
-                  <div className="d-none d-lg-block">
-                    <div className="table-responsive">
-                      <table className="table table-hover">
-                        <thead className="table-light">
+                <div className={TablaStyle.scrollableTable}>
+                  <div className={TablaStyle.tableBodyScroll}>
+                    <table
+                      className={`${TablaStyle.tableData} table table-striped`}
+                    >
+                      <thead className={TablaStyle.tableHeaderFixed}>
+                        <tr>
+                          <th>#</th>
+                          <th>Alumno</th>
+                          <th>Información Personal</th>
+                          <th>Genero</th>
+                          <th>Estado</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAlumnos.length === 0 ? (
                           <tr>
-                            <th>Alumno</th>
-                            <th>Información Personal</th>
-                            <th>Genero</th>
-                            <th>Estado</th>
+                            <td colSpan={12}>
+                              <div className={TablaStyle.emptyState}>
+                                <i
+                                  className={`fas fa-search ${TablaStyle.emptyIcon}`}
+                                ></i>
+                                <h5>No se encontraron alumnos</h5>
+                                <p>
+                                  No hay alumnos que coincidan con tu búsqueda.
+                                </p>
+                              </div>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {alumnos.map((alumno, index) => (
+                        ) : (
+                          filteredAlumnos.map((alumno, index) => (
                             <tr key={index}>
+                              <td className="fw-bold">{index + 1}</td>
                               <td>
                                 <div className="d-flex align-items-center">
                                   <div>
@@ -252,7 +350,7 @@ const MisAlumnos = () => {
                                 </div>
                               </td>
                               <td>
-                                <div className="info-personal">
+                                <div>
                                   <div className="mb-1">
                                     <i className="fas fa-birthday-cake text-muted me-1"></i>
                                     {calcularEdad(alumno.fechaNacimiento)} años
@@ -271,73 +369,57 @@ const MisAlumnos = () => {
                                 </div>
                               </td>
                               <td>
-                                <span className="badge bg-success">
-                                  {alumno.estadoPersona || "Activo"}
+                                <span
+                                  className={`${TablaStyle.statusBadge} ${
+                                    alumno.estadoPersona.toLowerCase() ===
+                                    "activo"
+                                      ? TablaStyle.activo
+                                      : TablaStyle.inactivo
+                                  }`}
+                                >
+                                  {alumno.estadoPersona}
                                 </span>
                               </td>
+                              <td>
+                                <div className={TablaStyle.actionButtons}>
+                                  <button
+                                    className={`${TablaStyle.btnAction} ${
+                                      alumno.estadoPersona === "Activo"
+                                        ? TablaStyle.btnDisable
+                                        : TablaStyle.btnEnable
+                                    }`}
+                                    onClick={() => toggleEstadoAlumno(alumno)}
+                                    disabled={
+                                      updatingAlumnoId ===
+                                      (alumno.id_alumno || alumno.idAlumno)
+                                    }
+                                    title={
+                                      alumno.estado === "Activo"
+                                        ? "Deshabilitar alumno"
+                                        : "Activar alumno"
+                                    }
+                                  >
+                                    <i
+                                      className={`fas ${
+                                        alumno.estadoPersona === "Activo"
+                                          ? "fa-user-slash"
+                                          : "fa-user-check"
+                                      }`}
+                                    ></i>
+                                  </button>
+                                </div>
+                              </td>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-
-                  {/* Vista de Cards - Mobile */}
-                  <div className="d-lg-none">
-                    <div className="row">
-                      {alumnos.map((alumno, index) => (
-                        <div key={index} className="col-12 mb-3">
-                          <div className="card alumno-card">
-                            <div className="card-body">
-                              <div className="d-flex align-items-start">
-                                <div className="avatar me-3">
-                                  {getInitials(alumno.nombre, alumno.apellido)}
-                                </div>
-                                <div className="flex-grow-1">
-                                  <h6 className="card-title mb-2">
-                                    {alumno.nombre} {alumno.apellido}
-                                    <span className="badge bg-success ms-2">
-                                      {alumno.estadoPersona || "Activo"}
-                                    </span>
-                                  </h6>
-                                  <div className="alumno-info">
-                                    <div className="info-row">
-                                      <span className="info-label">
-                                        Documento:
-                                      </span>
-                                      <span className="info-value">
-                                        {alumno.dni || "Sin documento"}
-                                      </span>
-                                    </div>
-                                    <div className="info-row">
-                                      <span className="info-label">Edad:</span>
-                                      <span className="info-value">
-                                        {calcularEdad(alumno.fechaNacimiento)}{" "}
-                                        años
-                                      </span>
-                                    </div>
-                                    <div className="info-row">
-                                      <span className="info-label">
-                                        Género:
-                                      </span>
-                                      <span className="info-value">
-                                        {alumno.genero || "N/A"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

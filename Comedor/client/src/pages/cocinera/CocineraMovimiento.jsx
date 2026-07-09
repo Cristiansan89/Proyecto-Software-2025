@@ -7,7 +7,9 @@ import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import { formatDate, formatDateTime } from "../../utils/dateUtils";
 import { formatNumeroAR } from "../../utils/formatNumero";
-import "../../styles/CocineraMovimiento.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
 
 const CocineraMovimiento = () => {
   const { isAuthenticated, user } = useAuth();
@@ -90,6 +92,18 @@ const CocineraMovimiento = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const clearFilters = () => {
+    setFiltros({
+      tipo: "",
+      insumo: "",
+      usuario: "",
+      fechaInicio: "",
+      fechaFin: "",
+    });
+
+    setCurrentPage(1);
   };
 
   useEffect(() => {
@@ -283,144 +297,154 @@ const CocineraMovimiento = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Movimiento...</p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-exchange-alt me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-exchange-alt"></i>
             Movimientos de Inventario
           </h1>
-          <p>Historial de entradas, salidas y merma de insumos</p>
+          <p className={ContenidoStyle.pageSubtitle}>
+            Historial de entradas, salidas y merma de insumos
+          </p>
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="card mb-4">
-        <div className="card-header">
+      <div className={`${ContenidoStyle.card}`}>
+        <div className={ContenidoStyle.cardHeader}>
           <h5 className="mb-0">
             <i className="fas fa-filter me-2"></i>
             Filtros
           </h5>
         </div>
-        <div className="card-body">
+        <div className={ContenidoStyle.cardBody}>
           <div className="row align-items-end">
-            <div className="col-md-2">
-              <label className="form-label">Tipo de Movimiento</label>
-              <select
-                className="form-select"
-                value={filtros.tipo}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, tipo: e.target.value })
-                }
-              >
-                <option value="">Todos</option>
-                <option value="Entrada">↗ Entrada</option>
-                <option value="Salida">↙ Salida</option>
-                <option value="Merma">🗑 Merma</option>
-              </select>
-            </div>
+            <div className={ContenidoStyle.filterActions}>
+              <div className="col-md-2">
+                <label className={ComponenteStyle.formLabel}>
+                  Tipo de Movimiento
+                </label>
+                <select
+                  className={`${ComponenteStyle.formSelect}`}
+                  value={filtros.tipo}
+                  onChange={(e) =>
+                    setFiltros({ ...filtros, tipo: e.target.value })
+                  }
+                >
+                  <option value="">Todos</option>
+                  <option value="Entrada">↗ Entrada</option>
+                  <option value="Salida">↙ Salida</option>
+                  <option value="Merma">🗑 Merma</option>
+                </select>
+              </div>
+              <div className="col-md-3">
+                <label className={ComponenteStyle.formLabel}>Insumo</label>
+                <input
+                  type="text"
+                  className={ComponenteStyle.formControl}
+                  placeholder="Buscar insumo..."
+                  value={filtros.insumo}
+                  onChange={(e) =>
+                    setFiltros({ ...filtros, insumo: e.target.value })
+                  }
+                />
+              </div>
+              <div className="col-md-2">
+                <label className={ComponenteStyle.formLabel}>Usuario</label>
+                <select
+                  className={ComponenteStyle.formSelect}
+                  value={filtros.usuario}
+                  onChange={(e) =>
+                    setFiltros({ ...filtros, usuario: e.target.value })
+                  }
+                >
+                  <option value="">Todos</option>
+                  {usuariosLista.map((usuario) => (
+                    <option key={usuario} value={usuario}>
+                      {usuario}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-2">
+                <label className={ComponenteStyle.formLabel}>
+                  Fecha Inicio
+                </label>
+                <input
+                  type="date"
+                  className={ComponenteStyle.formControl}
+                  value={filtros.fechaInicio}
+                  onChange={(e) =>
+                    setFiltros({ ...filtros, fechaInicio: e.target.value })
+                  }
+                />
+              </div>
+              <div className="col-md-2">
+                <label className={ComponenteStyle.formLabel}>Fecha Fin</label>
+                <input
+                  type="date"
+                  className={ComponenteStyle.formControl}
+                  value={filtros.fechaFin}
+                  onChange={(e) =>
+                    setFiltros({ ...filtros, fechaFin: e.target.value })
+                  }
+                />
+              </div>
+              <div className="mt-2">
+                {(filtros.tipo ||
+                  filtros.insumo ||
+                  filtros.usuario ||
+                  filtros.fechaInicio ||
+                  filtros.fechaFin) && (
+                  <button
+                    className="btn btn-outline-secondary btn-sm me-2"
+                    onClick={clearFilters}
+                    title="Limpiar filtros"
+                  >
+                    <i className="fas fa-times"></i>
+                    Limpiar
+                  </button>
+                )}
 
-            <div className="col-md-3">
-              <label className="form-label">Insumo</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Buscar insumo..."
-                value={filtros.insumo}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, insumo: e.target.value })
-                }
-              />
+                <button className="btn btn-danger me-2" onClick={generarPDF}>
+                  <i className="fas fa-file-pdf me-1"></i>
+                  Exportar PDF
+                </button>
+                <button className="btn btn-success" onClick={exportarCSV}>
+                  <i className="fas fa-download me-1"></i>
+                  Descargar CSV
+                </button>
+              </div>
             </div>
-
-            <div className="col-md-2">
-              <label className="form-label">Usuario</label>
-              <select
-                className="form-select"
-                value={filtros.usuario}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, usuario: e.target.value })
-                }
-              >
-                <option value="">Todos</option>
-                {usuariosLista.map((usuario) => (
-                  <option key={usuario} value={usuario}>
-                    {usuario}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-md-2">
-              <label className="form-label">Fecha Inicio</label>
-              <input
-                type="date"
-                className="form-control"
-                value={filtros.fechaInicio}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, fechaInicio: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="col-md-2">
-              <label className="form-label">Fecha Fin</label>
-              <input
-                type="date"
-                className="form-control"
-                value={filtros.fechaFin}
-                onChange={(e) =>
-                  setFiltros({ ...filtros, fechaFin: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="col-md-1" style={{ display: "none" }}>
-              <button
-                className="btn btn-outline-secondary w-100"
-                onClick={limpiarFiltros}
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-          <div className="mt-3">
-            <button className="btn btn-danger me-2" onClick={generarPDF}>
-              <i className="fas fa-file-pdf me-1"></i>
-              Exportar PDF
-            </button>
-            <button className="btn btn-success" onClick={exportarCSV}>
-              <i className="fas fa-download me-1"></i>
-              Descargar CSV
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Tabla de movimientos */}
-      <div className="card">
-        <div className="card-header">
-          <div className="d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">
-              <i className="fas fa-list me-2"></i>
-              Movimientos
-            </h5>
-            <span className="badge bg-info">
-              {movimientosFiltrados.length} movimientos
-            </span>
-          </div>
-        </div>
+      {/* Tabla de Movimientos */}
+      <div className={ContenidoStyle.card}>
+        <div
+          className={`${ContenidoStyle.cardHeader} ${ContenidoStyle.headerInventario} pb-0 pt-2`}
+        >
+          <h4>
+            <i className="fas fa-list me-1"></i>
+            Registros de Movimientos
+          </h4>
 
-        <div className="card-body">
-          {/* Selector de tamaño de página */}
-          <div className="page-size-selector d-flex align-items-center gap-2 mb-3">
-            <label className="mb-0">
-              <strong>Registros por página:</strong>
+          <div className={ContenidoStyle.headerRight}>
+            <label className="mx-2">
+              <span>Registros por página:</span>
             </label>
             <select
-              className="form-select"
-              style={{ width: "70px" }}
               value={pageSize}
               onChange={(e) => {
                 setPageSize(Number(e.target.value));
@@ -432,33 +456,22 @@ const CocineraMovimiento = () => {
               <option value={20}>20</option>
               <option value={50}>50</option>
             </select>
-            <span className="text-muted">
-              Total: {movimientosFiltrados.length} registros
-            </span>
           </div>
-
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-            </div>
-          ) : movimientosFiltrados.length === 0 ? (
-            <div className="text-center py-4">
-              <i className="fas fa-inbox fa-2x text-muted mb-3"></i>
-              <div colSpan={12}>
-                <div className="empty-state">
-                  <i className="fas fa-search empty-icon"></i>
-                  <h5>No se encontraron movimientos</h5>
-                  <p>No hay movimientos que coincidan con tu búsqueda.</p>
-                </div>
-              </div>
+        </div>
+        <div className={TablaStyle.tableContainer}>
+          {movimientosFiltrados.length === 0 ? (
+            <div className={TablaStyle.emptyState}>
+              <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+              <h5>No se encontraron movimientos</h5>
+              <p>No hay movimientos que coincidan con tu búsqueda.</p>
             </div>
           ) : (
-            <>
-              <div className="table-container">
-                <table className="table table-striped data-table">
-                  <thead className="table-light">
+            <div className={TablaStyle.scrollableTable}>
+              <div className={TablaStyle.tableBodyScroll}>
+                <table
+                  className={`${TablaStyle.tableData} table table-striped`}
+                >
+                  <thead className={TablaStyle.tableHeaderFixed}>
                     <tr>
                       <th width="5%">#</th>
                       <th style={{ cursor: "pointer" }} width="15%">
@@ -467,12 +480,10 @@ const CocineraMovimiento = () => {
                           className="d-flex align-items-center gap-2"
                         >
                           <i className="fas fa-calendar-alt"></i>
-                          Fecha
+                          Fecha y Hora
                           {sortConfig.key === "fechaHora" && (
                             <i
-                              className={`fas fa-arrow-${
-                                sortConfig.direction === "asc" ? "up" : "down"
-                              }`}
+                              className={`fas fa-arrow-${sortConfig.direction === "asc" ? "up" : "down"}`}
                             ></i>
                           )}
                         </div>
@@ -486,14 +497,12 @@ const CocineraMovimiento = () => {
                           Tipo
                           {sortConfig.key === "tipoMovimiento" && (
                             <i
-                              className={`fas fa-arrow-${
-                                sortConfig.direction === "asc" ? "up" : "down"
-                              }`}
+                              className={`fas fa-arrow-${sortConfig.direction === "asc" ? "up" : "down"}`}
                             ></i>
                           )}
                         </div>
                       </th>
-                      <th style={{ cursor: "pointer" }} width="20%">
+                      <th style={{ cursor: "pointer" }} width="15%">
                         <div
                           onClick={() => manejarOrdenamiento("nombreInsumo")}
                           className="d-flex align-items-center gap-2"
@@ -502,9 +511,7 @@ const CocineraMovimiento = () => {
                           Insumo
                           {sortConfig.key === "nombreInsumo" && (
                             <i
-                              className={`fas fa-arrow-${
-                                sortConfig.direction === "asc" ? "up" : "down"
-                              }`}
+                              className={`fas fa-arrow-${sortConfig.direction === "asc" ? "up" : "down"}`}
                             ></i>
                           )}
                         </div>
@@ -518,16 +525,14 @@ const CocineraMovimiento = () => {
                           Cantidad
                           {sortConfig.key === "cantidad" && (
                             <i
-                              className={`fas fa-arrow-${
-                                sortConfig.direction === "asc" ? "up" : "down"
-                              }`}
+                              className={`fas fa-arrow-${sortConfig.direction === "asc" ? "up" : "down"}`}
                             ></i>
                           )}
                         </div>
                       </th>
                       <th width="12%">Unidad</th>
-                      <th width="15%">Usuario</th>
-                      <th width="14%">Observaciones</th>
+                      <th width="12%">Usuario</th>
+                      <th width="22%">Observaciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -540,8 +545,8 @@ const CocineraMovimiento = () => {
                           <strong>
                             <small className="text-muted">
                               {formatDate(mov.fechaHora)}
-                              <br />
                             </small>
+                            <br />
                             <small className="text-muted">
                               {new Intl.DateTimeFormat("es-AR", {
                                 hour: "2-digit",
@@ -553,28 +558,24 @@ const CocineraMovimiento = () => {
                         </td>
                         <td>
                           <span
-                            className={`badge bg-${obtenerBadgeColor(
-                              mov.tipoMovimiento,
-                            )}`}
+                            className={`${ComponenteStyle.badge} bg-${obtenerBadgeColor(mov.tipoMovimiento)} text-white fw-bold`}
                           >
                             <span className="ms-1">{mov.tipoMovimiento}</span>
                           </span>
                         </td>
                         <td>
-                          <strong>{mov.nombreInsumo || "N/A"}</strong>
+                          <strong>{mov.nombreInsumo}</strong>
                         </td>
                         <td>
-                          <span className="badge bg-light text-dark">
+                          <span className="fw-bold">
                             {formatNumeroAR(mov.cantidadMovimiento)}
                           </span>
                         </td>
                         <td>
-                          <small className="text-muted">
-                            {mov.unidadMedida || "N/A"}
-                          </small>
+                          <small className="fw-bold">{mov.unidadMedida}</small>
                         </td>
                         <td>
-                          <small>
+                          <small className="fw-bold">
                             {mov.nombreUsuario ? (
                               <>
                                 <i className="fas fa-user me-1"></i>
@@ -598,35 +599,32 @@ const CocineraMovimiento = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
 
-              {/* Paginación */}
-              {totalPages > 1 && (
-                <div className="table-footer">
-                  <div className="pagination">
-                    <button
-                      className="pagination-btn"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <i className="fas fa-chevron-left"></i>
-                    </button>
-                    <div className="pagination-info">
-                      Página {currentPage} de {totalPages} (
-                      {movimientosFiltrados.length} registros)
-                    </div>
-                    <button
-                      className="pagination-btn"
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={currentPage === totalPages}
-                    >
-                      <i className="fas fa-chevron-right"></i>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
+          {/* Paginación corregida aquí dentro del Card */}
+          {totalPages > 1 && (
+            <div className={TablaStyle.pagination}>
+              <button
+                className={TablaStyle.paginationBtn}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              <div className={TablaStyle.paginationInfo}>
+                Página {currentPage} de {totalPages}
+              </div>
+              <button
+                className={TablaStyle.paginationBtn}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -634,10 +632,10 @@ const CocineraMovimiento = () => {
       {/* Estadísticas rápidas */}
       <div className="row mt-4">
         <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <i className="fas fa-arrow-down text-success fa-2x mb-2"></i>
-              <h6 className="card-title">Total Entradas</h6>
+              <h6 className="card-title fw-bold">Total Entradas</h6>
               <h3 className="text-success">
                 {
                   movimientosFiltrados.filter(
@@ -650,10 +648,10 @@ const CocineraMovimiento = () => {
         </div>
 
         <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <i className="fas fa-arrow-up text-warning fa-2x mb-2"></i>
-              <h6 className="card-title">Total Salidas</h6>
+              <h6 className="card-title fw-bold">Total Salidas</h6>
               <h3 className="text-warning">
                 {
                   movimientosFiltrados.filter(
@@ -666,10 +664,10 @@ const CocineraMovimiento = () => {
         </div>
 
         <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <i className="fas fa-trash text-danger fa-2x mb-2"></i>
-              <h6 className="card-title">Total Mermas</h6>
+              <h6 className="card-title fw-bold">Total Mermas</h6>
               <h3 className="text-danger">
                 {
                   movimientosFiltrados.filter(
@@ -682,10 +680,10 @@ const CocineraMovimiento = () => {
         </div>
 
         <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <i className="fas fa-exchange-alt text-info fa-2x mb-2"></i>
-              <h6 className="card-title">Total Movimientos</h6>
+              <h6 className="card-title fw-bold">Total Movimientos</h6>
               <h3 className="text-info">{movimientosFiltrados.length}</h3>
             </div>
           </div>

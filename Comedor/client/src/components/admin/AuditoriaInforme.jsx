@@ -285,6 +285,12 @@ const AuditoriaInforme = ({
     return formatAuditDateTime(fecha);
   };
 
+  const formatearFechaParaDisplay = (fecha) => {
+    if (!fecha) return '';
+    const [año, mes, día] = fecha.split('-');
+    return `${día}/${mes}/${año}`;
+  };
+
   const obtenerColorCriticidad = (criticidad) => {
     const colores = {
       "Bajo": "info",
@@ -550,12 +556,14 @@ const AuditoriaInforme = ({
   return (
     <div>
       {/* Header con botón de volver */}
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <button className="btn btn-secondary mb-3" onClick={cerrarInforme}>
+        <div className="page-header mb-3">
+        <button className="btn btn-secondary mb-3" onClick={cerrarInforme}>
             <i className="fas fa-arrow-left me-2"></i>
             Volver a la lista
           </button>
+      </div>
+      <div className="page-header mb-3">
+        <div className="header-left">
           <h2 className="page-title">
             <i className="fas fa-file-pdf me-2"></i>
             Informe de Auditoría en PDF
@@ -594,20 +602,20 @@ const AuditoriaInforme = ({
       {/* Resumen del período */}
       <div className="row mb-4">
         <div className="col-lg-12">
-          <div className="card h-100">
-            <div className="card-header bg-primary text-white">
+          <div className="auditoria__card h-100">
+            <div className="auditoria__card-header bg-primary text-white">
               <h5 className="mb-0">
                 <i className="fas fa-calendar me-2"></i>
                 Período y Filtros Aplicados
               </h5>
             </div>
             {/* Periodo y registros encontrados */}
-            <div className="card-body">
+            <div className="auditoria__card-body">
               <div className="row mb-3">
                 <div className="col-md-6">
                   <label className="text-muted small">📅 Período</label>
                   <p className="fw-bold">
-                    {filtrosInforme.fechaInicio} al {filtrosInforme.fechaFin}
+                    {formatearFechaParaDisplay(filtrosInforme.fechaInicio)} al {formatearFechaParaDisplay(filtrosInforme.fechaFin)}
                   </p>
                 </div>
                 <div className="col-md-6">
@@ -693,14 +701,14 @@ const AuditoriaInforme = ({
       </div>
 
       {/* Opciones del informe */}
-      <div className="card">
-        <div className="card-header bg-secondary text-white">
+      <div className="auditoria__card">
+        <div className="auditoria__card-header bg-secondary text-white">
           <h5 className="mb-0">
             <i className="fas fa-sliders-h me-2"></i>
             Filtros Avanzados del Informe
           </h5>
         </div>
-        <div className="card-body">
+        <div className="auditoria__card-body">
           <form>
             {/* Rango de fechas */}
             <div className="row mb-3">
@@ -942,8 +950,8 @@ const AuditoriaInforme = ({
       </div>
 
       {/* Tabla de registros filtrados */}
-      <div className="card mt-4">
-        <div className="card-header bg-info text-white">
+      <div className="auditoria__card mt-4">
+        <div className="auditoria__card-header bg-info text-white">
           <h5 className="mb-0">
             <i className="fas fa-table me-2"></i>
             Registros de Auditoría Filtrados
@@ -953,7 +961,7 @@ const AuditoriaInforme = ({
           </small>
         </div>
 
-        <div className="card-body">
+        <div className="auditoria__card-body">
           {obtenerLogsFiltradores().length === 0 ? (
             <div className="text-center py-5">
               <i className="fas fa-search fa-3x text-muted mb-3"></i>
@@ -976,7 +984,7 @@ const AuditoriaInforme = ({
                 </div>
               )}
               <div className="table-container" style={{ overflowX: "auto" }}>
-              <table className="table table-striped data-table">
+              <table className="auditoria__table table-striped data-table">
                 <thead className="table-light">
                   <tr>
                     <th width="5%">#</th>
@@ -1078,7 +1086,7 @@ const AuditoriaInforme = ({
         </div>
 
         {obtenerLogsFiltradores().length > 0 && (
-          <div className="card-footer bg-light">
+          <div className="auditoria__card-footer bg-light">
             {/* Controles de paginación */}
             <div className="row mb-3 align-items-center">
               <div className="col-md-4">

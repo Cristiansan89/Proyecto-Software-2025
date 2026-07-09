@@ -8,6 +8,8 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const ConfiguracionEscuela = () => {
   const [datos, setDatos] = useState({
@@ -32,7 +34,7 @@ const ConfiguracionEscuela = () => {
       //console.error("Error al cargar datos de la escuela:", error);
       showError(
         "Error",
-        "Error al cargar datos de la escuela: " + error.message
+        "Error al cargar datos de la escuela: " + error.message,
       );
     } finally {
       setLoading(false);
@@ -73,7 +75,7 @@ const ConfiguracionEscuela = () => {
       //console.error("Error al guardar datos de la escuela:", error);
       showError(
         "Error",
-        "Error al guardar datos de la escuela: " + error.message
+        "Error al guardar datos de la escuela: " + error.message,
       );
     } finally {
       setGuardando(false);
@@ -82,38 +84,38 @@ const ConfiguracionEscuela = () => {
 
   if (loading) {
     return (
-      <div className="container-fluid mt-4">
-        <div className="d-flex justify-content-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Configuración de la Escuela...</p>
       </div>
     );
   }
 
   return (
-    <div className="container-fluid mt-1">
+    <div>
       <div className="row">
-        <div className="col-12">
-          <div className="card shadow-sm">
-            <div className="card-header bg-light text-dark">
+        <div>
+          <div className={`${ContenidoStyle.card} shadow-sm`}>
+            <div className={`${ContenidoStyle.cardHeader} bg-light text-dark`}>
               <h5 className="mb-0">
                 <i className="fas fa-school me-2"></i>
                 Configuración de la Escuela
               </h5>
             </div>
-            <div className="card-body">
+            <div className={ContenidoStyle.cardBody}>
               <form onSubmit={handleSubmit}>
                 <div className="row">
                   <div className="col-md-6 mb-3">
-                    <label htmlFor="nombre" className="form-label">
+                    <label
+                      htmlFor="nombre"
+                      className={ComponenteStyle.formLabel}
+                    >
                       <i className="fas fa-school me-2"></i>
                       Nombre de la Institución *
                     </label>
                     <input
                       type="text"
-                      className="form-control"
+                      className={ComponenteStyle.formControl}
                       id="nombre"
                       name="nombre"
                       value={datos.nombre}
@@ -124,13 +126,16 @@ const ConfiguracionEscuela = () => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label htmlFor="email" className="form-label">
+                    <label
+                      htmlFor="email"
+                      className={ComponenteStyle.formLabel}
+                    >
                       <i className="fas fa-envelope me-2"></i>
                       Email Institucional *
                     </label>
                     <input
                       type="email"
-                      className="form-control"
+                      className={ComponenteStyle.formControl}
                       id="email"
                       name="email"
                       value={datos.email}
@@ -141,13 +146,16 @@ const ConfiguracionEscuela = () => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label htmlFor="telefono" className="form-label">
+                    <label
+                      htmlFor="telefono"
+                      className={ComponenteStyle.formLabel}
+                    >
                       <i className="fas fa-phone me-2"></i>
                       Teléfono
                     </label>
                     <input
                       type="text"
-                      className="form-control"
+                      className={ComponenteStyle.formControl}
                       id="telefono"
                       name="telefono"
                       value={datos.telefono}
@@ -158,13 +166,16 @@ const ConfiguracionEscuela = () => {
                   </div>
 
                   <div className="col-md-6 mb-3">
-                    <label htmlFor="direccion" className="form-label">
+                    <label
+                      htmlFor="direccion"
+                      className={ComponenteStyle.formLabel}
+                    >
                       <i className="fas fa-map-marker-alt me-2"></i>
                       Dirección
                     </label>
                     <input
                       type="text"
-                      className="form-control"
+                      className={ComponenteStyle.formControl}
                       id="direccion"
                       name="direccion"
                       value={datos.direccion}
@@ -217,13 +228,13 @@ const ConfiguracionEscuela = () => {
       <div className="row mt-4">
         <div className="col-12">
           <div className="card">
-            <div className="card-header bg-light text-dark">
+            <div className={`${ContenidoStyle.cardHeader} bg-light text-dark`}>
               <h5 className="mb-0">
                 <i className="fas fa-eye me-2"></i>
                 Vista Previa en Documentos
               </h5>
             </div>
-            <div className="card-body bg-light">
+            <div className={`${ContenidoStyle.cardBody} bg-light`}>
               <div className="text-center border rounded p-3 bg-white">
                 <h4 className="text-primary mb-2">
                   {datos.nombre || "Nombre de la Institución"}

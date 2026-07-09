@@ -5,6 +5,7 @@ import GeneracionAutomatica from "./GeneracionAutomatica";
 import ConfiguracionEscuela from "./ConfiguracionEscuela";
 import ConfiguracionServicio from "./ConfiguracionServicio";
 import ConfiguracionTelegram from "./ConfiguracionTelegram";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
 
 const ParametrosSistema = () => {
   const [activeTab, setActiveTab] = useState("parametros");
@@ -49,24 +50,28 @@ const ParametrosSistema = () => {
   ];
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-sliders-h me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-sliders-h"></i>
             Parámetros del Sistema
           </h1>
-          <p>Administra los parámetros del sistema</p>
+          <p className={ContenidoStyle.pageSubtitle}>
+            Administra los parámetros del sistema
+          </p>
         </div>
       </div>
 
       {/* Navegación por pestañas */}
-      <div className="navigation-tabs">
-        <div className="tabs-header">
+      <div className={ContenidoStyle.navigationTabs}>
+        <div className={ContenidoStyle.tabsHeader}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
+              className={`${ContenidoStyle.tabsButton} ${
+                activeTab === tab.id ? ContenidoStyle.active : ""
+              }`}
               onClick={() => setActiveTab(tab.id)}
             >
               <i className={tab.icon}></i>
@@ -77,7 +82,7 @@ const ParametrosSistema = () => {
       </div>
 
       {/* Contenido de la pestaña activa */}
-      <div className="tab-content">
+      <div className={ContenidoStyle.tabContent}>
         {tabs.find((tab) => tab.id === activeTab)?.component}
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const RolForm = ({
   rol,
@@ -75,7 +76,7 @@ const RolForm = ({
       const rolDuplicado = rolesExistentes.find(
         (r) =>
           r.nombreRol.toLowerCase() === formData.nombreRol.toLowerCase() &&
-          (mode === "create" || r.idRol !== rol?.idRol)
+          (mode === "create" || r.idRol !== rol?.idRol),
       );
       if (rolDuplicado) {
         newErrors.nombreRol = `El rol "${formData.nombreRol}" ya existe en el sistema`;
@@ -114,10 +115,10 @@ const RolForm = ({
   const isReadOnly = mode === "view";
 
   return (
-    <form onSubmit={handleSubmit} className="rol-form">
-      <div className="form-grid">
-        <div className="form-group">
-          <label htmlFor="nombreRol" className="form-label">
+    <form onSubmit={handleSubmit}>
+      <div className={ComponenteStyle.formGrid}>
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="nombreRol" className={ComponenteStyle.formLabel}>
             Nombre del Rol *
           </label>
           <input
@@ -126,7 +127,7 @@ const RolForm = ({
             name="nombreRol"
             value={formData.nombreRol}
             onChange={handleChange}
-            className={`form-input ${errors.nombreRol ? "error" : ""}`}
+            className={`${ComponenteStyle.formControl} ${errors.nombreRol ? "error" : ""}`}
             placeholder="Ej: Administrador, Cocinero, Nutricionista"
             maxLength={100}
             readOnly={isReadOnly}
@@ -134,8 +135,8 @@ const RolForm = ({
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="descripcionRol" className="form-label">
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="descripcionRol" className={ComponenteStyle.formLabel}>
             Descripción del Rol *
           </label>
           <textarea
@@ -143,23 +144,24 @@ const RolForm = ({
             name="descripcionRol"
             value={formData.descripcionRol}
             onChange={handleChange}
-            className={`form-textarea ${errors.descripcionRol ? "error" : ""}`}
+            className={`${ComponenteStyle.formControl} ${errors.descripcionRol ? "error" : ""}`}
             placeholder="Descripción detallada del rol y sus responsabilidades..."
             rows={3}
             maxLength={100}
             readOnly={isReadOnly}
             required
           />
-          {errors.descripcionRol && (
-            <span className="error-message">{errors.descripcionRol}</span>
-          )}
-          <small className="form-help">
+          {errors.descripcionRol && <span>{errors.descripcionRol}</span>}
+          <small className={ComponenteStyle.formHelp}>
             {formData.descripcionRol.length}/100 caracteres
           </small>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="habilitaCuentaUsuario" className="form-label">
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="habilitaCuentaUsuario"
+            className={ComponenteStyle.formLabel}
+          >
             ¿Habilita Cuenta de Usuario?
           </label>
           <select
@@ -167,13 +169,13 @@ const RolForm = ({
             name="habilitaCuentaUsuario"
             value={formData.habilitaCuentaUsuario}
             onChange={handleChange}
-            className="form-select"
+            className={ComponenteStyle.formSelect}
             disabled={isReadOnly}
           >
             <option value="No">No</option>
             <option value="Si">Sí</option>
           </select>
-          <small className="form-help">
+          <small className={ComponenteStyle.formHelp}>
             Determina si las personas con este rol pueden tener cuenta de
             usuario en el sistema
           </small>
@@ -181,7 +183,7 @@ const RolForm = ({
 
         {localServerError && (
           <div
-            className="alert alert-danger alert-dismissible fade show"
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
             role="alert"
           >
             <i className="fas fa-exclamation-circle me-2"></i>
@@ -191,7 +193,7 @@ const RolForm = ({
 
         {errors.nombreRol && (
           <div
-            className="alert alert-danger alert-dismissible fade show"
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
             role="alert"
           >
             <i className="fas fa-exclamation-circle me-2"></i>
@@ -200,8 +202,8 @@ const RolForm = ({
         )}
 
         {mode !== "create" && (
-          <div className="form-group">
-            <label htmlFor="estado" className="form-label">
+          <div className={ComponenteStyle.formGroup}>
+            <label htmlFor="estado" className={ComponenteStyle.formLabel}>
               Estado
             </label>
             <select
@@ -209,7 +211,7 @@ const RolForm = ({
               name="estado"
               value={formData.estado}
               onChange={handleChange}
-              className="form-select"
+              className={ComponenteStyle.formSelect}
               disabled={isReadOnly}
             >
               <option value="Activo">Activo</option>
@@ -219,63 +221,22 @@ const RolForm = ({
         )}
       </div>
 
-      {/* Información adicional para modo vista */}
-      {isReadOnly && rol && (
-        <div className="info-section">
-          <h4>Información del Rol</h4>
-          <div className="info-grid">
-            <div className="info-item">
-              <label>ID del Rol:</label>
-              <span>{rol.idRol}</span>
-            </div>
-            <div className="info-item">
-              <label>Estado:</label>
-              <span className={`status-badge ${rol.estado?.toLowerCase()}`}>
-                {rol.estado}
-              </span>
-            </div>
-            <div className="info-item">
-              <label>Habilita Cuenta:</label>
-              <span
-                className={`badge ${
-                  rol.habilitaCuentaUsuario === "Si"
-                    ? "badge-success"
-                    : "badge-secondary"
-                }`}
-              >
-                {rol.habilitaCuentaUsuario}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {!isReadOnly && (
-        <div className="form-actions">
+        <div className={ComponenteStyle.formActions}>
           <button
             type="button"
             onClick={onCancel}
-            className="btn btn-secondary"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
           >
             <i className="fas fa-times mr-1"></i>
             Cancelar
           </button>
-          <button type="submit" className="btn btn-primary">
+          <button
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+          >
             <i className="fas fa-save mr-1"></i>
             {mode === "create" ? "Crear Rol" : "Actualizar Rol"}
-          </button>
-        </div>
-      )}
-
-      {isReadOnly && (
-        <div className="form-actions">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="btn btn-secondary"
-          >
-            <i className="fas fa-times mr-1"></i>
-            Cerrar
           </button>
         </div>
       )}

@@ -10,24 +10,28 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
   // Mapeo de valores de BD a nombres amigables
   const motivosMap = {
-    'licencia_medica': 'Licencia Médica',
-    'licencia_maternidad': 'Licencia por Maternidad',
-    'licencia_anual': 'Licencia Anual',
-    'cambio_funciones': 'Cambio Funciones',
-    'renuncia': 'Renuncia',
-    'jubilacion': 'Jubilación',
-    'ausencia_prolongada': 'Ausencia Prolongada'
+    licencia_medica: "Licencia Médica",
+    licencia_maternidad: "Licencia por Maternidad",
+    licencia_anual: "Licencia Anual",
+    cambio_funciones: "Cambio Funciones",
+    renuncia: "Renuncia",
+    jubilacion: "Jubilación",
+    ausencia_prolongada: "Ausencia Prolongada",
   };
 
   // Mapeo inverso: nombres amigables a valores de BD
-  const motivosMapInverso = Object.entries(motivosMap).reduce((acc, [key, value]) => {
-    acc[value] = key;
-    return acc;
-  }, {});
+  const motivosMapInverso = Object.entries(motivosMap).reduce(
+    (acc, [key, value]) => {
+      acc[value] = key;
+      return acc;
+    },
+    {},
+  );
   const [formData, setFormData] = useState({
     idPersona: reemplazo?.idPersona || "",
     idDocenteTitular: reemplazo?.idDocenteTitular || "",
@@ -52,7 +56,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
   const [cicloInput, setCicloInput] = useState(
     reemplazo?.cicloLectivo ||
       reemplazo?.ciclo_lectivo ||
-      new Date().getFullYear()
+      new Date().getFullYear(),
   );
   const isEditMode = mode === "edit";
 
@@ -100,7 +104,11 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
 
       // Procesar fechaFin igual que fechaInicio
       let fechaFinValue = reemplazo.fechaFin ?? reemplazo.fecha_fin ?? "";
-      if (fechaFinValue && typeof fechaFinValue === "string" && fechaFinValue.includes("T")) {
+      if (
+        fechaFinValue &&
+        typeof fechaFinValue === "string" &&
+        fechaFinValue.includes("T")
+      ) {
         try {
           fechaFinValue = new Date(fechaFinValue).toISOString().split("T")[0];
         } catch (e) {
@@ -236,7 +244,7 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
             fechaFin: formData.fechaFin || null,
             motivo: motivoValue,
             estado: formData.estado,
-          }
+          },
         );
       }
 
@@ -250,12 +258,12 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
           .join("\n");
         showInfoError(
           "Información",
-          `Errores de validación:\n${errorMessages}`
+          `Errores de validación:\n${errorMessages}`,
         );
       } else {
         showError(
           "Error",
-          "Error al guardar el reemplazo. Por favor, inténtelo de nuevo."
+          "Error al guardar el reemplazo. Por favor, inténtelo de nuevo.",
         );
       }
     } finally {
@@ -276,303 +284,310 @@ const ReemplazoDocenteForm = ({ reemplazo, mode, onSave, onCancel }) => {
   }
 
   return (
-    <div className="reemplazo-docente-form">
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          <div>
-            <h5 className="section-title">Reemplazo de Docente</h5>
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>
+        Reemplazo de Docente
+      </h4>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="idPersona" className="form-label required">
-                  Docente Suplente
-                </label>
-                {isCreateMode ? (
-                  <Select
-                    isDisabled={isViewMode}
-                    isClearable
-                    options={suplentes
-                      .filter((s) => s.id !== null && s.id !== undefined)
-                      .map((suplente) => ({
-                        value: suplente.id,
-                        label: `${suplente.nombre} ${suplente.apellido} - DNI: ${suplente.dni}`,
-                      }))}
-                    value={
-                      suplentes
-                        .filter((s) => s.id !== null && s.id !== undefined)
-                        .map((suplente) => ({
-                          value: suplente.id,
-                          label: `${suplente.nombre} ${suplente.apellido} - DNI: ${suplente.dni}`,
-                        }))
-                        .find(
-                          (o) => String(o.value) === String(formData.idPersona)
-                        ) || null
-                    }
-                    onChange={(opt) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        idPersona: opt ? opt.value : "",
-                      }))
-                    }
-                    placeholder="Buscar y seleccionar docente suplente..."
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={
-                      suplentes.find(
-                        (s) => String(s.id) === String(formData.idPersona)
-                      )
-                        ? `${
-                            suplentes.find(
-                              (s) => String(s.id) === String(formData.idPersona)
-                            ).nombre
-                          } ${
-                            suplentes.find(
-                              (s) => String(s.id) === String(formData.idPersona)
-                            ).apellido
-                          } - DNI: ${
-                            suplentes.find(
-                              (s) => String(s.id) === String(formData.idPersona)
-                            ).dni
-                          }`
-                        : ""
-                    }
-                    readOnly
-                  />
-                )}
-                {errors.idPersona && (
-                  <div className="invalid-feedback">{errors.idPersona}</div>
-                )}
-              </div>
-              <div className="form-group">
-                <label
-                  htmlFor="idDocenteTitular"
-                  className="form-label required "
-                >
-                  Docente Titular a Reemplazar
-                </label>
-                {isCreateMode ? (
-                  <Select
-                    isDisabled={isViewMode}
-                    isClearable
-                    options={titulares
-                      .filter((t) => t.id !== null && t.id !== undefined)
-                      .map((titular) => ({
-                        value: titular.id,
-                        label: `${titular.nombre} ${titular.apellido} - ${titular.nombreGrado}`,
-                      }))}
-                    value={
-                      titulares
-                        .filter((t) => t.id !== null && t.id !== undefined)
-                        .map((titular) => ({
-                          value: titular.id,
-                          label: `${titular.nombre} ${titular.apellido} - ${titular.nombreGrado}`,
-                        }))
-                        .find(
-                          (o) =>
-                            String(o.value) ===
-                            String(formData.idDocenteTitular)
-                        ) || null
-                    }
-                    onChange={(opt) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        idDocenteTitular: opt ? opt.value : "",
-                        nombreGrado: opt
-                          ? titulares.find((t) => t.id === opt.value)
-                              ?.nombreGrado || ""
-                          : "",
-                      }));
-                    }}
-                    placeholder="Buscar y seleccionar docente titular..."
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={
-                      titulares.find(
-                        (t) =>
-                          String(t.id) === String(formData.idDocenteTitular)
-                      )
-                        ? `${
-                            titulares.find(
-                              (t) =>
-                                String(t.id) ===
-                                String(formData.idDocenteTitular)
-                            ).nombre
-                          } ${
-                            titulares.find(
-                              (t) =>
-                                String(t.id) ===
-                                String(formData.idDocenteTitular)
-                            ).apellido
-                          } - ${
-                            titulares.find(
-                              (t) =>
-                                String(t.id) ===
-                                String(formData.idDocenteTitular)
-                            ).nombreGrado
-                          }`
-                        : ""
-                    }
-                    readOnly
-                  />
-                )}
-                {errors.idDocenteTitular && (
-                  <div className="invalid-feedback">
-                    {errors.idDocenteTitular}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {formData.nombreGrado && (
-              <div className="form-group">
-                <label className="form-label ">Grado</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={formData.nombreGrado}
-                  disabled
-                />
-                <small className="form-text text-muted">
-                  <i className="fas fa-info-circle me-1"></i>
-                  El grado se asigna automáticamente según el docente titular
-                  seleccionado
-                </small>
-              </div>
-            )}
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="fechaInicio" className="form-label required ">
-                  Fecha de Inicio
-                </label>
-                <input
-                  type="date"
-                  id="fechaInicio"
-                  name="fechaInicio"
-                  className={`form-control ${
-                    errors.fechaInicio ? "is-invalid" : ""
-                  }`}
-                  value={formData.fechaInicio}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                />
-                {errors.fechaInicio && (
-                  <div className="invalid-feedback">{errors.fechaInicio}</div>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="fechaFin" className="form-label ">
-                  Fecha de Fin (opcional)
-                </label>
-                <input
-                  type="date"
-                  id="fechaFin"
-                  name="fechaFin"
-                  className={`form-control ${
-                    errors.fechaFin ? "is-invalid" : ""
-                  }`}
-                  value={formData.fechaFin}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  min={formData.fechaInicio}
-                />
-                {errors.fechaFin && (
-                  <div className="invalid-feedback">{errors.fechaFin}</div>
-                )}
-                <small className="form-text text-muted">
-                  Si no se especifica, el reemplazo queda abierto
-                </small>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="motivo" className="form-label required ">
-                  Motivo del Reemplazo
-                </label>
-                <select
-                  id="motivo"
-                  name="motivo"
-                  className={`form-control ${
-                    errors.motivo ? "is-invalid" : ""
-                  }`}
-                  value={formData.motivo}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                >
-                  <option value="">Seleccionar motivo</option>
-                  {options.motivos.map((motivo) => (
-                    <option key={motivo} value={motivo}>
-                      {motivo}
-                    </option>
-                  ))}
-                </select>
-                {errors.motivo && (
-                  <div className="invalid-feedback">{errors.motivo}</div>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="cicloLectivo" className="form-label ">
-                  Ciclo Lectivo
-                </label>
-                <input
-                  type="number"
-                  id="cicloLectivo"
-                  name="cicloLectivo"
-                  className="form-control"
-                  value={cicloInput}
-                  onChange={handleInputChange}
-                  disabled={isViewMode || isEditMode}
-                  min="2020"
-                  max="2030"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Botones */}
-        <div className="form-actions mt-4">
-          <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
-            disabled={loading}
+      <div className={ComponenteStyle.formRow}>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="idPersona"
+            className={`${ComponenteStyle.formLabel} required`}
           >
-            <i className="fas fa-times"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
-          </button>
-
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary me-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  {isCreateMode ? "Crear Reemplazo" : "Actualizar Reemplazo"}
-                </>
-              )}
-            </button>
+            Docente Suplente
+          </label>
+          {isCreateMode ? (
+            <Select
+              isDisabled={isViewMode}
+              isClearable
+              options={suplentes
+                .filter((s) => s.id !== null && s.id !== undefined)
+                .map((suplente) => ({
+                  value: suplente.id,
+                  label: `${suplente.nombre} ${suplente.apellido} - DNI: ${suplente.dni}`,
+                }))}
+              value={
+                suplentes
+                  .filter((s) => s.id !== null && s.id !== undefined)
+                  .map((suplente) => ({
+                    value: suplente.id,
+                    label: `${suplente.nombre} ${suplente.apellido} - DNI: ${suplente.dni}`,
+                  }))
+                  .find(
+                    (o) => String(o.value) === String(formData.idPersona),
+                  ) || null
+              }
+              onChange={(opt) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  idPersona: opt ? opt.value : "",
+                }))
+              }
+              placeholder="Buscar y seleccionar docente suplente..."
+            />
+          ) : (
+            <input
+              type="text"
+              className={ComponenteStyle.formControl}
+              value={
+                suplentes.find(
+                  (s) => String(s.id) === String(formData.idPersona),
+                )
+                  ? `${
+                      suplentes.find(
+                        (s) => String(s.id) === String(formData.idPersona),
+                      ).nombre
+                    } ${
+                      suplentes.find(
+                        (s) => String(s.id) === String(formData.idPersona),
+                      ).apellido
+                    } - DNI: ${
+                      suplentes.find(
+                        (s) => String(s.id) === String(formData.idPersona),
+                      ).dni
+                    }`
+                  : ""
+              }
+              readOnly
+            />
+          )}
+          {errors.idPersona && (
+            <div className={ComponenteStyle.invalidadFeedback}>
+              {errors.idPersona}
+            </div>
           )}
         </div>
-      </form>
-    </div>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="idDocenteTitular"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Docente Titular a Reemplazar
+          </label>
+          {isCreateMode ? (
+            <Select
+              isDisabled={isViewMode}
+              isClearable
+              options={titulares
+                .filter((t) => t.id !== null && t.id !== undefined)
+                .map((titular) => ({
+                  value: titular.id,
+                  label: `${titular.nombre} ${titular.apellido} - ${titular.nombreGrado}`,
+                }))}
+              value={
+                titulares
+                  .filter((t) => t.id !== null && t.id !== undefined)
+                  .map((titular) => ({
+                    value: titular.id,
+                    label: `${titular.nombre} ${titular.apellido} - ${titular.nombreGrado}`,
+                  }))
+                  .find(
+                    (o) =>
+                      String(o.value) === String(formData.idDocenteTitular),
+                  ) || null
+              }
+              onChange={(opt) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  idDocenteTitular: opt ? opt.value : "",
+                  nombreGrado: opt
+                    ? titulares.find((t) => t.id === opt.value)?.nombreGrado ||
+                      ""
+                    : "",
+                }));
+              }}
+              placeholder="Buscar y seleccionar docente titular..."
+            />
+          ) : (
+            <input
+              type="text"
+              className={ComponenteStyle.formControl}
+              value={
+                titulares.find(
+                  (t) => String(t.id) === String(formData.idDocenteTitular),
+                )
+                  ? `${
+                      titulares.find(
+                        (t) =>
+                          String(t.id) === String(formData.idDocenteTitular),
+                      ).nombre
+                    } ${
+                      titulares.find(
+                        (t) =>
+                          String(t.id) === String(formData.idDocenteTitular),
+                      ).apellido
+                    } - ${
+                      titulares.find(
+                        (t) =>
+                          String(t.id) === String(formData.idDocenteTitular),
+                      ).nombreGrado
+                    }`
+                  : ""
+              }
+              readOnly
+            />
+          )}
+          {errors.idDocenteTitular && (
+            <div className={ComponenteStyle.invalidadFeedback}>
+              {errors.idDocenteTitular}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {formData.nombreGrado && (
+        <div className={ComponenteStyle.formGroup}>
+          <label className={ComponenteStyle.formLabel}>Grado</label>
+          <input
+            type="text"
+            className={ComponenteStyle.formControl}
+            value={formData.nombreGrado}
+            disabled
+          />
+          <small className={`${ComponenteStyle.formControl} text-muted`}>
+            <i className="fas fa-info-circle me-1"></i>
+            El grado se asigna automáticamente según el docente titular
+            seleccionado
+          </small>
+        </div>
+      )}
+
+      <div className={ComponenteStyle.formRow}>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="fechaInicio"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Fecha de Inicio
+          </label>
+          <input
+            type="date"
+            id="fechaInicio"
+            name="fechaInicio"
+            className={`${ComponenteStyle.formControl}  ${errors.fechaInicio ? ComponeneteStyle.isInvalid : ""}`}
+            value={formData.fechaInicio}
+            onChange={handleInputChange}
+            disabled={isViewMode}
+          />
+          {errors.fechaInicio && (
+            <div className={ComponenteStyle.invalidFeedback}>
+              {errors.fechaInicio}
+            </div>
+          )}
+        </div>
+
+        <div className={ComponenteStyle.formGroup}>
+          {" "}
+          <label htmlFor="fechaFin" className={ComponenteStyle.formLabel}>
+            Fecha de Fin (opcional)
+          </label>
+          <input
+            type="date"
+            id="fechaFin"
+            name="fechaFin"
+            className={`${ComponenteStyle.formControl} ${errors.fechaFin ? ComponeneteStyle.isInvalid : ""}`}
+            value={formData.fechaFin}
+            onChange={handleInputChange}
+            disabled={isViewMode}
+            min={formData.fechaInicio}
+          />
+          {errors.fechaFin && (
+            <div className={ComponenteStyle.invalidFeedback}>
+              {errors.fechaFin}
+            </div>
+          )}
+          <small className={`${ComponenteStyle.invalidFeedback} text-muted`}>
+            Si no se especifica, el reemplazo queda abierto
+          </small>
+        </div>
+      </div>
+
+      <div className={ComponenteStyle.formRow}>
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="motivo"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Motivo del Reemplazo
+          </label>
+          <select
+            id="motivo"
+            name="motivo"
+            className={`${ComponenteStyle.formControl} ${errors.motivo ? ComponeneteStyle.isInvalid : ""}`}
+            value={formData.motivo}
+            onChange={handleInputChange}
+            disabled={isViewMode}
+          >
+            <option value="">Seleccionar motivo</option>
+            {options.motivos.map((motivo) => (
+              <option key={motivo} value={motivo}>
+                {motivo}
+              </option>
+            ))}
+          </select>
+          {errors.motivo && (
+            <div className={ComponenteStyle.invalidFeedback}>
+              {errors.motivo}
+            </div>
+          )}
+        </div>
+
+        <div className={ComponenteStyle.formGroup}>
+          <label
+            htmlFor="cicloLectivo"
+            className={`${ComponenteStyle.formLabel} required`}
+          >
+            Ciclo Lectivo
+          </label>
+          <input
+            type="number"
+            id="cicloLectivo"
+            name="cicloLectivo"
+            className={ComponenteStyle.formControl}
+            value={cicloInput}
+            onChange={handleInputChange}
+            disabled={isViewMode || isEditMode}
+            min="2020"
+            max="2030"
+          />
+        </div>
+      </div>
+
+      {/* Botones */}
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
+          <button
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save"></i>
+                {isCreateMode ? "Crear Reemplazo" : "Actualizar Reemplazo"}
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </form>
   );
 };
 

@@ -12,9 +12,11 @@ import {
   showToast,
   showInfo,
 } from "../../utils/alertService";
-import "../../styles/Consumos.css";
 import { formatDate, formatDateTime } from "../../utils/dateUtils";
 import { formatNumeroAR } from "../../utils/formatNumero";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
 
 // Función para convertir unidades de medida
 function convertirUnidad(cantidad, unidadOrigen, unidadDestino) {
@@ -58,7 +60,9 @@ function formatearCantidad(cantidad, unidad) {
   if (sinDecimales.includes(unidad)) {
     return Number.isInteger(Number(cantidad))
       ? String(Math.round(cantidad))
-      : parseFloat(Number(cantidad).toFixed(3)).toString().replace(/\.?0+$/, "");
+      : parseFloat(Number(cantidad).toFixed(3))
+          .toString()
+          .replace(/\.?0+$/, "");
   }
   // Gramos o Mililitros: hasta 3 decimales significativos
   return parseFloat(Number(cantidad).toFixed(3)).toString();
@@ -89,13 +93,14 @@ const Consumos = () => {
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [filtros, setFiltros] = useState({
-    fechaInicio: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-      .toISOString()
-      .split("T")[0], // Primer día del mes actual
-    fechaFin: new Date().toISOString().split("T")[0], // Día actual
+  // Valores iniciales de los filtros
+  const obtenerFiltrosIniciales = () => ({
+    fechaInicio: "",
+    fechaFin: "",
     idServicio: "",
   });
+
+  const [filtros, setFiltros] = useState(obtenerFiltrosIniciales());
 
   const [estadisticas, setEstadisticas] = useState({
     totalRegistros: 0,
@@ -119,14 +124,14 @@ const Consumos = () => {
       const serviciosResponse = await servicioService.getAll();
       if (serviciosResponse && Array.isArray(serviciosResponse)) {
         setServicios(
-          serviciosResponse.filter((s) => s.estado === "Activo") || []
+          serviciosResponse.filter((s) => s.estado === "Activo") || [],
         );
       }
     } catch (error) {
       //console.error("Error al cargar datos iniciales:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde.",
       );
       setServicios([]);
     } finally {
@@ -165,7 +170,7 @@ const Consumos = () => {
       //console.error("Error al cargar consumos:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los consumos. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los consumos. Por favor, intente nuevamente más tarde.",
       );
       setConsumos([]);
       setEstadisticas({
@@ -202,7 +207,7 @@ const Consumos = () => {
 
     const servicioMasConsumido = Object.keys(consumosPorServicio).reduce(
       (a, b) => (consumosPorServicio[a] > consumosPorServicio[b] ? a : b),
-      ""
+      "",
     );
 
     setEstadisticas({
@@ -222,13 +227,17 @@ const Consumos = () => {
   };
 
   const limpiarFiltros = () => {
-    setFiltros({
-      fechaInicio: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-        .toISOString()
-        .split("T")[0],
-      fechaFin: new Date().toISOString().split("T")[0],
-      idServicio: "",
-    });
+    setFiltros(obtenerFiltrosIniciales());
+  };
+
+  // Verificar si hay filtros activos (diferentes a los iniciales)
+  const hayFiltrosActivos = () => {
+    const filtrosIniciales = obtenerFiltrosIniciales();
+    return (
+      filtros.fechaInicio !== filtrosIniciales.fechaInicio ||
+      filtros.fechaFin !== filtrosIniciales.fechaFin ||
+      filtros.idServicio !== filtrosIniciales.idServicio
+    );
   };
 
   const formatearFecha = (fecha) => {
@@ -243,7 +252,7 @@ const Consumos = () => {
   const obtenerNombreServicio = (idServicio, nombreServicio) => {
     if (nombreServicio) return nombreServicio;
     const servicio = servicios.find(
-      (s) => (s.idServicio || s.id_servicio) === idServicio
+      (s) => (s.idServicio || s.id_servicio) === idServicio,
     );
     return servicio ? servicio.nombre : "Servicio no encontrado";
   };
@@ -266,12 +275,12 @@ const Consumos = () => {
     const csvData = consumos.map((consumo) => {
       const convertida = obtenerMejorUnidad(
         consumo.cantidadUtilizada || 0,
-        consumo.unidadMedida || "Unidades"
+        consumo.unidadMedida || "Unidades",
       );
       return [
         formatDate(consumo.fecha),
         obtenerNombreServicio(consumo.id_servicio, consumo.nombreServicio),
-        consumo.nombreInsumo || `Insumo #${consumo.id_insumo}` || "N/A",
+        consumo.nombreInsumo || `Insumo #${consumo.id_insumo}`,
         formatNumeroAR(convertida.cantidad),
         convertida.unidad,
         consumo.fechaHoraGeneracion
@@ -318,14 +327,10 @@ const Consumos = () => {
       doc.text(
         `Período: ${formatDate(filtros.fechaInicio)} - ${formatDate(filtros.fechaFin)}`,
         14,
-        32
+        32,
       );
       doc.text(`Generado por: ${user.nombre} ${user.apellido}`, 14, 40);
-      doc.text(
-        `Fecha de generación: ${formatDateTime(new Date())}`,
-        14,
-        48
-      );
+      doc.text(`Fecha de generación: ${formatDateTime(new Date())}`, 14, 48);
 
       // Estadísticas resumen
       doc.setFontSize(14);
@@ -336,19 +341,19 @@ const Consumos = () => {
       doc.text(
         `• Promedio de consumos: ${estadisticas.promedioConsumos}`,
         20,
-        80
+        80,
       );
       doc.text(
         `• Servicio más consumido: ${estadisticas.servicioMasConsumido}`,
         20,
-        86
+        86,
       );
 
       // Preparar datos para la tabla
       const tableData = consumos.map((consumo) => {
         const convertida = obtenerMejorUnidad(
           consumo.cantidadUtilizada || 0,
-          consumo.unidadMedida || "Unidades"
+          consumo.unidadMedida || "Unidades",
         );
         return [
           formatDate(consumo.fecha),
@@ -384,7 +389,7 @@ const Consumos = () => {
         doc.text(
           `Página ${i} de ${pageCount}`,
           doc.internal.pageSize.width - 30,
-          doc.internal.pageSize.height - 10
+          doc.internal.pageSize.height - 10,
         );
       }
 
@@ -413,7 +418,7 @@ const Consumos = () => {
   const verDetalle = (consumo) => {
     const convertida = obtenerMejorUnidad(
       consumo.cantidadUtilizada || 0,
-      consumo.unidadMedida || "Unidades"
+      consumo.unidadMedida || "Unidades",
     );
 
     showInfo(
@@ -423,39 +428,30 @@ const Consumos = () => {
       📅 Fecha: ${formatearFecha(consumo.fecha)}
       🍽️ Servicio: ${obtenerNombreServicio(
         consumo.id_servicio,
-        consumo.nombreServicio
+        consumo.nombreServicio,
       )}
-      📦 Insumo: ${
-        consumo.nombreInsumo || `Insumo #${consumo.id_insumo}` || "N/A"
-      }
+      📦 Insumo: ${consumo.nombreInsumo || `Insumo #${consumo.id_insumo}`}
       ⚖️ Cantidad Utilizada: ${formatearCantidad(convertida.cantidad, convertida.unidad)} ${convertida.unidad}
-      📐 Cantidad Calculada: ${consumo.cantidadCalculada || "N/A"}
+      📐 Cantidad Calculada: ${consumo.cantidadCalculada}
       📊 Varianza: ${varianza}%
       🆔 ID de Consumo: ${consumo.id_consumo}
-      🆔 ID de Jornada: ${consumo.id_jornada || "N/A"}
-      🆔 ID de Insumo: ${consumo.id_insumo || "N/A"}
-      📋 ID Item Receta: ${consumo.id_itemReceta || "N/A"}
-      📋 Origen Cálculo: ${consumo.origenCalculo || "N/A"}
+      🆔 ID de Jornada: ${consumo.id_jornada}
+      🆔 ID de Insumo: ${consumo.id_insumo}
+      📋 ID Item Receta: ${consumo.id_itemReceta}
+      📋 Origen Cálculo: ${consumo.origenCalculo}
       📋 Fecha Hora Generación: ${
         consumo.fechaHoraGeneracion
           ? formatDateTime(consumo.fechaHoraGeneracion)
           : "N/A"
-      }`
+      }`,
     );
   };
 
-  if (loading && consumos.length === 0) {
+  if (loading) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "50vh" }}
-      >
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Cargando consumos...</span>
-          </div>
-          <p className="mt-3">Cargando registros de consumos...</p>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Consumos...</p>
       </div>
     );
   }
@@ -468,111 +464,59 @@ const Consumos = () => {
   const consumosAMostrar = filteredInsumos.slice(startIndex, endIndex);
 
   return (
-    <div>
-      {/* Header */}
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-chart-bar me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-chart-bar"></i>
             Gestión de Consumos
           </h1>
-          <p className="page-subtitle">
+          <p className={ContenidoStyle.pageSubtitle}>
             Visualización y reportes de consumos del comedor escolar
           </p>
         </div>
       </div>
-
-      {/* Estadísticas */}
-      {/*
-      <div className="row mb-4">
-        <div className="col-md-3">
-          <div className="card h-100">
-            <div className="card-body text-center">
-              <i className="fas fa-list-ol fs-2 text-primary mb-3 d-block"></i>
-              <h3 className="text-primary">{estadisticas.totalRegistros}</h3>
-              <p className="text-muted small mb-0">Total Registros</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card h-100">
-            <div className="card-body text-center">
-              <i className="fas fa-utensils fs-2 text-success mb-3 d-block"></i>
-              <h3 className="text-success">{estadisticas.totalConsumos}</h3>
-              <p className="text-muted small mb-0">Total Consumos</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card h-100">
-            <div className="card-body text-center">
-              <i className="fas fa-chart-line fs-2 text-info mb-3 d-block"></i>
-              <h3 className="text-info">{estadisticas.promedioConsumos}</h3>
-              <p className="text-muted small mb-0">Promedio por Registro</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card h-100">
-            <div className="card-body text-center">
-              <i className="fas fa-trophy fs-2 text-warning mb-3 d-block"></i>
-              <h6 className="text-warning">
-                {estadisticas.servicioMasConsumido || "N/A"}
-              </h6>
-              <p className="text-muted small mb-0">Servicio Más Consumido</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      */}
-
-      {/* Filtros */}
-      <div className="card mb-3">
-        <div className="card-header">
-          <h5 className="mb-0">
-            <i className="fas fa-filter me-2"></i>
-            Filtros de Búsqueda
-          </h5>
-        </div>
-        <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-3">
-              <label htmlFor="fechaInicio" className="form-label">
-                <i className="fas fa-calendar me-2"></i>
+      <div className={ContenidoStyle.tabContent}>
+        <div className={ContenidoStyle.headerLeft}>
+          <div className={ContenidoStyle.searchFilters}>
+            <div className={ContenidoStyle.filterActionsCook}>
+              <label className={`${ComponenteStyle.formLabel} mb-0`}>
+                <i className="fas fa-calendar me-1"></i>
                 Fecha Inicio
               </label>
               <input
                 type="date"
-                className="form-control"
+                className={ComponenteStyle.formControl}
                 id="fechaInicio"
                 name="fechaInicio"
+                placeholder="dd/mm/aaaa"
                 value={filtros.fechaInicio}
                 onChange={handleFiltroChange}
               />
             </div>
-
-            <div className="col-md-3">
-              <label htmlFor="fechaFin" className="form-label">
-                <i className="fas fa-calendar me-2"></i>
+            <div className={ContenidoStyle.filterActionsCook}>
+              <label className={`${ComponenteStyle.formLabel} mb-0`}>
+                <i className="fas fa-calendar me-1"></i>
                 Fecha Fin
               </label>
               <input
                 type="date"
-                className="form-control"
+                className={ComponenteStyle.formControl}
                 id="fechaFin"
                 name="fechaFin"
+                placeholder="dd/mm/aaaa"
                 value={filtros.fechaFin}
                 onChange={handleFiltroChange}
               />
             </div>
 
-            <div className="col-md-3">
-              <label htmlFor="idServicio" className="form-label">
-                <i className="fas fa-utensils me-2"></i>
+            <div className={ContenidoStyle.filterActionsCook}>
+              <label className={`${ComponenteStyle.formLabel} mb-0`}>
+                <i className="fas fa-utensils me-1"></i>
                 Servicio
               </label>
               <select
-                className="form-select"
+                className={ComponenteStyle.formSelect}
                 id="idServicio"
                 name="idServicio"
                 value={filtros.idServicio}
@@ -589,216 +533,195 @@ const Consumos = () => {
                 ))}
               </select>
             </div>
+            {hayFiltrosActivos() && (
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={limpiarFiltros}
+                title="Limpiar filtros"
+                style={{ marginTop: "2.5rem" }}
+              >
+                <i className="fas fa-times"></i>
+                Limpiar
+              </button>
+            )}
+
+            <div className="d-flex gap-2 mt-2 w-100">
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={exportarCSV}
+                disabled={consumos.length === 0}
+              >
+                <i className="fas fa-file-csv me-2"></i>
+                Exportar CSV
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger mx-2"
+                onClick={exportarPDF}
+                disabled={consumos.length === 0}
+              >
+                <i className="fas fa-file-pdf me-2"></i>
+                Exportar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className={ContenidoStyle.card}>
+          <div
+            className={`${ContenidoStyle.cardHeader} ${ContenidoStyle.headerInventario} pb-0 pt-2`}
+          >
+            <h5>
+              <i className="fas fa-list me-1"></i>
+              Registros de Consumos
+            </h5>
+            <div className={ContenidoStyle.headerRight}>
+              <label className="mx-2">
+                <span>Registros por página:</span>
+              </label>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
           </div>
 
-          <div className="d-flex gap-2 mt-3">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={limpiarFiltros}
-            >
-              <i className="fas fa-broom me-2"></i>
-              Limpiar Filtros
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-success"
-              onClick={exportarCSV}
-              disabled={consumos.length === 0}
-            >
-              <i className="fas fa-file-csv me-2"></i>
-              Exportar CSV
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={exportarPDF}
-              disabled={consumos.length === 0}
-            >
-              <i className="fas fa-file-pdf me-2"></i>
-              Exportar PDF
-            </button>
-          </div>
-        </div>
-      </div>
-      {/* Lista de Consumos */}
-      <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">
-            <i className="fas fa-list me-2"></i>
-            Registros de Consumos
-          </h5>
-          <button
-            className="btn btn-outline-primary btn-sm"
-            onClick={() => cargarConsumos()}
-            disabled={loading}
-          >
-            <i className="fas fa-sync-alt me-1"></i>
-            {loading ? "Actualizando..." : "Actualizar"}
-          </button>
-        </div>
-
-        {/* Selector de tamaño de página y Paginación */}
-        <div className="page-size-selector mt-3 mx-4">
-          <span className="text-dark">Registros por página</span>
-          <select
-            className="form-select"
-            style={{ width: "60px" }}
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-          </select>
-          <span className="ms-2 text-muted">
-            Total {filteredInsumos.length} registros
-          </span>
-        </div>
-
-        {/* Tabla de Consumos */}
-        <div className="card-body">
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-              <p className="mt-2 text-muted">Actualizando datos...</p>
-            </div>
-          ) : consumos.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="fas fa-inbox fa-3x text-muted mb-3"></i>
-              <h5 className="text-muted">No hay registros de consumos</h5>
-              <p className="text-muted">
-                No se encontraron registros para el período seleccionado
-              </p>
-            </div>
-          ) : (
-            <div className="table-container">
-              <table className="table table-striped data-table">
-                <thead className="table-light">
-                  <tr>
-                    <th width="5%">#</th>
-                    <th width="20%">
-                      <i className="fas fa-calendar me-2"></i>
-                      Fecha
-                    </th>
-                    <th width="20%">
-                      <i className="fas fa-utensils me-2"></i>
-                      Servicio
-                    </th>
-                    <th width="20%">
-                      <i className="fas fa-cube me-2"></i>
-                      Insumo
-                    </th>
-                    <th width="20%">
-                      <i className="fas fa-weight me-2"></i>
-                      Cantidad
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {consumosAMostrar.map((consumo, index) => (
-                    <tr key={`${consumo.id_consumo}-${index}`}>
-                      <td>
-                        <strong>{startIndex + index + 1}</strong>
-                      </td>
-                      <td>
-                        <div className="d-flex flex-column">
-                          <span className="fw-semibold">
-                            {formatDate(consumo.fecha)}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <span className="badge bg-primary me-2">
-                            <i className="fas fa-utensils me-1"></i>
-                          </span>
-                          {obtenerNombreServicio(
-                            consumo.id_servicio,
-                            consumo.nombreServicio
-                          )}
-                        </div>
-                      </td>
-
-                      <td>
-                        <span className="badge bg-info text-dark">
-                          {consumo.nombreInsumo ||
-                            `Insumo #${consumo.id_insumo}` ||
-                            "N/A"}
-                        </span>
-                      </td>
-
-                      <td>
-                        {(() => {
-                          const convertida = obtenerMejorUnidad(
-                            consumo.cantidadUtilizada || 0,
-                            consumo.unidadMedida || "Unidades"
-                          );
-                          return (
-                            <span className="badge bg-warning text-dark fs-6">
-                              <i className="fas fa-weight me-1"></i>
-                              {formatNumeroAR(convertida.cantidad)} {convertida.unidad}
-                            </span>
-                          );
-                        })()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-               {totalPages > 1 && (
-                <div className="table-footer">
-                  <div className="pagination">
-                    <button
-                      className="pagination-btn"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <i className="fas fa-chevron-left"></i>
-                    </button>
-                    <div className="pagination-info">
-                      Página {currentPage} de {totalPages} (
-                      {filteredInsumos.length} registros)
-                    </div>
-                    <button
-                      className="pagination-btn"
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={currentPage === totalPages}
-                    >
-                      <i className="fas fa-chevron-right"></i>
-                    </button>
-                  </div>
+          {/* Tabla de Consumos */}
+          <div className={TablaStyle.tableContainer}>
+            {consumos.length === 0 ? (
+              <div>
+                <div className={TablaStyle.emptyState}>
+                  <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+                  <h5>No se encontraron consumos</h5>
+                  <p>No hay consumo que coincidan con tu búsqueda.</p>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {consumos.length > 0 && (
-          <div className="card-footer">
-            <div className="row text-center">
-              <div className="col-md-12">
-                <small className="text-muted">
-                  <i className="fas fa-info-circle me-1"></i>
-                  Mostrando {consumos.length} registro(s) de consumos | Período:{" "}
-                  {formatearFecha(filtros.fechaInicio)} -{" "}
-                  {formatearFecha(filtros.fechaFin)} | Última actualización:{" "}
-                  {new Date().toLocaleTimeString("es-ES")}
-                </small>
               </div>
-            </div>
+            ) : (
+              <div className={TablaStyle.scrollableTable}>
+                <div className={TablaStyle.tableBodyScroll}>
+                  <table
+                    className={`${TablaStyle.tableData} table table-striped`}
+                  >
+                    <thead className={TablaStyle.tableHeaderFixed}>
+                      <tr>
+                        <th width="12%">#</th>
+                        <th width="22%">
+                          <i className="fas fa-calendar me-2"></i>
+                          Fecha
+                        </th>
+                        <th width="22%">
+                          <i className="fas fa-utensils me-2"></i>
+                          Servicio
+                        </th>
+                        <th width="22%">
+                          <i className="fas fa-cube me-2"></i>
+                          Insumo
+                        </th>
+                        <th width="22%">
+                          <i className="fas fa-weight me-2"></i>
+                          Cantidad
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {consumosAMostrar.map((consumo, index) => (
+                        <tr key={`${consumo.id_consumo}-${index}`}>
+                          <td>
+                            <strong>{startIndex + index + 1}</strong>
+                          </td>
+                          <td>
+                            <div className="d-flex flex-column">
+                              <span className="fw-semibold">
+                                {formatDate(consumo.fecha)}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td>
+                            <div className="d-flex align-items-center">
+                              <span
+                                className={`${ComponenteStyle.badge} bg-primary me-2 text-white`}
+                              >
+                                <i className="fas fa-utensils me-1"></i>{" "}
+                                {obtenerNombreServicio(
+                                  consumo.id_servicio,
+                                  consumo.nombreServicio,
+                                )}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td>
+                            <span
+                              className={`${ComponenteStyle.badge} bg-info text-dark fs-6`}
+                            >
+                              {consumo.nombreInsumo ||
+                                `Insumo #${consumo.id_insumo}` ||
+                                "N/A"}
+                            </span>
+                          </td>
+
+                          <td>
+                            {(() => {
+                              const convertida = obtenerMejorUnidad(
+                                consumo.cantidadUtilizada || 0,
+                                consumo.unidadMedida || "Unidades",
+                              );
+                              return (
+                                <span
+                                  className={`${ComponenteStyle.badge} bg-warning text-dark fs-6`}
+                                >
+                                  <i className="fas fa-weight me-1"></i>
+                                  {formatNumeroAR(convertida.cantidad)}{" "}
+                                  {convertida.unidad}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {totalPages > 1 && (
+                    <div className={TablaStyle.pagination}>
+                      <button
+                        className={TablaStyle.paginationBtn}
+                        onClick={() =>
+                          setCurrentPage((p) => Math.max(1, p - 1))
+                        }
+                        disabled={currentPage === 1}
+                      >
+                        <i className="fas fa-chevron-left"></i>
+                      </button>
+                      <div className={TablaStyle.paginationInfo}>
+                        Página {currentPage} de {totalPages} (
+                        {filteredInsumos.length} registros)
+                      </div>
+                      <button
+                        className={TablaStyle.paginationBtn}
+                        onClick={() =>
+                          setCurrentPage((p) => Math.min(totalPages, p + 1))
+                        }
+                        disabled={currentPage === totalPages}
+                      >
+                        <i className="fas fa-chevron-right"></i>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

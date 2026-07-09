@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import '../styles/ConnectionStatus.css';
+import ConexionStyle '../styles/ConnectionStatus.module.css';
 
 const ConnectionStatus = () => {
     const [status, setStatus] = useState({
@@ -46,7 +46,7 @@ const ConnectionStatus = () => {
 
     if (status.loading) {
         return (
-            <div className="connection-status checking">
+            <div className={`${ConexionStyle.statusConnection} ${ConexionStatus.checking}`}>
                 <i className="fas fa-spinner fa-spin me-2"></i>
                 Verificando conexión...
             </div>
@@ -55,7 +55,7 @@ const ConnectionStatus = () => {
 
     if (status.connected) {
         return (
-            <div className="connection-status connected" title={`Tiempo de respuesta: ${status.responseTime}ms`}>
+            <div className={`${ConexionStyle.statusConnection} ${ConexionStyle.connected}`} title={`Tiempo de respuesta: ${status.responseTime}ms`}>
                 <i className="fas fa-wifi text-success me-2"></i>
                 <span className="text-success small">Conectado</span>
                 {status.responseTime && (
@@ -68,7 +68,7 @@ const ConnectionStatus = () => {
     }
 
     return (
-        <div className="connection-status disconnected">
+        <div className={`${ConexionStyle.statusConnection} ${ConexionStyle.disconnected}`}>
             <i className="fas fa-wifi text-danger me-2"></i>
             <span className="text-danger small">Sin conexión</span>
             <button

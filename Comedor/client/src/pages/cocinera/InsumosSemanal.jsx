@@ -5,8 +5,10 @@ import planificacionMenuService from "../../services/planificacionMenuService";
 import generacionAutomaticaService from "../../services/generacionAutomaticaService";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import "../../styles/InsumosSemanal.css";
 import { formatDate, formatDateTime } from "../../utils/dateUtils";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
 
 const InsumosSemanal = () => {
   const { isAuthenticated, user } = useAuth();
@@ -117,7 +119,7 @@ const InsumosSemanal = () => {
       // Guardar el estado de la planificación y las fechas exactas del primer menú
       let fechaInicioReal = fechaInicio;
       let fechaFinReal = fechaFin;
-      
+
       if (response && response.length > 0) {
         setEstadoPlanificacion(response[0]?.estado || null);
         // Usar las fechas exactas de la planificación para las solicitudes posteriores
@@ -158,7 +160,8 @@ const InsumosSemanal = () => {
       //console.error("❌ Error al cargar datos semanales:", error);
       setMensaje({
         tipo: "error",
-        texto: "❌ Ocurrió un error al cargar los datos semanales. Por favor, intente nuevamente más tarde.",
+        texto:
+          "❌ Ocurrió un error al cargar los datos semanales. Por favor, intente nuevamente más tarde.",
       });
       setMenusSemanales([]);
       setInsumosRequeridos({});
@@ -174,54 +177,43 @@ const InsumosSemanal = () => {
     fechaFin,
   ) => {
     try {
-      console.log(`🔍 Llamando a obtenerInsumosSemanales con fechas: ${fechaInicio} a ${fechaFin}`);
-      
       const response =
         await generacionAutomaticaService.obtenerInsumosSemanales(
           fechaInicio,
           fechaFin,
         );
 
-      console.log("📊 Respuesta completa del backend:", response);
-      console.log("📊 response.insumos:", response?.insumos);
-      console.log("📊 response.insumos length:", response?.insumos?.length);
-
       // Guardar el estado de la planificación si viene en la respuesta
       if (response.estado) {
-        console.log(`✅ Estado detectado: ${response.estado}`);
         setEstadoPlanificacion(response.estado);
       }
 
       // Si está en estado Programado, mostrar mensaje y no cargar insumos
       if (response.estado === "Programado") {
-        console.log("⚠️ Planificación en estado Programado");
         setMensaje({
           tipo: "warning",
-          texto: "⏳ La planificación de esta semana está en estado Programado. Los insumos se mostrarán cuando cambie a estado Activo.",
+          texto:
+            "⏳ La planificación de esta semana está en estado Programado. Los insumos se mostrarán cuando cambie a estado Activo.",
         });
         setInsumosRequeridos({});
         return;
       }
 
       if (!response || !response.insumos || response.insumos.length === 0) {
-        console.log("⚠️ No hay insumos en la respuesta o respuesta vacía");
         setMensaje({
           tipo: "info",
-          texto: "ℹ️ No hay una planificación activa para esta semana. Cree una en la sección 'Planificación de Menús'.",
+          texto:
+            "ℹ️ No hay una planificación activa para esta semana. Cree una en la sección 'Planificación de Menús'.",
         });
         setInsumosRequeridos({});
         return;
       }
-
-      console.log(`✅ Se obtuvieron ${response.insumos.length} insumos`);
 
       // Convertir array a map con nombre como clave
       const insumosMap = {};
       let insumosDesconocidosEncontrados = false;
 
       for (const insumo of response.insumos) {
-        console.log(`  Procesando insumo:`, insumo);
-        
         // Filtrar insumos desconocidos (sin nombre válido)
         if (insumo.nombre === "Insumo desconocido" || !insumo.nombre) {
           console.warn(
@@ -242,11 +234,7 @@ const InsumosSemanal = () => {
         };
       }
 
-      console.log(`✅ insumosMap contiene ${Object.keys(insumosMap).length} insumos`);
-      console.log("insumosMap:", insumosMap);
-
       setInsumosRequeridos(insumosMap);
-      console.log(`✅ Se cargaron ${Object.keys(insumosMap).length} insumos en el estado`);
 
       // Guardar detalles de cálculo para descarga de auditoría
       if (response.detallesCalculo) {
@@ -255,12 +243,11 @@ const InsumosSemanal = () => {
     } catch (error) {
       console.error("❌ Error en catch:", error);
       console.error("Error response data:", error.response?.data);
-      
+
       setDetallesCalculo({});
 
       // Capturar estado si viene en la respuesta de error
       if (error.response?.data?.estado) {
-        console.log(`✅ Estado en error detectado: ${error.response.data.estado}`);
         setEstadoPlanificacion(error.response.data.estado);
       }
 
@@ -278,7 +265,6 @@ const InsumosSemanal = () => {
 
       // Otros errores
       if (error.response?.status === 400) {
-        console.log("Error 400 detectado");
         setMensaje({
           tipo: "warning",
           texto:
@@ -322,9 +308,13 @@ const InsumosSemanal = () => {
     return parseFloat(Number(cantidad).toFixed(3)).toString().replace(".", ",");
   };
 
-  // Formatea un número con 3 decimales usando coma como separador
-  const formatConComa = (numero) =>
-    parseFloat(Number(numero).toFixed(3)).toFixed(3).replace(".", ",");
+  // Formatea un número con 3 decimales, coma decimal y punto de miles (ej: 14.000,520)
+  const formatConComa = (numero) => {
+    return Number(numero).toLocaleString("es-ES", {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    });
+  };
 
   const obtenerMejorUnidad = (cantidad, unidadOriginal) => {
     // Para gramos: si es >= 1000, convertir a kilogramos
@@ -487,11 +477,6 @@ const InsumosSemanal = () => {
           tipo: "success",
           texto: `✅ SISTEMA: Se generaron ${response.totalPedidos} pedido(s) automático(s) por insumos faltantes`,
         });
-        /*console.log(
-          "Pedidos generados automáticamente por el SISTEMA:",
-          response.pedidosCreados
-        );
-        console.log("Origen:", response.origen);*/
       } else {
         setMensaje({
           tipo: "warning",
@@ -522,270 +507,267 @@ const InsumosSemanal = () => {
 
   const semana = obtenerSemanaActual();
 
+  if (loading) {
+    return (
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Insumos Semanales...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="container-fluid mt-1">
-      <div className="card shadow-sm">
-        <div className="card-header bg-light text-dark">
-          <div className="d-flex justify-content-between align-items-center">
-            <h4 className="mb-0">
-              <i className="fas fa-list me-2"></i>
-              Lista de Insumos Semanal
-            </h4>
-          </div>
+    <div className={`${ContenidoStyle.card} shadow-sm`}>
+      <div className={`${ContenidoStyle.cardHeader} bg-light text-dark`}>
+        <div className="d-flex justify-content-between align-items-center">
+          <h4 className="mb-0">
+            <i className="fas fa-list me-2"></i>
+            Lista de Insumos Semanal
+          </h4>
         </div>
+      </div>
 
-        <div className="card-body">
-          {/* Controles de navegación */}
-          <div className="mb-4 d-flex justify-content-between align-items-center">
-            <button
-              className="btn btn-outline-primary btn-sm"
-              onClick={() => cambiarSemana(-1)}
-            >
-              <i className="fas fa-chevron-left"></i> Semana Anterior
-            </button>
+      <div className={ContenidoStyle.cardBody}>
+        {/* Controles de navegación */}
+        <div className="mb-4 d-flex justify-content-between align-items-center">
+          <button
+            className="btn btn-outline-primary btn-sm fw-bold"
+            onClick={() => cambiarSemana(-1)}
+          >
+            <i className="fas fa-chevron-left"></i> Semana Anterior
+          </button>
 
-            <div className="text-center">
-              <h5 className="mb-0">
-                {semana[0].toLocaleDateString("es-ES", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}{" "}
-                a{" "}
-                {semana[4].toLocaleDateString("es-ES", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
-              </h5>
-            </div>
-
-            <button
-              className="btn btn-outline-primary btn-sm"
-              onClick={() => cambiarSemana(1)}
-            >
-              Semana Siguiente <i className="fas fa-chevron-right"></i>
-            </button>
+          <div className="text-center">
+            <h5 className="mb-0">
+              {semana[0].toLocaleDateString("es-ES", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}{" "}
+              a{" "}
+              {semana[4].toLocaleDateString("es-ES", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+            </h5>
           </div>
 
-          {loading && (
-            <div className="text-center my-4">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-            </div>
-          )}
-
-          {/* Para no planificado */}
-          {!loading && menusSemanales.length === 0 && (
-            <div
-              className="alert alert-warning d-flex align-items-center"
-              role="alert"
-            >
-              <i className="fas fa-exclamation-triangle me-3 fs-4"></i>
-              <div>
-                <h6 className="alert-heading mb-2">
-                  No hay menús planificados para esta semana
-                </h6>
-                <p className="mb-2">
-                  Para generar insumos semanales, necesita crear una
-                  planificación de menús primero.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Para Programado */}
-          {!loading && estadoPlanificacion === "Programado" && (
-              <div
-                className="alert alert-success d-flex align-items-center"
-                role="alert"
-              >
-                <i className="fas fa-calendar-check me-3 fs-4"></i>
-                <div>
-                  <h6 className="alert-heading mb-2">
-                    La planificación de menús ya está programada para esta
-                    semana
-                  </h6>
-                  <p className="mb-2">
-                    Se debería esperar a que se termine la planificación de la
-                    semana anterior. Y se Active esta.
-                  </p>
-                </div>
-              </div>
-            )}
-
-          {/* Para Finalizado */}
-          {!loading && estadoPlanificacion === "Finalizado" && (
-              <div
-                className="alert alert-dark d-flex align-items-center"
-                role="alert"
-              >
-                <i className="fas fa-calendar-check me-3 fs-4"></i>
-                <div>
-                  <h6 className="alert-heading mb-2">
-                    La planificación de menús de está semana ya fue finalizada.
-                  </h6>
-                  <p className="mb-2">Pase a la siguiente semana.</p>
-                </div>
-              </div>
-            )}
-
-          {/* Para activo */}
-    
-          {!loading && estadoPlanificacion === "Activo" && Object.keys(insumosRequeridos).length > 0 && (
-              <>
-                {/* Resumen de insumos */}
-                <div className="mb-4">
-                  <h5 className="border-bottom pb-2">
-                    <i className="fas fa-boxes me-2"></i>
-                    Insumos Requeridos para la Semana
-                  </h5>
-
-                  <div className="table-container mt-3">
-                    <table className="table table-striped data-table">
-                      <thead className="table-light">
-                        <tr>
-                          <th>ID</th>
-                          <th width="30%">Insumo</th>
-                          <th width="25%">Cantidad Insumo</th>
-                          <th width="25%">Stock Inicial</th>
-                          <th width="20%">Stock Final</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(insumosRequeridos).map(
-                          ([nombreInsumo, datos], index) => {
-                            const mejorUnidad = obtenerMejorUnidad(
-                              datos.cantidad,
-                              datos.unidad,
-                            );
-
-                            // Convertir stock disponible a la mejorUnidad para comparación correcta
-                            const stockDisponibleEnMejorUnidad =
-                              convertirCantidadEntre(
-                                datos.cantidad_disponible || 0,
-                                datos.unidad_inventario,
-                                mejorUnidad.unidad,
-                              );
-
-                            const cantidadNecesaria = mejorUnidad.cantidad;
-                            const diferencia = parseFloat(
-                              (
-                                stockDisponibleEnMejorUnidad - cantidadNecesaria
-                              ).toFixed(3),
-                            );
-
-                            const esFaltante = diferencia < 0;
-
-                            // Clase para la fila: danger si es negativo
-                            let classRow = "";
-                            if (esFaltante) {
-                              classRow = "table-danger"; // Rojo - negativo
-                            }
-
-                            return (
-                              <tr key={nombreInsumo} className={classRow}>
-                                <td className="text-center">
-                                  <strong>{index + 1}</strong>
-                                </td>
-                                <td width="30%">
-                                  <strong>{nombreInsumo}</strong>
-                                  {esFaltante && !datos.enPedido && (
-                                    <div className="small text-danger">
-                                      <i className="fas fa-exclamation-triangle me-1"></i>
-                                      Faltante
-                                    </div>
-                                  )}
-                                  {datos.enPedido && (
-                                    <div className="small text-info">
-                                      <i className="fas fa-clock me-1"></i>
-                                      En Pedido
-                                    </div>
-                                  )}
-                                </td>
-
-                                <td width="25%">
-                                  <span className="badge bg-success">
-                                    {formatearCantidad(
-                                      mejorUnidad.cantidad,
-                                      mejorUnidad.unidad,
-                                    )}{" "}
-                                    {mejorUnidad.unidad}
-                                  </span>
-                                </td>
-                                <td width="25%">
-                                  <span className="badge bg-info text-dark">
-                                    {datos.cantidad_disponible
-                                      ? formatConComa(datos.cantidad_disponible)
-                                      : "0,000"}{" "}
-                                    {datos.unidad_inventario}
-                                  </span>
-                                </td>
-                                <td width="20%">
-                                  <span
-                                    className={`badge ${
-                                      esFaltante ? "bg-danger" : "bg-success"
-                                    }`}
-                                  >
-                                    {formatConComa(diferencia)}{" "}
-                                    {mejorUnidad.unidad}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          },
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Botones de acción */}
-                <div className="form-actions mt-3">
-                  <button
-                    className="btn btn-outline-primary"
-                    onClick={generarPDF}
-                  >
-                    <i className="fas fa-file-pdf me-1"></i>
-                    Descargar PDF
-                  </button>
-                  <button
-                    className="btn btn-outline-success"
-                    onClick={() => {
-                      // Exportar a CSV
-                      const csv = generarCSV();
-                      descargarCSV(csv);
-                    }}
-                  >
-                    <i className="fas fa-download me-1"></i>
-                    Descargar CSV
-                  </button>
-                  {Object.keys(detallesCalculo).length > 0 && (
-                    <button
-                      className="btn btn-outline-secondary"
-                      onClick={generarTXTCalculo}
-                    >
-                      <i className="fas fa-calculator me-1"></i>
-                      Descargar Detalle de Cálculo (TXT)
-                    </button>
-                  )}
-                  {/* Botón para generar pedidos por faltantes 
-                  <button
-                    className="btn btn-outline-danger"
-                    onClick={generarPedidosPorFaltantes}
-                    disabled={generandoPedidos}
-                  >
-                    <i className="fas fa-shopping-cart me-1"></i>
-                    {generandoPedidos
-                      ? "Sistema generando pedidos..."
-                      : "Generar Pedidos por Faltantes"}
-                  </button>
-                  */}
-                </div>
-              </>
-            )}
+          <button
+            className="btn btn-outline-primary btn-sm fw-bold"
+            onClick={() => cambiarSemana(1)}
+          >
+            Semana Siguiente <i className="fas fa-chevron-right"></i>
+          </button>
         </div>
+
+        {loading && (
+          <div className="text-center my-4">
+            <div className="spinner-border" role="status">
+              <span className="visually-hidden">Cargando...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Para no planificado */}
+        {!loading && menusSemanales.length === 0 && (
+          <div
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning} d-flex align-items-center`}
+            role="alert"
+          >
+            <i className="fas fa-exclamation-triangle me-3 fs-4"></i>
+            <div>
+              <h6 className="alert-heading mb-2">
+                No hay menús planificados para esta semana
+              </h6>
+              <p className="mb-2">
+                Para generar insumos semanales, necesita crear una planificación
+                de menús primero.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Para Programado */}
+        {!loading && estadoPlanificacion === "Programado" && (
+          <div
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertSuccess} d-flex align-items-center`}
+            role="alert"
+          >
+            <i className="fas fa-calendar-check me-3 fs-4"></i>
+            <div>
+              <h6 className="alert-heading mb-2">
+                La planificación de menús ya está programada para esta semana
+              </h6>
+              <p className="mb-2">
+                Se debería esperar a que se termine la planificación de la
+                semana anterior. Y se Active esta.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Para Finalizado */}
+        {!loading && estadoPlanificacion === "Finalizado" && (
+          <div
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDark} d-flex align-items-center`}
+            role="alert"
+          >
+            <i className="fas fa-calendar-check me-3 fs-4"></i>
+            <div>
+              <h6 className="alert-heading mb-2">
+                La planificación de menús de está semana ya fue finalizada.
+              </h6>
+              <p className="mb-2">Pase a la siguiente semana.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Para activo */}
+
+        {!loading &&
+          estadoPlanificacion === "Activo" &&
+          Object.keys(insumosRequeridos).length > 0 && (
+            <>
+              {/* Resumen de insumos */}
+              <div className="mb-4">
+                <h5 className="border-bottom pb-2">
+                  <i className="fas fa-boxes me-2"></i>
+                  Insumos Requeridos para la Semana
+                </h5>
+
+                <div className={TablaStyle.tableContainer}>
+                  <table
+                    className={`${TablaStyle.tableData} table table-striped`}
+                  >
+                    <thead className={TablaStyle.tableHeaderFixed}>
+                      <tr>
+                        <th whidth="5%">#</th>
+                        <th width="25%">Insumo</th>
+                        <th width="25%">Cantidad Insumo</th>
+                        <th width="25%">Stock Inicial</th>
+                        <th width="20%">Stock Final</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(insumosRequeridos).map(
+                        ([nombreInsumo, datos], index) => {
+                          const mejorUnidad = obtenerMejorUnidad(
+                            datos.cantidad,
+                            datos.unidad,
+                          );
+
+                          // Convertir stock disponible a la mejorUnidad para comparación correcta
+                          const stockDisponibleEnMejorUnidad =
+                            convertirCantidadEntre(
+                              datos.cantidad_disponible || 0,
+                              datos.unidad_inventario,
+                              mejorUnidad.unidad,
+                            );
+
+                          const cantidadNecesaria = mejorUnidad.cantidad;
+                          const diferencia = parseFloat(
+                            (
+                              stockDisponibleEnMejorUnidad - cantidadNecesaria
+                            ).toFixed(3),
+                          );
+
+                          const esFaltante = diferencia < 0;
+
+                          // Clase para la fila: danger si es negativo
+                          let classRow = "";
+                          if (esFaltante) {
+                            classRow = "table-danger"; // Rojo - negativo
+                          }
+
+                          return (
+                            <tr key={nombreInsumo} className={classRow}>
+                              <td className="text-center">
+                                <strong>{index + 1}</strong>
+                              </td>
+                              <td width="30%">
+                                <strong>{nombreInsumo}</strong>
+                                {esFaltante && !datos.enPedido && (
+                                  <div className="small text-danger">
+                                    <i className="fas fa-exclamation-triangle me-1"></i>
+                                    Faltante
+                                  </div>
+                                )}
+                                {datos.enPedido && (
+                                  <div className="small text-info">
+                                    <i className="fas fa-clock me-1"></i>
+                                    En Pedido
+                                  </div>
+                                )}
+                              </td>
+
+                              <td width="25%">
+                                <span
+                                  className={`${ComponenteStyle.badge} bg-success text-white fw-fold`}
+                                >
+                                  {formatConComa(mejorUnidad.cantidad)}{" "}
+                                  {mejorUnidad.unidad}
+                                </span>
+                              </td>
+                              <td width="25%">
+                                <span
+                                  className={`${ComponenteStyle.badge} bg-info text-dark fw-bold`}
+                                >
+                                  {datos.cantidad_disponible
+                                    ? formatConComa(datos.cantidad_disponible)
+                                    : "0,000"}{" "}
+                                  {datos.unidad_inventario}
+                                </span>
+                              </td>
+                              <td width="20%">
+                                <span
+                                  className={`${ComponenteStyle.badge} ${esFaltante ? "bg-danger text-white fw-bold" : "bg-success text-white fw-bold"}`}
+                                >
+                                  {formatConComa(diferencia)}{" "}
+                                  {mejorUnidad.unidad}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        },
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className={`${ComponenteStyle.formActions} mt-3`}>
+                <button
+                  className={`${ComponenteStyle.btn} ${ComponenteStyle.btnOutlinePrimary} fw-bold`}
+                  onClick={generarPDF}
+                >
+                  <i className="fas fa-file-pdf me-1"></i>
+                  Descargar PDF
+                </button>
+                <button
+                  className={`${ComponenteStyle.btn} ${ComponenteStyle.btnOutlineSuccess} fw-bold`}
+                  onClick={() => {
+                    // Exportar a CSV
+                    const csv = generarCSV();
+                    descargarCSV(csv);
+                  }}
+                >
+                  <i className="fas fa-download me-1"></i>
+                  Descargar CSV
+                </button>
+                {Object.keys(detallesCalculo).length > 0 && (
+                  <button
+                    className="btn btn-outline-secondary fw-bold"
+                    onClick={generarTXTCalculo}
+                  >
+                    <i className="fas fa-calculator me-1"></i>
+                    Descargar Detalle de Cálculo (TXT)
+                  </button>
+                )}
+              </div>
+            </>
+          )}
       </div>
     </div>
   );

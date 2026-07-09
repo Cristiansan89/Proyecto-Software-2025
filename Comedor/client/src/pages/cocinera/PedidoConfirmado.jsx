@@ -3,7 +3,10 @@ import { createPortal } from "react-dom";
 import API from "../../services/api.js";
 import { showSuccess, showError, showWarning } from "../../utils/alertService";
 import PedidoVista from "../../components/cocinera/PedidoVista.jsx";
-import "../../styles/pedidoConfirmado.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const PedidoConfirmado = () => {
   const [pedidosConfirmados, setPedidosConfirmados] = useState([]);
@@ -109,11 +112,29 @@ const PedidoConfirmado = () => {
 
   const obtenerEstadosBadge = (insumosConfirmados, insumosRechazados) => {
     if (insumosConfirmados > 0 && insumosRechazados === 0) {
-      return <span className="badge badge-success">✓ Confirmados</span>;
+      return (
+        <span
+          className={`${ContenidoStyle.badge} ${ContenidoStyle.badgeSuccess}`}
+        >
+          ✓ Confirmados
+        </span>
+      );
     } else if (insumosConfirmados === 0 && insumosRechazados > 0) {
-      return <span className="badge badge-danger">✗ Rechazados</span>;
+      return (
+        <span
+          className={`${ContenidoStyle.badge} ${ContenidoStyle.badgeDanger}`}
+        >
+          ✗ Rechazados
+        </span>
+      );
     } else {
-      return <span className="badge badge-warning">⚠ Parcialmente</span>;
+      return (
+        <span
+          className={`${ContenidoStyle.badge} ${ContenidoStyle.badgeWarning}`}
+        >
+          ⚠ Parcialmente
+        </span>
+      );
     }
   };
 
@@ -164,117 +185,126 @@ const PedidoConfirmado = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Cargando pedidos confirmados...</p>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Pedidos...</p>
       </div>
     );
   }
 
   return (
-    <div className="content-page">
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h5 className={ContenidoStyle.pageTitle}>Pedidos Confirmados</h5>
+        </div>
+      </div>
+
       {/* Filtros */}
-      <div className="filtros-section">
-        <div className="filtro-grupo">
-          <input
-            type="text"
-            placeholder="🔍 Buscar por proveedor..."
-            value={filtros.proveedor}
-            onChange={(e) =>
-              setFiltros({ ...filtros, proveedor: e.target.value })
-            }
-            className="filtro-input"
-          />
-        </div>
-
-        <div className="filtro-grupo">
-          <input
-            type="text"
-            placeholder="🔍 Buscar por nº pedido..."
-            value={filtros.numeroPedido}
-            onChange={(e) =>
-              setFiltros({ ...filtros, numeroPedido: e.target.value })
-            }
-            className="filtro-input"
-          />
-        </div>
-
-        <div className="filtro-grupo">
-          <select
-            value={filtros.estado}
-            onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
-            className="form-select"
-          >
-            <option value="">Todos los estados</option>
-            <option value="Enviado">Enviado</option>
-            <option value="Confirmado">Confirmado</option>
-            <option value="Entregado">Entregado</option>
-          </select>
-        </div>
-
-        {hayFiltrosAplicados() && (
-          <button
-            className="btn btn-outline-secondary"
-            onClick={clearFilters}
-            title="Limpiar filtros"
-          >
-            <i className="fas fa-times me-1"></i>
-          </button>
-        )}
-      </div>
-
-      {/* Selector de tamaño de página y Paginación */}
-      <div className="page-size-selector mt-3 mb-3">
-        <span className="text-dark mx-2">Registros por página</span>
-        <select
-          className="form-select"
-          style={{ width: "60px" }}
-          value={pageSize}
-          onChange={(e) => {
-            setPageSize(Number(e.target.value));
-            setCurrentPage(1);
-          }}
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-        </select>
-        <span className="ms-2 text-muted">
-          Total {filteredInsumos.length} registros
-        </span>
-      </div>
-
-      {/* Tabla de Pedidos Confirmados */}
-      <div className="table-container">
-        {pedidosFiltrados.length === 0 ? (
-          <div colSpan={12}>
-            <div className="empty-state">
-              <i className="fas fa-search empty-icon"></i>
-              <h5>No se encontraron pedidos confirmados</h5>
-              <p>No hay pedidos que coincidan con tu búsqueda.</p>
-            </div>
+      <div className={ContenidoStyle.headerLeft}>
+        <div className={ContenidoStyle.searchFilters}>
+          <div className={ContenidoStyle.searchBar}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar por proveedor..."
+              value={filtros.proveedor}
+              onChange={(e) =>
+                setFiltros({ ...filtros, proveedor: e.target.value })
+              }
+              className={ContenidoStyle.searchInput}
+            />
           </div>
-        ) : (
-          <div>
-            <div>
-              <div>
+          <div className={ContenidoStyle.searchBar}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar por nº pedido..."
+              value={filtros.numeroPedido}
+              onChange={(e) =>
+                setFiltros({ ...filtros, numeroPedido: e.target.value })
+              }
+              className={ContenidoStyle.searchInput}
+            />
+          </div>
+          <div className={ContenidoStyle.filterActions}>
+            <select
+              value={filtros.estado}
+              onChange={(e) =>
+                setFiltros({ ...filtros, estado: e.target.value })
+              }
+              className={ContenidoStyle.filterSelect}
+            >
+              <option value="">Todos los estados</option>
+              <option value="Enviado">Enviado</option>
+              <option value="Confirmado">Confirmado</option>
+              <option value="Entregado">Entregado</option>
+            </select>
+          </div>
+          {hayFiltrosAplicados() && (
+            <button
+              className="btn btn-outline-secondary"
+              onClick={clearFilters}
+              title="Limpiar filtros"
+            >
+              <i className="fas fa-times"></i>Limpiar
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className={ContenidoStyle.card}>
+        <div
+          className={`${ContenidoStyle.cardHeader} ${ContenidoStyle.headerInventario} pb-0 pt-2`}
+        >
+          <h5>
+            <i className="fas fa-list me-1"></i>
+            Registros de Consumos
+          </h5>
+          <div className={ContenidoStyle.headerRight}>
+            <label className="mx-2">
+              <span>Registros por página:</span>
+            </label>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
+        <div className={TablaStyle.tableContainer}>
+          {pedidosFiltrados.length === 0 ? (
+            <div colSpan={12}>
+              <div className={TablaStyle.emptyState}>
+                <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+                <h5>No se encontraron pedidos confirmados</h5>
+                <p>No hay pedidos que coincidan con tu búsqueda.</p>
+              </div>
+            </div>
+          ) : (
+            <div className={TablaStyle.scrollableTable}>
+              <div className={TablaStyle.tableBodyScroll}>
                 <table
-                  className="table table-striped data-table"
-                  style={{ minWidth: 0 }}
+                  className={`${TablaStyle.tableData} table table-striped`}
                 >
                   <colgroup>
-                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "12%" }} />
+                    <col style={{ width: "12%" }} />
+                    <col style={{ width: "14%" }} />
                     <col style={{ width: "11%" }} />
                     <col style={{ width: "11%" }} />
                     <col style={{ width: "11%" }} />
-                    <col style={{ width: "11%" }} />
-                    <col style={{ width: "11%" }} />
-                    <col style={{ width: "11%" }} />
-                    <col style={{ width: "11%" }} />
-                    <col style={{ width: "11%" }} />
+                    <col style={{ width: "12%" }} />
+                    <col style={{ width: "12%" }} />
                   </colgroup>
-                  <thead className="table-header-auto">
-                    <tr className="tabla-title">
+                  <thead className={TablaStyle.tableHeaderFixed}>
+                    <tr>
                       <th>#</th>
                       <th>Proveedor</th>
                       <th>Nº Pedido</th>
@@ -289,14 +319,14 @@ const PedidoConfirmado = () => {
                   <tbody>
                     {pedidosACamostre.map((pedido, index) => (
                       <tr key={pedido.id_pedido}>
-                        <td className="numero-id">
-                          <span>{startIndex + index + 1}</span>
+                        <td>
+                          <span className="fw-bold">
+                            {startIndex + index + 1}
+                          </span>
                         </td>
-                        <td className="proveedor-nombre">
-                          {pedido.razonSocial}
-                        </td>
-                        <td className="numero-pedido">
-                          <span>
+                        <td className="fw-bold">{pedido.razonSocial}</td>
+                        <td>
+                          <span className="fw-bold">
                             {pedido.id_pedido_uuid
                               .substring(0, 8)
                               .toUpperCase()}
@@ -304,13 +334,13 @@ const PedidoConfirmado = () => {
                         </td>
                         <td>
                           <div className="d-flex flex-column">
-                            <small className="text-muted">
-                              Emit.:{" "}
+                            <small className="text-muted fw-bold">
+                              Emitido:{" "}
                               {formatearFechaConHora(pedido.fechaEmision)}
                             </small>
                             {pedido.fechaConfirmacion && (
                               <span className="text-success">
-                                Conf.:{" "}
+                                Confirmación:{" "}
                                 {formatearFechaConHora(
                                   pedido.fechaConfirmacion,
                                 )}
@@ -319,18 +349,24 @@ const PedidoConfirmado = () => {
                           </div>
                         </td>
 
-                        <td className="numero-confirmados">
-                          <span className="badge-number bg-success">
+                        <td className="text-center">
+                          <span
+                            className={`${ContenidoStyle.badgeNumber} ${ContenidoStyle.bgSuccess}`}
+                          >
                             {pedido.insumosConfirmados}
                           </span>
                         </td>
-                        <td className="numero-rechazados">
-                          <span className="badge-number bg-danger">
+                        <td className="text-center">
+                          <span
+                            className={`${ContenidoStyle.badgeNumber} ${ContenidoStyle.bgDanger}`}
+                          >
                             {pedido.insumosRechazados}
                           </span>
                         </td>
-                        <td className="numero-pendientes">
-                          <span className="badge-number bg-secondary">
+                        <td className="text-center">
+                          <span
+                            className={`${ContenidoStyle.badgeNumber} ${ContenidoStyle.bgSecondary}`}
+                          >
                             {pedido.insumosPendientes}
                           </span>
                         </td>
@@ -355,61 +391,60 @@ const PedidoConfirmado = () => {
                     ))}
                   </tbody>
                 </table>
-                {totalPages > 1 && (
-                  <div className="table-footer">
-                    <div className="pagination">
-                      <button
-                        className="pagination-btn"
-                        onClick={() =>
-                          setCurrentPage((p) => Math.max(1, p - 1))
-                        }
-                        disabled={currentPage === 1}
-                      >
-                        <i className="fas fa-chevron-left"></i>
-                      </button>
-                      <div className="pagination-info">
-                        Página {currentPage} de {totalPages} (
-                        {filteredInsumos.length} registros)
-                      </div>
-                      <button
-                        className="pagination-btn"
-                        onClick={() =>
-                          setCurrentPage((p) => Math.min(totalPages, p + 1))
-                        }
-                        disabled={currentPage === totalPages}
-                      >
-                        <i className="fas fa-chevron-right"></i>
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
+              {totalPages > 1 && (
+                <div className={TablaStyle.pagination}>
+                  <button
+                    className={TablaStyle.paginationBtn}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <i className="fas fa-chevron-left"></i>
+                  </button>
+                  <div className={TablaStyle.paginationInfo}>
+                    Página {currentPage} de {totalPages} (
+                    {filteredInsumos.length} registros)
+                  </div>
+                  <button
+                    className={TablaStyle.paginationBtn}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    <i className="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Modal de Detalles */}
       {mostrarDetalles &&
         detallesPedido &&
         createPortal(
-          <div className="modal-overlay-pedido-vista">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h2 className="modal-title">
-                  <i className="fas fa-clipboard-list me-1"></i>
-                  Detalles de Confirmación
-                </h2>
-                <button className="modal-close" onClick={cerrarDetalles}>
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-
-              <div className="modal-body">
-                <PedidoVista
-                  detallesPedido={detallesPedido}
-                  onClose={cerrarDetalles}
-                />
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-clipboard-list me-1"></i>
+                    Detalles de Confirmación
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={cerrarDetalles}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <PedidoVista
+                    detallesPedido={detallesPedido}
+                    onClose={cerrarDetalles}
+                  />
+                </div>
               </div>
             </div>
           </div>,

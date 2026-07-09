@@ -1,0 +1,81 @@
+/* Impresión para PDF */
+@media print {
+  body {
+    background-color: white;
+  }
+
+  .estadisticaContainer {
+    padding: 0;
+    background-color: white;
+    min-height: auto;
+  }
+
+  .pageHeader {
+    display: block;
+    background-color: white;
+    box-shadow: none;
+    border-bottom: 2px solid #0d6efd;
+    margin-bottom: 20px;
+    padding: 15px 0;
+  }
+
+  .headerLeft h1 {
+    font-size: 24px;
+    color: #0d6efd;
+  }
+
+  .pageSubtitle {
+    color: #666;
+    font-size: 13px;
+  }
+
+  .headerActions {
+    display: none !important;
+  }
+
+  .btn {
+    display: none !important;
+  }
+
+  .filtrosCard {
+    display: none !important;
+  }
+
+  .kpiCard {
+    page-break-inside: avoid;
+    border: 1px solid #ddd;
+    box-shadow: none;
+    margin-bottom: 15px;
+    background: white;
+  }
+
+  .graficoCard {
+    page-break-inside: avoid;
+    border: 1px solid #ddd;
+    box-shadow: none;
+    margin-bottom: 20px;
+    background: white;
+
+    .cardHeader {
+      background: #f8f9fa !important;
+      border-color: #ddd !important;
+
+      .cardBody {
+        padding: 15px;
+      }
+    }
+
+    h5 {
+      color: #0d6efd;
+      font-size: 14px;
+    }
+  }
+
+  canvas {
+    max-height: 300px;
+  }
+
+  .loadingContainer {
+    display: none;
+  }
+}

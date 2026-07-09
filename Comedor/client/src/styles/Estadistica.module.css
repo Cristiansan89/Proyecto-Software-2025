@@ -1,0 +1,467 @@
+.estadisticaContainer {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.headerLeft h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #333;
+  font-weight: 600;
+}
+
+.pageSubtitle {
+  margin: 8px 0 0 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+}
+
+.headerBtn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.headerBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* --- TARJETAS DE RESUMEN / STATS --- */
+.statsCard {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.statsCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.statsCardBody {
+  padding: 30px 20px;
+}
+
+.cardBody {
+  padding: 1.5rem;
+  background: white;
+  color: var(--bs-card-color);
+}
+
+.statsIcon {
+  font-size: 32px;
+  margin-bottom: 15px;
+  display: block;
+}
+
+/* Colores para CSS Modules sin encadenamiento */
+.textSuccess {
+  color: #198754;
+}
+.textPrimary {
+  color: #0d6efd;
+}
+.textWarning {
+  color: #fd7e14;
+}
+.textInfo {
+  color: #0dcaf0;
+}
+.textDanger {
+  color: #dc3545;
+}
+
+.statsNumber {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 15px 0;
+  color: #333;
+}
+
+.statsLabel {
+  color: #6c757d;
+  font-size: 14px;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* --- CONTENEDORES GENERALES --- */
+.graficosContainer {
+  background: white;
+  background-color: rgba(248, 246, 246, 0.95);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.graficoCard {
+  border: none;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 25px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.graficoCard:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+.graficoCardHeader {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: none;
+  border-bottom: 2px solid #e9ecef;
+  padding: 18px 20px;
+  border-radius: 10px 10px 0 0;
+}
+
+.graficoCardHeader h5 {
+  margin: 0 0 10px 0;
+  font-weight: 600;
+  font-size: 16px;
+  color: #252d31;
+  letter-spacing: 0.3px;
+}
+
+.graficoCardHeader .badge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background-color: #cfe2ff;
+  color: #084298;
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  text-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.graficoCardBody {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.graficoCardBody canvas {
+  max-height: 300px;
+}
+
+/* --- FILTROS GLOBALES --- */
+.filtrosCard {
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 25px;
+}
+
+.filtrosCardHeader {
+  background: linear-gradient(135deg, #0d6efd 0%, #0d5fdd 100%);
+  border: none;
+  border-radius: 10px 10px 0 0;
+  padding: 18px 20px;
+}
+
+.filtrosCardHeader h5 {
+  color: white;
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+}
+
+.filtrosCardBody {
+  padding: 25px;
+}
+
+.filtrosFormLabel {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.filtrosControl {
+  border-radius: 8px;
+  border: 1.5px solid #e9ecef;
+  padding: 10px 14px;
+  background-color: white;
+  color: #333;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.filtrosControl:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+  outline: none;
+}
+
+.filtrosBtn {
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 10px 16px;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.filtrosBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* --- KPI CARDS --- */
+.kpiCard {
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid #0d6efd;
+  overflow: hidden;
+}
+
+.kpiCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.kpiCardBody {
+  padding: 25px 20px;
+}
+
+.kpiIcon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  display: block;
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.kpiCard:hover .kpiIcon {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.kpiTitle {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  margin-bottom: 8px !important;
+}
+
+.kpiValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #252d31;
+  margin: 12px 0 !important;
+  line-height: 1.2;
+}
+
+.fiveCard {
+  flex: auto;
+  width: 20%;
+}
+
+.chartjsTooltip {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* --- RESPONSIVE MEJORADO --- */
+@media (max-width: 992px) {
+  .kpiCard,
+  .graficoCard {
+    margin-bottom: 20px;
+  }
+  .filtrosCard :global(.row) {
+    gap: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+  }
+  .headerLeft h1 {
+    font-size: 22px;
+  }
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .headerBtn {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .graficosContainer {
+    padding: 15px;
+  }
+  .statsCardBody {
+    padding: 20px 15px;
+  }
+  .statsNumber,
+  .kpiValue {
+    font-size: 24px;
+  }
+
+  .kpiCard {
+    margin-bottom: 15px;
+  }
+  .kpiIcon {
+    font-size: 2rem;
+  }
+
+  .filtrosCardBody {
+    padding: 15px;
+  }
+  .filtrosBtn {
+    width: 100%;
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .graficoCard {
+    margin-bottom: 15px;
+  }
+  .graficoCardHeader h5 {
+    font-size: 14px;
+  }
+  .graficoCardBody {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .estadisticaContainer,
+  .graficosContainer {
+    padding: 10px;
+  }
+  .pageHeader {
+    padding: 10px;
+    gap: 10px;
+  }
+  .headerLeft h1 {
+    font-size: 18px;
+  }
+  .headerBtn {
+    width: 100%;
+    padding: 8px;
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+  .headerBtn:last-child {
+    margin-bottom: 0;
+  }
+
+  .kpiValue {
+    font-size: 20px;
+  }
+  .kpiIcon {
+    font-size: 1.8rem;
+  }
+}
+
+/* --- IMPRESIÓN PARA PDF --- */
+@media print {
+  body {
+    background-color: white;
+  }
+  .estadisticaContainer {
+    padding: 0;
+    background-color: white;
+    min-height: auto;
+  }
+
+  .pageHeader {
+    display: block;
+    background-color: white;
+    box-shadow: none;
+    border-bottom: 2px solid #0d6efd;
+    margin-bottom: 20px;
+    padding: 15px 0;
+  }
+
+  .headerLeft h1 {
+    font-size: 24px;
+    color: #0d6efd;
+  }
+  .pageSubtitle {
+    color: #666;
+    font-size: 13px;
+  }
+
+  .headerActions,
+  .filtrosCard {
+    display: none !important;
+  }
+
+  .kpiCard,
+  .graficoCard {
+    page-break-inside: avoid;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    margin-bottom: 15px;
+    background: white !important;
+    transform: none !important;
+  }
+
+  .graficoCardHeader {
+    background: #f8f9fa !important;
+    border-color: #ddd !important;
+  }
+
+  .graficoCardHeader h5 {
+    color: #0d6efd;
+    font-size: 14px;
+  }
+  .graficoCardBody {
+    padding: 15px;
+  }
+  canvas {
+    max-height: 300px;
+  }
+}

@@ -63,7 +63,7 @@ export class UsuarioController {
       try {
         if (!newUsuario.mail) {
           console.warn(
-            "El usuario no tiene un correo válido. Se omitió el envío del correo de bienvenida."
+            "El usuario no tiene un correo válido. Se omitió el envío del correo de bienvenida.",
           );
         } else {
           await sendWelcomeEmail(newUsuario, originalPassword);
@@ -223,5 +223,23 @@ export class UsuarioController {
   // Método legacy - mantener para compatibilidad
   changeStatus = async (req, res) => {
     return this.cambiarEstado(req, res);
+  };
+
+  // Reparar usuarios sin rol asignado
+  repairMissingRoles = async (req, res) => {
+    try {
+      console.log("🔧 Iniciando reparación de roles desde endpoint...");
+      const result = await this.usuarioModel.repairMissingRoles();
+      res.json({
+        message: "Reparación de roles completada",
+        ...result,
+      });
+    } catch (error) {
+      console.error("Error al reparar roles:", error);
+      res.status(500).json({
+        message: "Error al reparar roles",
+        error: error.message,
+      });
+    }
   };
 }

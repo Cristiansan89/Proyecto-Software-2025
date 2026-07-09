@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api.js";
+import servicioTurnoService from "../../services/servicioTurnoService.js";
 import { showWarning, showError, showInfo } from "../../utils/alertService";
+import styles from "../../styles/Docente.module.css";
 
 const DocenteDashboard = () => {
   const { user } = useAuth();
@@ -24,15 +26,30 @@ const DocenteDashboard = () => {
 
       // Cargar grados asignados al docente
       const gradosRes = await API.get(
-        `/docente-grados?idPersona=${user.idPersona || user.id_persona}`
+        `/docente-grados/grados-by-docente?idPersona=${user.idPersona || user.id_persona}`,
       );
       const gradosDocente = gradosRes.data || [];
 
       // Seleccionar el primer grado (principal) del docente
       const gradoPrincipal = gradosDocente.length > 0 ? gradosDocente[0] : null;
 
-      // Cargar servicios disponibles
-      const serviciosRes = await API.get("/servicios");
+      // Cargar servicios según el turno del grado principal
+      let servicios = [];
+      if (gradoPrincipal) {
+        try {
+          const serviciosRes = await servicioTurnoService.getServiciosByTurno(
+            gradoPrincipal.idTurno,
+          );
+          servicios =
+            serviciosRes?.filter((s) => s.estadoServicio === "Activo") || [];
+        } catch (error) {
+          //console.error("Error al cargar servicios del turno:", error);
+          showError(
+            "Error",
+            "❌ Ocurrió un error al cargar los servicios del turno. Por favor, intenta nuevamente más tarde.",
+          );
+        }
+      }
 
       // Si tiene grado, cargar información de alumnos
       let totalAlumnos = 0;
@@ -40,23 +57,22 @@ const DocenteDashboard = () => {
         try {
           const alumnosRes = await API.get(
             `/alumnos-grado?nombreGrado=${encodeURIComponent(
-              gradoPrincipal.nombreGrado
-            )}`
+              gradoPrincipal.nombreGrado,
+            )}`,
           );
           totalAlumnos = alumnosRes.data?.length || 0;
         } catch (error) {
           //console.error("Error al cargar alumnos:", error);
           showError(
             "Error",
-            "❌ Ocurrió un error al cargar los alumnos de tu grado. Por favor, intenta nuevamente más tarde."
+            "❌ Ocurrió un error al cargar los alumnos de tu grado. Por favor, intenta nuevamente más tarde.",
           );
         }
       }
 
       setDatos({
         grado: gradoPrincipal,
-        servicios:
-          serviciosRes.data?.filter((s) => s.estado === "Activo") || [],
+        servicios,
         asistenciasRecientes: [],
         totalAlumnos,
         estadisticasAsistencia: {},
@@ -65,7 +81,7 @@ const DocenteDashboard = () => {
       //console.error("Error al cargar datos del docente:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los datos del docente. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los datos del docente. Por favor, intente nuevamente más tarde.",
       );
     } finally {
       setLoading(false);
@@ -77,7 +93,7 @@ const DocenteDashboard = () => {
       if (!datos.grado) {
         showWarning(
           "Advertencia",
-          "No tienes un grado asignado para registrar asistencias"
+          "No tienes un grado asignado para registrar asistencias",
         );
         return;
       }
@@ -88,7 +104,7 @@ const DocenteDashboard = () => {
         idPersonaDocente: user.idPersona || user.id_persona,
         nombreGrado: datos.grado.nombreGrado,
         fecha: fechaHoy,
-        idServicio: servicio.id_servicio,
+        idServicio: servicio.idServicio,
       });
 
       // Abrir el enlace generado
@@ -113,178 +129,99 @@ const DocenteDashboard = () => {
   }
 
   return (
-    <div className="docente-dashboard">
-      {/* Header de Bienvenida */}
-      <div className="welcome-header">
-        <div className="welcome-content">
-          <h1>👨‍🏫 Bienvenido, {user?.nombres || user?.nombre}</h1>
-          <p className="welcome-subtitle">Panel de Control Docente</p>
-        </div>
+    <div>
+      <div className="page-header text-dark ">
+        <h2>
+          <i className="fas fa-person-chalkboard me-2"></i>
+          Bienvenido, {user?.nombres || user?.nombre}
+        </h2>
       </div>
 
       {/* Estadísticas Rápidas */}
-      <div className="row mb-4">
-        <div className="col-md-3">
-          <div className="stats-card">
-            <div className="stats-icon">
-              <i className="fas fa-chalkboard-teacher"></i>
-            </div>
-            <div className="stats-content">
-              <h3>{datos.grado ? "1" : "0"}</h3>
-              <p>Grado Asignado</p>
-            </div>
-          </div>
+      <div className={styles.dashboardStatsDocente}>
+        <div className={`${styles.statsCard} ${styles.alumnosDashboard}`}>
+          <h3>
+            <i className="fas fa-users me-2"></i>
+            {datos.totalAlumnos}
+          </h3>
+          <p>Alumnos en mi Grado</p>
         </div>
-        <div className="col-md-3">
-          <div className="stats-card">
-            <div className="stats-icon">
-              <i className="fas fa-users"></i>
-            </div>
-            <div className="stats-content">
-              <h3>{datos.totalAlumnos}</h3>
-              <p>Alumnos en mi Grado</p>
-            </div>
-          </div>
+        <div className={`${styles.statsCard} ${styles.serviciosDashboard}`}>
+          <h3>
+            <i className="fas fa-utensils me-2"></i>
+            {datos.servicios.length}
+          </h3>
+          <p>Servicios Disponibles</p>
         </div>
-        <div className="col-md-3">
-          <div className="stats-card">
-            <div className="stats-icon">
-              <i className="fas fa-utensils"></i>
-            </div>
-            <div className="stats-content">
-              <h3>{datos.servicios.length}</h3>
-              <p>Servicios Disponibles</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="stats-card">
-            <div className="stats-icon">
-              <i className="fas fa-calendar-day"></i>
-            </div>
-            <div className="stats-content">
-              <h3>
-                {new Date().toLocaleDateString("es-ES", { day: "numeric" })}
-              </h3>
-              <p>Hoy</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Acciones Rápidas */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card action-card">
-            <div className="card-header">
-              <h3>📋 Registro de Asistencias</h3>
-              <p className="mb-0">
-                Registra la asistencia de tus alumnos para los servicios de
-                comedor
-              </p>
-            </div>
-            <div className="card-body">
-              {!datos.grado ? (
-                <div className="no-grados">
-                  <i className="fas fa-info-circle"></i>
-                  <p>No tienes un grado asignado actualmente.</p>
-                </div>
-              ) : (
-                <div className="grado-principal">
-                  <div className="grado-card">
-                    <div className="grado-header">
-                      <h4>📚 {datos.grado.nombreGrado}</h4>
-                      <div className="grado-info">
-                        <span className="badge bg-info me-2">
-                          Ciclo{" "}
-                          {new Date(datos.grado.cicloLectivo).getFullYear()}
-                        </span>
-                        <span className="badge bg-success">
-                          {datos.totalAlumnos} alumnos
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="servicios-list">
-                      <p className="servicios-title">
-                        Registrar asistencia para:
-                      </p>
-                      <div className="servicios-buttons">
-                        {datos.servicios.map((servicio) => (
-                          <button
-                            key={servicio.id_servicio}
-                            className="btn btn-primary btn-servicio me-2 mb-2"
-                            onClick={() => generarEnlaceAsistencia(servicio)}
-                          >
-                            🍽️ {servicio.nombre}
-                            <small className="d-block">
-                              ({servicio.descripcion})
-                            </small>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+        <div className={`${styles.statsCard} ${styles.fechaHoy}`}>
+          <h3>
+            {" "}
+            <i className="fas fa-calendar-day me-2"></i>
+            {new Date().toLocaleDateString("es-ES", {
+              day: "numeric",
+            })}{" "}
+            -{" "}
+            {new Date()
+              .toLocaleDateString("es-ES", { month: "long" })
+              .toUpperCase()}
+          </h3>
+          <p>Hoy</p>
         </div>
       </div>
 
       {/* Información del Día */}
       <div className="row">
         <div className="col-md-6">
-          <div className="card info-card">
+          {/* Acciones Rápidas */}
+          <div className="card asistencia-card">
             <div className="card-header">
-              <h4>📅 Información del Día</h4>
+              <h5>
+                <i className="fas fa-utensils me-1"></i>
+                Menú del Día
+              </h5>
+              <p className="mb-0">
+                Consulta el menú del día para tu grado y registra asistencias
+              </p>
             </div>
             <div className="card-body">
-              <div className="info-item">
-                <strong>Fecha:</strong>
-                <span>
-                  {new Date().toLocaleDateString("es-ES", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </span>
-              </div>
-              <div className="info-item">
-                <strong>Mi Grado:</strong>
-                <span className="badge bg-primary">
-                  {datos.grado ? datos.grado.nombreGrado : "Sin asignar"}
-                </span>
-              </div>
-              <div className="info-item">
-                <strong>Rol:</strong>
-                <span className="badge bg-success">
-                  {user?.rol || user?.nombre_rol}
-                </span>
-              </div>
-              {datos.grado && (
-                <div className="info-item">
-                  <strong>Docente:</strong>
-                  <span>
-                    {datos.grado.nombre} {datos.grado.apellido}
-                  </span>
+              {datos.servicios.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <i className="fas fa-utensils"></i>
+                  <p className="text-muted">
+                    No hay servicios activos para tu grado hoy.
+                  </p>
+                </div>
+              ) : (
+                <div className="list-group">
+                  {datos.servicios.map((servicio) => (
+                    <button
+                      key={servicio.idServicio}
+                      className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                      onClick={() => generarEnlaceAsistencia(servicio)}
+                    >
+                      <div>
+                        <h5 className="mb-1">{servicio.nombreServicio}</h5>
+                        <small className="text-muted">
+                          {servicio.descripcion}
+                        </small>
+                      </div>
+                      <i className="fas fa-arrow-right"></i>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="col-md-6">
-          <div className="card help-card">
+        <div className="col-md-6 mb-4">
+          <div className={`card shadow-sm ${styles.helpCard}`}>
             <div className="card-header">
               <h4>❓ ¿Cómo registrar asistencias?</h4>
             </div>
             <div className="card-body">
-              <ol className="help-steps">
-                <li>
-                  Selecciona tu grado en la sección "Registro de Asistencias"
-                </li>
+              <ol className={styles.helpSteps}>
+                <li>Selecciona tu grado en la sección "Menú del Día"</li>
                 <li>
                   Haz clic en el servicio para el cual quieres registrar
                   asistencia

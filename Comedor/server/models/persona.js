@@ -211,4 +211,19 @@ export class PersonaModel {
       throw new Error("Error al actualizar la persona");
     }
   }
+
+  static async cambiarEstado({ id, estado }) {
+    try {
+      await connection.query(
+        `UPDATE Personas
+         SET estado = ?, fechaModificacion = NOW()
+         WHERE id_persona = ?;`,
+        [estado, id]
+      );
+
+      return this.getById({ id });
+    } catch (error) {
+      throw new Error("Error al cambiar el estado de la persona");
+    }
+  }
 }

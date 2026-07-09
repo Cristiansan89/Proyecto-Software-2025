@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import "../../styles/RegistroAsistenciasMovil.css"; // Reutilizamos estilos
+import MovilStyle from "../../styles/Movil.module.css";
 
 const RegistroExitoso = () => {
   const location = useLocation();
@@ -7,11 +7,11 @@ const RegistroExitoso = () => {
   const { mensaje, registradas, servicio } = location.state || {};
 
   return (
-    <div className="movil-container">
-      <div className="error-movil">
+    <div className={MovilStyle.containerMovil}>
+      <div className={MovilStyle.errorMovil}>
         {" "}
         {/* Usamos la clase de contenedor de mensajes */}
-        <div className="success-icon" style={{ fontSize: "4rem" }}>
+        <div className={MovilStyle.iconSuccess} style={{ fontSize: "4rem" }}>
           ✅
         </div>
         <h2>{mensaje || "¡Operación Exitosa!"}</h2>
@@ -20,7 +20,7 @@ const RegistroExitoso = () => {
           servicio de <strong>{servicio}</strong>.
         </p>
         <br />
-        <button className="btn-guardar" onClick={() => navigate("/")}>
+        <button className={MovilStyle.btnGuardar} onClick={() => navigate("/")}>
           Volver al Inicio
         </button>
       </div>

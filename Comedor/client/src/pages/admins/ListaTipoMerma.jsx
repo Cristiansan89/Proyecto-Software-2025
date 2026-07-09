@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import tipoMermaService from "../../services/tipoMermaService.js";
 import TipoMermaForm from "../../components/admin/TipoMermaForm.jsx";
 import {
@@ -9,6 +10,10 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const ListaTipoMerma = () => {
   const [tiposMerma, setTiposMerma] = useState([]);
@@ -17,10 +22,8 @@ const ListaTipoMerma = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("crear");
   const [selectedTipo, setSelectedTipo] = useState(null);
-  const [sortConfig, setSortConfig] = useState({
-    key: "id_tipo_merma",
-    direction: "asc",
-  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   // Cargar tipos de merma
   const cargarTiposMerma = async () => {
@@ -28,13 +31,15 @@ const ListaTipoMerma = () => {
       setLoading(true);
       setError(null);
       const data = await tipoMermaService.getAll();
+      const dataOrdenada = (data || []).sort((a, b) => {
+        return Number(a.id_tipo_merma) - Number(b.id_tipo_merma);
+      });
       setTiposMerma(data);
     } catch (error) {
-      //console.error("Error al cargar tipos de merma:", error);
       showError(
         "Error",
         "Error al cargar los tipos de merma: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
       );
       setError("Error al cargar los tipos de merma");
     } finally {
@@ -60,30 +65,26 @@ const ListaTipoMerma = () => {
     setShowModal(true);
   };
 
-  // Ordenar tabla
-  const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
+  const filteredTiposMermas = tiposMerma.filter((tipo) => {
+    const matchesSearch = (tipo.nombre || "")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "" || tipo.estado === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleSearchTerm = (e) => {
+    setSearchTerm(e.target.value);
   };
 
-  // Ordenar datos
-  const tiposMermaOrdenados = [...tiposMerma].sort((a, b) => {
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+  const handleStatusFilter = (e) => {
+    setStatusFilter(e.target.value);
+  };
 
-    if (typeof aValue === "number") {
-      return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
-    }
-
-    const aStr = String(aValue).toLowerCase();
-    const bStr = String(bValue).toLowerCase();
-    return sortConfig.direction === "asc"
-      ? aStr.localeCompare(bStr)
-      : bStr.localeCompare(aStr);
-  });
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
+  };
 
   // Eliminar tipo
   const handleEliminar = async (id, nombre) => {
@@ -92,7 +93,7 @@ const ListaTipoMerma = () => {
       "Eliminar Tipo de Merma",
       `¿Está seguro de que desea eliminar el tipo de merma "${nombre}"?`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     // 2. Si el usuario confirma, ejecutamos la acción
@@ -104,14 +105,14 @@ const ListaTipoMerma = () => {
         await cargarTiposMerma();
         showSuccess(
           "Éxito",
-          `Tipo de merma "${nombre}" eliminado exitosamente`
+          `Tipo de merma "${nombre}" eliminado exitosamente`,
         );
       } catch (error) {
         // Manejo de errores sin console.log innecesarios
         showError(
           "Error",
           "Error al eliminar el tipo de merma: " +
-            (error.response?.data?.message || error.message)
+            (error.response?.data?.message || error.message),
         );
       }
     }
@@ -133,154 +134,190 @@ const ListaTipoMerma = () => {
 
   if (loading) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "400px" }}
-      >
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Tipos de Mermas...</p>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="header-left">
-          <h2 className="page-title-sub">Gestionar Tipos de Mermas</h2>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h2 className={ContenidoStyle.pageTitle}>
+            Gestionar Tipos de Mermas
+          </h2>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-primary" onClick={handleNuevo}>
-            <i className="fas fa-plus me-2"></i>Nuevo Tipo de Merma
+        <div className={ContenidoStyle.headerActions}>
+          <button
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
+            onClick={handleNuevo}
+          >
+            <i className="fas fa-plus me-1"></i>Nuevo Tipo de Merma
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="alert alert-danger" role="alert">
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger}`}
+          role="alert"
+        >
           {error}
         </div>
       )}
 
+      {/* Filtros */}
+      <div className={ContenidoStyle.headerLeft}>
+        <div className={ContenidoStyle.searchFilters}>
+          <div className={ContenidoStyle.searchBar}>
+            <input
+              type="text"
+              className={ContenidoStyle.searchInput}
+              placeholder="Buscar por nombre..."
+              value={searchTerm}
+              onChange={handleSearchTerm}
+            />
+          </div>
+          <div className={ContenidoStyle.filterActions}>
+            <select
+              className={ContenidoStyle.filterSelect}
+              value={statusFilter}
+              onChange={handleStatusFilter}
+            >
+              <option value="">Todos los estados</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+            {(searchTerm || statusFilter) && (
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={clearFilters}
+              >
+                <i className="fas fa-times"></i> Limpiar
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Tabla de tipos de merma */}
-      <div className="table-container">
-        {tiposMerma.length === 0 ? (
-            <div colSpan={12}>
-              <div className="empty-state">
-                <i className="fas fa-search empty-icon"></i>
-                <h5>No se encontraron tipos de merma</h5>
-                <p>No hay tipos de merma que coincidan con tu búsqueda.</p>
-              </div>
-            </div>
-        ) : (
-          <div className="scrollable-table">
-            <div className="table-body-scroll">
-              <table className="table table-striped data-table">
-                <thead>
-                  <tr>
-                    <th>
-                      <button
-                        className="btn btn-link p-0 text-dark"
-                        onClick={() => handleSort("id_tipo_merma")}
-                        style={{ textDecoration: "none" }}
-                      >
-                        #
-                        {sortConfig.key === "id_tipo_merma" && (
-                          <i
-                            className={`fas fa-sort-${
-                              sortConfig.direction === "asc" ? "up" : "down"
-                            } ms-2`}
-                          ></i>
-                        )}
-                      </button>
-                    </th>
-                    <th>Nombre</th>
-                    <th>Descripción</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tiposMermaOrdenados.map((tipo) => (
-                    <tr key={tipo.id_tipo_merma}>
-                      <td>
-                        <strong>{tipo.id_tipo_merma}</strong>
-                      </td>
-                      <td>
-                        <i className="fas fa-tag me-2"></i>
-                        {tipo.nombre}
-                      </td>
-                      <td>{tipo.descripcion || "-"}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            tipo.estado === "Activo"
-                              ? "bg-success"
-                              : "bg-secondary"
-                          }`}
-                        >
-                          {tipo.estado}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            className="btn-action btn-edit"
-                            onClick={() => handleEditar(tipo)}
-                            title="Editar"
-                          >
-                            <i className="fas fa-edit"></i>
-                          </button>
-                          <button
-                            className="btn-action btn-delete"
-                            onClick={() =>
-                              handleEliminar(tipo.id_tipo_merma, tipo.nombre)
-                            }
-                            title="Eliminar"
-                          >
-                            <i className="fas fa-trash-alt"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <div className={TablaStyle.tableContainer}>
+        {filteredTiposMermas.length === 0 ? (
+          <div colSpan={12}>
+            <div className={TablaStyle.emptyState}>
+              <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+              <h5>No se encontraron tipos de merma</h5>
+              <p>No hay tipos de merma que coincidan con tu búsqueda.</p>
             </div>
           </div>
+        ) : (
+          <table className={`${TablaStyle.tableData} table table-striped`}>
+            <thead className={TablaStyle.tableHeaderFixed}>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTiposMermas.map((tipo) => (
+                <tr key={tipo.id_tipo_merma}>
+                  <td>
+                    <strong>{tipo.id_tipo_merma}</strong>
+                  </td>
+                  <td>
+                    <div className={TablaStyle.titleTable}>
+                      <i className="fas fa-tag me-2"></i>
+                      <strong>{tipo.nombre}</strong>
+                    </div>
+                  </td>
+                  <td>
+                    {" "}
+                    <div className={TablaStyle.titleDescripcion}>
+                      {tipo.descripcion || "-"}
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      className={`${TablaStyle.statusBadge} ${tipo.estado.toLowerCase() === "activo" ? TablaStyle.activo : TablaStyle.inactivo}`}
+                    >
+                      {tipo.estado}
+                    </span>
+                  </td>
+                  <td>
+                    <div className={TablaStyle.actionButtons}>
+                      <button
+                        className={`${TablaStyle.btnAction} ${TablaStyle.btnEdit}`}
+                        onClick={() => handleEditar(tipo)}
+                        title="Editar"
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
+                        onClick={() =>
+                          handleEliminar(tipo.id_tipo_merma, tipo.nombre)
+                        }
+                        title="Eliminar"
+                      >
+                        <i className="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
       {/* Modal para agregar/editar tipo */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content configuracion-modal">
-            <div className="modal-header">
-              <h4 className="modal-title">
-                <i className="fas fa-tags me-2"></i>
-                {modalMode === "crear"
-                  ? "Nuevo Tipo de Merma"
-                  : "Editar Tipo de Merma"}
-              </h4>
-              <button
-                className="modal-close text-white"
-                onClick={handleCerrarModal}
-              >
-                <i className="fas fa-times"></i>
-              </button>
+      {showModal &&
+        createPortal(
+          <div className={`${FormularioStyle.modal} fade show d-block`}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-tags me-2"></i>
+                    {modalMode === "crear"
+                      ? "Nuevo Tipo de Merma"
+                      : "Editar Tipo de Merma"}
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={handleCerrarModal}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+
+                <div className={FormularioStyle.modalBody}>
+                  <TipoMermaForm
+                    tipoMerma={selectedTipo}
+                    mode={modalMode}
+                    onSave={handleGuardadoExitoso}
+                    onCancel={handleCerrarModal}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="modal-body">
-              <TipoMermaForm
-                tipoMerma={selectedTipo}
-                mode={modalMode}
-                onSave={handleGuardadoExitoso}
-                onCancel={handleCerrarModal}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
+
+      {showModal &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

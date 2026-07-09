@@ -51,6 +51,16 @@ const docenteGradoService = {
         }
     },
 
+    // Obtener grados asignados a un docente específico
+    async getGradosByDocente(idPersona) {
+        try {
+            const response = await api.get(`/docente-grados/grados-by-docente?idPersona=${idPersona}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     // Crear nueva asignación
     async create(data) {
         try {

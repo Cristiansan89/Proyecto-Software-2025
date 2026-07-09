@@ -9,6 +9,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -200,315 +201,275 @@ const InsumoForm = ({ insumo, mode, onSave, onCancel }) => {
   }, [insumo]);
 
   return (
-    <div className="insumo-form">
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          {/* Información Básica */}
-          <div>
-            <h5 className="section-title">Información Básica</h5>
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-info-circle me-2"></i>Información Básica
+      </h4>
 
-            <div className="form-group">
-              <label htmlFor="nombreInsumo" className="form-label required ">
-                Nombre del Insumo
-              </label>
-              <input
-                type="text"
-                id="nombreInsumo"
-                name="nombreInsumo"
-                className={`form-control ${
-                  errors.nombreInsumo ? "is-invalid" : ""
-                }`}
-                value={formData.nombreInsumo}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-                placeholder="Ingrese el nombre del insumo"
-                maxLength="100"
-              />
-              {errors.nombreInsumo && (
-                <div className="invalid-feedback">{errors.nombreInsumo}</div>
-              )}
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="nombreInsumo"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          Nombre del Insumo
+        </label>
+        <input
+          type="text"
+          id="nombreInsumo"
+          name="nombreInsumo"
+          className={`${ComponenteStyle.formControl} ${errors.nombreInsumo ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.nombreInsumo}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+          placeholder="Ingrese el nombre del insumo"
+          maxLength="100"
+        />
+        {errors.nombreInsumo && (
+          <div className={ComponenteStyle.invalidFeedback}>
+            {errors.nombreInsumo}
+          </div>
+        )}
+      </div>
+
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="descripcion" className={ComponenteStyle.formLabel}>
+          Descripción
+        </label>
+        <textarea
+          id="descripcion"
+          name="descripcion"
+          className={`${ComponenteStyle.formControl} ${errors.descripcion ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.descripcion}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+          placeholder="Ingrese una descripción del insumo (opcional)"
+          rows="3"
+          maxLength="255"
+        />
+        {errors.descripcion && (
+          <div className={ComponenteStyle.invalidFeedback}>
+            {errors.descripcion}
+          </div>
+        )}
+        <small className={`${ComponenteStyle.formText} text-muted`}>
+          {formData.descripcion.length}/255 caracteres
+        </small>
+      </div>
+
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="categoria" className={ComponenteStyle.formLabel}>
+          Categoría
+        </label>
+        <select
+          id="categoria"
+          name="categoria"
+          className={ComponenteStyle.formSelect}
+          value={formData.categoria}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+        >
+          {categorias.map((categoria) => (
+            <option key={categoria.value} value={categoria.value}>
+              {categoria.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className={ComponenteStyle.formGroup}>
+        <label
+          htmlFor="unidadMedida"
+          className={`${ComponenteStyle.formLabel} required`}
+        >
+          Unidad de Medida
+        </label>
+        <select
+          id="unidadMedida"
+          name="unidadMedida"
+          className={`${ComponenteStyle.formSelect} ${errors.unidadMedida ? ComponenteStyle.isInvalid : ""}`}
+          value={formData.unidadMedida}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+        >
+          <option value="">Seleccionar unidad de medida</option>
+          {unidadesMedida.map((unidad) => (
+            <option key={unidad.value} value={unidad.value}>
+              {unidad.label}
+            </option>
+          ))}
+        </select>
+        {errors.unidadMedida && (
+          <div className={ComponenteStyle.invalidFeedback}>
+            {errors.unidadMedida}
+          </div>
+        )}
+      </div>
+
+      {/* Información de Stock */}
+
+      <h4 className={`${ComponenteStyle.sectionTitle} mt-5`}>
+        Control de Stock
+      </h4>
+
+      <div className={ComponenteStyle.formRow}>
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="stockMinimo" className={ComponenteStyle.formLabel}>
+            Stock Mínimo
+          </label>
+          <input
+            type="number"
+            id="stockMinimo"
+            name="stockMinimo"
+            className={`${ComponenteStyle.formControl} ${errors.stockMinimo ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.stockMinimo}
+            onChange={handleInputChange}
+            disabled={isViewMode}
+            placeholder="0.000"
+            min="0"
+            step="0.001"
+          />
+          {errors.stockMinimo && (
+            <div className={ComponenteStyle.invalidFeedback}>
+              {errors.stockMinimo}
             </div>
-
-            <div className="form-group">
-              <label htmlFor="descripcion" className="form-label ">
-                Descripción
-              </label>
-              <textarea
-                id="descripcion"
-                name="descripcion"
-                className={`form-control ${
-                  errors.descripcion ? "is-invalid" : ""
-                }`}
-                value={formData.descripcion}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-                placeholder="Ingrese una descripción del insumo (opcional)"
-                rows="3"
-                maxLength="255"
-              />
-              {errors.descripcion && (
-                <div className="invalid-feedback">{errors.descripcion}</div>
-              )}
-              <small className="form-text text-muted">
-                {formData.descripcion.length}/255 caracteres
-              </small>
+          )}
+          <small className={`${ComponenteStyle.formText} text-muted`}>
+            Cantidad mínima antes de requerir reposición
+          </small>
+        </div>
+        <div className={ComponenteStyle.formGroup}>
+          <label htmlFor="stockMaximo" className={ComponenteStyle.formLabel}>
+            Stock Máximo
+          </label>
+          <input
+            type="number"
+            id="stockMaximo"
+            name="stockMaximo"
+            className={`${ComponenteStyle.formControl} ${errors.stockMaximo ? ComponenteStyle.isInvalid : ""}`}
+            value={formData.stockMaximo}
+            onChange={handleInputChange}
+            disabled={isViewMode}
+            placeholder="0.000"
+            min="0"
+            step="0.001"
+          />
+          {errors.stockMaximo && (
+            <div className={ComponenteStyle.invalidFeedback}>
+              {errors.stockMaximo}
             </div>
-
-            <div className="form-group">
-              <label htmlFor="categoria" className="form-label ">
-                Categoría
-              </label>
-              <select
-                id="categoria"
-                name="categoria"
-                className="form-control"
-                value={formData.categoria}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-              >
-                {categorias.map((categoria) => (
-                  <option key={categoria.value} value={categoria.value}>
-                    {categoria.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="unidadMedida" className="form-label required ">
-                Unidad de Medida
-              </label>
-              <select
-                id="unidadMedida"
-                name="unidadMedida"
-                className={`form-control ${
-                  errors.unidadMedida ? "is-invalid" : ""
-                }`}
-                value={formData.unidadMedida}
-                onChange={handleInputChange}
-                disabled={isViewMode}
-              >
-                <option value="">Seleccionar unidad de medida</option>
-                {unidadesMedida.map((unidad) => (
-                  <option key={unidad.value} value={unidad.value}>
-                    {unidad.label}
-                  </option>
-                ))}
-              </select>
-              {errors.unidadMedida && (
-                <div className="invalid-feedback">{errors.unidadMedida}</div>
-              )}
-            </div>
-
-            {/* Información de Stock */}
-            <div className="mt-5">
-              <h5 className="section-title">Control de Stock</h5>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="stockMinimo" className="form-label ">
-                    Stock Mínimo
-                  </label>
-                  <input
-                    type="number"
-                    id="stockMinimo"
-                    name="stockMinimo"
-                    className={`form-control ${
-                      errors.stockMinimo ? "is-invalid" : ""
-                    }`}
-                    value={formData.stockMinimo}
-                    onChange={handleInputChange}
-                    disabled={isViewMode}
-                    placeholder="0.000"
-                    min="0"
-                    step="0.001"
-                  />
-                  {errors.stockMinimo && (
-                    <div className="invalid-feedback">{errors.stockMinimo}</div>
-                  )}
-                  <small className="form-text text-muted">
-                    Cantidad mínima antes de requerir reposición
-                  </small>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="stockMaximo" className="form-label ">
-                    Stock Máximo
-                  </label>
-                  <input
-                    type="number"
-                    id="stockMaximo"
-                    name="stockMaximo"
-                    className={`form-control ${
-                      errors.stockMaximo ? "is-invalid" : ""
-                    }`}
-                    value={formData.stockMaximo}
-                    onChange={handleInputChange}
-                    disabled={isViewMode}
-                    placeholder="0.000"
-                    min="0"
-                    step="0.001"
-                  />
-                  {errors.stockMaximo && (
-                    <div className="invalid-feedback">{errors.stockMaximo}</div>
-                  )}
-                  <small className="form-text text-muted">
-                    Cantidad máxima permitida en inventario
-                  </small>
-                </div>
-                <div>
-                  <div className="form-group">
-                    <label htmlFor="stockActual" className="form-label ">
-                      Stock Actual
-                    </label>
-                    <input
-                      type="number"
-                      id="stockActual"
-                      name="stockActual"
-                      className={`form-control ${
-                        errors.stockActual ? "is-invalid" : ""
-                      }`}
-                      value={formData.stockActual}
-                      onChange={handleInputChange}
-                      disabled={isViewMode}
-                      placeholder="0.000"
-                      min="0"
-                      step="0.001"
-                    />
-                    {errors.stockActual && (
-                      <div className="invalid-feedback">
-                        {errors.stockActual}
-                      </div>
-                    )}
-                    <small className="form-text text-muted">
-                      Cantidad disponible en inventario
-                    </small>
-                  </div>
-                </div>
+          )}
+          <small className={`${ComponenteStyle.formText} text-muted`}>
+            Cantidad máxima permitida en inventario
+          </small>
+        </div>
+        <div>
+          <div className={ComponenteStyle.formGroup}>
+            <label htmlFor="stockActual" className={ComponenteStyle.formLabel}>
+              Stock Actual
+            </label>
+            <input
+              type="number"
+              id="stockActual"
+              name="stockActual"
+              className={`${ComponenteStyle.formControl} ${
+                errors.stockActual ? ComponenteStyle.isInvalid : ""
+              }`}
+              value={formData.stockActual}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+              placeholder="0.000"
+              min="0"
+              step="0.001"
+            />
+            {errors.stockActual && (
+              <div className={ComponenteStyle.invalidFeedback}>
+                {errors.stockActual}
               </div>
-
-              {/* Alerta de stock bajo */}
-              {Number(formData.stockActual) >= 0 &&
-                Number(formData.stockMinimo) > 0 &&
-                Number(formData.stockActual) <=
-                  Number(formData.stockMinimo) && (
-                  <div className="alert alert-warning ">
-                    <p>
-                      <i className="fas fa-exclamation-triangle mx-1"></i>
-                      <b>Atención: </b> El stock actual está por debajo o igual
-                      al mínimo establecido.
-                    </p>
-                  </div>
-                )}
-
-              {/* Estado */}
-              <div className="form-group">
-                <label htmlFor="estado" className="form-label ">
-                  Estado
-                </label>
-                <select
-                  id="estado"
-                  name="estado"
-                  className="form-control"
-                  value={formData.estado}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                >
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                </select>
-              </div>
-
-              {/* Información adicional en modo vista */}
-              {isViewMode && insumo && (
-                <div className="mt-4">
-                  <div className="info-card">
-                    <h6 className="info-title">Información Adicional</h6>
-                    <div className="info-row">
-                      <span className="info-label">ID del Insumo:</span>
-                      <span className="info-value">{insumo.idInsumo}</span>
-                    </div>
-                    {insumo.fecha && (
-                      <div className="info-row">
-                        <span className="info-label">Fecha de Registro:</span>
-                        <span className="info-value">
-                          {new Date(insumo.fecha).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                    <div className="info-row">
-                      <span className="info-label">Categoría:</span>
-                      <span className="info-value">{insumo.categoria}</span>
-                    </div>
-                    <div className="info-row">
-                      <span className="info-label">Estado del Stock:</span>
-                      <span
-                        className={`info-value ${
-                          insumo.stockActual <= insumo.stockMinimo * 0.75
-                            ? "text-danger"
-                            : insumo.stockActual <= insumo.stockMinimo
-                              ? "text-warning"
-                              : "text-success"
-                        }`}
-                      >
-                        {insumo.stockActual <= insumo.stockMinimo * 0.75
-                          ? "Stock Crítico"
-                          : insumo.stockActual <= insumo.stockMinimo
-                            ? "Stock Bajo"
-                            : "Stock Bueno"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
+            <small className={`${ComponenteStyle.formText} text-muted`}>
+              Cantidad disponible en inventario
+            </small>
           </div>
         </div>
+      </div>
 
-        {/* Alerta de error del servidor */}
-        {serverError && (
+      {/* Alerta de stock bajo */}
+      {Number(formData.stockActual) >= 0 &&
+        Number(formData.stockMinimo) > 0 &&
+        Number(formData.stockActual) <= Number(formData.stockMinimo) && (
           <div
-            className="alert alert-danger alert-dismissible fade show"
-            role="alert"
+            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning}`}
           >
-            <i className="fas fa-exclamation-circle me-2"></i>
-            {serverError}
+            <p>
+              <i className="fas fa-exclamation-triangle mx-1"></i>
+              <b>Atención: </b> El stock actual está por debajo o igual al
+              mínimo establecido.
+            </p>
           </div>
         )}
 
-        {/* Botones */}
-        <div className="form-actions mt-4">
+      {/* Estado */}
+      <div className={ComponenteStyle.formGroup}>
+        <label htmlFor="estado" className={ComponenteStyle.formLabel}>
+          Estado
+        </label>
+        <select
+          id="estado"
+          name="estado"
+          className={ComponenteStyle.formControl}
+          value={formData.estado}
+          onChange={handleInputChange}
+          disabled={isViewMode}
+        >
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
+
+      {/* Alerta de error del servidor */}
+      {serverError && (
+        <div
+          className={`${ComponenteStyle.alert} ${ComponenteStyle.alertDanger} alert-dismissible fade show`}
+          role="alert"
+        >
+          <i className="fas fa-exclamation-circle me-2"></i>
+          {serverError}
+        </div>
+      )}
+
+      {/* Botones */}
+      <div className={ComponenteStyle.formActions}>
+        <button
+          type="button"
+          className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+          onClick={onCancel}
+          disabled={loading}
+        >
+          <i className="fas fa-times"></i>
+          {isViewMode ? "Cerrar" : "Cancelar"}
+        </button>
+
+        {!isViewMode && (
           <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onCancel}
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
             disabled={loading}
           >
-            <i className="fas fa-times"></i>
-            {isViewMode ? "Cerrar" : "Cancelar"}
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save"></i>
+                {isCreateMode ? "Crear Insumo" : "Actualizar Insumo"}
+              </>
+            )}
           </button>
-
-          {!isViewMode && (
-            <button
-              type="submit"
-              className="btn btn-primary me-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save"></i>
-                  {isCreateMode ? "Crear Insumo" : "Actualizar Insumo"}
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </form>
-    </div>
+        )}
+      </div>
+    </form>
   );
 };
 

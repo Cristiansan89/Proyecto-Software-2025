@@ -1,16 +1,12 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import API from "../../services/api";
-import {
-  showSuccess,
-  showError,
-  showWarning,
-  showInfo,
-  showToast,
-  showConfirm,
-} from "../../utils/alertService";
-import "../../styles/ConfiguracionServiciosAutomaticos.css";
+import { showError, showSuccess, showConfirm } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
-// Funciones de configuración automática y servicios integradas
 const serviciosAPI = {
   getAll: async () => {
     try {
@@ -28,48 +24,41 @@ const configuracionAutomaticaAPI = {
       const response = await API.get("/configuracion-servicios-automaticos");
       return response.data;
     } catch (error) {
-      //console.error("Error al obtener configuraciones:", error);
       showError("Error al obtener las configuraciones automáticas.");
       throw error;
     }
   },
-
   crear: async (datos) => {
     try {
       const response = await API.post(
         "/configuracion-servicios-automaticos",
-        datos
+        datos,
       );
       return response.data;
     } catch (error) {
-      //console.error("Error al crear configuración:", error);
       showError("Error al crear la configuración automática.");
       throw error;
     }
   },
-
   actualizar: async (id, datos) => {
     try {
       const response = await API.patch(
         `/configuracion-servicios-automaticos/${id}`,
-        datos
+        datos,
       );
       return response.data;
     } catch (error) {
-      //console.error("Error al actualizar configuración:", error);
       showError("Error al actualizar la configuración automática.");
       throw error;
     }
   },
-
   eliminar: async (id) => {
     try {
       const response = await API.delete(
-        `/configuracion-servicios-automaticos/${id}`
+        `/configuracion-servicios-automaticos/${id}`,
       );
       return response.data;
     } catch (error) {
-      //console.error("Error al eliminar configuración:", error);
       showError("Error al eliminar la configuración automática.");
       throw error;
     }
@@ -81,7 +70,6 @@ const ConfiguracionServiciosAutomaticos = () => {
   const [servicios, setServicios] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editando, setEditando] = useState(null);
   const [formData, setFormData] = useState({
@@ -104,16 +92,14 @@ const ConfiguracionServiciosAutomaticos = () => {
         serviciosAPI.getAll(),
       ]);
 
-      //console.log("Servicios cargados:", serviciosResponse);
       setConfiguraciones(configResponse.data || []);
       setServicios(
         Array.isArray(serviciosResponse)
           ? serviciosResponse
-          : serviciosResponse.data || []
+          : serviciosResponse.data || [],
       );
     } catch (err) {
       setError("Error al cargar los datos");
-      //console.error(err);
       showError("Error al cargar los datos de configuración automática.");
     } finally {
       setLoading(false);
@@ -132,7 +118,7 @@ const ConfiguracionServiciosAutomaticos = () => {
     if (config) {
       setEditando(config.id_configuracion);
       setFormData({
-        id_servicio: String(config.id_servicio), // Convertir a string para el select
+        id_servicio: String(config.id_servicio),
         horaInicio: config.horaInicio,
         horaFin: config.horaFin,
         procesarAutomaticamente: config.procesarAutomaticamente,
@@ -154,22 +140,17 @@ const ConfiguracionServiciosAutomaticos = () => {
   const handleGuardar = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
 
-    // Validar que el servicio esté seleccionado
     if (!formData.id_servicio || formData.id_servicio === "") {
       showError("Validación", "Debe seleccionar un servicio");
       return;
     }
 
     try {
-      // Convertir id_servicio a número
       const idServicio = parseInt(formData.id_servicio, 10);
 
-      // Validar que la conversión fue exitosa
       if (isNaN(idServicio)) {
         showError("Error", "El servicio seleccionado no es válido");
-        //console.error("id_servicio inválido:", formData.id_servicio);
         return;
       }
 
@@ -178,34 +159,22 @@ const ConfiguracionServiciosAutomaticos = () => {
         id_servicio: idServicio,
       };
 
-      //console.log("Datos a enviar:", datosConvertidos);
-
       if (editando) {
         await configuracionAutomaticaAPI.actualizar(editando, datosConvertidos);
-
-        // Cerrar modal inmediatamente
         setModalAbierto(false);
-
-        // Mostrar alert de éxito
         showSuccess("¡Éxito!", "Configuración actualizada exitosamente");
       } else {
         await configuracionAutomaticaAPI.crear(datosConvertidos);
-
-        // Cerrar modal inmediatamente
         setModalAbierto(false);
-
-        // Mostrar alert de éxito
         showSuccess("¡Éxito!", "Configuración creada exitosamente");
       }
 
       cargarDatos();
     } catch (err) {
-      // console.error("Error detallado:", err.response?.data);
       showError("Error", "No se pudo guardar la configuración");
       const errorMessage =
         err.response?.data?.message || "Error al guardar la configuración";
 
-      // Detectar error de duplicación
       if (
         err.response?.status === 409 ||
         errorMessage.toLowerCase().includes("ya existe")
@@ -218,95 +187,79 @@ const ConfiguracionServiciosAutomaticos = () => {
   };
 
   const handleEliminar = async (id, nombreServicio) => {
-    // Confirmación asíncrona con alertService
     const result = await showConfirm(
       "Eliminar Configuración",
       `¿Está seguro de que desea eliminar la configuración del servicio "${nombreServicio}"?`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
-   
     if (result) {
       try {
-        // Convertir el id a número
         const idNum = typeof id === "number" ? id : parseInt(id, 10);
-       
-        
+
         if (!idNum || isNaN(idNum)) {
-        
           showError("Error", "ID de configuración inválido");
           return;
         }
-        
-    
-        const response = await configuracionAutomaticaAPI.eliminar(idNum);
-    
-        
-        // Mostrar éxito
-      
-        showSuccess("¡Éxito!", "Configuración eliminada exitosamente");
 
-        // IMPORTANTE: Esperar a que cargarDatos() termine ANTES de continuar
-       
+        await configuracionAutomaticaAPI.eliminar(idNum);
+        showSuccess("¡Éxito!", "Configuración eliminada exitosamente");
         await cargarDatos();
-     
       } catch (err) {
-       
         showError("Error", "No se pudo eliminar la configuración");
       }
-    } else {
-      // showInfo("Operación cancelada", "La configuración no fue eliminada");
     }
   };
+
   const getNombreServicio = (idServicio) => {
-    const servicio = servicios.find((s) => s.idServicio === idServicio);
+    // NOTA: Verifica si en tu BD es s.idServicio o s.id_servicio
+    const servicio = servicios.find(
+      (s) => s.idServicio === idServicio || s.id_servicio === idServicio,
+    );
     return servicio ? servicio.nombre : "Sin especificar";
   };
 
   if (loading) {
     return (
-      <div className="text-center py-4">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Configuración de Servicios...</p>
       </div>
     );
   }
 
   return (
-    <div className="configuracion-servicios-container mt-1">
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <h2 className="page-title-sub">
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h2 className={ContenidoStyle.pageTitle}>
             Configuración de Servicios Automáticos
           </h2>
         </div>
-        <div className="header-actions">
+        <div className={ContenidoStyle.headerActions}>
           <button
-            className="btn btn-primary-new"
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
             onClick={() => handleAbrirModal()}
           >
-            <i className="fas fa-plus"></i>
-            Agregar Configuración
+            <i className="fas fa-plus"></i> Agregar Configuración
           </button>
         </div>
       </div>
 
-      <div className="table-container">
-        {loading ? (
-          <div className="loading-spinner">
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Cargando grados...</p>
+      <div className={ContenidoStyle.tableContainer}>
+        {configuraciones.length === 0 ? (
+          /* CORRECCIÓN: Contenedor div limpio sin atributos de tabla obsoletos */
+          <div className={TablaStyle.emptyState}>
+            <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+            <h5>No se encontraron configuraciones de servicios</h5>
+            <p>No hay configuraciones que coincidan con tu búsqueda.</p>
           </div>
         ) : (
-          <div className="scrollable-table">
-            <div className="table-body-scroll">
-              <table
-                className="table table-striped data-table"
-                style={{ width: "100%" }}
-              >
-                <thead className="table-header-fixed">
+          <div className={TablaStyle.scrollableTable}>
+            <div className={TablaStyle.tableBodyScroll}>
+              <table className={`${TablaStyle.tableData} table table-striped`}>
+                <thead className={TablaStyle.tableHeaderFixed}>
                   <tr>
                     <th>#</th>
                     <th>Servicio</th>
@@ -337,13 +290,11 @@ const ConfiguracionServiciosAutomaticos = () => {
                       <td>
                         {config.procesarAutomaticamente ? (
                           <span className="badge bg-success">
-                            <i className="fas fa-check me-1"></i>
-                            Sí
+                            <i className="fas fa-check me-1"></i> Sí
                           </span>
                         ) : (
                           <span className="badge bg-secondary">
-                            <i className="fas fa-times me-1"></i>
-                            No
+                            <i className="fas fa-times me-1"></i> No
                           </span>
                         )}
                       </td>
@@ -353,25 +304,27 @@ const ConfiguracionServiciosAutomaticos = () => {
                         </small>
                       </td>
                       <td>
-                        <button
-                          className="btn btn-sm btn-outline-primary me-1"
-                          onClick={() => handleAbrirModal(config)}
-                          title="Editar"
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() =>
-                            handleEliminar(
-                              config.id_configuracion,
-                              getNombreServicio(config.id_servicio)
-                            )
-                          }
-                          title="Eliminar"
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
+                        <div className={TablaStyle.actionButtons}>
+                          <button
+                            className={`${TablaStyle.btnAction} ${TablaStyle.btnEdit}`}
+                            onClick={() => handleAbrirModal(config)}
+                            title="Editar"
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                          <button
+                            className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
+                            onClick={() =>
+                              handleEliminar(
+                                config.id_configuracion,
+                                getNombreServicio(config.id_servicio),
+                              )
+                            }
+                            title="Eliminar"
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -382,156 +335,166 @@ const ConfiguracionServiciosAutomaticos = () => {
         )}
       </div>
 
-      {/* Modal */}
-      {modalAbierto && (
-        <div className="modal fade show d-block">
-          <div className="modal-dialog">
-            <div>
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  <i className="fas fa-clock me-2"></i>
-                  {editando ? "Editar Configuración" : "Nueva Configuración"}
-                </h5>
-                <button
-                  className="modal-close text-white"
-                  onClick={() => setModalAbierto(false)}
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-              <form onSubmit={handleGuardar}>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label">
-                      <i className="fas fa-utensils me-2"></i>
-                      Servicio
-                    </label>
-                    <select
-                      className="form-select"
-                      name="id_servicio"
-                      value={formData.id_servicio}
-                      onChange={handleInputChange}
-                      required
-                      disabled={!!editando}
-                    >
-                      <option key="empty" value="">
-                        Seleccionar servicio
-                      </option>
-                      {servicios.map((servicio) => (
-                        <option
-                          key={`servicio-${servicio.idServicio}`}
-                          value={String(servicio.idServicio)}
-                        >
-                          {servicio.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-row mb-3">
-                    <div className="form-group">
-                      <label className="form-label">
-                        <i className="fas fa-clock me-2"></i>
-                        Hora Inicio
+      {/* Modal Principal */}
+      {modalAbierto &&
+        createPortal(
+          <div className={`modal fade show d-block ${FormularioStyle.modal}`}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-clock me-2"></i>
+                    {editando ? "Editar Configuración" : "Nueva Configuración"}
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={() => setModalAbierto(false)}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <form onSubmit={handleGuardar}>
+                  <div className={FormularioStyle.modalBody}>
+                    <div className={ComponenteStyle.formGroup}>
+                      <label className={ComponenteStyle.formLabel}>
+                        <i className="fas fa-utensils me-2"></i> Servicio
                       </label>
-                      <input
-                        type="time"
-                        className="form-control"
-                        name="horaInicio"
-                        value={formData.horaInicio}
+                      <select
+                        className={ComponenteStyle.formSelect}
+                        name="id_servicio"
+                        value={formData.id_servicio}
                         onChange={handleInputChange}
                         required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">
-                        <i className="fas fa-clock me-2"></i>
-                        Hora Fin
-                      </label>
-                      <input
-                        type="time"
-                        className="form-control"
-                        name="horaFin"
-                        value={formData.horaFin}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <div className="form-check">
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        id="procesarAutomaticamente"
-                        name="procesarAutomaticamente"
-                        checked={formData.procesarAutomaticamente}
-                        onChange={handleInputChange}
-                      />
-                      <label
-                        className="form-check-label"
-                        htmlFor="procesarAutomaticamente"
+                        disabled={!!editando}
                       >
-                        Procesar Automáticamente
-                      </label>
+                        <option value="">Seleccionar servicio</option>
+                        {servicios.map((servicio) => (
+                          <option
+                            key={`servicio-${servicio.idServicio || servicio.id_servicio}`}
+                            value={String(
+                              servicio.idServicio || servicio.id_servicio,
+                            )}
+                          >
+                            {servicio.nombre}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  </div>
 
-                  <div className="mb-3">
-                    <label className="form-label">
-                      <i className="fas fa-file-alt me-2"></i>
-                      Descripción
-                    </label>
-                    <textarea
-                      className="form-control"
-                      name="descripcion"
-                      value={formData.descripcion}
-                      onChange={handleInputChange}
-                      rows="3"
-                      placeholder="Descripción opcional"
-                    ></textarea>
-                  </div>
-
-                  {error && (
-                    <div
-                      className="alert alert-danger alert-dismissible fade show"
-                      role="alert"
-                    >
-                      <div>
-                        <i className="fas fa-exclamation-circle me-2"></i>
-                        <strong className="me-1">Error:</strong> {error}
+                    <div className={ComponenteStyle.formRow}>
+                      <div className={ComponenteStyle.formGroup}>
+                        <label className={ComponenteStyle.formLabel}>
+                          <i className="fas fa-clock me-2"></i> Hora Inicio
+                        </label>
+                        <input
+                          type="time"
+                          className={ComponenteStyle.formControl}
+                          name="horaInicio"
+                          value={formData.horaInicio}
+                          onChange={handleInputChange}
+                          required
+                        />
                       </div>
+                      <div className={ComponenteStyle.formGroup}>
+                        <label className={ComponenteStyle.formLabel}>
+                          <i className="fas fa-clock me-2"></i> Hora Fin
+                        </label>
+                        <input
+                          type="time"
+                          className={ComponenteStyle.formControl}
+                          name="horaFin"
+                          value={formData.horaFin}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group mb-3">
+                      <div className="form-check">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="procesarAutomaticamente"
+                          name="procesarAutomaticamente"
+                          checked={formData.procesarAutomaticamente}
+                          onChange={handleInputChange}
+                        />
+                        <label
+                          className={ComponenteStyle.formCheckLabel}
+                          htmlFor="procesarAutomaticamente"
+                        >
+                          Procesar Automáticamente
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className={ComponenteStyle.formGroup}>
+                      <label className={ComponenteStyle.formLabel}>
+                        <i className="fas fa-file-alt me-2"></i> Descripción
+                      </label>
+                      <textarea
+                        className={ComponenteStyle.formControl}
+                        name="descripcion"
+                        value={formData.descripcion}
+                        onChange={handleInputChange}
+                        rows="3"
+                        placeholder="Descripción opcional"
+                      ></textarea>
+                    </div>
+
+                    {error && (
+                      <div
+                        className="alert alert-danger alert-dismissible fade show"
+                        role="alert"
+                      >
+                        <div>
+                          <i className="fas fa-exclamation-circle me-2"></i>
+                          <strong className="me-1">Error:</strong> {error}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-close"
+                          onClick={() => setError("")}
+                          aria-label="Close"
+                        ></button>
+                      </div>
+                    )}
+
+                    <div className={ComponenteStyle.formActions}>
                       <button
                         type="button"
-                        className="btn-close"
-                        onClick={() => setError("")}
-                        aria-label="Close"
-                      ></button>
+                        className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
+                        onClick={() => setModalAbierto(false)}
+                      >
+                        <i className="fas fa-times"></i> Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
+                      >
+                        <i className="fas fa-save"></i>{" "}
+                        {editando ? "Actualizar" : "Guardar"}
+                      </button>
                     </div>
-                  )}
-
-                  <div className="form-actions">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => setModalAbierto(false)}
-                    >
-                      <i className="fas fa-times"></i>
-                      Cancelar
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      <i className="fas fa-save"></i>
-                      {editando ? "Actualizar" : "Guardar"}
-                    </button>
                   </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
-      {modalAbierto && <div className="modal-backdrop fade show"></div>}
+      {/* Backdrop del Modal */}
+      {/* CORRECCIÓN: Cierre sintáctico correcto del createPortal */}
+      {modalAbierto &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

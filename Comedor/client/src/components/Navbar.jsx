@@ -2,12 +2,26 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { ChangePassword } from "./auth/ChangePassword";
 import { showConfirm } from "../utils/alertService";
+import StylesLayouts from "../styles/Layouts.module.css";
 
 const Navbar = ({ onToggleSidebar, sidebarCollapsed }) => {
   const { logout, user } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Obtener nombre de usuario según el rol
+  const getUserDisplayName = () => {
+    const userRole = user?.rol || user?.nombre_rol;
+    if (userRole === "Proveedor") {
+      return user?.nombreUsuario.toUpperCase() || "Usuario";
+    } else {
+      // Para Administrador, Docente, Cocinera: mostrar nombre completo
+      const nombre = user?.nombres || user?.nombre || "";
+      const apellido = user?.apellidos || "";
+      return apellido ? `${nombre} ${apellido}` : nombre || "Usuario";
+    }
+  };
 
   // Cerrar el dropdown cuando se hace clic fuera
   useEffect(() => {
@@ -29,7 +43,7 @@ const Navbar = ({ onToggleSidebar, sidebarCollapsed }) => {
       "Cerrar Sesión",
       "¿Estás seguro de que deseas cerrar sesión?",
       "Sí, cerrar sesión",
-      "Cancelar"
+      "Cancelar",
     );
 
     if (confirmed) {
@@ -50,51 +64,53 @@ const Navbar = ({ onToggleSidebar, sidebarCollapsed }) => {
   return (
     <>
       <nav
-        className={`admin-navbar ${
-          sidebarCollapsed ? "sidebar-collapsed" : ""
+        className={`${StylesLayouts.navbar} ${
+          StylesLayouts.sidebarCollapsed ? StylesLayouts.navbarShifted : ""
         }`}
       >
-        <div className="navbar-left">
-          <button className="sidebar-toggle-btn" onClick={onToggleSidebar}>
+        <div className={`${StylesLayouts.navbarLeft}`}>
+          <button
+            className={`${StylesLayouts.toggleBtn}`}
+            onClick={onToggleSidebar}
+          >
             <i className="fas fa-bars"></i>
           </button>
         </div>
 
-        <div className="navbar-right">
-          <div className="navbar-actions">
-            <div className="user-menu-container" ref={dropdownRef}>
-              <button className="user-menu-button" onClick={toggleUserMenu}>
-                <div className="user-avatar">
-                  <i className="fas fa-user-circle"></i>
-                </div>
-                <div className="user-info">
-                  <span className="user-name">
-                    {user?.nombres || user?.nombre || "Usuario"}
+        <div className={`${StylesLayouts.navbarRight}`}>
+          <div className={`${StylesLayouts.navbarActions}`}>
+            <div
+              className={`${StylesLayouts.userMenuContainer}`}
+              ref={dropdownRef}
+            >
+              <button
+                className={`${StylesLayouts.userMenuButton}`}
+                onClick={toggleUserMenu}
+              >
+                <div className={`${StylesLayouts.userDetails}`}>
+                  <span className={`${StylesLayouts.userName}`}>
+                    {getUserDisplayName()}
                   </span>
-                  <i
-                    className={`fas fa-chevron-down ${
-                      showUserMenu ? "rotate" : ""
-                    }`}
-                  ></i>
                 </div>
+                <i
+                  className={`fas fa-chevron-down ${
+                    showUserMenu ? StylesLayouts.rotateArrow : ""
+                  }`}
+                ></i>
               </button>
 
               {showUserMenu && (
-                <div className="user-dropdown">
-                  <div className="dropdown-item">
-                    <i className="fas fa-user me-2"></i>
-                    {user?.nombreUsuario}
-                  </div>
-                  <div className="dropdown-divider"></div>
+                <div className={`${StylesLayouts.userDropdown}`}>
+                  <div className={`${StylesLayouts.dropdownDivider}`}></div>
                   <button
-                    className="dropdown-item dropdown-button"
+                    className={`${StylesLayouts.dropdownItem} ${StylesLayouts.dropdownButton} ${StylesLayouts.cambiarContraseña}`}
                     onClick={handleChangePassword}
                   >
                     <i className="fas fa-key me-2"></i>
                     Cambiar Contraseña
                   </button>
                   <button
-                    className="dropdown-item dropdown-button logout"
+                    className={`${StylesLayouts.dropdownItem} ${StylesLayouts.dropdownButton} ${StylesLayouts.logout}`}
                     onClick={handleLogout}
                   >
                     <i className="fas fa-sign-out-alt me-2"></i>

@@ -236,11 +236,14 @@ const AuditoriaDetalle = ({
     <div>
       {/* Header con botón de volver */}
       <div className="page-header mb-3">
-        <div className="header-left">
-          <button className="btn btn-secondary mb-3" onClick={cerrarDetalles}>
+        <button className="btn btn-secondary mb-3" onClick={cerrarDetalles}>
             <i className="fas fa-arrow-left me-2"></i>
             Volver a la lista
           </button>
+      </div>
+      <div className="page-header mb-3">
+        <div className="header-left">
+          
           <h2 className="page-title">
             <i className="fas fa-file-shield me-2"></i>
             Detalles del Registro de Auditoría
@@ -262,14 +265,14 @@ const AuditoriaDetalle = ({
       <div className="row">
         {/* Panel izquierdo - Información General */}
         <div className="col-lg-6">
-          <div className="card h-100">
-            <div className="card-header bg-primary text-white">
+          <div className="auditoria__card h-100">
+            <div className="auditoria__card-header bg-primary text-white">
               <h5 className="mb-0">
                 <i className="fas fa-info-circle me-2"></i>
                 Información General
               </h5>
             </div>
-            <div className="card-body">
+            <div className="auditoria__card-body">
               <div className="row mb-3">
                 <div className="col-12">
                   <label className="text-muted small">📅 Fecha y Hora</label>
@@ -300,14 +303,14 @@ const AuditoriaDetalle = ({
 
         {/* Panel derecho - Detalles de la Acción */}
         <div className="col-lg-6">
-          <div className="card h-100">
-            <div className="card-header bg-info text-white">
+          <div className="auditoria__card h-100">
+            <div className="auditoria__card-header bg-info text-white">
               <h5 className="mb-0">
                 <i className="fas fa-cogs me-2"></i>
                 Detalles de la Acción
               </h5>
             </div>
-            <div className="card-body">
+            <div className="auditoria__card-body">
               <div className="row mb-3">
                 <div className="col-6">
                   <label className="text-muted small">🔧 Acción</label>
@@ -371,28 +374,28 @@ const AuditoriaDetalle = ({
       </div>
 
       {/* Descripción */}
-      <div className="card mb-3 mt-3">
-        <div className="card-header bg-secondary text-white">
+      <div className="auditoria__card mb-3 mt-3">
+        <div className="auditoria__card-header bg-secondary text-white">
           <h5 className="mb-0">
             <i className="fas fa-align-left me-2"></i>
             Descripción
           </h5>
         </div>
-        <div className="card-body">
+        <div className="auditoria__card-body">
           <p>{selectedLog.descripcion}</p>
         </div>
       </div>
 
       {/* Valor Anterior */}
       {selectedLog.valor_anterior && (
-        <div className="card mb-3">
-          <div className="card-header bg-success text-white">
+        <div className="auditoria__card mb-3">
+          <div className="auditoria__card-header bg-success text-white">
             <h5 className="mb-0">
               <i className="fas fa-history me-2"></i>
               Valor Anterior
             </h5>
           </div>
-          <div className="card-body">
+          <div className="auditoria__card-body">
             <pre
               className="bg-light p-3 rounded"
               style={{ overflow: "auto", maxHeight: "400px" }}
@@ -411,14 +414,14 @@ const AuditoriaDetalle = ({
 
       {/* Valor Nuevo */}
       {selectedLog.valor_nuevo && (
-        <div className="card">
-          <div className="card-header bg-warning text-dark">
+        <div className="auditoria__card">
+          <div className="auditoria__card-header bg-warning text-dark">
             <h5 className="mb-0">
               <i className="fas fa-star me-2"></i>
               Valor Nuevo
             </h5>
           </div>
-          <div className="card-body">
+          <div className="auditoria__card-body">
             <pre
               className="bg-light p-3 rounded"
               style={{ overflow: "auto", maxHeight: "400px" }}

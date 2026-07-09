@@ -12,6 +12,9 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
 
 const ListaAsistencia = () => {
   const { user } = useAuth();
@@ -33,6 +36,8 @@ const ListaAsistencia = () => {
     completados: 0,
     cancelados: 0,
   });
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     cargarDatosIniciales();
@@ -59,7 +64,8 @@ const ListaAsistencia = () => {
     const gradosConServicio = new Set();
     asistencias.forEach((asistencia) => {
       if (
-        (asistencia.id_servicio || asistencia.idServicio) === parseInt(idServicio)
+        (asistencia.id_servicio || asistencia.idServicio) ===
+        parseInt(idServicio)
       ) {
         const gradoId = asistencia.id_grado || asistencia.idGrado;
         gradosConServicio.add(gradoId);
@@ -68,8 +74,8 @@ const ListaAsistencia = () => {
 
     // Si encontramos grados con este servicio, retornarlos
     if (gradosConServicio.size > 0) {
-      return grados.filter((g) => 
-        gradosConServicio.has(g.id_grado || g.idGrado)
+      return grados.filter((g) =>
+        gradosConServicio.has(g.id_grado || g.idGrado),
       );
     }
 
@@ -95,7 +101,7 @@ const ListaAsistencia = () => {
     // Si encontramos servicios con este grado, retornarlos
     if (serviciosConGrado.size > 0) {
       return servicios.filter((s) =>
-        serviciosConGrado.has(s.idServicio || s.id_servicio)
+        serviciosConGrado.has(s.idServicio || s.id_servicio),
       );
     }
 
@@ -109,10 +115,10 @@ const ListaAsistencia = () => {
       // Cuando se selecciona un servicio, actualizar grados disponibles
       const gradosDisponibles = obtenerGradosPorServicio(valor);
       setGradosFiltrados(gradosDisponibles);
-      
+
       // Limpiar el filtro de grado si el grado actual no está disponible en los datos
       const gradoActualDisponible = gradosDisponibles.some(
-        (g) => (g.id_grado || g.idGrado) === parseInt(filtros.idGrado)
+        (g) => (g.id_grado || g.idGrado) === parseInt(filtros.idGrado),
       );
       if (!gradoActualDisponible && filtros.idGrado) {
         setFiltros((prev) => ({
@@ -130,10 +136,10 @@ const ListaAsistencia = () => {
       // Cuando se selecciona un grado, actualizar servicios disponibles
       const serviciosDisponibles = obtenerServiciosPorGrado(valor);
       setServiciosFiltrados(serviciosDisponibles);
-      
+
       // Limpiar el filtro de servicio si el servicio actual no está disponible en los datos
       const servicioActualDisponible = serviciosDisponibles.some(
-        (s) => (s.idServicio || s.id_servicio) === parseInt(filtros.idServicio)
+        (s) => (s.idServicio || s.id_servicio) === parseInt(filtros.idServicio),
       );
       if (!servicioActualDisponible && filtros.idServicio) {
         setFiltros((prev) => ({
@@ -277,10 +283,10 @@ const ListaAsistencia = () => {
   };
 
   const formatearFechaNumerica = (fechaStr) => {
-  if (!fechaStr) return "Sin fecha";
-  const [year, month, day] = fechaStr.split('-');
-  return `${day}-${month}-${year}`;
-};
+    if (!fechaStr) return "Sin fecha";
+    const [year, month, day] = fechaStr.split("-");
+    return `${day}-${month}-${year}`;
+  };
 
   const obtenerNombreServicio = (idServicio, nombreServicio) => {
     if (nombreServicio) return nombreServicio;
@@ -612,55 +618,59 @@ const ListaAsistencia = () => {
     ? asistencias.filter((a) => a.estado === filtros.estado)
     : asistencias; // Mostrar todas las asistencias
 
-  /*console.log("📊 Debug - Estado filtro:", filtros.estado);
-  console.log("📊 Debug - Total asistencias:", asistencias.length);
-  console.log(
-    "📊 Debug - Filtradas por estado:",
-    asistenciasFiltradasPorEstado.length
-  );*/
+  // Cálculo de paginación
+  const totalPages = Math.ceil(asistenciasFiltradasPorEstado.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const asistenciasActuales = asistenciasFiltradasPorEstado.slice(
+    startIndex,
+    endIndex,
+  );
+
+  // Resetear a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtros, pageSize]);
 
   if (loading && asistencias.length === 0) {
     return (
-      <div className="loading-container">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando asistencias...</span>
-        </div>
-        <p className="mt-3">Cargando registros de asistencias...</p>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Asistencia Generadas...</p>
       </div>
     );
   }
 
   return (
     <div>
-      {/* Estadísticas */}
-      <div className="row mb-4">
+      <div className="row">
         <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <h6 className="card-title text-muted">Total Registros</h6>
               <h2 className="text-primary">{estadisticas.totalRegistros}</h2>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <h6 className="card-title text-muted">Pendientes</h6>
               <h2 className="text-warning">{estadisticas.pendientes}</h2>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <h6 className="card-title text-muted">Completados</h6>
               <h2 className="text-success">{estadisticas.completados}</h2>
             </div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <h6 className="card-title text-muted">Cancelados</h6>
               <h2 className="text-danger">{estadisticas.cancelados}</h2>
             </div>
@@ -669,23 +679,23 @@ const ListaAsistencia = () => {
       </div>
 
       {/* Filtros */}
-      <div className="card mb-4">
-        <div className="card-header">
+      <div className={`${ContenidoStyle.card} mb-3`}>
+        <div className={ContenidoStyle.cardHeader}>
           <h5 className="card-title mb-0">
-            <i className="fas fa-filter me-2"></i>
+            <i className="fas fa-filter me-1"></i>
             Filtros de Búsqueda
           </h5>
         </div>
-        <div className="card-body">
+        <div className={ContenidoStyle.cardBody}>
           <div className="row g-3">
             <div className="col-md-3">
-              <label htmlFor="fecha" className="form-label">
+              <label htmlFor="fecha" className={ComponenteStyle.formLabel}>
                 <i className="fas fa-calendar me-2"></i>
                 Fecha
               </label>
               <input
                 type="date"
-                className="form-control"
+                className={ComponenteStyle.formControl}
                 id="fecha"
                 name="fecha"
                 value={filtros.fecha}
@@ -694,12 +704,12 @@ const ListaAsistencia = () => {
             </div>
 
             <div className="col-md-3">
-              <label htmlFor="idServicio" className="form-label">
+              <label htmlFor="idServicio" className={ComponenteStyle.formLabel}>
                 <i className="fas fa-utensils me-2"></i>
                 Servicio
               </label>
               <select
-                className="form-select"
+                className={ComponenteStyle.formSelect}
                 id="idServicio"
                 name="idServicio"
                 value={filtros.idServicio}
@@ -724,12 +734,12 @@ const ListaAsistencia = () => {
             </div>
 
             <div className="col-md-3">
-              <label htmlFor="idGrado" className="form-label">
+              <label htmlFor="idGrado" className={ComponenteStyle.formLabel}>
                 <i className="fas fa-graduation-cap me-2"></i>
                 Grado
               </label>
               <select
-                className="form-select"
+                className={ComponenteStyle.formSelect}
                 id="idGrado"
                 name="idGrado"
                 value={filtros.idGrado}
@@ -754,12 +764,12 @@ const ListaAsistencia = () => {
             </div>
 
             <div className="col-md-3">
-              <label htmlFor="estado" className="form-label">
+              <label htmlFor="estado" className={ComponenteStyle.formLabel}>
                 <i className="fas fa-tasks me-2"></i>
                 Estado
               </label>
               <select
-                className="form-select"
+                className={ComponenteStyle.formSelect}
                 id="estado"
                 name="estado"
                 value={filtros.estado}
@@ -776,196 +786,159 @@ const ListaAsistencia = () => {
           <div className="d-flex gap-2 mt-3">
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-outline-secondary"
               onClick={limpiarFiltros}
             >
               <i className="fas fa-broom me-2"></i>
               Limpiar Filtros
             </button>
-            {/*
-            <button
-              type="button"
-              className="btn btn-success"
-              onClick={exportarCSV}
-              disabled={asistencias.length === 0}
-            >
-              <i className="fas fa-download me-2"></i>
-              Exportar CSV
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-warning"
-              onClick={procesarTodasAsistencias}
-              disabled={loading || !filtros.fecha || asistencias.length === 0}
-              title="Procesa automáticamente todas las asistencias del día seleccionado"
-            >
-              <i className="fas fa-cogs me-2"></i>
-              {loading ? "Procesando..." : "Procesar Todas"}
-            </button> */}
           </div>
         </div>
       </div>
 
       {/* Lista de Asistencias */}
-      <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center">
+      <div className={`${ContenidoStyle.card}`}>
+        <div
+          className={`${ContenidoStyle.cardHeader} ${ContenidoStyle.headerInventario} pb-0 pt-2`}
+        >
           <h5 className="card-title mb-0">
             <i className="fas fa-list me-2"></i>
             Registros de Asistencias
           </h5>
-          <div className="d-flex gap-2">
-            <button
-              className="btn btn-outline-primary btn-sm"
-              onClick={() => cargarAsistencias()}
-              disabled={loading}
+          <div className={ContenidoStyle.headerRight}>
+            <label className="mx-2">
+              <span>Registros por página:</span>
+            </label>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
             >
-              <i className="fas fa-sync-alt me-1"></i>
-              {loading ? "Actualizando..." : "Actualizar"}
-            </button>
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
           </div>
         </div>
 
-        <div className="card-body">
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Cargando...</span>
+        <div className={TablaStyle.tableContainer}>
+          {asistenciasFiltradasPorEstado.length === 0 ? (
+            <div colSpan={12}>
+              <div className={TablaStyle.emptyState}>
+                <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+                <h5>No hay registros de asistencias</h5>
+                <p>
+                  {filtros.fecha
+                    ? `No se encontraron registros para ${formatearFecha(
+                        filtros.fecha,
+                      )}`
+                    : "No hay registros con los filtros seleccionados"}
+                </p>
               </div>
-              <p className="mt-2 text-muted">Actualizando datos...</p>
-            </div>
-          ) : asistenciasFiltradasPorEstado.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="fas fa-inbox fa-3x text-muted mb-3"></i>
-              <h5 className="text-muted">No hay registros de asistencias</h5>
-              <p className="text-muted">
-                {filtros.fecha
-                  ? `No se encontraron registros para ${formatearFecha(
-                      filtros.fecha,
-                    )}`
-                  : "No hay registros con los filtros seleccionados"}
-              </p>
             </div>
           ) : (
-            <div className="table-container">
-              <table className="table table-striped data-table">
-                <thead className="table-header-fixed">
-                  <tr>
-                    <th>#</th>
-                    <th width="12%">Fecha</th>
-                    <th width="18%">Servicio</th>
-                    <th width="18%">Grado</th>
-                    <th width="20%">Alumno</th>
-                    <th width="12%">Asistencia</th>
-                    <th width="12%">Estado</th>
-                    {/*<th width="8%">Acciones</th>*/}
+            <table className={`${TablaStyle.tableData} table table-striped`}>
+              <thead className={TablaStyle.tableHeaderFixed}>
+                <tr>
+                  <th width="5%">#</th>
+                  <th width="14%">Fecha</th>
+                  <th width="18%">Servicio</th>
+                  <th width="18%">Grado</th>
+                  <th width="20%">Alumno</th>
+                  <th width="14%">Asistencia</th>
+                  <th width="12%">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {asistenciasActuales.map((asistencia, index) => (
+                  <tr key={`${asistencia.id_asistencia}-${index}`}>
+                    <td>
+                      <strong>{startIndex + index + 1}</strong>
+                    </td>
+                    <td>
+                      <div className="d-flex flex-column">
+                        <span className="fw-semibold">
+                          {formatearFechaNumerica(asistencia.fecha) ||
+                            "Sin fecha"}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="d-flex align-items-center">
+                        {obtenerNombreServicio(
+                          asistencia.id_servicio,
+                          asistencia.nombreServicio,
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="d-flex align-items-center">
+                        {obtenerNombreGrado(
+                          asistencia.id_grado,
+                          asistencia.nombreGrado,
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="d-flex align-items-center">
+                        <span className="fw-medium">
+                          {asistencia.nombreAlumno || "Sin especificar"}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        className={`${TablaStyle.statusBadge} ${
+                          asistencia.tipoAsistencia.toLowerCase() === "si"
+                            ? TablaStyle.asiste
+                            : asistencia.tipoAsistencia.toLowerCase() === "no"
+                              ? TablaStyle.noAsiste
+                              : TablaStyle.ausente
+                        }`}
+                      >
+                        {asistencia.tipoAsistencia}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`${TablaStyle.statusBadge} ${asistencia.estado.toLowerCase() === "Completado" ? TablaStyle.pendiente : TablaStyle.completado}`}
+                      >
+                        {asistencia.estado}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {asistenciasFiltradasPorEstado.map((asistencia, index) => (
-                    <tr key={`${asistencia.id_asistencia}-${index}`}>
-                      <td>
-                        <strong>{index + 1}</strong>
-                      </td>
-                      <td>
-                        <div className="d-flex flex-column">
-                          <span className="fw-semibold">
-                            {formatearFechaNumerica(asistencia.fecha) || "Sin fecha"}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="d-flex align-items-center">
-                          {obtenerNombreServicio(
-                            asistencia.id_servicio,
-                            asistencia.nombreServicio,
-                          )}
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="d-flex align-items-center">
-                          {obtenerNombreGrado(
-                            asistencia.id_grado,
-                            asistencia.nombreGrado,
-                          )}
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <span className="fw-medium">
-                            {asistencia.nombreAlumno || "Sin especificar"}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td>
-                        <span
-                          className={`badge ${getBadgeTipo(
-                            asistencia.tipoAsistencia,
-                          )}`}
-                        >
-                          {asistencia.tipoAsistencia}
-                        </span>
-                      </td>
-
-                      <td>
-                        <span
-                          className={`badge ${getBadgeEstado(
-                            asistencia.estado,
-                          )}`}
-                        >
-                          {asistencia.estado}
-                        </span>
-                      </td>
-                      {/* <td>
-                        <div className="btn-group btn-group-sm" role="group">
-                           🔧 NUEVO: Botón para cambiar tipo de asistencia
-                          <button
-                            type="button"
-                            className="btn btn-outline-info"
-                            title="Cambiar tipo de asistencia (Si/No/Ausente)"
-                            onClick={() => cambiarTipoAsistencia(asistencia)}
-                          >
-                            <i className="fas fa-check-double"></i>
-                          </button>
-
-                          {asistencia.estado === "Pendiente" && (
-                            <button
-                              type="button"
-                              className="btn btn-outline-warning"
-                              title="Cambiar estado"
-                              onClick={() => cambiarEstado(asistencia)}
-                            >
-                              <i className="fas fa-edit"></i>
-                            </button>
-                          )}
-                        </div>
-                      </td>*/}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {totalPages > 1 && (
+            <div className={TablaStyle.pagination}>
+              <button
+                className={TablaStyle.paginationBtn}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              <div className={TablaStyle.paginationInfo}>
+                Página {currentPage} de {totalPages} (
+                {asistenciasFiltradasPorEstado.length} registros)
+              </div>
+              <button
+                className={TablaStyle.paginationBtn}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
             </div>
           )}
         </div>
-
-        {asistenciasFiltradasPorEstado.length > 0 && (
-          <div className="card-footer">
-            <div className="row text-center">
-              <div className="col-md-12">
-                <small className="text-muted">
-                  <i className="fas fa-info-circle me-1"></i>
-                  Mostrando {asistenciasFiltradasPorEstado.length} de{" "}
-                  {asistencias.length} registro(s) | Última actualización:{" "}
-                  {new Date().toLocaleTimeString("es-ES")}
-                </small>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -58,7 +58,7 @@ export class TelegramController {
         chatId,
         message,
         botType,
-        options
+        options,
       );
 
       if (result.success) {
@@ -104,7 +104,7 @@ export class TelegramController {
       ) {
         console.error(
           "❌ Validación fallida: gradosData inválidos",
-          gradosData
+          gradosData,
         );
         return res.status(400).json({
           success: false,
@@ -121,7 +121,7 @@ export class TelegramController {
       }
 
       console.log(
-        "✅ Validaciones pasadas, generando enlaces con FRONTEND_URL..."
+        "✅ Validaciones pasadas, generando enlaces con FRONTEND_URL...",
       );
       console.log("🔍 FRONTEND_URL actual:", process.env.FRONTEND_URL);
 
@@ -138,10 +138,10 @@ export class TelegramController {
       const formattedMessage = telegramService.formatAsistenciasMessage(
         enlacesConURLCorrecta,
         fecha,
-        mensaje
+        mensaje,
       );
       const buttons = telegramService.formatAsistenciasButtons(
-        enlacesConURLCorrecta
+        enlacesConURLCorrecta,
       );
 
       console.log("✅ Mensaje formateado. Enviando...");
@@ -154,7 +154,7 @@ export class TelegramController {
           const { connection } = await import("../models/db.js");
           const [parametros] = await connection.query(
             "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo' LIMIT 1",
-            ["TELEGRAM_DOCENTES_CHAT_ID"]
+            ["TELEGRAM_DOCENTES_CHAT_ID"],
           );
 
           if (parametros && parametros.length > 0) {
@@ -162,7 +162,7 @@ export class TelegramController {
             console.log("📱 Chat ID obtenido de BD:", targetChatId);
           } else {
             console.warn(
-              "⚠️ TELEGRAM_DOCENTES_CHAT_ID no encontrado en BD, usando valor por defecto"
+              "⚠️ TELEGRAM_DOCENTES_CHAT_ID no encontrado en BD, usando valor por defecto",
             );
             // Usar un valor por defecto (puedes cambiar esto por el chat ID real)
             targetChatId =
@@ -172,7 +172,7 @@ export class TelegramController {
           console.warn(
             "⚠️ Error obteniendo chat ID de BD:",
             dbError.message,
-            "usando valor por defecto"
+            "usando valor por defecto",
           );
           targetChatId =
             process.env.TELEGRAM_DOCENTES_CHAT_ID || "-1002419447293";
@@ -194,7 +194,7 @@ export class TelegramController {
         targetChatId,
         formattedMessage,
         buttons,
-        "docente" // Usar el bot DocenteComedor_Bot para enviar enlaces a docentes
+        "docente", // Usar el bot DocenteComedor_Bot para enviar enlaces a docentes
       );
 
       if (result.success) {
@@ -237,21 +237,21 @@ export class TelegramController {
       // Verificar si ya existe el parámetro
       const [existente] = await connection.query(
         "SELECT id_parametro FROM Parametros WHERE nombreParametro = ? LIMIT 1",
-        ["TELEGRAM_DOCENTES_CHAT_ID"]
+        ["TELEGRAM_DOCENTES_CHAT_ID"],
       );
 
       if (existente && existente.length > 0) {
         // Actualizar
         await connection.query(
           "UPDATE Parametros SET valor = ?, estado = 'Activo' WHERE nombreParametro = ?",
-          [String(chatId), "TELEGRAM_DOCENTES_CHAT_ID"]
+          [String(chatId), "TELEGRAM_DOCENTES_CHAT_ID"],
         );
         console.log("✅ Chat ID de docentes actualizado:", chatId);
       } else {
         // Crear nuevo
         await connection.query(
           "INSERT INTO Parametros (nombreParametro, valor, tipoParametro, estado) VALUES (?, ?, ?, ?)",
-          ["TELEGRAM_DOCENTES_CHAT_ID", String(chatId), "telegram", "Activo"]
+          ["TELEGRAM_DOCENTES_CHAT_ID", String(chatId), "telegram", "Activo"],
         );
         console.log("✅ Chat ID de docentes guardado:", chatId);
       }
@@ -277,7 +277,7 @@ export class TelegramController {
 
       const [parametros] = await connection.query(
         "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo' LIMIT 1",
-        ["TELEGRAM_DOCENTES_CHAT_ID"]
+        ["TELEGRAM_DOCENTES_CHAT_ID"],
       );
 
       if (parametros && parametros.length > 0) {
@@ -320,21 +320,21 @@ export class TelegramController {
       // Verificar si ya existe el parámetro
       const [existente] = await connection.query(
         "SELECT id_parametro FROM Parametros WHERE nombreParametro = ? LIMIT 1",
-        ["TELEGRAM_COCINERA_CHAT_ID"]
+        ["TELEGRAM_COCINERA_CHAT_ID"],
       );
 
       if (existente && existente.length > 0) {
         // Actualizar
         await connection.query(
           "UPDATE Parametros SET valor = ?, estado = 'Activo' WHERE nombreParametro = ?",
-          [String(chatId), "TELEGRAM_COCINERA_CHAT_ID"]
+          [String(chatId), "TELEGRAM_COCINERA_CHAT_ID"],
         );
         console.log("✅ Chat ID de cocinera actualizado:", chatId);
       } else {
         // Crear nuevo
         await connection.query(
           "INSERT INTO Parametros (nombreParametro, valor, tipoParametro, estado) VALUES (?, ?, ?, ?)",
-          ["TELEGRAM_COCINERA_CHAT_ID", String(chatId), "telegram", "Activo"]
+          ["TELEGRAM_COCINERA_CHAT_ID", String(chatId), "telegram", "Activo"],
         );
         console.log("✅ Chat ID de cocinera guardado:", chatId);
       }
@@ -360,7 +360,7 @@ export class TelegramController {
 
       const [parametros] = await connection.query(
         "SELECT valor FROM Parametros WHERE nombreParametro = ? AND estado = 'Activo' LIMIT 1",
-        ["TELEGRAM_COCINERA_CHAT_ID"]
+        ["TELEGRAM_COCINERA_CHAT_ID"],
       );
 
       if (parametros && parametros.length > 0) {
@@ -400,7 +400,7 @@ export class TelegramController {
         "📥 Tipo de proveedorId:",
         typeof proveedorId,
         "Es Buffer:",
-        Buffer.isBuffer(proveedorId)
+        Buffer.isBuffer(proveedorId),
       );
 
       if (!proveedorId || !chatId) {
@@ -448,12 +448,12 @@ export class TelegramController {
          telegramChatId = VALUES(telegramChatId),
          telegramUsuario = VALUES(telegramUsuario),
          notificacionesTelegram = VALUES(notificacionesTelegram)`,
-        [proveedorId, String(chatId), telegramUsuario || ""]
+        [proveedorId, String(chatId), telegramUsuario || ""],
       );
 
       console.log(
         `✅ Chat ID de proveedor ${proveedorId} actualizado:`,
-        chatId
+        chatId,
       );
       res.json({
         success: true,
@@ -490,7 +490,7 @@ export class TelegramController {
          FROM Proveedores p
          LEFT JOIN ProveedorConfiguracionTelegram ct ON p.id_proveedor = ct.id_proveedor
          WHERE p.id_proveedor = ? LIMIT 1`,
-        [proveedorId]
+        [proveedorId],
       );
 
       if (resultado && resultado.length > 0) {
@@ -529,7 +529,7 @@ export class TelegramController {
 
       const [proveedores] = await connection.query(
         `SELECT 
-          p.id_proveedor,
+          BIN_TO_UUID(p.id_proveedor) as id_proveedor,
           p.razonSocial,
           p.mail,
           p.telefono,
@@ -539,17 +539,17 @@ export class TelegramController {
         FROM Proveedores p
         LEFT JOIN ProveedorConfiguracionTelegram ct ON p.id_proveedor = ct.id_proveedor
         WHERE p.estado = 'Activo'
-        ORDER BY p.razonSocial ASC`
+        ORDER BY p.razonSocial ASC`,
       );
 
       if (proveedores && proveedores.length > 0) {
         const proveedoresConTelegram = proveedores.map((p) => ({
-          id: p.id_proveedor,
-          nombre: p.razonSocial,
-          email: p.mail,
-          telefono: p.telefono,
+          id: p.id_proveedor || "sin-id",
+          nombre: p.razonSocial || "Sin nombre",
+          email: p.mail || "",
+          telefono: p.telefono || "",
           chatId: p.telegramChatId,
-          telegramUsuario: p.telegramUsuario,
+          telegramUsuario: p.telegramUsuario || "",
           notificacionesActivas: p.notificacionesTelegram === "Activo",
           configurado: p.telegramChatId !== null,
         }));
@@ -602,7 +602,7 @@ export class TelegramController {
          telegramChatId = VALUES(telegramChatId),
          telegramUsuario = VALUES(telegramUsuario),
          notificacionesTelegram = VALUES(notificacionesTelegram)`,
-        [docenteId, String(chatId), telegramUsuario || ""]
+        [docenteId, String(chatId), telegramUsuario || ""],
       );
 
       console.log(`✅ Chat ID del docente ${docenteId} guardado:`, chatId);
@@ -632,8 +632,8 @@ export class TelegramController {
           p.nombre,
           p.apellido,
           dg.nombreGrado,
-          u.mail,
-          u.telefono,
+          COALESCE(u.mail, '') as mail,
+          COALESCE(u.telefono, '') as telefono,
           ct.telegramChatId,
           ct.telegramUsuario,
           ct.notificacionesTelegram
@@ -642,19 +642,19 @@ export class TelegramController {
         LEFT JOIN Usuarios u ON p.id_persona = u.id_persona
         LEFT JOIN DocenteConfiguracionTelegram ct ON dg.id_docenteTitular = ct.id_docenteTitular
         WHERE p.nombreRol = 'Docente' AND p.estado = 'Activo'
-        ORDER BY dg.nombreGrado ASC, p.apellido ASC, p.nombre ASC`
+        ORDER BY dg.nombreGrado ASC, p.apellido ASC, p.nombre ASC`,
       );
 
       if (docentes && docentes.length > 0) {
         const docentesConTelegram = docentes.map((d) => ({
-          id: d.id_docenteTitular,
-          nombre: d.nombre,
-          apellido: d.apellido,
-          nombreGrado: d.nombreGrado,
-          email: d.mail,
-          telefono: d.telefono,
+          id: d.id_docenteTitular || "sin-id",
+          nombre: d.nombre || "Sin nombre",
+          apellido: d.apellido || "",
+          nombreGrado: d.nombreGrado || "Sin grado",
+          email: d.mail || "",
+          telefono: d.telefono || "",
           chatId: d.telegramChatId,
-          telegramUsuario: d.telegramUsuario,
+          telegramUsuario: d.telegramUsuario || "",
           notificacionesActivas: d.notificacionesTelegram === "Activo",
           configurado: d.telegramChatId !== null,
         }));
@@ -687,7 +687,8 @@ export class TelegramController {
   // Manejar callbacks de botones (Dar visto / Realizar Pedido)
   static async handleAlertaCallback(req, res) {
     try {
-      const { callback_query_id, callback_data, chat_id, message_id } = req.body;
+      const { callback_query_id, callback_data, chat_id, message_id } =
+        req.body;
 
       if (!callback_data) {
         return res.status(400).json({
@@ -696,8 +697,11 @@ export class TelegramController {
         });
       }
 
-      const alertasService = (await import("../services/alertasInventarioService.js")).default;
-      const telegramService = (await import("../services/telegramService.js")).default;
+      const alertasService = (
+        await import("../services/alertasInventarioService.js")
+      ).default;
+      const telegramService = (await import("../services/telegramService.js"))
+        .default;
 
       let respuesta = "";
       let exito = false;
@@ -716,7 +720,8 @@ export class TelegramController {
       } else if (callback_data.startsWith("realizar_pedido_")) {
         // Acción: Realizar Pedido
         const idsInsumos = callback_data.replace("realizar_pedido_", "");
-        const resultado = await alertasService.realizarPedidoAutomatico(idsInsumos);
+        const resultado =
+          await alertasService.realizarPedidoAutomatico(idsInsumos);
 
         if (resultado.success) {
           respuesta = `✅ ${resultado.message}`;
@@ -728,14 +733,19 @@ export class TelegramController {
 
       // Responder al callback (eliminar botones del mensaje original)
       if (exito) {
-        await telegramService.editMessage(chat_id, message_id, respuesta, "sistema");
+        await telegramService.editMessage(
+          chat_id,
+          message_id,
+          respuesta,
+          "sistema",
+        );
       }
 
       // Notificar al usuario con popup
       const notificacion = await telegramService.answerCallbackQuery(
         callback_query_id,
         respuesta,
-        exito
+        exito,
       );
 
       res.json({
@@ -754,13 +764,13 @@ export class TelegramController {
 
   /**
    * 🚀 NUEVO ENDPOINT: Enviar mensajes personalizados a múltiples destinatarios
-   * 
+   *
    * Características:
    * - Filtra dinámicamente qué registros recibirán mensajes
    * - Personaliza el contenido para cada destinatario
    * - Extrae chat_id único de cada persona
    * - Envía mensajes individuales
-   * 
+   *
    * Body esperado:
    * {
    *   "tipoDestinatarios": "docentes|proveedores|alumnos",
@@ -771,9 +781,14 @@ export class TelegramController {
    */
   static async sendPersonalizedMassMessages(req, res) {
     const timestampLog = `[${new Date().toISOString().substr(11, 8)}]`;
-    
+
     try {
-      const { tipoDestinatarios, filtro, contenido, botType = "docente" } = req.body;
+      const {
+        tipoDestinatarios,
+        filtro,
+        contenido,
+        botType = "docente",
+      } = req.body;
 
       console.log(`\n${timestampLog} 🚀 INICIANDO ENVÍO MASIVO PERSONALIZADO`);
       console.log(`${timestampLog} ├─ Tipo: ${tipoDestinatarios}`);
@@ -784,7 +799,8 @@ export class TelegramController {
       if (!tipoDestinatarios) {
         return res.status(400).json({
           success: false,
-          message: "Se requiere 'tipoDestinatarios' (docentes|proveedores|alumnos)",
+          message:
+            "Se requiere 'tipoDestinatarios' (docentes|proveedores|alumnos)",
         });
       }
 
@@ -854,15 +870,19 @@ export class TelegramController {
         });
       }
 
-      console.log(`${timestampLog} 📊 Se encontraron ${registros.length} registros`);
+      console.log(
+        `${timestampLog} 📊 Se encontraron ${registros.length} registros`,
+      );
 
       // 🔄 CREAR FUNCIÓN DE FILTRO
       const funcionFiltro = (registro) => {
         if (!filtro) return true; // Sin filtro = enviar a todos
 
         // Filtro por notificaciones activas (por defecto)
-        if (filtro.notificacionesActivas && 
-            registro.notificacionesTelegram !== "Activo") {
+        if (
+          filtro.notificacionesActivas &&
+          registro.notificacionesTelegram !== "Activo"
+        ) {
           return false;
         }
 
@@ -883,7 +903,11 @@ export class TelegramController {
 
         // Permitir filtros customizados adicionales
         for (const [key, value] of Object.entries(filtro)) {
-          if (!["notificacionesActivas", "conChatId", "grado", "email"].includes(key)) {
+          if (
+            !["notificacionesActivas", "conChatId", "grado", "email"].includes(
+              key,
+            )
+          ) {
             if (registro[key] !== value) {
               return false;
             }
@@ -897,11 +921,11 @@ export class TelegramController {
       const constructorMensaje = (registro) => {
         let tipo = tipoDestinatarios.slice(0, -1); // Eliminar la 's' final
         if (tipoDestinatarios === "alumnos") tipo = "alumno";
-        
+
         return telegramService.formatPersonalizedMessage(
           registro,
           tipo,
-          contenido || {}
+          contenido || {},
         );
       };
 
@@ -911,12 +935,12 @@ export class TelegramController {
         funcionFiltro,
         constructorMensaje,
         botType,
-        {}
+        {},
       );
 
       // 📊 RESPONDER CON RESUMEN
       console.log(`${timestampLog} ✅ ENVÍO COMPLETADO\n`);
-      
+
       res.json({
         success: resultado.success,
         message: resultado.message,
@@ -933,7 +957,10 @@ export class TelegramController {
         tipoDestinatarios,
       });
     } catch (error) {
-      console.error(`${timestampLog} ❌ Error en sendPersonalizedMassMessages:`, error);
+      console.error(
+        `${timestampLog} ❌ Error en sendPersonalizedMassMessages:`,
+        error,
+      );
       res.status(500).json({
         success: false,
         message: "Error al enviar mensajes personalizados",

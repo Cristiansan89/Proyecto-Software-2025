@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import ReemplazoDocenteForm from "../../components/admin/ReemplazoDocenteForm";
 import reemplazoDocenteService from "../../services/reemplazoDocenteService.js";
 import { gradoService } from "../../services/gradoService.js";
@@ -12,6 +13,9 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const ListaReemplazosGrados = () => {
   const [reemplazos, setReemplazos] = useState([]);
@@ -26,6 +30,7 @@ const ListaReemplazosGrados = () => {
   const [motivoFilter, setMotivoFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Estados para filtros dinámicos
   const [grados, setGrados] = useState([]);
@@ -122,10 +127,11 @@ const ListaReemplazosGrados = () => {
     setCurrentPage(1);
   }, [searchTerm, gradoFilter, estadoFilter, motivoFilter, reemplazos]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredReemplazos.length / pageSize),
-  );
+  // Paginación
+  const totalPages = Math.ceil(filteredReemplazos.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentReemplazos = filteredReemplazos.slice(startIndex, endIndex);
 
   // Ordenar reemplazos por ID
   const sortedReemplazos = filteredReemplazos.slice().sort((a, b) => {
@@ -151,9 +157,11 @@ const ListaReemplazosGrados = () => {
     // Asegurar que el objeto tiene todos los datos necesarios
     const reemplazoCompleto = {
       ...reemplazo,
-      idReemplazoDocente: reemplazo.idReemplazoDocente || reemplazo.id_reemplazoDocente,
+      idReemplazoDocente:
+        reemplazo.idReemplazoDocente || reemplazo.id_reemplazoDocente,
       idPersona: reemplazo.idPersona || reemplazo.id_persona,
-      idDocenteTitular: reemplazo.idDocenteTitular || reemplazo.id_docenteTitular,
+      idDocenteTitular:
+        reemplazo.idDocenteTitular || reemplazo.id_docenteTitular,
       nombreGrado: reemplazo.nombreGrado || reemplazo.nombre_grado,
       cicloLectivo: reemplazo.cicloLectivo || reemplazo.ciclo_lectivo,
       fechaInicio: reemplazo.fechaInicio || reemplazo.fecha_inicio,
@@ -176,9 +184,11 @@ const ListaReemplazosGrados = () => {
     // Asegurar que el objeto tiene todos los datos necesarios
     const reemplazoCompleto = {
       ...reemplazo,
-      idReemplazoDocente: reemplazo.idReemplazoDocente || reemplazo.id_reemplazoDocente,
+      idReemplazoDocente:
+        reemplazo.idReemplazoDocente || reemplazo.id_reemplazoDocente,
       idPersona: reemplazo.idPersona || reemplazo.id_persona,
-      idDocenteTitular: reemplazo.idDocenteTitular || reemplazo.id_docenteTitular,
+      idDocenteTitular:
+        reemplazo.idDocenteTitular || reemplazo.id_docenteTitular,
       nombreGrado: reemplazo.nombreGrado || reemplazo.nombre_grado,
       cicloLectivo: reemplazo.cicloLectivo || reemplazo.ciclo_lectivo,
       fechaInicio: reemplazo.fechaInicio || reemplazo.fecha_inicio,
@@ -276,13 +286,21 @@ const ListaReemplazosGrados = () => {
         `✅ Reemplazo del docente creado correctamente!\n\nSuplente: ${result.nombreSuplente} ${result.apellidoSuplente}\nTitular: ${result.nombreTitular} ${result.apellidoTitular}\nGrado: ${result.nombreGrado}\nMotivo: ${motivoFormateado}`,
       );
     } else {
-      showSuccess("Éxito", "Reemplazo del docente ha sido actualizado correctamente!");
+      showSuccess(
+        "Éxito",
+        "Reemplazo del docente ha sido actualizado correctamente!",
+      );
     }
   };
 
   const handleCancel = () => {
     setShowModal(false);
     setSelectedReemplazo(null);
+  };
+
+  const handlePageChange = (page) => {
+    if (page < 1) page = 1;
+    setCurrentPage(page);
   };
 
   // Obtener listas únicas para los filtros
@@ -296,365 +314,397 @@ const ListaReemplazosGrados = () => {
 
   if (loading) {
     return (
-      <div className="loading-spinner">
+      <div className={ContenidoStyle.loadingContainer}>
         <i className="fas fa-spinner fa-spin"></i>
-        <p>Cargando reemplazos...</p>
+        <p>Cargando Reemplazos de Docentes...</p>
       </div>
     );
   }
 
   return (
-    <div className="reemplazos-page">
-      {/* Header */}
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <h2 className="page-title-sub">Reemplazos de Docentes</h2>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>Reemplazos de Docentes</h1>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-primary-new" onClick={handleCreate}>
-            <i className="fas fa-plus"></i>
-            Crear Reemplazo
+        <div className={ContenidoStyle.headerActions}>
+          <button
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
+            onClick={handleCreate}
+          >
+            <i className="fas fa-plus me-1"></i>
+            Asignar Reemplazo
           </button>
         </div>
       </div>
 
       {/* Filtros y búsqueda */}
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <div className="filters-section">
-            <div className="search-bar">
-              <input
-                type="text"
-                placeholder="Buscar por suplente, titular, grado o DNI..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-            </div>
-
-            <div className="filter-actions">
-              <select
-                className="filter-select"
-                value={gradoFilter}
-                onChange={(e) => setGradoFilter(e.target.value)}
-                disabled={loadingGrados}
-              >
-                <option value="">Todos los grados</option>
-                {loadingGrados ? (
-                  <option disabled>Cargando grados...</option>
-                ) : (
-                  grados.map((grado) => (
-                    <option
-                      key={grado.idGrado || grado.id}
-                      value={grado.nombreGrado}
-                    >
-                      {grado.nombreGrado}
-                    </option>
-                  ))
-                )}
-              </select>
-
-              <select
-                className="filter-select"
-                value={estadoFilter}
-                onChange={(e) => setEstadoFilter(e.target.value)}
-              >
-                <option value="">Todos los estados</option>
-                {estadosUnicos.map((estado) => (
-                  <option key={estado} value={estado}>
-                    {estado}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                className="filter-select"
-                value={motivoFilter}
-                onChange={(e) => setMotivoFilter(e.target.value)}
-              >
-                <option value="">Todos los motivos</option>
-
-                {motivosUnicos.map((motivo) => (
-                  <option key={motivo} value={motivo}>
-                    {formatearMotivo(motivo)}
-                  </option>
-                ))}
-              </select>
-
-              {(searchTerm || gradoFilter || estadoFilter || motivoFilter) && (
-                <button
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setGradoFilter("");
-                    setEstadoFilter("");
-                    setMotivoFilter("");
-                  }}
-                  title="Limpiar filtros"
-                >
-                  <i className="fas fa-times"></i>
-                  Limpiar
-                </button>
-              )}
-            </div>
+      <div className={ContenidoStyle.headerLeft}>
+        <div className={ContenidoStyle.searchFilters}>
+          <div className={ContenidoStyle.searchBar}>
+            <input
+              type="text"
+              placeholder="Buscar por suplente, titular, grado o DNI..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={ContenidoStyle.searchInput}
+            />
           </div>
 
-          {/* Información de resultados y paginación */}
-          <div className="results-info">
-            <div className="results-count">
-              Mostrando {paginatedReemplazos.length} de{" "}
-              {filteredReemplazos.length} reemplazos{" "}
-              {searchTerm && (
-                <span className="filter-indicator">
-                  filtrado por "{searchTerm}"
-                </span>
+          <div className={ContenidoStyle.filterActions}>
+            <select
+              className={ContenidoStyle.filterSelect}
+              value={gradoFilter}
+              onChange={(e) => setGradoFilter(e.target.value)}
+              disabled={loadingGrados}
+            >
+              <option value="">Todos los grados</option>
+              {loadingGrados ? (
+                <option disabled>Cargando grados...</option>
+              ) : (
+                grados.map((grado) => (
+                  <option
+                    key={grado.idGrado || grado.id}
+                    value={grado.nombreGrado}
+                  >
+                    {grado.nombreGrado}
+                  </option>
+                ))
               )}
-            </div>
-            <div className="page-size-selector d-flex align-items-center gap-2">
-              <label htmlFor="registrosPorPagina" className="mb-0">
-                <strong>Registros por página:</strong>
-              </label>
+            </select>
 
-              <select
-                id="registrosPorPagina"
-                className="form-select form-select-sm"
-                style={{ width: "70px" }}
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
+            <select
+              className={ContenidoStyle.filterSelect}
+              value={estadoFilter}
+              onChange={(e) => setEstadoFilter(e.target.value)}
+            >
+              <option value="">Todos los estados</option>
+              {estadosUnicos.map((estado) => (
+                <option key={estado} value={estado}>
+                  {estado}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className={ContenidoStyle.filterSelect}
+              value={motivoFilter}
+              onChange={(e) => setMotivoFilter(e.target.value)}
+            >
+              <option value="">Todos los motivos</option>
+
+              {motivosUnicos.map((motivo) => (
+                <option key={motivo} value={motivo}>
+                  {formatearMotivo(motivo)}
+                </option>
+              ))}
+            </select>
+
+            {(searchTerm || gradoFilter || estadoFilter || motivoFilter) && (
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => {
+                  setSearchTerm("");
+                  setGradoFilter("");
+                  setEstadoFilter("");
+                  setMotivoFilter("");
                 }}
+                title="Limpiar filtros"
               >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-              </select>
-            </div>
+                <i className="fas fa-times"></i>
+                Limpiar
+              </button>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Tabla */}
-      <div className="table-container">
-        {paginatedReemplazos.length === 0 ? (
+        {/* Información de resultados y paginación */}
+        <div className={TablaStyle.paginationInfoBar}>
+          <div className={TablaStyle.paginationInfo}>
+            Mostrando {startIndex + 1} a{" "}
+            {Math.min(endIndex, filteredReemplazos.length)} de{" "}
+            {filteredReemplazos.length} docente
+          </div>
+          <div className={TablaStyle.itemsPerPage}>
+            <label>
+              <strong>Registros por página:</strong>
+            </label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(parseInt(e.target.value, 10));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Tabla */}
+        <div className={TablaStyle.tableContainer}>
+          {currentReemplazos.length === 0 ? (
             <div colSpan={12}>
-              <div className="empty-state">
-                <i className="fas fa-search empty-icon"></i>
+              <div className={TablaStyle.emptyState}>
+                <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
                 <h5>No se encontraron reemplazos de docentes</h5>
-                <p>No hay reemplazos de docentes que coincidan con tu búsqueda.</p>
+                <p>
+                  No hay reemplazos de docentes que coincidan con tu búsqueda.
+                </p>
               </div>
             </div>
-        ) : (
-          <div className="scrollable-table">
-            <div className="table-body-scroll">
-              <table className="table table-striped data-table">
-                <thead className="table-header-fixed">
-                  <tr>
-                    <th>#</th>
-                    <th>Docente Suplente</th>
-                    <th>Docente Titular</th>
-                    <th>Grado</th>
-                    <th>Período</th>
-                    <th>Motivo</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedReemplazos.map((reemplazo) => (
-                    <tr key={reemplazo.idReemplazoDocente}>
-                      <td>
-                        <strong>
-                          {(currentPage - 1) * pageSize +
-                            filteredReemplazos.indexOf(reemplazo) +
-                            1}
-                        </strong>
-                      </td>
-                      <td>
-                        <div className="user-info">
-                          <div>
-                            <strong>
-                              <h6>
-                                {reemplazo.nombreSuplente}{" "}
-                                {reemplazo.apellidoSuplente}
-                              </h6>
-                            </strong>
-                            <small className="d-block">
-                              DNI: {reemplazo.dniSuplente}
-                            </small>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="user-info">
-                          <div>
-                            <strong>
-                              <h6>
-                                {reemplazo.nombreTitular}{" "}
-                                {reemplazo.apellidoTitular}
-                              </h6>
-                            </strong>
-                            <small className="d-block">
-                              DNI: {reemplazo.dniTitular}
-                            </small>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="type-badge teacher">
-                          {reemplazo.nombreGrado}
-                        </span>
-                        <small className="d-block text-muted">
-                          Ciclo: {formatCicloLectivo(reemplazo.cicloLectivo)}
-                        </small>
-                      </td>
-                      <td>
-                        <div>
-                          <strong>Inicio:</strong>{" "}
-                          {new Date(reemplazo.fechaInicio).toLocaleDateString()}
-                        </div>
-                        <div>
-                          <strong>Fin:</strong>{" "}
-                          {reemplazo.fechaFin && reemplazo.fechaFin.trim()
-                            ? new Date(reemplazo.fechaFin).toLocaleDateString()
-                            : "Sin definir"}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="badge bg-info">
-                          {formatearMotivo(reemplazo.motivo)}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`status-badge ${reemplazo.estado.toLowerCase()}`}
-                        >
-                          {reemplazo.estado}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            className="btn-action btn-view"
-                            onClick={() => handleView(reemplazo)}
-                            title="Ver detalles"
-                          >
-                            <i className="fas fa-eye"></i>
-                          </button>
-                          {reemplazo.estado !== "Finalizado" && (
-                            <button
-                              className="btn-action btn-edit"
-                              onClick={() => handleEdit(reemplazo)}
-                              title="Editar reemplazo"
-                            >
-                              <i className="fas fa-edit"></i>
-                            </button>
-                          )}
-                          {reemplazo.estado === "Activo" && (
-                            <button
-                              className="btn-action btn-warning"
-                              onClick={() =>
-                                handleFinalizarReemplazo(
-                                  reemplazo.idReemplazoDocente,
-                                  reemplazo,
-                                )
-                              }
-                              title="Finalizar reemplazo"
-                            >
-                              <i className="fas fa-stop"></i>
-                            </button>
-                          )}
-                          {reemplazo.estado !== "Finalizado" && (
-                            <button
-                              className="btn-action btn-delete"
-                              onClick={() =>
-                                handleDelete(
-                                  reemplazo.idReemplazoDocente,
-                                  reemplazo,
-                                )
-                              }
-                              title="Eliminar reemplazo"
-                            >
-                              <i className="fas fa-trash"></i>
-                            </button>
-                          )}
-                        </div>
-                      </td>
+          ) : (
+            <div className={TablaStyle.scrollableTable}>
+              <div className={TablaStyle.tableBodyScroll}>
+                <table
+                  className={`${TablaStyle.tableData} table table-striped`}
+                >
+                  <thead className={TablaStyle.tableHeaderFixed}>
+                    <tr>
+                      <th>#</th>
+                      <th>Docente Suplente</th>
+                      <th>Docente Titular</th>
+                      <th>Grado</th>
+                      <th>Período</th>
+                      <th>Motivo</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {totalPages > 1 && (
-                <div className="table-footer">
-                  <div className="pagination">
+                  </thead>
+                  <tbody>
+                    {currentReemplazos.map((reemplazo) => (
+                      <tr key={reemplazo.idReemplazoDocente}>
+                        <td>
+                          <strong>
+                            {(currentPage - 1) * pageSize +
+                              filteredReemplazos.indexOf(reemplazo) +
+                              1}
+                          </strong>
+                        </td>
+                        <td>
+                          <div>
+                            <div>
+                              <strong>
+                                <h6>
+                                  {reemplazo.nombreSuplente}{" "}
+                                  {reemplazo.apellidoSuplente}
+                                </h6>
+                              </strong>
+                              <small className="d-block">
+                                DNI: {reemplazo.dniSuplente}
+                              </small>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div>
+                            <div>
+                              <strong>
+                                <h6>
+                                  {reemplazo.nombreTitular}{" "}
+                                  {reemplazo.apellidoTitular}
+                                </h6>
+                              </strong>
+                              <small className="d-block">
+                                DNI: {reemplazo.dniTitular}
+                              </small>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className={`${TablaStyle.typeBadge} ${TablaStyle.teacherBadge}`}
+                          >
+                            {reemplazo.nombreGrado}
+                          </span>
+                          <small className="d-block text-muted">
+                            Ciclo: {formatCicloLectivo(reemplazo.cicloLectivo)}
+                          </small>
+                        </td>
+                        <td>
+                          <div>
+                            <strong>Inicio:</strong>{" "}
+                            {new Date(
+                              reemplazo.fechaInicio,
+                            ).toLocaleDateString()}
+                          </div>
+                          <div>
+                            <strong>Fin:</strong>{" "}
+                            {reemplazo.fechaFin && reemplazo.fechaFin.trim()
+                              ? new Date(
+                                  reemplazo.fechaFin,
+                                ).toLocaleDateString()
+                              : "Sin definir"}
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className={`${ContenidoStyle.badge} bg-danger text-white`}
+                          >
+                            {formatearMotivo(reemplazo.motivo)}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`${TablaStyle.statusBadge} 
+                                ${
+                                  reemplazo.estado.toLowerCase() === "activo"
+                                    ? TablaStyle.activo
+                                    : reemplazo.estado.toLowerCase() ===
+                                        "inactivo"
+                                      ? TablaStyle.inactivo
+                                      : TablaStyle.finalizado
+                                }
+                            `}
+                          >
+                            {reemplazo.estado}
+                          </span>
+                        </td>
+                        <td>
+                          <div className={TablaStyle.actionButtons}>
+                            <button
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnView}`}
+                              onClick={() => handleView(reemplazo)}
+                              title="Ver detalles"
+                            >
+                              <i className="fas fa-eye"></i>
+                            </button>
+                            {reemplazo.estado !== "Finalizado" && (
+                              <button
+                                className={`${TablaStyle.btnAction} ${TablaStyle.btnEdit}`}
+                                onClick={() => handleEdit(reemplazo)}
+                                title="Editar reemplazo"
+                              >
+                                <i className="fas fa-edit"></i>
+                              </button>
+                            )}
+                            {reemplazo.estado === "Activo" && (
+                              <button
+                                className={`${TablaStyle.btnAction} ${TablaStyle.btnWarning}`}
+                                onClick={() =>
+                                  handleFinalizarReemplazo(
+                                    reemplazo.idReemplazoDocente,
+                                    reemplazo,
+                                  )
+                                }
+                                title="Finalizar reemplazo"
+                              >
+                                <i className="fas fa-stop"></i>
+                              </button>
+                            )}
+                            {reemplazo.estado !== "Finalizado" && (
+                              <button
+                                className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
+                                onClick={() =>
+                                  handleDelete(
+                                    reemplazo.idReemplazoDocente,
+                                    reemplazo,
+                                  )
+                                }
+                                title="Eliminar reemplazo"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Paginación */}
+                {totalPages > 1 && (
+                  <div className={TablaStyle.pagination}>
                     <button
-                      className="pagination-btn"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      className={TablaStyle.paginationButton}
+                      onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     >
                       <i className="fas fa-chevron-left"></i>
                     </button>
-                    <div className="pagination-info">
-                      Página {currentPage} de {totalPages} (
-                      {filteredReemplazos.length} registros)
-                    </div>
+                    {getPaginationNumbers().map((page) => (
+                      <button
+                        key={page}
+                        className={`${TablaStyle.paginationButton} ${currentPage === page ? TablaStyle.active : ""}`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
                     <button
-                      className="pagination-btn"
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
+                      className={TablaStyle.paginationButton}
+                      onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                     >
                       <i className="fas fa-chevron-right"></i>
                     </button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Modal para Reemplazo */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content reemplazo-grado-modal">
-            <div className="modal-header">
-              <h3>
-                {modalMode === "create" && (
-                  <>
-                    <i className="fas fa-user-plus me-2"></i>
-                    Crear Reemplazo
-                  </>
-                )}
-                {modalMode === "edit" && (
-                  <>
-                    <i className="fas fa-user-edit me-2"></i>
-                    Editar Reemplazo
-                  </>
-                )}
-                {modalMode === "view" && (
-                  <>
-                    <i className="fas fa-user me-2"></i>
-                    Detalles del Reemplazo
-                  </>
-                )}
-              </h3>
-              <button className="modal-close" onClick={handleCancel}>
-                <i className="fas fa-times"></i>
-              </button>
+      {showModal &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    {modalMode === "create" && (
+                      <>
+                        <i className="fas fa-user-plus me-2"></i>
+                        Crear Reemplazo
+                      </>
+                    )}
+                    {modalMode === "edit" && (
+                      <>
+                        <i className="fas fa-user-edit me-2"></i>
+                        Editar Reemplazo
+                      </>
+                    )}
+                    {modalMode === "view" && (
+                      <>
+                        <i className="fas fa-user me-2"></i>
+                        Detalles del Reemplazo
+                      </>
+                    )}
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={handleCancel}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <ReemplazoDocenteForm
+                    reemplazo={selectedReemplazo}
+                    mode={modalMode}
+                    onSave={handleSave}
+                    onCancel={handleCancel}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="modal-body">
-              <ReemplazoDocenteForm
-                reemplazo={selectedReemplazo}
-                mode={modalMode}
-                onSave={handleSave}
-                onCancel={handleCancel}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
+
+      {showModal &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

@@ -9,6 +9,7 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -111,7 +112,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
       // Actualizar persona
       savedPersona = await personaService.update(
         persona.idPersona,
-        personaData
+        personaData,
       );
 
       // Pasar datos al callback del componente padre
@@ -129,12 +130,12 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
           .join("\n");
         showInfoError(
           "Información",
-          `Errores de validación:\n${errorMessages}`
+          `Errores de validación:\n${errorMessages}`,
         );
       } else {
         showError(
           "Error",
-          "Error al guardar la persona. Por favor, inténtelo de nuevo."
+          "Error al guardar la persona. Por favor, inténtelo de nuevo.",
         );
       }
     } finally {
@@ -145,155 +146,163 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
   const isViewMode = mode === "view";
 
   return (
-    <div className="persona-form">
-      <form onSubmit={handleSubmit}>
-        <div className="form-sections">
-          {/* Información Personal */}
-          <div>
-            <h4 className="section-title">Información Personal</h4>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="nombre" className="form-label required">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  id="nombre"
-                  name="nombre"
-                  className={`form-control ${
-                    errors.nombre ? "is-invalid" : ""
-                  }`}
-                  value={formData.nombre}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  placeholder="Ingrese el nombre"
-                />
-                {errors.nombre && (
-                  <div className="invalid-feedback">{errors.nombre}</div>
-                )}
+    <form onSubmit={handleSubmit}>
+      <h4 className={ComponenteStyle.sectionTitle}>
+        <i className="fas fa-user-edit me-2"></i>
+        Información Personal
+      </h4>
+      <div className={ComponenteStyle.formGrid}>
+        <div className={ComponenteStyle.formRow}>
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="nombre"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Nombre
+            </label>
+            <input
+              type="text"
+              id="nombre"
+              name="nombre"
+              className={`${ComponenteStyle.formControl} ${errors.nombre ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.nombre}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+              placeholder="Ingrese el nombre"
+            />
+            {errors.nombre && (
+              <div className={ComponenteStyle.invalidFeedback}>
+                {errors.nombre}
               </div>
+            )}
+          </div>
 
-              <div className="form-group">
-                <label htmlFor="apellido" className="form-label required">
-                  Apellido
-                </label>
-                <input
-                  type="text"
-                  id="apellido"
-                  name="apellido"
-                  className={`form-control ${
-                    errors.apellido ? "is-invalid" : ""
-                  }`}
-                  value={formData.apellido}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  placeholder="Ingrese el apellido"
-                />
-                {errors.apellido && (
-                  <div className="invalid-feedback">{errors.apellido}</div>
-                )}
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="apellido"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Apellido
+            </label>
+            <input
+              type="text"
+              id="apellido"
+              name="apellido"
+              className={`${ComponenteStyle.formControl} ${errors.apellido ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.apellido}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+              placeholder="Ingrese el apellido"
+            />
+            {errors.apellido && (
+              <div className={ComponenteStyle.invalidFeedback}>
+                {errors.apellido}
               </div>
-            </div>
+            )}
+          </div>
+        </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="dni" className="form-label required">
-                  Número de Documento
-                </label>
-                <input
-                  type="text"
-                  id="dni"
-                  name="dni"
-                  className={`form-control ${errors.dni ? "is-invalid" : ""}`}
-                  value={formData.dni}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  placeholder="Ingrese el número de documento"
-                />
-                {errors.dni && (
-                  <div className="invalid-feedback">{errors.dni}</div>
-                )}
+        <div className={ComponenteStyle.formRow}>
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="dni"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Número de Documento
+            </label>
+            <input
+              type="text"
+              id="dni"
+              name="dni"
+              className={`${ComponenteStyle.formControl} ${errors.dni ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.dni}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+              placeholder="Ingrese el número de documento"
+            />
+            {errors.dni && (
+              <div className={ComponenteStyle.invalidFeedback}>
+                {errors.dni}
               </div>
+            )}
+          </div>
 
-              <div className="form-group">
-                <label
-                  htmlFor="fechaNacimiento"
-                  className="form-label required"
-                >
-                  Fecha de Nacimiento
-                </label>
-                <input
-                  type="date"
-                  id="fechaNacimiento"
-                  name="fechaNacimiento"
-                  className={`form-control ${
-                    errors.fechaNacimiento ? "is-invalid" : ""
-                  }`}
-                  value={formData.fechaNacimiento}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                  max={new Date().toISOString().split("T")[0]}
-                />
-                {errors.fechaNacimiento && (
-                  <div className="invalid-feedback">
-                    {errors.fechaNacimiento}
-                  </div>
-                )}
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="fechaNacimiento"
+              className={ComponenteStyle.formLabel}
+            >
+              Fecha de Nacimiento
+            </label>
+            <input
+              type="date"
+              id="fechaNacimiento"
+              name="fechaNacimiento"
+              className={`${ComponenteStyle.formControl} ${errors.fechaNacimiento ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.fechaNacimiento}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+              max={new Date().toISOString().split("T")[0]}
+            />
+            {errors.fechaNacimiento && (
+              <div className={ComponenteStyle.invalidFeedback}>
+                {errors.fechaNacimiento}
               </div>
-            </div>
+            )}
+          </div>
+        </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="genero" className="form-label required">
-                  Género
-                </label>
-                <select
-                  id="genero"
-                  name="genero"
-                  className={`form-control ${
-                    errors.genero ? "is-invalid" : ""
-                  }`}
-                  value={formData.genero}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                >
-                  <option value="">Seleccionar Género</option>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Femenina">Femenina</option>
-                  <option value="Otros">Otros</option>
-                </select>
-                {errors.genero && (
-                  <div className="invalid-feedback">{errors.genero}</div>
-                )}
+        <div className={ComponenteStyle.formRow}>
+          <div className={ComponenteStyle.formGroup}>
+            <label
+              htmlFor="genero"
+              className={`${ComponenteStyle.formLabel} required`}
+            >
+              Género
+            </label>
+            <select
+              id="genero"
+              name="genero"
+              className={`${ComponenteStyle.formControl} ${errors.genero ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.genero}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+            >
+              <option value="">Seleccionar Género</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Femenina">Femenina</option>
+              <option value="Otros">Otros</option>
+            </select>
+            {errors.genero && (
+              <div className={ComponenteStyle.invalidFeedback}>
+                {errors.genero}
               </div>
-              {/* Estado */}
+            )}
+          </div>
 
-              <div className="form-group">
-                <label htmlFor="estado" className="form-label required">
-                  Estado
-                </label>
-                <select
-                  id="estado"
-                  name="estado"
-                  className="form-control"
-                  value={formData.estado}
-                  onChange={handleInputChange}
-                  disabled={isViewMode}
-                >
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                </select>
-              </div>
-            </div>
+          <div className={ComponenteStyle.formGroup}>
+            <label htmlFor="estado" className={ComponenteStyle.formLabel}>
+              Estado
+            </label>
+            <select
+              id="estado"
+              name="estado"
+              className={`${ComponenteStyle.formControl} ${errors.estado ? ComponenteStyle.isInvalid : ""}`}
+              value={formData.estado}
+              onChange={handleInputChange}
+              disabled={isViewMode}
+            >
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
           </div>
         </div>
 
         {/* Botones */}
-        <div className="form-actions mt-4">
+        <div className={ComponenteStyle.formActions}>
           <button
             type="button"
-            className="btn btn-secondary me-2"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel}`}
             onClick={onCancel}
             disabled={loading}
           >
@@ -304,7 +313,7 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
           {!isViewMode && (
             <button
               type="submit"
-              className="btn btn-primary me-2"
+              className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
               disabled={loading}
             >
               {loading ? (
@@ -321,8 +330,8 @@ const PersonaForm = ({ persona, mode, onSave, onCancel }) => {
             </button>
           )}
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 };
 

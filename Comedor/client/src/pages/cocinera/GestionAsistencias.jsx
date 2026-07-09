@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import CocineraGestionAsistencias from "./CocineraGestionAsistencias";
 import ListaAsistencia from "./ListaAsistencia";
 import ListaAsistenciasService from "./ListaAsistenciasService";
-import "../../styles/GestionAsistencias.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
 
 const GestionAsistencias = () => {
   const [activeTab, setActiveTab] = useState("gestion-asistencias");
@@ -34,14 +34,14 @@ const GestionAsistencias = () => {
   ];
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-check-square me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-check-square"></i>
             Gestión de Asistencias
           </h1>
-          <p className="page-subtitle">
+          <p className={ContenidoStyle.pageSubtitle}>
             Generar y enviar enlaces de registro de asistencias para los alumnos
             al comedor escolar
           </p>
@@ -49,12 +49,14 @@ const GestionAsistencias = () => {
       </div>
 
       {/* Pestañas de navegación */}
-      <div className="navigation-tabs">
-        <div className="tabs-header">
+      <div className={ContenidoStyle.navigationTabs}>
+        <div className={ContenidoStyle.tabsHeader}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
+              className={`${ContenidoStyle.tabsButton} ${
+                activeTab === tab.id ? ContenidoStyle.active : ""
+              }`}
               onClick={() => handleTabChange(tab.id)}
             >
               <i className={tab.icon}></i> {tab.label}
@@ -63,7 +65,7 @@ const GestionAsistencias = () => {
         </div>
       </div>
 
-      <div className="tab-content">
+      <div className={ContenidoStyle.tabContent}>
         {tabs.find((tab) => tab.id === activeTab)?.component}
       </div>
     </div>

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import UsuarioForm from "../../components/admin/UsuarioForm.jsx";
 import usuarioService from "../../services/usuarioService.js";
 import { rolService } from "../../services/rolService.js";
-import "../../styles/table-insumos.css";
 import { formatLastActivity } from "../../utils/dateUtils.js";
 import {
   showSuccess,
@@ -12,13 +12,16 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [filteredUsuarios, setFilteredUsuarios] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("view"); // 'view', 'edit', 'create'
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedUsuario, setSelectedUsuario] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -101,13 +104,10 @@ const Usuarios = () => {
   }, [searchQuery, filterEstado, filterRol, usuarios]);
 
   // Paginación
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentUsuarios = filteredUsuarios.slice(
-    indexOfFirstItem,
-    indexOfLastItem,
-  );
   const totalPages = Math.ceil(filteredUsuarios.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentUsuarios = filteredUsuarios.slice(startIndex, endIndex);
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
@@ -177,297 +177,363 @@ const Usuarios = () => {
     }
   };
 
+  const handlePageChange = (page) => {
+    if (page < 1) page = 1;
+    setCurrentPage(page);
+  };
+
+  const getPaginationNumbers = () => {
+    if (totalPages <= 10) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    // Si hay más de 10 páginas, mostrar 10 números
+    let start = currentPage - 5;
+    let end = currentPage + 5;
+
+    // Ajustar si está cerca del inicio
+    if (start < 1) {
+      start = 1;
+      end = 10;
+    }
+
+    // Ajustar si está cerca del final
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, totalPages - 9);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  if (loading) {
+    return (
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Usuarios...</p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-users me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-users"></i>
             Gestión de Usuarios
           </h1>
-          <p className="page-subtitle">
+          <p className={ContenidoStyle.pageSubtitle}>
             Administra los usuarios y sus roles disponibles
           </p>
         </div>
       </div>
-      {/* Lista de Usuarios */}
-      <div className="tab-content">
-        {/* Filtros de búsqueda y estado */}
-        <div className="page-header mb-3">
-          <div className="header-left">
-            <div className="search-filters">
-              <div className="search-bar">
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Buscar por usuario, nombre, apellido o email..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
-              <div className="filter-actions">
-                <select
-                  className="filter-select"
-                  value={filterEstado}
-                  onChange={handleFilterEstado}
-                >
-                  <option value="">Todos los estados</option>
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
-                </select>
 
-                {(searchQuery || filterEstado || filterRol) && (
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={clearFilters}
-                    title="Limpiar filtros"
-                  >
-                    <i className="fas fa-times"></i>
-                    Limpiar
-                  </button>
-                )}
-              </div>
+      <div className={ContenidoStyle.tabContent}>
+        <div className={ContenidoStyle.headerLeft}>
+          <div className={ContenidoStyle.searchFilters}>
+            <div className={ContenidoStyle.searchBar}>
+              <input
+                type="text"
+                className={ContenidoStyle.searchInput}
+                placeholder="Buscar por usuario, nombre, apellido o email..."
+                value={searchQuery}
+                onChange={handleSearch}
+              />
+            </div>
+            <div className={ContenidoStyle.filterActions}>
+              <select
+                className={ContenidoStyle.filterSelect}
+                value={filterEstado}
+                onChange={handleFilterEstado}
+              >
+                <option value="">Todos los estados</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
+
+              {(searchQuery || filterEstado || filterRol) && (
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={clearFilters}
+                  title="Limpiar filtros"
+                >
+                  <i className="fas fa-times"></i>
+                  Limpiar
+                </button>
+              )}
             </div>
           </div>
         </div>
 
+        <div className={TablaStyle.paginationInfoBar}>
+          <div className={TablaStyle.paginationInfo}>
+            Mostrando {startIndex + 1} a{" "}
+            {Math.min(endIndex, filteredUsuarios.length)} de{" "}
+            {filteredUsuarios.length} usuarios
+          </div>
+          <div className={TablaStyle.itemsPerPage}>
+            <label>
+              <strong>Registros por página:</strong>
+            </label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(parseInt(e.target.value, 10));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
+
         {/* Lista de usuarios */}
-        <div
-          className="table-container"
-          style={{ minHeight: "400px", overflow: "auto" }}
-        >
-          {loading ? (
-            <div className="loading-spinner">
-              <i className="fas fa-spinner fa-spin"></i>
-              <p>Cargando usuarios...</p>
+        <div className={TablaStyle.tableContainer}>
+          {currentUsuarios.length === 0 ? (
+            <div className={TablaStyle.emptyState}>
+              <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+              <h5>No se encontraron usuarios</h5>
+              <p>No hay usuarios que coincidan con tu búsqueda.</p>
             </div>
           ) : (
-            <div style={{ width: "100%", overflowX: "auto" }}>
-              <table
-                className="table table-striped data-table table-responsive-insumos"
-                style={{ minWidth: 900 }}
-              >
-                <colgroup>
-                  <col style={{ width: "1%" }} />
-                  <col style={{ width: "25%" }} />
-                  <col style={{ width: "12%" }} />
-                  <col style={{ width: "12%" }} />
-                  <col style={{ width: "13%" }} />
-                  <col style={{ width: "13%" }} />
-                  <col style={{ width: "12%" }} />
-                  <col style={{ width: "12%" }} />
-                </colgroup>
-                <thead className="table-header-fixed">
-                  <tr>
-                    <th>#</th>
-                    <th>Usuario</th>
-                    <th>Teléfono</th>
-                    <th>Rol</th>
-                    <th>Fecha Alta</th>
-                    <th>Última Actividad</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentUsuarios.length === 0 ? (
-                    <tr>
-                      <td colSpan={12}>
-                        <div className="empty-state">
-                          <i className="fas fa-search empty-icon"></i>
-                          <h5>No se encontraron usuarios</h5>
-                          <p>No hay usuarios que coincidan con tu búsqueda.</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    currentUsuarios.map((usuario, index) => (
-                      <tr key={usuario.idUsuario || `usuario-${index}`}>
-                        <td>
-                          <strong>{index + 1}</strong>
-                        </td>
-                        <td className="truncate-cell">
-                          <strong>
-                            {usuario.nombreUsuario || "Sin usuario"}
-                          </strong>
-                          <div className="text-muted small">
-                            {(usuario.nombre || "") +
-                              " " +
-                              (usuario.apellido || "")}
-                          </div>
-                          {usuario.mail || "N/A"}
-                        </td>
-                        <td className="truncate-cell">
-                          {usuario.telefono || "N/A"}
-                        </td>
-                        <td>
-                          {usuario.nombreRol ? (
-                            <span className="badge bg-info">
-                              {usuario.nombreRol}
+            <table className={`${TablaStyle.tableData} table table-striped`}>
+              <colgroup>
+                <col style={{ width: "1%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "13%" }} />
+                <col style={{ width: "13%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "17%" }} />
+              </colgroup>
+              <thead className={TablaStyle.tableHeaderFixed}>
+                <tr>
+                  <th>#</th>
+                  <th>Usuario</th>
+                  <th>Teléfono</th>
+                  <th>Rol</th>
+                  <th>Fecha Alta</th>
+                  <th>Última Actividad</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentUsuarios.map((usuario, index) => (
+                  <tr key={usuario.idUsuario || `usuario-${index}`}>
+                    <td>
+                      <strong>{startIndex + index + 1}</strong>
+                    </td>
+                    <td>
+                      <strong>{usuario.nombreUsuario || "Sin usuario"}</strong>
+                      <div className="text-muted small">
+                        {(usuario.nombre || "") +
+                          " " +
+                          (usuario.apellido || "")}
+                      </div>
+                      {usuario.mail || "N/A"}
+                    </td>
+                    <td>{usuario.telefono || "N/A"}</td>
+                    <td>
+                      {usuario.nombreRol ? (
+                        <span
+                          className={`${TablaStyle.typeBadge} ${
+                            usuario.nombreRol === "Alumno"
+                              ? TablaStyle.studentBadge
+                              : TablaStyle.teacherBadge
+                          }`}
+                        >
+                          {usuario.nombreRol}
+                        </span>
+                      ) : (
+                        "N/A"
+                      )}
+                    </td>
+                    <td>
+                      {usuario.fechaAlta
+                        ? new Date(usuario.fechaAlta).toLocaleDateString(
+                            "es-ES",
+                          )
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {(() => {
+                        const activity = formatLastActivity(
+                          usuario.fechaUltimaActividad,
+                        );
+                        if (activity.isNever) {
+                          return (
+                            <span
+                              style={{ color: "#999", fontStyle: "italic" }}
+                            >
+                              Nunca
                             </span>
-                          ) : (
-                            "N/A"
-                          )}
-                        </td>
-                        <td>
-                          {usuario.fechaAlta
-                            ? new Date(usuario.fechaAlta).toLocaleDateString(
-                                "es-ES",
-                              )
-                            : "N/A"}
-                        </td>
-                        <td>
-                          {(() => {
-                            const activity = formatLastActivity(
-                              usuario.fechaUltimaActividad,
-                            );
-                            if (activity.isNever) {
-                              return (
-                                <span
-                                  style={{ color: "#999", fontStyle: "italic" }}
-                                >
-                                  Nunca
-                                </span>
-                              );
-                            }
-                            return (
-                              <div>
-                                <div
-                                  style={{
-                                    fontWeight: activity.isRecent
-                                      ? "bold"
-                                      : "normal",
-                                    color: activity.isRecent
-                                      ? "#2563eb"
-                                      : "inherit",
-                                  }}
-                                >
-                                  {activity.relativeTime}
-                                </div>
-                                <div>
-                                  <small style={{ color: "#666" }}>
-                                    {activity.fecha}
-                                  </small>
-                                </div>
-                                <div>
-                                  <small style={{ color: "#666" }}>
-                                    {activity.hora}
-                                  </small>
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </td>
-                        <td>
-                          <span>{usuario.estado || "Desconocido"}</span>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              className="btn-action btn-view"
-                              onClick={() => openModal("view", usuario)}
+                          );
+                        }
+                        return (
+                          <div>
+                            <div
+                              style={{
+                                fontWeight: activity.isRecent
+                                  ? "bold"
+                                  : "normal",
+                                color: activity.isRecent
+                                  ? "#2563eb"
+                                  : "inherit",
+                              }}
                             >
-                              <i className="fas fa-eye"></i>
-                            </button>
-                            <button
-                              className="btn-action btn-edit"
-                              onClick={() => openModal("edit", usuario)}
-                            >
-                              <i className="fas fa-pencil-alt"></i>
-                            </button>
-                            <button
-                              className={`btn-action ${
-                                usuario.estado === "Activo"
-                                  ? "btn-disable"
-                                  : "btn-enable"
-                              }`}
-                              onClick={() => handleToggleUsuarioEstado(usuario)}
-                              title={
-                                usuario.estado === "Activo"
-                                  ? "Deshabilitar usuario"
-                                  : "Activar usuario"
-                              }
-                            >
-                              <i
-                                className={`fas ${
-                                  usuario.estado === "Activo"
-                                    ? "fa-user-slash"
-                                    : "fa-user-check"
-                                }`}
-                              ></i>
-                            </button>
+                              {activity.relativeTime}
+                            </div>
+                            <div>
+                              <small style={{ color: "#666" }}>
+                                {activity.fecha}
+                              </small>
+                            </div>
+                            <div>
+                              <small style={{ color: "#666" }}>
+                                {activity.hora}
+                              </small>
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        );
+                      })()}
+                    </td>
+                    <td>
+                      <span
+                        className={`${TablaStyle.statusBadge} ${usuario.estado.toLowerCase() === "activo" ? TablaStyle.activo : TablaStyle.inactivo}`}
+                      >
+                        {usuario.estado}
+                      </span>
+                    </td>
+                    <td>
+                      <div className={TablaStyle.actionButtons}>
+                        <button
+                          className={`${TablaStyle.btnAction} ${TablaStyle.btnView}`}
+                          onClick={() => openModal("view", usuario)}
+                        >
+                          <i className="fas fa-eye"></i>
+                        </button>
+                        <button
+                          className={`${TablaStyle.btnAction} ${TablaStyle.btnEdit}`}
+                          onClick={() => openModal("edit", usuario)}
+                        >
+                          <i className="fas fa-pencil-alt"></i>
+                        </button>
+                        <button
+                          className={`${TablaStyle.btnAction} ${
+                            usuario.estado === "Activo"
+                              ? TablaStyle.btnDisable
+                              : TablaStyle.btnEnable
+                          }`}
+                          onClick={() => handleToggleUsuarioEstado(usuario)}
+                          title={
+                            usuario.estado === "Activo"
+                              ? "Deshabilitar usuario"
+                              : "Activar usuario"
+                          }
+                        >
+                          <i
+                            className={`fas ${
+                              usuario.estado === "Activo"
+                                ? "fa-user-slash"
+                                : "fa-user-check"
+                            }`}
+                          ></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div className="pagination">
+          <div className={TablaStyle.pagination}>
             <button
-              className="pagination-btn"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              className={TablaStyle.paginationButton}
+              onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
               <i className="fas fa-chevron-left"></i>
             </button>
-            <div className="pagination-info">
-              Página {currentPage} de {totalPages} ({filteredUsuarios.length}{" "}
-              usuario{filteredUsuarios.length !== 1 ? "s" : ""})
-            </div>
+            {getPaginationNumbers().map((page) => (
+              <button
+                key={page}
+                className={`${TablaStyle.paginationButton} ${currentPage === page ? TablaStyle.active : ""}`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
             <button
-              className="pagination-btn"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
+              className={TablaStyle.paginationButton}
+              onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
               <i className="fas fa-chevron-right"></i>
             </button>
           </div>
         )}
+      </div>
 
-        {/* Modal para Usuario */}
-        {showModal && (
-          <div className="modal-overlay">
-            <div className="modal-content usuario-modal">
-              <div className="modal-header">
-                <h3>
-                  {modalMode === "view" && (
-                    <h3 className="text-white">
-                      <i className="fas fa-eye"></i> Detalle del Usuario
-                    </h3>
-                  )}
-                  {modalMode === "edit" && (
-                    <h3 className="text-white">
-                      <i className="fas fa-pencil-alt"></i> Editar Usuario
-                    </h3>
-                  )}
-                </h3>
-                <button className="modal-close text-white" onClick={closeModal}>
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-              <div className="modal-body">
-                <UsuarioForm
-                  usuario={selectedUsuario}
-                  mode={modalMode}
-                  onCancel={() => {
-                    closeModal();
-                    loadUsuarios(); // Recargar la lista después de cerrar el modal
-                  }}
-                />
+      {/* Modal para Usuario */}
+      {showModal &&
+        createPortal(
+          <div className={FormularioStyle.modal}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    {modalMode === "view" && (
+                      <>
+                        <i className="fas fa-eye"></i> Detalle del Usuario
+                      </>
+                    )}
+                    {modalMode === "edit" && (
+                      <>
+                        <i className="fas fa-pencil-alt"></i> Editar Usuario
+                      </>
+                    )}
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={closeModal}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <UsuarioForm
+                    usuario={selectedUsuario}
+                    mode={modalMode}
+                    onCancel={() => {
+                      closeModal();
+                      loadUsuarios(); // Recargar la lista después de cerrar el modal
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body,
         )}
-      </div>
+
+      {showModal &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

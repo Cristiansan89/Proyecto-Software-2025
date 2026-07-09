@@ -138,18 +138,29 @@ curl http://localhost:5000/api/health
 # Los logs deben mostrar: "✅ Servidor ejecutándose en puerto 5000"
 ```
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura del Proyecto del Servidor
 
 ```
 ├── server/
-│   ├── models/          # Modelos de datos
-│   ├── controllers/     # Lógica de negocio
-│   ├── middleware/      # Middlewares de autenticación
-│   ├── models/          # Modelos de datos
-│   ├── routes/          # Rutas de la API
-│   ├── schemas/         # Validaciones de los datos (nivel de aplicación)
-│   ├── services/        # Servicio de mensajería (mailtrap y telegram)
-│   └── sql/             # Scripts de base de datos
+│   ├── tests/           # Suite de pruebas de integración de endpoints (Vitest + Supertest)
+│   │   ├── grados.test.js   # Casos de prueba para la gestión de grados
+│   │   ├── personas.test.js # Casos de prueba para el ciclo de vida de usuarios y datos personales
+│   │   ├── proveedores.test.js # Validación de lógica de negocio y endpoints de proveedores
+│   │   ├── recetas.test.js  # Pruebas funcionales sobre el módulo de recetas y fórmulas de cocina
+│   │   └── usuarios.test.js # Pruebas para la autenticación, roles y perfiles
+│   ├── controllers/         # Controladores encargados de procesar las peticiones HTTP y orquestar la lógica de negocio
+│   ├── middleware/          # Middlewares globales y locales (Autenticación JWT, validación de roles y manejo de errores)
+│   ├── models/              # Capa de persistencia y modelos de datos (Abstracción de consultas a la base de datos)
+│   ├── routes/              # Definición de las rutas/endpoints de la API RESTful expuestos para el cliente
+│   ├── schemas/             # Esquemas de validación estructural de datos a nivel de aplicación (ej. Zod o Joi)
+│   ├── services/            # Módulos de servicios externos y mensajería automatizada (Mailtrap para correos y bots de Telegram)
+│   ├── sql/                 # Scripts, respaldos, esquemas de inicialización y queries puras de la base de datos SQL
+│   ├── utils/               # Funciones utilitarias del backend, formateadores y herramientas de criptografía (ej. Bcrypt)
+│   ├── app.js               # Configuración centralizada de Express (Middlewares, rutas base, CORS y políticas de seguridad)
+│   ├── package.json         # Manifesto del servidor, dependencias de producción/desarrollo y scripts de inicialización
+│   ├── server-whit-mysql.js # Punto de entrada principal (Entry point) que levanta el servidor e inicializa la conexión a MySQL
+│   ├── utils.js             # Funciones auxiliares globales para la raíz del backend
+│   └── vitest.config.js     # Configuración del entorno de pruebas automatizadas del servidor
 └── README.md
 ```
 
@@ -327,83 +338,244 @@ Interfaz web moderna y responsiva para la gestión del comedor escolar, desarrol
 
 ```
 client/
-├── public/                      # Archivos estáticos
+│
+├── coverage/                    # Reportes de cobertura de código generados automáticamente por Vitest
+│   ├── components/              # Cobertura detallada de componentes de la interfaz (.html interactivos)
+│   │   ├── auth/                # Reportes del flujo de autenticación (Cambio de contraseña, recuperación)
+│   │   │   ├── ChangePassword.jsx.html
+│   │   │   ├── ForgotPassword.jsx.html
+│   │   │   └── index.html
+│   │   ├── ErrorBoundary.jsx.html # Cobertura del capturador de errores globales de renderizado
+│   │   ├── index.jsx.html       # Reporte consolidado de componentes de raíz
+│   │   ├── Navbar.jsx.html      # Cobertura de la barra de navegación principal
+│   │   └── ProtectedRoute.jsx.html # Cobertura de la lógica de guardianes de rutas
+│   ├── pages/                   # Reportes de cobertura correspondientes a las vistas generales
+│   │   └── auth/                # Cobertura del flujo de inicio de sesión
+│   │       ├── index.html
+│   │       └── Login.jsx.html
+│   └── styles/                  # Cobertura técnica asociada al mapeo estructural de estilos
+│       ├── ChangePassword.jsx.html
+│       ├── ForgotPassword.jsx.html
+│       └── index.html
+├── public/                      # Archivos estáticos y assets globales (imágenes, favicons)
 ├── src/
-│   ├── assets/                 # Imágenes y recursos
-│   ├── components/             # Componentes reutilizables
-│   │   ├── SidebarMenu.jsx
-│   │   ├── Navbar.jsx
-│   │   └── LoadingSpinner.jsx
-│   ├── context/                # Context API para estado global
-│   │   └── AuthContext.jsx
-│   ├── hooks/                  # Custom hooks
-│   │   └── useAuth.js
-│   ├── layouts/                # Layouts de página
+│   ├── components/              # Componentes reutilizables de la interfaz organizados por módulos de rol
+│   │   ├── admin/               # Formularios, modales y barras laterales del rol Administrador
+│   │   │   ├── AlumnoGradoForm.jsx
+│   │   │   ├── AsignarInsumosForm.jsx
+│   │   │   ├── AsignarPermisosForm.jsx
+│   │   │   ├── AditoriaDetalle.jsx
+│   │   │   ├── AuditoriaForm.jsx
+│   │   │   ├── AuditoriaInforme.jsx
+│   │   │   ├── ChatIdDocenteForm.jsx
+│   │   │   ├── ChatIDProveedorForm.jsx
+│   │   │   ├── DocenteGradoForm.jsx
+│   │   │   ├── EstadoPedidoForm.jsx
+│   │   │   ├── GradoForm.jsx
+│   │   │   ├── InsumoForm.jsx
+│   │   │   ├── ParametrosForm.jsx
+│   │   │   ├── PermisoForm.jsx
+│   │   │   ├── PersonaEditForm.jsx
+│   │   │   ├── PersonaForm.jsx
+│   │   │   ├── ProveedorForm.jsx
+│   │   │   ├── ReemplazoDocenteForm.jsx
+│   │   │   ├── RolForm.jsx
+│   │   │   ├── ServicioForm.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   │   ├── TelegramInstruccionsModal.jsx
+│   │   │   ├── TipoMermaForm.jsx
+│   │   │   ├── TurnoForm.jsx
+│   │   │   └── UsuarioForm.jsx
+│   │   ├── auth/                # Componentes para el flujo de recuperación y actualización de credenciales
+│   │   │   ├── ChangePassword.jsx
+│   │   │   └── ForgotPassword.jsx
+│   │   ├── cocinera/            # Formularios de inventario, recetas y pedidos del rol Cocina
+│   │   │   ├── CocineraSidebar.jsx
+│   │   │   ├── MovimientosForm.jsx
+│   │   │   ├── PedidoAutomaticoForm.jsx
+│   │   │   ├── PedidoFormSimple.jsx
+│   │   │   ├── PedidoVista.jsx
+│   │   │   ├── PlanificacionMenuForm.jsx
+│   │   │   ├── RecepcionInsumo.jsx
+│   │   │   └── RecetaForm.jsx
+│   │   ├── docente/             # Componentes específicos del rol de Docencia
+│   │   │   └── DocenteSidebar.jsx
+│   │   ├── proveedor/           # Gestión de catálogos e insumos del rol de Proveedores
+│   │   │   ├── AddInsumosForm.jsx
+│   │   │   └── ProveedorSidebar.jsx
+│   │   ├── ConnectionStatus.jsx # Componente global para monitoreo del estado de red
+│   │   ├── ErrorBoundary.jsx    # Límite de errores para mitigar colapsos en la UI
+│   │   ├── Navbar.jsx           # Barra de navegación superior
+│   │   ├── PrmisosProtegido.jsx # Componente de validación atómica de permisos
+│   │   └── ProtectedRoute.jsx   # Middleware visual para protección de rutas según autenticación
+│   ├── context/                 # Context API para la gestión del estado global de la aplicación
+│   │   └── AuthContext.jsx      # Proveedor del estado de autenticación, usuarios y sesión activa
+│   ├── hooks/                   # Custom Hooks para encapsular lógica y comportamiento reutilizable
+│   │   └── usePermisos.js       # Hook para verificar y abstraer permisos de usuario en los componentes
+│   ├── layouts/                 # Plantillas de diseño estructural de la página según el rol
 │   │   ├── AdminLayout.jsx
 │   │   ├── CocineroLayout.jsx
-│   │   └── DocenteLayout.jsx
-│   ├── pages/                  # Páginas/vistas
-│   │   ├── Login.jsx
-│   │   ├── admin/
-│   │   │   ├── DashboardAdmin.jsx
-│   │   │   ├── GestionAlumnos.jsx
-│   │   │   ├── GestionDocentes.jsx
-│   │   │   ├── GestionGrados.jsx
-│   │   │   ├── GestionInsumos.jsx
-│   │   │   ├── GestionProveedores.jsx
-│   │   │   ├── GestionUsuarios.jsx
-│   │   │   ├── GestionRoles.jsx
-│   │   │   └── GestionRolPermisos.jsx
-│   │   ├── cocinera/
-│   │   │   ├── DashboardCocinero.jsx
-│   │   │   ├── GestionRecetas.jsx
-│   │   │   ├── RecetaForm.jsx
-│   │   │   ├── PlanificacionCalendario.jsx
-│   │   │   ├── PlanificacionListado.jsx
-│   │   │   ├── ListaAsistencia.jsx
-│   │   │   ├── Inventarios.jsx
+│   │   ├── DocenteLayout.jsx
+│   │   └── ProveedorLayout.jsx
+│   ├── pages/                   # Vistas/Páginas principales de la aplicación (enrutadas)
+│   │   ├── admins/              # Dashboards, listados y configuraciones complejas del sistema
+│   │   │   ├── Alertas.jsx
+│   │   │   ├── Auditoria.jsx
+│   │   │   ├── Configuracion.jsx
+│   │   │   ├── ConfiguracionEscuela.jsx
+│   │   │   ├── ConfiguracionServicio.jsx
+│   │   │   ├── ConfiguracionTelegram.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── GeneracionAutomatica.jsx
+│   │   │   ├── GestionRolesPermisos.jsx
+│   │   │   ├── ListaAlumnoGrado.jsx
+│   │   │   ├── ListaDocenteGrado.jsx
+│   │   │   ├── ListaEstadoPedido.jsx
+│   │   │   ├── ListaGrados.jsx
+│   │   │   ├── ListaInsumos.jsx
+│   │   │   ├── ListaReemplazoDocente.jsx
+│   │   │   ├── ListaServicios.jsx
+│   │   │   ├── ListaTipoMerma.jsx
+│   │   │   ├── ListaTurnos.jsx
+│   │   │   ├── Parametros.jsx
+│   │   │   ├── ParametrosSistema.jsx
+│   │   │   ├── PersonaGrado.jsx
+│   │   │   ├── Personas.jsx
+│   │   │   ├── Proveedores.jsx
+│   │   │   └── Usuarios.jsx
+│   │   ├── auth/                # Vista del formulario de Login de la aplicación
+│   │   │   └── Login.jsx
+│   │   ├── cocinera/            # Vistas de gestión de menús, pedidos, existencias e informes diarios
+│   │   │   ├── CocineraDashboard.jsx
+│   │   │   ├── CocineraGestionAsistencias.jsx
+│   │   │   ├── CocineraInventario.jsx
+│   │   │   ├── CocineraMenu.jsx
+│   │   │   ├── CocineraMovimiento.jsx
+│   │   │   ├── CocineraReceta.jsx
+│   │   │   ├── CocineraTelegram.jsx
+│   │   │   ├── CocineraTelegramExitoso.jsx
 │   │   │   ├── Consumos.jsx
-│   │   │   ├── Pedidos.jsx
+│   │   │   ├── ControlInventario.jsx
 │   │   │   ├── Estadistica.jsx
-│   │   │   └── AlertasInventario.jsx
-│   │   └── docente/
-│   │       ├── DashboardDocente.jsx
-│   │       └── RegistroAsistencia.jsx
-│   ├── routes/                 # Definición de rutas
-│   │   └── AppRoutes.jsx
-│   ├── services/               # Servicios API
-│   │   ├── api.js
-│   │   ├── authService.js
-│   │   ├── alumnosService.js
-│   │   ├── docentesService.js
-│   │   ├── gradosService.js
-│   │   ├── insumosService.js
-│   │   ├── proveedoresService.js
-│   │   ├── usuariosService.js
-│   │   ├── rolesService.js
-│   │   ├── recetasService.js
-│   │   ├── planificacionMenuService.js
-│   │   ├── consumosService.js
+│   │   │   ├── GestionAsistencias.jsx
+│   │   │   ├── InsumosSemanal.jsx
+│   │   │   ├── ListaAsistencia.jsx
+│   │   │   ├── ListaAsistenciasService.jsx
+│   │   │   ├── MenuesDiaria.jsx
+│   │   │   ├── PedidoConfirmado.jsx
+│   │   │   ├── PedidoInsumo.jsx
+│   │   │   ├── Pedidos.jsx
+│   │   │   ├── PlanificacionCalendario.jsx
+│   │   │   ├── PlanificacionSemanal.jsx
+│   │   │   └── Reportes.jsx
+│   │   ├── docente/             # Vistas de toma de asistencia escolar, horarios y alumnos a cargo
+│   │   │   ├── AsistenciaAlumno.jsx
+│   │   │   ├── Calendario.jsx
+│   │   │   ├── DocenteAsistencia.jsx
+│   │   │   ├── DocenteDashboard.jsx
+│   │   │   ├── Horarios.jsx
+│   │   │   └── MisAlumnos.jsx
+│   │   ├── movil/               # Vistas simplificadas optimizadas exclusivamente para dispositivos móviles
+│   │   │   ├── RegistroAsistenciasMovil.jsx
+│   │   │   └── RegistroExitoso.jsx
+│   │   ├── proveedor/           # Vistas de recepción de pedidos de compra y confirmaciones de entrega
+│   │   │   ├── ConfirmacionExitosa.jsx
+│   │   │   ├── ConfirmacionProveedor.jsx
+│   │   │   ├── GestionProductos.jsx
+│   │   │   └── ProveedorPedidos.jsx
+│   │   ├── NotFound.jsx         # Vista de error de ruta no encontrada (404)
+│   │   └── TestPage.jsx         # Página sandbox/entorno de pruebas en desarrollo
+│   ├── routes/                  # Configuración y definición de rutas del sistema
+│   │   └── AppRoutes.jsx        # Enrutador principal mapeado con sus respectivos layouts y guards
+│   ├── services/                # Capa de abstracción para el consumo e interacción de la API HTTP Restful
+│   │   ├── alumnoGradoService.js
+│   │   ├── api.js               # Instancia de comunicación core de la aplicación
+│   │   ├── asistenciaService.js
 │   │   ├── asistenciasService.js
-│   │   ├── pedidosService.js
-│   │   ├── movimientosInventarioService.js
-│   │   ├── serviciosService.js
-│   │   └── alertasService.js
-│   ├── styles/                 # Estilos globales y por módulo
-│   │   ├── App.css
-│   │   ├── PlanificacionMenus.css
-│   │   ├── GestionRecetas.css
-│   │   └── Estadistica.css
-│   ├── utils/                  # Funciones auxiliares
+│   │   ├── auditoriaService.js
+│   │   ├── authService.js
+│   │   ├── axiosConfig.js       # Interceptores HTTP para manejo automático de tokens y errores
+│   │   ├── cacheService.js
+│   │   ├── configService.js
+│   │   ├── configServicioAutomaticoService.js
+│   │   ├── consumosService.js
+│   │   ├── docenteGradoService.js
+│   │   ├── escuelaService.js
+│   │   ├── estadoPedidoService.js
+│   │   ├── generacionAutomaticaService.js
+│   │   ├── gradoService.js
+│   │   ├── insumoService.js
+│   │   ├── inventarioService.js
+│   │   ├── mockConsumos.js
+│   │   ├── movimientoInventarioService.js
+│   │   ├── pedidoService.js
+│   │   ├── permisoService.js
+│   │   ├── personaService.js
+│   │   ├── planificacionMenuService.js
+│   │   ├── planificacionServicioRecetaService.js
+│   │   ├── proveedorInsumoService.js
+│   │   ├── proveedorService.js
+│   │   ├── recetaService.js
+│   │   ├── reemplazoDocenteService.js
+│   │   ├── rolPermisoService.js
+│   │   ├── rolService.js
+│   │   ├── servicioConfigService.js
+│   │   ├── servicioService.js
+│   │   ├── serviciosRecetasService.js
+│   │   ├── servicioTurnoService.js
+│   │   ├── tipoMermaService.js
+│   │   ├── turnoService.js
+│   │   └── usuarioService.js
+│   ├── styles/                  # Hojas de estilo modulares basados en CSS Modules para evitar colisiones
+│   │   ├── App.css              # Estilos comunes base de la app
+│   │   ├── Auditoria.css
+│   │   ├── Calendario.module.css
+│   │   ├── CocineraInventario.module.css
+│   │   ├── Componentes.module.css
+│   │   ├── Confirmaciones.module.css
+│   │   ├── ConnectionStatus.module.css
+│   │   ├── ContenidoPage.module.css
+│   │   ├── Dashboard.module.css
+│   │   ├── Docente.module.css
+│   │   ├── Estadistica.module.css
+│   │   ├── Formulario.module.css
+│   │   ├── ImpresionPDF.module.css
+│   │   ├── index.css            # Inicialización de fuentes, resets y variables CSS
+│   │   ├── Instrucciones.module.css
+│   │   ├── Layouts.module.css
+│   │   ├── Login.module.css
+│   │   ├── Movil.module.css
+│   │   ├── Parametros.module.css
+│   │   ├── Pedido.module.css
+│   │   └── Tabla.module.css
+│   ├── test/                    # Suite completa de pruebas unitarias y de integración del Frontend
+│   │   ├── components/          # Tests de comportamiento de componentes lógicos e interactivos
+│   │   │   ├── auth/            # Casos de prueba para flujos de formularios de contraseñas
+│   │   │   │   ├── ChangePassword.test.jsx
+│   │   │   │   └── ForgotPassword.test.jsx
+│   │   │   ├── ConnectionStatus.test.jsx # Test de simulación offline / online
+│   │   │   ├── ErrorBoundary.test.jsx    # Test de captura e intercepción de errores de UI
+│   │   │   ├── Navbar.test.jsx           # Test de renderizado y navegación
+│   │   │   ├── NotFound.test.jsx         # Test de redirección por rutas inválidas
+│   │   │   └── ProtectedRoute.test.jsx   # Test de aserciones de acceso no autorizado
+│   │   ├── pages/               # Tests orientados a flujos completos en pantallas y páginas integradas
+│   │   │   └── auth/
+│   │   │       └── Login.test.jsx # Pruebas funcionales del ciclo de inicio de sesión con mocking HTTP
+│   │   └── setup.js             # Archivo de configuración global de Testing Library, mocks globales y MSW
+│   ├── utils/                   # Funciones puras auxiliares y formateadores utilitarios
+│   │   ├── alertService.js
 │   │   ├── dateUtils.js
-│   │   ├── formatUtils.js
-│   │   └── validationUtils.js
-│   ├── App.jsx
-│   └── main.jsx
-├── package.json
-├── vite.config.js
-├── eslint.config.js
-└── README.md
+│   │   ├── filterOptions.js
+│   │   ├── formatCantidad.js
+│   │   └── formatNumero.js
+│   ├── App.jsx                  # Componente raíz integrador de la aplicación
+│   └── main.jsx                 # Punto de entrada de renderizado de React en el DOM con modo estricto
+├── eslint.config.js             # Configuración de linter para mantener la consistencia del código
+├── index.html                   # Archivo HTML plantilla base para montar la aplicación SPA de Vite
+├── package.json                 # Manifesto del proyecto, scripts de ejecución y dependencias declaradas
+├── vite.config.js               # Configuración del empaquetador Vite
+├── vitest.config.js             # Configuración del entorno de ejecución de pruebas automatizadas
+└── README.md                    # Documentación técnica general del proyecto
 ```
 
 ## 🚀 Instalación y Configuración Completa
@@ -582,14 +754,14 @@ DOCENTE:
 ### Permisos por Rol
 
 | Funcionalidad           | Admin | Cocinera | Docente | Proveedor |
-| ----------------------- | ----- | -------- | ------- | ------- |
-| Gestión de Usuarios     | ✅    | ❌       | ❌      |❌      |
-| Gestión de Insumos      | ✅    | ✅       | ❌      |❌      |
-| Planificación de Menús  | ❌    | ✅       | ❌      |❌      |
-| Registro de Asistencias | ❌    | ✅       | ✅      |❌      |
-| Inventario              | ✅    | ✅       | ❌      |❌      |
-| Reportes y Estadísticas | ❌    | ✅       | ❌      |❌      |
-| Gestión de Pedidos      | ❌    | ✅       | ❌      | ✅      |
+| ----------------------- | ----- | -------- | ------- | --------- |
+| Gestión de Usuarios     | ✅    | ❌       | ❌      | ❌        |
+| Gestión de Insumos      | ✅    | ✅       | ❌      | ❌        |
+| Planificación de Menús  | ❌    | ✅       | ❌      | ❌        |
+| Registro de Asistencias | ❌    | ✅       | ✅      | ❌        |
+| Inventario              | ✅    | ✅       | ❌      | ❌        |
+| Reportes y Estadísticas | ❌    | ✅       | ❌      | ❌        |
+| Gestión de Pedidos      | ❌    | ✅       | ❌      | ✅        |
 
 ---
 
@@ -644,6 +816,22 @@ DOCENTE:
 ---
 
 ## 🧪 Testing y Desarrollo
+
+Para correr los tests localmente, asegúrate de instalar las dependencias y ejecutar:
+
+### Frontend
+
+```bash
+cd client
+npm run test    # o el comando que uses para vitest en el frontend
+```
+
+### Backend
+
+```bash
+cd server
+npm run test    # o el comando que uses para vitest en el backend
+```
 
 ### Ejecutar en Modo Desarrollo
 
@@ -764,7 +952,7 @@ Proyecto desarrollado para propósitos educativos y de gestión escolar.
 
 ## 📈 Estado del Proyecto
 
-Proyecto en desarrollo activo con funcionalidades core implementadas y en proceso de testing.
+Proyecto en desarrollo activo con funcionalidades core implementadas y testeado con vitest, supertest, etc.
 
 ### ✅ Funcionalidades Completadas
 
@@ -799,7 +987,7 @@ Proyecto en desarrollo activo con funcionalidades core implementadas y en proces
 - ✅ Búsqueda y filtrado en tablas
 - ✅ Validación de formularios
 
-**Última actualización:** Marzo 30, 2026
+**Última actualización:** Julio 09, 2026
 
 ---
 

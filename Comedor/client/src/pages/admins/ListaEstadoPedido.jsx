@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import estadoPedidoService from "../../services/estadoPedidoService.js";
 import EstadoPedidoForm from "../../components/admin/EstadoPedidoForm.jsx";
 import {
@@ -9,6 +10,9 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const ListaEstadoPedido = () => {
   const [estadosPedido, setEstadosPedido] = useState([]);
@@ -17,6 +21,7 @@ const ListaEstadoPedido = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("create");
   const [selectedEstado, setSelectedEstado] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Cargar estados de pedido
   const cargarEstadosPedido = async () => {
@@ -24,13 +29,16 @@ const ListaEstadoPedido = () => {
       setLoading(true);
       setError(null);
       const data = await estadoPedidoService.getAll();
+      const dataOrdenada = (data || []).sort((a, b) => {
+        return Number(a.id_estadoPedido) - Number(b.id_estadoPedido);
+      });
       setEstadosPedido(data);
     } catch (error) {
       // console.error("Error al cargar estados de pedido:", error);
       showError(
         "Error",
         "Error al cargar los estados de pedido: " +
-          (error.response?.data?.message || error.message)
+          (error.response?.data?.message || error.message),
       );
       setError("Error al cargar los estados de pedido");
     } finally {
@@ -63,7 +71,7 @@ const ListaEstadoPedido = () => {
       "Eliminar Estado de Pedido",
       `¿Está seguro de que desea eliminar el estado de pedido "${nombreEstado}"?`,
       "Sí, eliminar",
-      "Cancelar"
+      "Cancelar",
     );
 
     // 2. Ejecutar solo si el usuario confirmó
@@ -75,17 +83,34 @@ const ListaEstadoPedido = () => {
         await cargarEstadosPedido();
         showSuccess(
           "Éxito",
-          `Estado de pedido "${nombreEstado}" eliminado exitosamente`
+          `Estado de pedido "${nombreEstado}" eliminado exitosamente`,
         );
       } catch (error) {
         // Notificación de error sin logs innecesarios
         showError(
           "Error",
           "Error al eliminar el estado de pedido: " +
-            (error.response?.data?.message || error.message)
+            (error.response?.data?.message || error.message),
         );
       }
     }
+  };
+
+  // Filtrar estado
+  const filteredEstadosPedidos = estadosPedido.filter((estado) => {
+    const matchesSearch = (estado.nombreEstado || "")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const handleSearchTerm = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("");
   };
 
   // Cerrar modal
@@ -108,28 +133,26 @@ const ListaEstadoPedido = () => {
 
   if (loading) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "400px" }}
-      >
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Estados de Pedidos...</p>
       </div>
     );
   }
 
-  // Ordenar por id_estadoPedido ascendente
-  const estadosPedidoOrdenados = [...estadosPedido].sort((a, b) => a.id_estadoPedido - b.id_estadoPedido);
-
   return (
-    <div>
-      <div className="page-header">
-        <div className="header-left">
-          <h2 className="page-title-sub">Gestionar Estados de Pedidos</h2>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            Gestionar Estados de Pedidos
+          </h1>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-primary" onClick={handleNuevo}>
+        <div className={ContenidoStyle.headerActions}>
+          <button
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
+            onClick={handleNuevo}
+          >
             <i className="fas fa-plus me-2"></i>Nuevo Estado de Pedido
           </button>
         </div>
@@ -141,66 +164,85 @@ const ListaEstadoPedido = () => {
         </div>
       )}
 
+      {/* Filtros */}
+      <div className={ContenidoStyle.headerLeft}>
+        <div className={ContenidoStyle.searchFilters}>
+          <div className={ContenidoStyle.searchBar}>
+            <input
+              type="text"
+              className={ContenidoStyle.searchInput}
+              placeholder="Buscar nombre del estado de pedido..."
+              value={searchTerm}
+              onChange={handleSearchTerm}
+            />
+          </div>
+          <div className={ContenidoStyle.filterActions}>
+            {searchTerm && (
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={clearFilters}
+              >
+                <i className="fas fa-times"></i> Limpiar
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Tabla de estados de pedido */}
-      <div className="table-container">
-        {estadosPedido.length === 0 ? (
-           <div colSpan={12}>
-              <div className="empty-state">
-                <i className="fas fa-search empty-icon"></i>
-                <h5>No se encontraron estados de pedido</h5>
-                <p>No hay estados de pedido que coincidan con tu búsqueda.</p>
-              </div>
+      <div className={TablaStyle.tableContainer}>
+        {filteredEstadosPedidos.length === 0 ? (
+          <div colSpan={12}>
+            <div className={TablaStyle.emptyState}>
+              <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+              <h5>No se encontraron estados de pedido</h5>
+              <p>No hay estados de pedido que coincidan con tu búsqueda.</p>
             </div>
+          </div>
         ) : (
-          <div className="scrollable-table">
-            <div className="table-body-scroll">
-              <table className="table table-striped data-table">
-                <thead>
+          <div className={TablaStyle.scrollableTable}>
+            <div className={TablaStyle.bodyScroll}>
+              <table className={`${TablaStyle.tableData} table table-striped`}>
+                <thead className={TablaStyle.tableHeaderFixed}>
                   <tr>
                     <th>#</th>
                     <th>Nombre del Estado</th>
                     <th>Descripción</th>
-                    {/* <th>Estado</th> */}
                     <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {estadosPedidoOrdenados.map((estado) => (
+                  {filteredEstadosPedidos.map((estado) => (
                     <tr key={estado.id_estadoPedido}>
                       <td>
                         <strong>{estado.id_estadoPedido}</strong>
                       </td>
                       <td>
-                        <i className="fas fa-clipboard-check me-2"></i>
-                        <strong>{estado.nombreEstado}</strong>
+                        <div className={TablaStyle.titleTable}>
+                          <i className="fas fa-clipboard-check"></i>
+                          <strong>{estado.nombreEstado}</strong>
+                        </div>
                       </td>
-                      <td>{estado.descripcion || "-"}</td>
-                      {/* <td>
-                          <span
-                            className={`badge ${
-                              estado.estado === "Activo"
-                                ? "bg-success"
-                                : "bg-secondary"
-                            }`}
-                          >
-                            {estado.estado}
-                          </span>
-                        </td> */}
                       <td>
-                        <div className="action-buttons">
+                        <div className={TablaStyle.titleDescripcion}>
+                          {estado.descripcion || "-"}
+                        </div>
+                      </td>
+                      <td>
+                        <div className={TablaStyle.actionButtons}>
                           <button
-                            className="btn-action btn-edit"
+                            className={`${TablaStyle.btnAction} ${TablaStyle.btnEdit}`}
                             onClick={() => handleEditar(estado)}
                             title="Editar"
                           >
                             <i className="fas fa-edit"></i>
                           </button>
                           <button
-                            className="btn-action btn-delete"
+                            className={`${TablaStyle.btnAction} ${TablaStyle.btnDelete}`}
                             onClick={() =>
                               handleEliminar(
                                 estado.id_estadoPedido,
-                                estado.nombreEstado
+                                estado.nombreEstado,
                               )
                             }
                             title="Eliminar"
@@ -219,34 +261,47 @@ const ListaEstadoPedido = () => {
       </div>
 
       {/* Modal para agregar/editar estado */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content configuracion-modal">
-            <div className="modal-header">
-              <h4 className="modal-title">
-                <i className="fas fa-clipboard-list"></i>
-                {modalMode === "create"
-                  ? "Nuevo Estado de Pedido"
-                  : "Editar Estado de Pedido"}
-              </h4>
-              <button
-                className="modal-close text-white"
-                onClick={handleCerrarModal}
-              >
-                <i className="fas fa-times"></i>
-              </button>
+      {showModal &&
+        createPortal(
+          <div className={`modal fade show d-block ${FormularioStyle.modal}`}>
+            <div className={FormularioStyle.modalDialog}>
+              <div className={FormularioStyle.modalContent}>
+                <div className={FormularioStyle.modalHeader}>
+                  <h5 className={FormularioStyle.modalTitle}>
+                    <i className="fas fa-clipboard-list"></i>
+                    {modalMode === "create"
+                      ? "Nuevo Estado de Pedido"
+                      : "Editar Estado de Pedido"}
+                  </h5>
+                  <button
+                    className={FormularioStyle.modalClose}
+                    onClick={handleCerrarModal}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+                <div className={FormularioStyle.modalBody}>
+                  <EstadoPedidoForm
+                    estadoPedido={selectedEstado}
+                    mode={modalMode}
+                    onSave={handleGuardadoExitoso}
+                    onCancel={handleCerrarModal}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="modal-body">
-              <EstadoPedidoForm
-                estadoPedido={selectedEstado}
-                mode={modalMode}
-                onSave={handleGuardadoExitoso}
-                onCancel={handleCerrarModal}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
+
+      {showModal &&
+        createPortal(
+          <div
+            className={`${FormularioStyle.modalBackdrop}`}
+            style={{ zIndex: 1040, pointerEvents: "all" }}
+          ></div>,
+          document.body,
+        )}
     </div>
   );
 };

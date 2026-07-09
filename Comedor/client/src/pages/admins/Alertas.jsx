@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api";
-import "../../styles/Alertas.css";
 import { showError } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import ParametroStyle from "../../styles/Parametros.module.css";
 
 const Alertas = () => {
   const { user } = useAuth();
@@ -108,7 +110,7 @@ const Alertas = () => {
       // Obtener todos los parámetros una sola vez
       const parametros = await API.get("/parametros-sistemas");
       const parametroExistente = parametros.data.find(
-        (p) => p.nombreParametro === nombreParametro
+        (p) => p.nombreParametro === nombreParametro,
       );
 
       const payload = {
@@ -122,7 +124,7 @@ const Alertas = () => {
         // Actualizar usando PATCH
         await API.patch(
           `/parametros-sistemas/${parametroExistente.id_parametro}`,
-          payload
+          payload,
         );
       } else {
         // Crear usando POST
@@ -212,7 +214,7 @@ const Alertas = () => {
       await Promise.all(
         operaciones.map(async (op) => {
           const parametroExistente = parametrosExistentes.find(
-            (p) => p.nombreParametro === op.nombreParametro
+            (p) => p.nombreParametro === op.nombreParametro,
           );
 
           // Manejar caso especial de destinatarioEmail vacío
@@ -220,7 +222,7 @@ const Alertas = () => {
             // Si el parámetro existe pero el valor está vacío, eliminarlo
             if (parametroExistente) {
               await API.delete(
-                `/parametros-sistemas/${parametroExistente.id_parametro}`
+                `/parametros-sistemas/${parametroExistente.id_parametro}`,
               );
             }
             // Si no existe y el valor está vacío, no hacer nada
@@ -238,13 +240,13 @@ const Alertas = () => {
             // Actualizar
             await API.patch(
               `/parametros-sistemas/${parametroExistente.id_parametro}`,
-              payload
+              payload,
             );
           } else {
             // Crear
             await API.post("/parametros-sistemas", payload);
           }
-        })
+        }),
       );
 
       setMensaje({
@@ -264,6 +266,9 @@ const Alertas = () => {
           "Error al guardar la configuración de alertas",
       });
     } finally {
+      // Limpiar mensaje después de 5 segundos
+      setTimeout(() => setMensaje(null), 5000);
+
       setSaving(false);
     }
   };
@@ -277,20 +282,19 @@ const Alertas = () => {
 
   if (loading) {
     return (
-      <div className="container mt-5 text-center">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Configuración de Alertas...</p>
       </div>
     );
   }
 
   return (
-    <div className="container-fluid alertas-container pt-1">
-      <div className="page-header mb-3">
-        <div className="header-left">
-          <h2 className="page-title-sub">Configuración de Alertas</h2>
-          <p className="pt-1">
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h2 className={ContenidoStyle.pageTitle}>Configuración de Alertas</h2>
+          <p className={ContenidoStyle.pageSubtitle}>
             Controla el comportamiento de las alertas de inventario en el
             sistema
           </p>
@@ -298,32 +302,43 @@ const Alertas = () => {
       </div>
 
       <form onSubmit={handleGuardar}>
-        {/* Sección: Alertas Generales */}
-        <div className="card mb-4">
-          <div className="card-header bg-primary text-dark">
-            <h5 className="mb-0">
+        {mensaje && (
+          <div
+            className={`${ParametroStyle.alert} ${
+              ParametroStyle[
+                `alert${mensaje.tipo.charAt(0).toUpperCase() + mensaje.tipo.slice(1).toLowerCase()}`
+              ]
+            } alert-dismissible fade show mb-3`}
+            role="alert"
+          >
+            {mensaje.texto}
+          </div>
+        )}
+        <div className={`${ParametroStyle.card} mb-4`}>
+          <div className={`${ParametroStyle.cardHeader} bg-light text-dark`}>
+            <h5 className={ContenidoStyle.pageTitle}>
               <i className="fas fa-exclamation-triangle me-2"></i>
               Alertas Generales
             </h5>
           </div>
-          <div className="card-body">
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <div className="form-check form-switch mx-5">
+          <div className={ParametroStyle.cardBody}>
+            <div className={ParametroStyle.row}>
+              <div className="col-md-6 mx-3">
+                <div className="form-check form-switch">
                   <input
-                    className="form-check-input"
                     type="checkbox"
                     id="alertasInventario"
+                    className="form-check-input"
                     checked={alertas.alertasInventarioHabilitadas}
                     onChange={(e) =>
                       handleInputChange(
                         "alertasInventarioHabilitadas",
-                        e.target.checked
+                        e.target.checked,
                       )
                     }
                   />
                   <label
-                    className="form-check-label"
+                    className={ParametroStyle.formCheckLabel}
                     htmlFor="alertasInventario"
                   >
                     <strong>Habilitar Todas las Alertas de Inventario</strong>
@@ -339,41 +354,44 @@ const Alertas = () => {
         </div>
 
         {/* Sección: Alertas por Estado */}
-        <div className="card mb-4">
-          <div className="card-header bg-danger text-dark">
-            <h5 className="mb-0">
+        <div className={ParametroStyle.card}>
+          <div className={`${ParametroStyle.cardHeader} bg-light text-dark`}>
+            <h5 className={ContenidoStyle.pageTitle}>
               <i className="fas fa-binoculars me-2"></i>
               Alertas por Estado de Stock
             </h5>
           </div>
-          <div className="card-body">
-            <div className="row mx-5">
-              <div className="col-md-6 mb-3">
+          <div className={ParametroStyle.cardBody}>
+            <div className={`${ParametroStyle.row}`}>
+              <div className="col-md-5 mx-3">
                 <div className="form-check form-switch">
                   <input
-                    className="form-check-input"
                     type="checkbox"
+                    className="form-check-input"
                     id="alertasAgotado"
                     checked={alertas.alertasAgotadoHabilitadas}
                     onChange={(e) =>
                       handleInputChange(
                         "alertasAgotadoHabilitadas",
-                        e.target.checked
+                        e.target.checked,
                       )
                     }
                     disabled={!alertas.alertasInventarioHabilitadas}
                   />
-                  <label className="form-check-label" htmlFor="alertasAgotado">
+                  <label
+                    className={ParametroStyle.formCheckLabel}
+                    htmlFor="alertasAgotado"
+                  >
                     <strong>Alertas de Stock Agotado</strong>
                     <br />
-                    <small className="text-muted">
+                    <small className={ParametroStyle.textMuted}>
                       Alertar cuando el stock es = 0
                     </small>
                   </label>
                 </div>
               </div>
 
-              <div className="col-md-6 mb-3">
+              <div className="col-md-5 mx-3">
                 <div className="form-check form-switch">
                   <input
                     className="form-check-input"
@@ -383,12 +401,15 @@ const Alertas = () => {
                     onChange={(e) =>
                       handleInputChange(
                         "alertasCriticoHabilitadas",
-                        e.target.checked
+                        e.target.checked,
                       )
                     }
                     disabled={!alertas.alertasInventarioHabilitadas}
                   />
-                  <label className="form-check-label" htmlFor="alertasCritico">
+                  <label
+                    className={ParametroStyle.formCheckLabel}
+                    htmlFor="alertasCritico"
+                  >
                     <strong>Alertas de Stock Crítico</strong>
                     <br />
                     <small className="text-muted">
@@ -398,7 +419,7 @@ const Alertas = () => {
                 </div>
               </div>
 
-              <div className="col-md-6 mb-3">
+              <div className="col-md-5 mx-3 mt-3">
                 <div className="form-check form-switch">
                   <input
                     className="form-check-input"
@@ -408,12 +429,15 @@ const Alertas = () => {
                     onChange={(e) =>
                       handleInputChange(
                         "alertasBajoHabilitadas",
-                        e.target.checked
+                        e.target.checked,
                       )
                     }
                     disabled={!alertas.alertasInventarioHabilitadas}
                   />
-                  <label className="form-check-label" htmlFor="alertasBajo">
+                  <label
+                    className={ParametroStyle.formCheckLabel}
+                    htmlFor="alertasBajo"
+                  >
                     <strong>Alertas de Stock Bajo</strong>
                     <br />
                     <small className="text-muted">
@@ -423,7 +447,7 @@ const Alertas = () => {
                 </div>
               </div>
 
-              <div className="col-md-6 mb-3">
+              <div className="col-md-6 mx-3 mt-3">
                 <div className="form-check form-switch">
                   <input
                     className="form-check-input"
@@ -433,13 +457,13 @@ const Alertas = () => {
                     onChange={(e) =>
                       handleInputChange(
                         "notificacionesUIHabilitadas",
-                        e.target.checked
+                        e.target.checked,
                       )
                     }
                     disabled={!alertas.alertasInventarioHabilitadas}
                   />
                   <label
-                    className="form-check-label"
+                    className={ParametroStyle.formCheckLabel}
                     htmlFor="notificacionesUI"
                   >
                     <strong>Notificaciones en la UI</strong>
@@ -455,80 +479,90 @@ const Alertas = () => {
         </div>
 
         {/* Sección: Porcentajes de Alerta */}
-        <div className="card mb-4">
-          <div className="card-header bg-warning text-dark">
-            <h5 className="mb-0">
+        <div className={ParametroStyle.card}>
+          <div className={`${ParametroStyle.cardHeader} bg-light}text-dark`}>
+            <h5 className={ContenidoStyle.pageTitle}>
               <i className="fas fa-chart-pie me-2"></i>
               Porcentajes de Alerta
             </h5>
           </div>
-          <div className="card-body mx-3">
+          <div className={`${ParametroStyle.cardBody}`}>
             <p className="text-muted mb-3">
               Estos porcentajes se calculan como: (Stock Actual / Stock Máximo)
               × 100
             </p>
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label htmlFor="porcentajeCritico" className="form-label">
+            <div className={ParametroStyle.row}>
+              <div className="col-md-5 mx-3 mt-3">
+                <label
+                  htmlFor="porcentajeCritico"
+                  className={ParametroStyle.formLabel}
+                >
                   <strong>
                     <i className="fas fa-exclamation-circle text-danger me-2"></i>
                     Porcentaje Crítico (%)
                   </strong>
                 </label>
-                <div className="input-group input-alerta">
+                <div className={ParametroStyle.inputGroup}>
                   <input
                     type="number"
-                    className="form-control"
+                    className={ParametroStyle.formControl}
                     id="porcentajeCritico"
-                    min="0"
+                    min="1"
                     max="100"
                     step="0.5"
                     value={alertas.porcentajeAlertaCritico}
                     onChange={(e) =>
                       handleInputChange(
                         "porcentajeAlertaCritico",
-                        parseFloat(e.target.value)
+                        parseFloat(e.target.value),
                       )
                     }
                     disabled={!alertas.alertasInventarioHabilitadas}
                   />
-                  <span className="input-group-text">%</span>
+                  <span className={ParametroStyle.inputGroupText}>%</span>
                 </div>
 
-                <small className="form-text text-muted d-block mt-2">
+                <small
+                  className={`${ParametroStyle.formText} text-muted d-block mt-2`}
+                >
                   Valores ≤ a este porcentaje se consideran Críticos
                   <br />
                   <strong>Actual: {alertas.porcentajeAlertaCritico}%</strong>
                 </small>
               </div>
 
-              <div className="col-md-6 mb-3">
-                <label htmlFor="porcentajeBajo" className="form-label">
+              <div className="col-md-5 mx-3 mt-3">
+                <label
+                  htmlFor="porcentajeBajo"
+                  className={ParametroStyle.formLabel}
+                >
                   <strong>
                     <i className="fas fa-arrow-down text-warning me-2"></i>
                     Porcentaje Bajo (%)
                   </strong>
                 </label>
-                <div className="input-group input-alerta">
+                <div className={ParametroStyle.inputGroup}>
                   <input
                     type="number"
-                    className="form-control"
+                    className={ParametroStyle.formControl}
                     id="porcentajeBajo"
-                    min="0"
+                    min="1"
                     max="100"
                     step="0.5"
                     value={alertas.porcentajeAlertaBajo}
                     onChange={(e) =>
                       handleInputChange(
                         "porcentajeAlertaBajo",
-                        parseFloat(e.target.value)
+                        parseFloat(e.target.value),
                       )
                     }
                     disabled={!alertas.alertasInventarioHabilitadas}
                   />
-                  <span className="input-group-text">%</span>
+                  <span className={ParametroStyle.inputGroupText}>%</span>
                 </div>
-                <small className="form-text text-muted d-block mt-2">
+                <small
+                  className={`${ParametroStyle.formText} text-muted d-block mt-2`}
+                >
                   Valores entre Crítico y este porcentaje se consideran Bajos
                   <br />
                   <strong>Actual: {alertas.porcentajeAlertaBajo}%</strong>
@@ -539,15 +573,14 @@ const Alertas = () => {
         </div>
 
         {/* Sección: Telegram */}
-        <div className="card mb-4">
-          <div className="card-header bg-info text-dark">
-            <h5 className="mb-0">
-              <i className="fab fa-telegram me-2"></i>
+        <div className={`${ParametroStyle.card} mb-4`}>
+          <div className={`${ParametroStyle.cardHeader} bg-light text-dark`}>
+            <h5 className={ContenidoStyle.pageTitle}>
               Configuración de Telegram
             </h5>
           </div>
-          <div className="card-body mx-5">
-            <div className="form-check form-switch mb-3">
+          <div className={`${ParametroStyle.cardBody}`}>
+            <div className="form-check form-switch mx-3">
               <input
                 className="form-check-input"
                 type="checkbox"
@@ -558,7 +591,10 @@ const Alertas = () => {
                 }
                 disabled={!alertas.alertasInventarioHabilitadas}
               />
-              <label className="form-check-label" htmlFor="telegramHabilitado">
+              <label
+                className={ParametroStyle.formCheckLabel}
+                htmlFor="telegramHabilitado"
+              >
                 <strong>Habilitar Notificaciones por Telegram</strong>
                 <br />
                 <small className="text-muted">
@@ -568,14 +604,17 @@ const Alertas = () => {
             </div>
 
             {alertas.telegramHabilitado && (
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label htmlFor="cantidadReintentos" className="form-label">
+              <div className={`${ParametroStyle.row}`}>
+                <div className="col-md-5 mx-3 mt-3">
+                  <label
+                    htmlFor="cantidadReintentos"
+                    className={ParametroStyle.formLabel}
+                  >
                     <strong>Cantidad de Reintentos</strong>
                   </label>
                   <input
                     type="number"
-                    className="form-control"
+                    className={ParametroStyle.formControl}
                     id="cantidadReintentos"
                     min="1"
                     max="10"
@@ -583,23 +622,26 @@ const Alertas = () => {
                     onChange={(e) =>
                       handleInputChange(
                         "cantidadReintentosTelegram",
-                        parseInt(e.target.value)
+                        parseInt(e.target.value),
                       )
                     }
                     disabled={!alertas.alertasInventarioHabilitadas}
                   />
-                  <small className="form-text text-muted">
+                  <small className={`${ParametroStyle.formText} text-muted`}>
                     Número de veces que se reintentará enviar la alerta
                   </small>
                 </div>
 
-                <div className="col-md-6 mb-3">
-                  <label htmlFor="intervaloReintentos" className="form-label">
+                <div className="col-md-5 mx-3 mt-3">
+                  <label
+                    htmlFor="intervaloReintentos"
+                    className={`${ParametroStyle.formLabel}`}
+                  >
                     <strong>Intervalo entre Reintentos (minutos)</strong>
                   </label>
                   <input
                     type="number"
-                    className="form-control"
+                    className={ParametroStyle.formControl}
                     id="intervaloReintentos"
                     min="1"
                     max="60"
@@ -607,12 +649,12 @@ const Alertas = () => {
                     onChange={(e) =>
                       handleInputChange(
                         "intervaloReintentosTelegram",
-                        parseInt(e.target.value)
+                        parseInt(e.target.value),
                       )
                     }
                     disabled={!alertas.alertasInventarioHabilitadas}
                   />
-                  <small className="form-text text-muted">
+                  <small className={`${ParametroStyle.formText} text-muted`}>
                     Minutos de espera entre cada reintento
                   </small>
                 </div>
@@ -622,15 +664,15 @@ const Alertas = () => {
         </div>
 
         {/* Sección: Email */}
-        <div className="card mb-4">
-          <div className="card-header bg-secondary text-dark">
-            <h5 className="mb-0">
+        <div className={`${ParametroStyle.card}`}>
+          <div className={`${ParametroStyle.cardHeader} bg-light text-dark`}>
+            <h5 className={ContenidoStyle.pageTitle}>
               <i className="fas fa-envelope me-2"></i>
               Configuración de Email
             </h5>
           </div>
-          <div className="card-body mx-5">
-            <div className="form-check form-switch mb-3">
+          <div className={`${ParametroStyle.cardBody}`}>
+            <div className="form-check form-switch mx-3">
               <input
                 className="form-check-input"
                 type="checkbox"
@@ -641,7 +683,10 @@ const Alertas = () => {
                 }
                 disabled={!alertas.alertasInventarioHabilitadas}
               />
-              <label className="form-check-label" htmlFor="emailHabilitado">
+              <label
+                className={ParametroStyle.formCheckLabel}
+                htmlFor="emailHabilitado"
+              >
                 <strong>Habilitar Notificaciones por Email</strong>
                 <br />
                 <small className="text-muted">
@@ -652,12 +697,15 @@ const Alertas = () => {
 
             {alertas.emailHabilitado && (
               <div className="mb-3">
-                <label htmlFor="destinatarioEmail" className="form-label">
+                <label
+                  htmlFor="destinatarioEmail"
+                  className={ParametroStyle.formLabel}
+                >
                   <strong>Correo Electrónico de Destinatario</strong>
                 </label>
                 <input
                   type="email"
-                  className="form-control"
+                  className={ParametroStyle.formControl}
                   id="destinatarioEmail"
                   value={alertas.destinatarioEmail}
                   onChange={(e) =>
@@ -666,7 +714,7 @@ const Alertas = () => {
                   placeholder="admin@comedor.com"
                   disabled={!alertas.alertasInventarioHabilitadas}
                 />
-                <small className="form-text text-muted">
+                <small className={`${ParametroStyle.formText} text-muted`}>
                   Dirección de correo donde se enviarán las alertas
                 </small>
               </div>
@@ -675,24 +723,24 @@ const Alertas = () => {
         </div>
 
         {/* Resumen Visual */}
-        <div className="card mb-4 bg-light">
-          <div className="card-header bg-light">
-            <h5 className="mb-0">
+        <div className={`${ParametroStyle.card} bg-light text-dark`}>
+          <div className={ParametroStyle.cardHeader}>
+            <h5 className={ContenidoStyle.pageTitle}>
               <i className="fas fa-info-circle me-2"></i>
               Resumen de Configuración
             </h5>
           </div>
-          <div className="card-body mx-4">
-            <div className="row">
+          <div className={ParametroStyle.cardBody}>
+            <div className={ParametroStyle.row}>
               <div className="col-md-6">
-                <p className="mb-2">
+                <p className="mx-2">
                   <strong>Estado General:</strong>
-                  <br />
+
                   <span
-                    className={`badge ${
+                    className={`${ParametroStyle.badge} ${
                       alertas.alertasInventarioHabilitadas
-                        ? "bg-success"
-                        : "bg-danger"
+                        ? ParametroStyle.bgSuccess
+                        : ParametroStyle.bgDanger
                     }`}
                   >
                     {alertas.alertasInventarioHabilitadas
@@ -701,89 +749,86 @@ const Alertas = () => {
                   </span>
                 </p>
 
-                <p className="mb-2">
+                <p className="mx-2">
                   <strong>Canales Activos:</strong>
-                  <br />
+
                   {alertas.telegramHabilitado && (
-                    <span className="badge bg-info me-2">
+                    <span
+                      className={`${ParametroStyle.badge} ${ParametroStyle.bgInfo} me-2`}
+                    >
                       <i className="fab fa-telegram me-1"></i>Telegram
                     </span>
                   )}
                   {alertas.emailHabilitado && (
-                    <span className="badge bg-secondary me-2">
+                    <span
+                      className={`${ParametroStyle.badge} ${ParametroStyle.bgSecondary} me-2`}
+                    >
                       <i className="fas fa-envelope me-1"></i>Email
                     </span>
                   )}
                   {alertas.notificacionesUIHabilitadas && (
-                    <span className="badge bg-primary me-2">
+                    <span
+                      className={`${ParametroStyle.badge} ${ParametroStyle.bgPrimary} me-2`}
+                    >
                       <i className="fas fa-bell me-1"></i>UI
                     </span>
                   )}
                   {!alertas.telegramHabilitado &&
                     !alertas.emailHabilitado &&
                     !alertas.notificacionesUIHabilitadas && (
-                      <span className="text-muted">Ninguno habilitado</span>
+                      <span className={ParametroStyle.textMuted}>
+                        Ninguno habilitado
+                      </span>
                     )}
-                </p>
-              </div>
-
-              <div className="col-md-6">
-                <p className="mb-2">
-                  <strong>Umbrales de Alerta:</strong>
-                  <br />
-                  <i className="fas fa-exclamation-circle text-danger me-2"></i>
-                  Crítico: ≤ {alertas.porcentajeAlertaCritico}%
-                  <br />
-                  <i className="fas fa-arrow-down text-warning me-2"></i>
-                  Bajo: ≤ {alertas.porcentajeAlertaBajo}%
                 </p>
 
                 {alertas.telegramHabilitado && (
-                  <p className="mb-0">
+                  <p className="ms-2">
                     <strong>Telegram:</strong>{" "}
                     {alertas.cantidadReintentosTelegram} reintentos cada{" "}
                     {alertas.intervaloReintentosTelegram} min
                   </p>
                 )}
               </div>
+
+              <div className="col-md-5">
+                <p className="mx-2">
+                  <strong>Umbrales de Alerta</strong>
+                  <br />
+                  <div className="ms-3">
+                    <i className="fas fa-exclamation-circle text-danger me-2"></i>
+                    Crítico: ≤ {alertas.porcentajeAlertaCritico}%
+                    <br />
+                    <i className="fas fa-arrow-down text-warning me-2"></i>
+                    Bajo: ≤ {alertas.porcentajeAlertaBajo}%
+                  </div>
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Botones de Acción */}
-        <div className="form-actions">
-          <button
-            type="submit"
-            className="btn btn-primary me-2"
-            disabled={saving}
-          >
-            <i className="fas fa-save"></i>
-            {saving ? "Guardando..." : "Guardar"}
-          </button>
+        <div className={ComponenteStyle.formActions}>
           <button
             type="button"
-            className="btn btn-warning me-2"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel} `}
             onClick={() => cargarConfiguracionAlertas()}
             disabled={saving}
           >
             <i className="fas fa-redo"></i>
             Recargar
           </button>
+          <button
+            type="submit"
+            className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate} `}
+            disabled={saving}
+          >
+            <i className="fas fa-save"></i>
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
         </div>
       </form>
-      {mensaje && (
-        <div
-          className={`alert alert-${mensaje.tipo} alert-dismissible fade show`}
-          role="alert"
-        >
-          {mensaje.texto}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setMensaje(null)}
-          ></button>
-        </div>
-      )}
     </div>
   );
 };

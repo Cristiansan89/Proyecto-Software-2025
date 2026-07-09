@@ -1,0 +1,535 @@
+.containerPedido {
+  padding: 2rem;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.sectionFiltros {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.groupFiltro {
+  flex: 1;
+  min-width: 200px;
+}
+
+.inputFiltro {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  background: white;
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+}
+
+.btnReset {
+  padding: 0.8rem 1.5rem;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+  }
+}
+
+.tablaConfirmados {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.tablaContainer {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.scrollableTable {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.tablaBodyScroll {
+  overflow-x: auto;
+}
+
+.tablaHeader {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  border-bottom: 2px solid #ddd;
+  z-index: 10;
+}
+
+.tablaData {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  padding: 0;
+
+  th {
+    padding: 0.6rem 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    background: #f8f9fa;
+    border-bottom: 2px solid #ddd;
+  }
+
+  td {
+    padding: 0.6rem 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.8rem;
+  }
+
+  tbody tr:hover {
+    background: #f8f9fa;
+  }
+}
+
+.tablaVacia {
+  padding: 3rem;
+  text-align: center;
+  color: #999;
+}
+
+.tablaTitle th {
+  text-align: center;
+}
+
+.titleNombre {
+  text-align: center;
+  font-weight: 700;
+}
+
+.pageTitle {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  flex-direction: row-reverse;
+  flex-wrap: nowrap;
+  align-content: center;
+}
+
+.column {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.numberId {
+  font-weight: 800;
+  text-align: center;
+}
+
+.numberPedido {
+  font-weight: 500;
+  text-align: center;
+}
+
+.numberConfirmados {
+  text-align: center;
+}
+
+.numberRechazados {
+  text-align: center;
+}
+
+.numberPendientes {
+  text-align: center;
+}
+
+.numberBadge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.7rem;
+  min-width: 30px;
+  text-align: center;
+
+  &.bgSuccess {
+    background: #28a745;
+  }
+
+  &.bgDanger {
+    background: #dc3545;
+  }
+
+  &.bgSecondary {
+    background: #6c757d;
+  }
+}
+
+.badgeSuccess {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: #d4edda;
+  color: #155724;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.7rem;
+}
+
+.badgeDanger {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: #f8d7da;
+  color: #721c24;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.7rem;
+}
+
+.badgeWarning {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: #fff3cd;
+  color: #856404;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.7rem;
+}
+
+.btnDetalles {
+  padding: 0.5rem 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 0.7rem;
+
+  &:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+}
+
+.modalContent {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+}
+
+.modalBody {
+  padding: 1.5rem;
+}
+
+.infoPedido {
+  background: #f8f9fa;
+  padding: 0.5rem;
+  border-radius: 8px;
+  margin-bottom: 0.2rem;
+}
+
+.infoFila {
+  display: flex;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid #e9ecef;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.infoLabel {
+  font-weight: 700;
+  color: #000000;
+  min-width: 150px;
+}
+
+.infoValor {
+  font-weight: 500;
+  color: #000000;
+  word-break: break-word;
+}
+
+.tablaInsumos {
+  margin-bottom: 2rem;
+
+  h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+}
+
+.tablaDetalles {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+
+  thead {
+    background: #f8f9fa;
+    border-bottom: 2px solid #ddd;
+  }
+
+  th {
+    padding: 0.8rem;
+    text-align: left;
+    font-weight: 600;
+    color: #000000;
+    font-size: 1rem;
+  }
+
+  td {
+    padding: 0.8rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  tbody tr {
+    &.filaDisponible {
+      background: rgba(40, 167, 69, 0.05);
+    }
+
+    &.filaNoDisponible {
+      background: rgba(220, 53, 69, 0.05);
+    }
+  }
+}
+
+.nameInsumo {
+  font-weight: 800;
+  color: #040404;
+}
+
+.cantidadValor {
+  text-align: center;
+  font-weight: 600;
+}
+
+.estadoInsumo {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  &.disponible {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  &.noDisponible {
+    background: #f8d7da;
+    color: #721c24;
+  }
+}
+
+.fechaConfirmacion {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #000000;
+}
+
+.sinDetalles {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+}
+
+.resumenConfirmacion {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.itemResumen {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+}
+
+.labelResumen {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.valorResumen {
+  font-size: 1.3rem;
+  font-weight: 700;
+
+  &.confirmado {
+    color: #28a745;
+  }
+
+  &.rechazado {
+    color: #dc3545;
+  }
+
+  &.pendiente {
+    color: #ffc107;
+  }
+}
+
+.modalFooter {
+  padding: 1.5rem;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.btnModalClose {
+  padding: 0.8rem 2rem;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: #666;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sectionFiltros {
+    flex-direction: column;
+  }
+
+  .groupFiltro {
+    width: 100%;
+  }
+
+  .tablaData {
+    font-size: 0.85rem;
+
+    th,
+    td {
+      padding: 0.6rem 0.4rem;
+    }
+  }
+
+  .modalContent {
+    max-width: 95%;
+  }
+
+  .resumenConfirmacion {
+    grid-template-columns: 1fr;
+  }
+
+  .infoFila {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .infoLabel {
+    min-width: auto;
+  }
+}

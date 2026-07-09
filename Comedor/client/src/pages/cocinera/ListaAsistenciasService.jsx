@@ -16,6 +16,9 @@ import {
   showToast,
   showConfirm,
 } from "../../utils/alertService";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
+import TablaStyle from "../../styles/Tabla.module.css";
 
 const ListaAsistenciasService = () => {
   const { user } = useAuth();
@@ -36,6 +39,8 @@ const ListaAsistenciasService = () => {
   const [asistenciaPorServicio, setAsistenciaPorServicio] = useState({});
   const [serviciosCompletados, setServiciosCompletados] = useState({});
   const [procesandoAutomatico, setProcesandoAutomatico] = useState(false);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     cargarDatosIniciales();
@@ -70,7 +75,7 @@ const ListaAsistenciasService = () => {
       // console.error("Error al cargar datos iniciales:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar los datos iniciales. Por favor, intente nuevamente más tarde.",
       );
     } finally {
       setLoading(false);
@@ -89,7 +94,7 @@ const ListaAsistenciasService = () => {
       const queryString = params.toString();
       const response =
         await asistenciasService.obtenerRegistrosAsistenciasServicio(
-          queryString
+          queryString,
         );
 
       if (response.success) {
@@ -99,7 +104,7 @@ const ListaAsistenciasService = () => {
         //console.error("Error:", response.message);
         showError(
           "Error",
-          "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+          "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde.",
         );
         setAsistencias([]);
         setEstadisticas({
@@ -112,7 +117,7 @@ const ListaAsistenciasService = () => {
       //console.error("Error al cargar asistencias:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar las asistencias. Por favor, intente nuevamente más tarde.",
       );
       setAsistencias([]);
       setEstadisticas({
@@ -130,10 +135,10 @@ const ListaAsistenciasService = () => {
     const totalRegistros = asistenciasData.length;
     const totalPresentes = asistenciasData.reduce(
       (sum, registro) => sum + (registro.cantidadPresentes || 0),
-      0
+      0,
     );
     const registrosConPresencia = asistenciasData.filter(
-      (r) => (r.cantidadPresentes || 0) > 0
+      (r) => (r.cantidadPresentes || 0) > 0,
     ).length;
     const porcentajeAsistencia =
       totalRegistros > 0
@@ -188,7 +193,7 @@ const ListaAsistenciasService = () => {
             await procesarAsistenciaAutomaticamente(
               datos.fecha,
               datos.idServicio,
-              datos.servicio
+              datos.servicio,
             );
           }
         }
@@ -204,7 +209,7 @@ const ListaAsistenciasService = () => {
   const procesarAsistenciaAutomaticamente = async (
     fecha,
     idServicio,
-    nombreServicio
+    nombreServicio,
   ) => {
     if (procesandoAutomatico) return;
 
@@ -213,7 +218,7 @@ const ListaAsistenciasService = () => {
       // Obtener detalles del menú del día para este servicio
       const menuDelDia = await planificacionMenuService.getMenusSemana(
         fecha,
-        fecha
+        fecha,
       );
       const menu = menuDelDia?.find((m) => m.id_servicio === idServicio);
 
@@ -223,17 +228,17 @@ const ListaAsistenciasService = () => {
 
       showSuccess(
         "¡Asistencia Completada!",
-        `La asistencia para ${nombreServicio} del día ${new Date(fecha).toLocaleDateString(
-          "es-ES"
-        )} ha sido completada al 100%.
+        `La asistencia para ${nombreServicio} del día ${new Date(
+          fecha,
+        ).toLocaleDateString("es-ES")} ha sido completada al 100%.
 
-Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
+Presiona el botón para descargar las instrucciones e ingredientes requeridos.`,
       );
 
       // Ofrecer descargar PDF inmediatamente
       setTimeout(() => {
         const confirmar = confirm(
-          `¿Desea descargar el PDF con las instrucciones e ingredientes para ${nombreServicio}?`
+          `¿Desea descargar el PDF con las instrucciones e ingredientes para ${nombreServicio}?`,
         );
         if (confirmar && menu) {
           exportarMenuAPDF(fecha, idServicio, nombreServicio, menu);
@@ -261,12 +266,14 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
     }));
   };
 
+  const obtenerFiltrosIniciales = () => ({
+    fecha: new Date().toISOString().split("T")[0],
+    idServicio: "",
+    idGrado: "",
+  });
+
   const limpiarFiltros = () => {
-    setFiltros({
-      fecha: new Date().toISOString().split("T")[0],
-      idServicio: "",
-      idGrado: "",
-    });
+    setFiltros(obtenerFiltrosIniciales());
   };
 
   const formatearFecha = (fecha) => {
@@ -333,7 +340,7 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
         doc.setFontSize(10);
         const instruccionesTexto = doc.splitTextToSize(
           recetaDetalles.instrucciones,
-          180
+          180,
         );
         doc.text(instruccionesTexto, 14, yPosition + 8);
         yPosition = yPosition + 8 + instruccionesTexto.length * 5 + 10;
@@ -367,12 +374,12 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
         doc.text(
           `Página ${i} de ${pageCount}`,
           doc.internal.pageSize.width - 30,
-          doc.internal.pageSize.height - 10
+          doc.internal.pageSize.height - 10,
         );
       }
 
       doc.save(
-        `menu_${nombreServicio}_${fecha.replace(/-/g, "")}_${Date.now()}.pdf`
+        `menu_${nombreServicio}_${fecha.replace(/-/g, "")}_${Date.now()}.pdf`,
       );
 
       showSuccess("Éxito", "PDF del menú descargado correctamente");
@@ -393,7 +400,7 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
       Grado: ${registro.nombreGrado || "Sin especificar"}
       Cantidad de Presentes: ${registro.cantidadPresentes || 0}
       Fecha de Creación: ${registro.fechaCreacion || "N/A"}
-    `
+    `,
     );
   };
 
@@ -452,7 +459,7 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
       doc.text(
         `Fecha de generación: ${new Date().toLocaleString("es-ES")}`,
         14,
-        40
+        40,
       );
       doc.text(`Fecha del reporte: ${formatearFecha(filtros.fecha)}`, 14, 48);
       doc.text(`Total de registros: ${asistencias.length}`, 14, 56);
@@ -492,15 +499,15 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
         doc.text(
           `Página ${i} de ${pageCount}`,
           doc.internal.pageSize.width - 30,
-          doc.internal.pageSize.height - 10
+          doc.internal.pageSize.height - 10,
         );
       }
 
       doc.save(
         `reporte_asistencias_${filtros.fecha.replace(
           /-/g,
-          ""
-        )}_${Date.now()}.pdf`
+          "",
+        )}_${Date.now()}.pdf`,
       );
 
       // Registrar la generación del PDF en auditoría
@@ -520,13 +527,31 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
     }
   };
 
+  const hayFiltrosActivos = () => {
+    const filtrosIniciales = obtenerFiltrosIniciales();
+    return (
+      filtros.fecha !== filtrosIniciales.fecha ||
+      filtros.idServicio !== filtrosIniciales.idServicio ||
+      filtros.idGrado !== filtrosIniciales.idGrado
+    );
+  };
+
+  // Cálculo de paginación
+  const totalPages = Math.ceil(asistencias.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const asistenciasActuales = asistencias.slice(startIndex, endIndex);
+
+  // Resetear a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtros, pageSize]);
+
   if (loading && asistencias.length === 0) {
     return (
-      <div className="loading-container">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Cargando asistencias...</span>
-        </div>
-        <p className="mt-3">Cargando registros de asistencias...</p>
+      <div className={ContenidoStyle.loadingContainer}>
+        <i className="fas fa-spinner fa-spin"></i>
+        <p>Cargando Registros de Asistencias...</p>
       </div>
     );
   }
@@ -534,26 +559,26 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
   return (
     <div>
       {/* Estadísticas */}
-      <div className="row mb-4">
+      <div className="row">
         <div className="col-md-4">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <h6 className="card-title text-muted">Total Registros</h6>
               <h2 className="text-primary">{estadisticas.totalRegistros}</h2>
             </div>
           </div>
         </div>
         <div className="col-md-4">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <h6 className="card-title text-muted">Total Presentes</h6>
               <h2 className="text-success">{estadisticas.totalPresentes}</h2>
             </div>
           </div>
         </div>
         <div className="col-md-4">
-          <div className="card text-center">
-            <div className="card-body">
+          <div className={`${ContenidoStyle.card} text-center`}>
+            <div className={ContenidoStyle.cardBody}>
               <h6 className="card-title text-muted">% Clases con Presencia</h6>
               <h2 className="text-info">
                 {estadisticas.porcentajeAsistencia}%
@@ -564,23 +589,23 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
       </div>
 
       {/* Filtros */}
-      <div className="card mb-4">
-        <div className="card-header">
+      <div className={`${ContenidoStyle.card} mb-3`}>
+        <div className={ContenidoStyle.cardHeader}>
           <h5 className="card-title mb-0">
             <i className="fas fa-filter me-2"></i>
             Filtros de Búsqueda
           </h5>
         </div>
-        <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-4">
-              <label htmlFor="fecha" className="form-label">
+        <div className={ContenidoStyle.cardBody}>
+          <div className="row">
+            <div className="col-lg-3">
+              <label htmlFor="fecha" className={ComponenteStyle.formLabel}>
                 <i className="fas fa-calendar me-2"></i>
                 Fecha
               </label>
               <input
                 type="date"
-                className="form-control"
+                className={ComponenteStyle.formControl}
                 id="fecha"
                 name="fecha"
                 value={filtros.fecha}
@@ -588,13 +613,13 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
               />
             </div>
 
-            <div className="col-md-4">
-              <label htmlFor="idServicio" className="form-label">
+            <div className="col-lg-3">
+              <label htmlFor="idServicio" className={ComponenteStyle.formLabel}>
                 <i className="fas fa-utensils me-2"></i>
                 Servicio
               </label>
               <select
-                className="form-select"
+                className={ComponenteStyle.formSelect}
                 id="idServicio"
                 name="idServicio"
                 value={filtros.idServicio}
@@ -612,13 +637,13 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
               </select>
             </div>
 
-            <div className="col-md-4">
-              <label htmlFor="idGrado" className="form-label">
+            <div className="col-lg-3">
+              <label htmlFor="idGrado" className={ComponenteStyle.formLabel}>
                 <i className="fas fa-graduation-cap me-2"></i>
                 Grado
               </label>
               <select
-                className="form-select"
+                className={ComponenteStyle.formSelect}
                 id="idGrado"
                 name="idGrado"
                 value={filtros.idGrado}
@@ -635,18 +660,20 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
                 ))}
               </select>
             </div>
+            <div className="col-md-2" style={{ marginTop: "2.3rem" }}>
+              {hayFiltrosActivos() && (
+                <button
+                  title="Limpiar filtros"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={limpiarFiltros}
+                >
+                  <i className="fas fa-broom me-2"></i>
+                  Limpiar
+                </button>
+              )}
+            </div>
           </div>
-
           <div className="d-flex gap-2 mt-3">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={limpiarFiltros}
-            >
-              <i className="fas fa-broom me-2"></i>
-              Limpiar Filtros
-            </button>
-
             <button
               type="button"
               className="btn btn-success"
@@ -671,132 +698,154 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`
       </div>
 
       {/* Lista de Asistencias */}
-      <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center">
+      <div className={`${ContenidoStyle.card}`}>
+        <div
+          className={`${ContenidoStyle.cardHeader} ${ContenidoStyle.headerInventario} pb-0 pt-2`}
+        >
           <h5 className="card-title mb-0">
             <i className="fas fa-list me-2"></i>
             Registros de Asistencias por Servicio
           </h5>
-          <button
-            className="btn btn-outline-primary btn-sm"
-            onClick={() => cargarAsistencias()}
-            disabled={loading}
-          >
-            <i className="fas fa-sync-alt me-1"></i>
-            {loading ? "Actualizando..." : "Actualizar"}
-          </button>
+          <div className={ContenidoStyle.headerRight}>
+            <label className="mx-2">
+              <span>Registros por página:</span>
+            </label>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
         </div>
-
-        <div className="card-body">
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Cargando...</span>
+        <div className={TablaStyle.tableContainer}>
+          {asistencias.length === 0 ? (
+            <div colSpan={12}>
+              <div className={TablaStyle.emptyState}>
+                <i className={`fas fa-search ${TablaStyle.emptyIcon}`}></i>
+                <h5>No hay registros de asistencias</h5>
+                <p>
+                  {filtros.fecha
+                    ? `No se encontraron registros para ${formatearFecha(
+                        filtros.fecha,
+                      )}`
+                    : "No hay registros con los filtros seleccionados"}
+                </p>
               </div>
-              <p className="mt-2 text-muted">Actualizando datos...</p>
-            </div>
-          ) : asistencias.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="fas fa-inbox fa-3x text-muted mb-3"></i>
-              <h5 className="text-muted">No hay registros de asistencias</h5>
-              <p className="text-muted">
-                {filtros.fecha
-                  ? `No se encontraron registros para ${formatearFecha(
-                      filtros.fecha
-                    )}`
-                  : "No hay registros con los filtros seleccionados"}
-              </p>
             </div>
           ) : (
-            <div className="table-container">
-              <table className="table table-striped data-table">
-                <thead className="table-header-fixed">
-                  <tr>
-                    <th width="5%">#</th>
-                    <th width="15%">
-                      <i className="fas fa-calendar me-2"></i>
-                      Fecha
-                    </th>
-                    <th width="20%">
-                      <i className="fas fa-utensils me-2"></i>
-                      Servicio
-                    </th>
-                    <th width="10%">
-                      <i className="fas fa-graduation-cap me-2"></i>
-                      Grado
-                    </th>
-                    <th width="26%">
-                      <i className="fas fa-users me-2"></i>
-                      Cantidad Presentes
-                    </th>
-                    <th width="20%">
-                      <i className="fas fa-clock me-2"></i>
-                      Fecha Creación
-                    </th>
+            <table className={`${TablaStyle.tableData} table table-striped`}>
+              <thead className={TablaStyle.tableHeaderFixed}>
+                <tr>
+                  <th width="5%" className="text-center">
+                    #
+                  </th>
+                  <th width="15%" className="text-center">
+                    <i className="fas fa-calendar me-2"></i>
+                    Fecha
+                  </th>
+                  <th width="20%" className="text-center">
+                    <i className="fas fa-utensils me-2"></i>
+                    Servicio
+                  </th>
+                  <th width="10%" className="text-center">
+                    <i className="fas fa-graduation-cap me-2"></i>
+                    Grado
+                  </th>
+                  <th width="26%" className="text-center">
+                    <i className="fas fa-users me-2"></i>
+                    Cantidad Presentes
+                  </th>
+                  <th width="20%" className="text-center">
+                    <i className="fas fa-clock me-2"></i>
+                    Fecha Creación
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {asistenciasActuales.map((registro, index) => (
+                  <tr
+                    key={`${
+                      registro.idRegistro || registro.id_registro || index
+                    }`}
+                  >
+                    <td className="text-center">
+                      <strong>{startIndex + index + 1}</strong>
+                    </td>
+                    <td className="text-center">
+                      <strong className="text-dark">
+                        {formatearFechaCorta(registro.fecha)}
+                      </strong>
+                    </td>
+
+                    <td className="text-center">
+                      <span
+                        className={`${ComponenteStyle.badge} bg-primary fw-bold text-white`}
+                      >
+                        <i className="fas fa-utensils me-1"></i>
+                        {registro.nombreServicio}
+                      </span>
+                    </td>
+
+                    <td className="text-center">
+                      <span
+                        className={`${ComponenteStyle.badge} bg-success fw-bold text-white`}
+                      >
+                        <i className="fas fa-graduation-cap me-1"></i>
+                        {registro.nombreGrado}
+                      </span>
+                    </td>
+
+                    <td className="text-center">
+                      <span
+                        className={`${ComponenteStyle.badge} bg-warning fs-6 fw-bold`}
+                      >
+                        <i className="fas fa-users me-1"></i>
+                        {registro.cantidadPresentes || 0}
+                      </span>
+                    </td>
+
+                    <td className="text-center">
+                      <strong>
+                        {formatearFechaHora(registro.fechaCreacion)}
+                      </strong>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {asistencias.map((registro, index) => (
-                    <tr
-                      key={`${
-                        registro.idRegistro || registro.id_registro || index
-                      }`}
-                    >
-                      <td>
-                        <strong>{index + 1}</strong>
-                      </td>
-                      <td>
-                        <strong className="text-dark">
-                          {formatearFechaCorta(registro.fecha)}
-                        </strong>
-                      </td>
-
-                      <td>
-                        <span className="badge bg-primary">
-                          <i className="fas fa-utensils me-1"></i>
-                          {registro.nombreServicio || "Sin especificar"}
-                        </span>
-                      </td>
-
-                      <td>
-                        <span className="badge bg-success">
-                          <i className="fas fa-graduation-cap me-1"></i>
-                          {registro.nombreGrado || "Sin especificar"}
-                        </span>
-                      </td>
-
-                      <td className="text-center">
-                        <span className="badge bg-warning text-dark fs-6">
-                          <i className="fas fa-users me-1"></i>
-                          {registro.cantidadPresentes || 0}
-                        </span>
-                      </td>
-
-                      <td>
-                        <strong>{formatearFechaHora(registro.fechaCreacion)}</strong>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {totalPages > 1 && (
+            <div className={TablaStyle.pagination}>
+              <button
+                className={TablaStyle.paginationBtn}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              <div className={TablaStyle.paginationInfo}>
+                Página {currentPage} de {totalPages} ({asistencias.length}{" "}
+                registros)
+              </div>
+              <button
+                className={TablaStyle.paginationBtn}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                disabled={currentPage === totalPages}
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
             </div>
           )}
         </div>
-
-        {asistencias.length > 0 && (
-          <div className="card-footer">
-            <div className="row text-center">
-              <div className="col-md-12">
-                <small className="text-black">
-                  <i className="fas fa-info-circle me-1"></i>
-                  Mostrando {asistencias.length} registro(s) de asistencia
-                  agregados | Última actualización:{" "}
-                  {new Date().toLocaleTimeString("es-ES")}
-                </small>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

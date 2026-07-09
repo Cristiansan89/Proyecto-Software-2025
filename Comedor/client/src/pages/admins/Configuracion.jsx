@@ -3,6 +3,7 @@ import ListaTurnos from "./ListaTurnos";
 import ListaServicios from "./ListaServicios";
 import ListaTipoMerma from "./ListaTipoMerma";
 import ListaEstadoPedido from "./ListaEstadoPedido";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
 
 const Configuracion = () => {
   const [activeTab, setActiveTab] = useState("turnos");
@@ -35,24 +36,28 @@ const Configuracion = () => {
   ];
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-cog me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-cog"></i>
             Configuración del Sistema
           </h1>
-          <p>Administra la configuración básica del comedor</p>
+          <p className={ContenidoStyle.pageSubtitle}>
+            Administra la configuración básica del comedor
+          </p>
         </div>
       </div>
 
       {/* Navegación por pestañas */}
-      <div className="navigation-tabs">
-        <div className="tabs-header">
+      <div className={ContenidoStyle.navigationTabs}>
+        <div className={ContenidoStyle.tabsHeader}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
+              className={`${ContenidoStyle.tabsButton} ${
+                activeTab === tab.id ? ContenidoStyle.active : ""
+              }`}
               onClick={() => setActiveTab(tab.id)}
             >
               <i className={tab.icon}></i>
@@ -63,7 +68,7 @@ const Configuracion = () => {
       </div>
 
       {/* Contenido de la pestaña activa */}
-      <div className="tab-content">
+      <div className={ContenidoStyle.tabContent}>
         {tabs.find((tab) => tab.id === activeTab)?.component}
       </div>
     </div>

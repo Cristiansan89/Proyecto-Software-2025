@@ -3,7 +3,8 @@ import PlanificacionSemanal from "../../pages/cocinera/PlanificacionSemanal";
 import PlanificacionCalendario from "../../pages/cocinera/PlanificacionCalendario";
 import InsumosSemanal from "../../pages/cocinera/InsumosSemanal";
 import planificacionMenuService from "../../services/planificacionMenuService";
-import "../../styles/PlanificacionMenus.css";
+import ContenidoStyle from "../../styles/ContenidoPage.module.css";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const PlanificacionMenus = () => {
   const [activeTab, setActiveTab] = useState("planificacion");
@@ -33,7 +34,7 @@ const PlanificacionMenus = () => {
       //console.error("Error al cargar planificaciones:", error);
       showError(
         "Error",
-        "❌ Ocurrió un error al cargar las planificaciones. Por favor, intente nuevamente más tarde."
+        "❌ Ocurrió un error al cargar las planificaciones. Por favor, intente nuevamente más tarde.",
       );
     } finally {
       setCargandoPlanificaciones(false);
@@ -50,7 +51,7 @@ const PlanificacionMenus = () => {
         const response = await planificacionMenuService.getAll();
         if (Array.isArray(response)) {
           setPlanificaciones(response);
-          
+
           // Ordenar planificaciones por fecha de inicio (de menor a mayor)
           const planificacionesOrdenadas = response.sort((a, b) => {
             const fechaA = new Date(a.fechaInicio);
@@ -60,7 +61,7 @@ const PlanificacionMenus = () => {
 
           // Buscar una planificación activa o la primera disponible
           const planificacionActiva = planificacionesOrdenadas.find(
-            (p) => p.estado === "Activo"
+            (p) => p.estado === "Activo",
           );
           const planificacionASeleccionar =
             planificacionActiva || planificacionesOrdenadas[0];
@@ -107,14 +108,14 @@ const PlanificacionMenus = () => {
   ];
 
   return (
-    <div>
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">
-            <i className="fas fa-calendar-alt me-2"></i>
+    <div className={ContenidoStyle.pageContent}>
+      <div className={ContenidoStyle.pageHeader}>
+        <div className={ContenidoStyle.headerLeft}>
+          <h1 className={ContenidoStyle.pageTitle}>
+            <i className="fas fa-calendar-alt"></i>
             Planificación de Menús
           </h1>
-          <p className="page-subtitle">
+          <p className={ContenidoStyle.pageSubtitle}>
             Gestiona la planificación de jornadas, servicios y recetas para el
             comedor escolar
           </p>
@@ -122,12 +123,12 @@ const PlanificacionMenus = () => {
       </div>
 
       {/* Pestañas de navegación */}
-      <div className="navigation-tabs">
-        <div className="tabs-header">
+      <div className={ContenidoStyle.navigationTabs}>
+        <div className={ContenidoStyle.tabsHeader}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
+              className={`${ContenidoStyle.tabsButton} ${activeTab === tab.id ? ContenidoStyle.active : ""}`}
               onClick={() => handleTabChange(tab.id)}
             >
               <i className={tab.icon}></i> {tab.label}
@@ -138,76 +139,76 @@ const PlanificacionMenus = () => {
 
       {/* Selector de planificaciones (solo en pestaña de calendario) */}
       {activeTab === "calendario" && (
-        <div className="planificacion-selector mb-4">
-          <div className="card">
-            <div className="card-body">
-              <div className="row align-items-center">
-                <div className="col-md-6">
-                  <label className="form-label fw-bold mb-0">
-                    <h2 className="page-title-sub">
-                      <i className="fas fa-folder-open me-2"></i> 
-                      Seleccionar Calendario
-                    </h2>
-                  </label>
-                </div>
-                <div className="col-md-6">
-                  {cargandoPlanificaciones ? (
-                    <div className="text-center">
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Cargando...
-                    </div>
-                  ) : planificaciones.length === 0 ? (
-                    <div className="alert alert-info mb-0">
-                      <i className="fas fa-info-circle me-2"></i>
-                      No hay planificaciones disponibles. Cree una nueva en la
-                      pestaña "Planificación Semanal".
-                    </div>
-                  ) : (
-                    <select
-                      className="form-select"
-                      value={planificacionSeleccionada?.id_planificacion || ""}
-                      onChange={(e) => {
-                        const idSeleccionado = e.target.value;
-                        const seleccionada = planificaciones.find(
-                          (p) =>
-                            String(p.id_planificacion) ===
-                            String(idSeleccionado)
-                        );
-                        if (seleccionada) {
-                          handleSeleccionarPlanificacion(seleccionada);
-                        }
-                      }}
-                    >
-                      <option value="">-- Seleccionar planificación --</option>
-                      {planificaciones.map((planificacion) => (
-                        <option
-                          key={planificacion.id_planificacion}
-                          value={String(planificacion.id_planificacion)}
-                        >
-                          {new Date(
-                            planificacion.fechaInicio
-                          ).toLocaleDateString("es-ES")}{" "}
-                          -{" "}
-                          {new Date(planificacion.fechaFin).toLocaleDateString(
-                            "es-ES"
-                          )}{" "}
-                          ({planificacion.estado})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
+        <div className={ContenidoStyle.pageContent}>
+          <div className={ContenidoStyle.pageHeader}>
+            <div className="row w-100 align-items-center">
+              <div className="col-md-6">
+                <p
+                  className={`${ContenidoStyle.pageTitle} fs-5 aling-items-center`}
+                >
+                  <i className="fas fa-folder-open me-2"></i>
+                  Seleccionar Calendario
+                </p>
+              </div>
+              <div className="col-md-6 d-flex justify-content-start justify-content-md-end mt-3 mt-md-0">
+                {" "}
+                {cargandoPlanificaciones ? (
+                  <div className="text-center">
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
+                    Cargando...
+                  </div>
+                ) : planificaciones.length === 0 ? (
+                  <div
+                    className={`${ComponenteStyle.alert} ${ComponenteStyle.alertInfo} mb-0`}
+                  >
+                    <i className="fas fa-info-circle me-2"></i>
+                    No hay planificaciones disponibles. Cree una nueva en la
+                    pestaña "Planificación Semanal".
+                  </div>
+                ) : (
+                  <select
+                    className={`${ComponenteStyle.formSelect} w-50`}
+                    value={planificacionSeleccionada?.id_planificacion || ""}
+                    onChange={(e) => {
+                      const idSeleccionado = e.target.value;
+                      const seleccionada = planificaciones.find(
+                        (p) =>
+                          String(p.id_planificacion) === String(idSeleccionado),
+                      );
+                      if (seleccionada) {
+                        handleSeleccionarPlanificacion(seleccionada);
+                      }
+                    }}
+                  >
+                    <option value="">-- Seleccionar planificación --</option>
+                    {planificaciones.map((planificacion) => (
+                      <option
+                        key={planificacion.id_planificacion}
+                        value={String(planificacion.id_planificacion)}
+                      >
+                        {new Date(planificacion.fechaInicio).toLocaleDateString(
+                          "es-ES",
+                        )}{" "}
+                        -{" "}
+                        {new Date(planificacion.fechaFin).toLocaleDateString(
+                          "es-ES",
+                        )}{" "}
+                        ({planificacion.estado})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="tab-content">
+      <div className={ContenidoStyle.tabContent}>
         {tabs.find((tab) => tab.id === activeTab)?.component}
       </div>
     </div>
