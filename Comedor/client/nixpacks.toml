@@ -1,13 +1,9 @@
-# Esto va arriba de todo para que Nixpacks sepa qué archivos vigilar
 onlyIncludeFiles = ["package.json", "pnpm-lock.yaml"]
 
 providers = ["node"]
 
 [variables]
 NODE_VERSION = "20"
-
-# Esto le dice a pnpm a nivel global que ignore las restricciones de scripts nativos
-# y permita que esbuild y @swc/core compilen sin preguntar
 PNPM_FLAGS = "--ignore-scripts=false"
 
 [phases.install]
@@ -15,7 +11,7 @@ cmds = [
   "npm install -g corepack",
   "corepack enable",
   "corepack prepare pnpm@9.1.0 --activate",
-  "pnpm install --no-frozen-lockfile --only-built-dependencies=esbuild,@swc/core,msw"
+  "pnpm install --no-frozen-lockfile"
 ]
 
 [phases.build]
