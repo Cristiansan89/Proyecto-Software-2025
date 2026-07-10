@@ -6,6 +6,10 @@ providers = ["node"]
 [variables]
 NODE_VERSION = "20"
 
+# Esto le dice a pnpm a nivel global que ignore las restricciones de scripts nativos
+# y permita que esbuild y @swc/core compilen sin preguntar
+PNPM_FLAGS = "--ignore-scripts=false"
+
 [phases.install]
 cmds = [
   "npm install -g corepack",
