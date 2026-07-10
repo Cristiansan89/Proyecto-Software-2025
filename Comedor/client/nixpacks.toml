@@ -1,5 +1,3 @@
-onlyIncludeFiles = ["package.json", "pnpm-lock.yaml"]
-
 providers = ["node"]
 
 [variables]
