@@ -1,3 +1,6 @@
+# Esto va arriba de todo para que Nixpacks sepa qué archivos vigilar
+onlyIncludeFiles = ["package.json", "pnpm-lock.yaml"]
+
 providers = ["node"]
 
 [variables]
@@ -8,10 +11,8 @@ cmds = [
   "npm install -g corepack",
   "corepack enable",
   "corepack prepare pnpm@9.1.0 --activate",
-  "pnpm install --no-frozen-lockfile"
+  "pnpm install --no-frozen-lockfile --only-built-dependencies=esbuild,@swc/core,msw"
 ]
-# Esto le dice a Railway: "No ejecutes tu propia instalación después de mis comandos"
-onlyIncludeFiles = ["package.json", "pnpm-lock.yaml"] 
 
 [phases.build]
 cmds = ["pnpm run build"]
