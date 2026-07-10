@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import "../../styles/CocineraTelegram.css";
+import CocineraTelegran from "../../styles/CocineraTelegram.module.css";
 
 const CocineraTelegramExitoso = () => {
   const [pedidosCreados, setPedidosCreados] = useState(1);
@@ -18,7 +18,7 @@ const CocineraTelegramExitoso = () => {
         console.error("Error parsing pedidoExitoso:", error);
       }
     }
-    
+
     // Limpiar sessionStorage cuando se carga esta página para evitar reutilización
     return () => {
       sessionStorage.removeItem("pedidoExitoso");
@@ -36,37 +36,46 @@ const CocineraTelegramExitoso = () => {
   };
 
   return (
-    <div className="cocinera-telegram-container">
-      <div className="success-overlay">
-        <div className="success-card">
-          <div className="success-icon">✅</div>
-          <h1 className="success-title">{mensaje}</h1>
-          <p className="success-message">
-            Se ha generado el pedido automático de insumos faltantes correctamente.
+    <div className={CocineraTelegran.containerTelegram}>
+      <div className={CocineraTelegran.successOverlay}>
+        <div className={CocineraTelegran.successCard}>
+          <div className={CocineraTelegran.successIcon}>✅</div>
+          <h1 className={CocineraTelegran.successTitle}>{mensaje}</h1>
+          <p className={CocineraTelegran.successMessage}>
+            Se ha generado el pedido automático de insumos faltantes
+            correctamente.
           </p>
 
-          <div className="success-details">
-            <div className="detail-item">
-              <span className="detail-label">Pedidos Creados:</span>
-              <span className="detail-value">{pedidosCreados}</span>
+          <div className={CocineraTelegran.successDetails}>
+            <div className={CocineraTelegran.detailItem}>
+              <span className={CocineraTelegran.detailLabel}>
+                Pedidos Creados:
+              </span>
+              <span className={CocineraTelegran.detailValue}>
+                {pedidosCreados}
+              </span>
             </div>
-            <div className="detail-item">
-              <span className="detail-label">Fecha y Hora:</span>
-              <span className="detail-value">
+            <div className={CocineraTelegran.detailItem}>
+              <span className={CocineraTelegran.detailLabel}>
+                Fecha y Hora:
+              </span>
+              <span className={CocineraTelegran.detailValue}>
                 {new Date().toLocaleString("es-ES")}
               </span>
             </div>
-            <div className="detail-item">
-              <span className="detail-label">Estado:</span>
-              <span className="detail-value">✅ Completado</span>
+            <div className={CocineraTelegran.detailItem}>
+              <span className={CocineraTelegran.detailLabel}>Estado:</span>
+              <span className={CocineraTelegran.detailValue}>
+                ✅ Completado
+              </span>
             </div>
           </div>
 
-          <button className="btn-salir" onClick={handleSalir}>
+          <button className={CocineraTelegran.btnSalir} onClick={handleSalir}>
             🔚 Salir del Sistema
           </button>
 
-          <p className="footer-text">
+          <p className={CocineraTelegran.footerText}>
             Los proveedores recibirán la información del pedido automáticamente.
           </p>
         </div>
