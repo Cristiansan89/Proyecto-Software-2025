@@ -20,12 +20,14 @@ export const corsMiddleware = () =>
         "http://192.168.100.10:5177",
         "http://192.168.100.10:5178",
         "http://192.168.100.10:5179",
-      ];
+        // Lee la variable de Railway en producción; limpia valores nulos o vacíos
+        process.env.FRONTEND_URL,
+      ].filter(Boolean);
 
       // Permitir requests sin origin (como desde Postman o curl)
       if (!origin) return callback(null, true);
 
-      // Permitir dominios específicos
+      // Permitir dominios específicos (incluyendo tu URL de Railway)
       if (ACCEPTED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
