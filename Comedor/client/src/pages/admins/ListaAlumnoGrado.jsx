@@ -185,7 +185,7 @@ const ListaAlumnosGrados = () => {
     if (modalMode === "create") {
       showSuccess(
         "Éxito",
-        `Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo Lectivo: ${result.cicloLectivo}`,
+        `Alumno asignado al grado correctamente!\n\nAlumno: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo Lectivo: ${formatCicloLectivo(result.cicloLectivo)}`,
       );
     } else {
       showSuccess(

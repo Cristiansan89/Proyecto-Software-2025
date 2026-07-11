@@ -210,7 +210,7 @@ const ListaDocentesGrados = () => {
     if (modalMode === "create") {
       showSuccess(
         "Éxito",
-        `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${new Date(result.cicloLectivo).getFullYear()}`,
+        `Docente asignado al grado correctamente!\n\nDocente: ${result.nombre} ${result.apellido}\nGrado: ${result.nombreGrado}\nCiclo: ${formatCicloLectivo(result.cicloLectivo)}`,
       );
     } else {
       showSuccess(
