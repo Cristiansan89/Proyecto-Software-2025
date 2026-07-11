@@ -5,31 +5,35 @@ const getApiBaseUrl = () => {
   const currentUrl = window.location.origin;
   console.log("🔍 Current window origin:", currentUrl);
 
-  // Si estamos en ngrok HTTPS, usar la URL completa de ngrok
+  // 1. Si estamos en producción (Railway), usar la variable de entorno de Vite
+  if (import.meta.env.VITE_API_URL) {
+    console.log("🚀 Using Environment API URL:", import.meta.env.VITE_API_URL);
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // 2. Si estamos en ngrok HTTPS, usar la URL completa de ngrok
   if (currentUrl.includes("ngrok-free.dev")) {
     const apiUrl = currentUrl + "/api";
     console.log("🌐 Using ngrok API URL:", apiUrl);
     return apiUrl;
   }
 
-  // Si estamos en localhost HTTP, usar localhost:3000
+  // 3. Si estamos en localhost HTTP, usar localhost:3000
   if (currentUrl.includes("localhost") || currentUrl.includes("127.0.0.1")) {
     const apiUrl = "http://localhost:3000/api";
     console.log("🏠 Using Localhost API URL:", apiUrl);
     return apiUrl;
   }
 
-  // En desarrollo (192.168.x.x), usar localhost:3000
-  if (currentUrl.includes("192.168") || currentUrl.includes("192.168.100.10")) {
+  // 4. En desarrollo (192.168.x.x), usar localhost:3000
+  if (currentUrl.includes("192.168")) {
     const apiUrl = "http://localhost:3000/api";
     console.log("🖥️ Using Localhost API URL (from IP access):", apiUrl);
     return apiUrl;
   }
 
-  // Por defecto, usar localhost:3000/api
-  const apiUrl = "http://localhost:3000/api";
-  console.log("📡 Using default Localhost API URL:", apiUrl);
-  return apiUrl;
+  // Por defecto de respaldo
+  return "http://localhost:3000/api";
 };
 
 // Usa la URL del backend detectada automáticamente con prefijo /api
@@ -90,7 +94,7 @@ api.interceptors.response.use(
       // El servidor respondió con un código de estado fuera del rango 2xx
       console.error(
         `📡 Error del servidor (${error.response.status}):`,
-        error.response?.data?.message
+        error.response?.data?.message,
       );
     } else if (error.request) {
       // La petición fue hecha pero no se recibió respuesta
@@ -100,7 +104,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
