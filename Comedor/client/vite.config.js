@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  base: "/",
   plugins: [react()],
   server: {
     host: "0.0.0.0", // Escuchar en todas las interfaces
@@ -15,13 +15,13 @@ export default defineConfig({
       // "spleeny-slouchily-brenda.ngrok-free.dev",
       //"vincent-intercalary-unhealthily.ngrok-free.dev",
       //"gift-emission-hurled.ngrok-free.dev",
-      "lushly-tabby-craftwork.ngrok-free.dev"
+      //"lushly-tabby-craftwork.ngrok-free.dev",
     ],
     // Headers para evitar caché a través de ngrok
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-      "Pragma": "no-cache",
-      "Expires": "0",
+      Pragma: "no-cache",
+      Expires: "0",
     },
     // Proxy para las solicitudes de API
     proxy: {
