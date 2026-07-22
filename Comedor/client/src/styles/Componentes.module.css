@@ -119,6 +119,32 @@
   }
 }
 
+.formReceta {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  border-left: 4px solid #667eea;
+}
+
+.sectionTitleReceta {
+  color: #2c3e50;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+  gap: 0.5rem;
+
+  i {
+    color: #667eea;
+    margin-right: 0.5rem !important;
+    margin-left: 0.5rem !important;
+  }
+}
+
 .formActions {
   display: flex;
   justify-content: center;

@@ -402,7 +402,7 @@ const ListaReemplazosGrados = () => {
 
             {(searchTerm || gradoFilter || estadoFilter || motivoFilter) && (
               <button
-                className="btn btn-outline-secondary btn-sm"
+                className={ContenidoStyle.btnOutlineSecondary}
                 onClick={() => {
                   setSearchTerm("");
                   setGradoFilter("");

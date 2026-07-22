@@ -5,10 +5,22 @@ const ProveedorSidebar = ({ collapsed }) => {
   const location = useLocation();
   const menuItems = [
     {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: "fas fa-home",
+      path: "/proveedor/dashboard",
+    },
+    {
       id: "gestionproductos",
       label: "Gestión de Productos",
       icon: "fas fa-boxes",
       path: "/proveedor/gestionproductos",
+    },
+    {
+      id: "gestionpedidos",
+      label: "Gestión de Pedidos",
+      icon: "fas fa-shopping-cart",
+      path: "/proveedor/gestionpedidos",
     },
   ];
 

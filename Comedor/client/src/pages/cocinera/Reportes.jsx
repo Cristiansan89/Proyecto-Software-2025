@@ -968,7 +968,7 @@ const Reportes = () => {
 
                 <div className="col-auto">
                   <button
-                    className="btn btn-outline-secondary"
+                    className={ContenidoStyle.btnOutlineSecondary}
                     onClick={limpiarFiltros}
                     disabled={generando}
                   >

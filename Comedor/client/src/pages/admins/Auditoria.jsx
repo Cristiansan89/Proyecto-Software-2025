@@ -58,7 +58,7 @@ const Auditoria = () => {
 
   const criticidades = ["Bajo", "Medio", "Alto"];
 
-  const resultados = ["Éxito", "Error", "Intento_fallido"];
+  const resultados = ["Éxito", "Error", "Intento Fallido"];
 
   useEffect(() => {
     cargarLogs();
@@ -316,7 +316,7 @@ const Auditoria = () => {
     const colores = {
       Éxito: "success",
       Error: "danger",
-      Intento_fallido: "warning",
+      Intento Fallido: "warning",
     };
     return colores[resultado] || "secondary";
   };
@@ -830,7 +830,7 @@ const Auditoria = () => {
                               {log.resultado_accion === "Error" && (
                                 <i className="fas fa-times-circle me-1"></i>
                               )}
-                              {log.resultado_accion === "Intento_fallido" && (
+                              {log.resultado_accion === "Intento Fallido" && (
                                 <i className="fas fa-exclamation-triangle me-1"></i>
                               )}
                               {log.resultado_accion || "N/A"}
@@ -883,11 +883,52 @@ const Auditoria = () => {
                   </div>
 
                   <div className="col-md-4 text-center">
-                    <small className="text-muted">
-                      <i className="fas fa-info-circle me-1"></i>
-                      Mostrando {obtenerLogsActuales().length} de {logs.length}{" "}
-                      registros
-                    </small>
+                    {/* Controles de paginación */}
+                    <div className="d-flex justify-content-center align-items-center gap-2">
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={handlePaginaAnterior}
+                        disabled={paginaActual === 1}
+                      >
+                        <i className="fas fa-chevron-left"></i> Anterior
+                      </button>
+
+                      <div className="d-flex gap-1">
+                        {Array.from(
+                          { length: Math.min(5, totalPaginas) },
+                          (_, i) => {
+                            let numeroPagina;
+                            if (totalPaginas <= 5) {
+                              numeroPagina = i + 1;
+                            } else if (paginaActual <= 3) {
+                              numeroPagina = i + 1;
+                            } else if (paginaActual >= totalPaginas - 2) {
+                              numeroPagina = totalPaginas - 4 + i;
+                            } else {
+                              numeroPagina = paginaActual - 2 + i;
+                            }
+
+                            return (
+                              <button
+                                key={numeroPagina}
+                                className={`btn btn-sm ${paginaActual === numeroPagina ? "btn-primary" : "btn-outline-primary"}`}
+                                onClick={() => handleIrAPagina(numeroPagina)}
+                              >
+                                {numeroPagina}
+                              </button>
+                            );
+                          },
+                        )}
+                      </div>
+
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={handlePaginaSiguiente}
+                        disabled={paginaActual === totalPaginas}
+                      >
+                        Siguiente <i className="fas fa-chevron-right"></i>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="col-md-4 text-end">
@@ -896,57 +937,6 @@ const Auditoria = () => {
                       - {formatearFechaParaDisplay(filtros.fechaFin)}
                     </small>
                   </div>
-                </div>
-
-                {/* Controles de paginación */}
-                <div className="d-flex justify-content-center align-items-center gap-2 mt-3">
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={handlePaginaAnterior}
-                    disabled={paginaActual === 1}
-                  >
-                    <i className="fas fa-chevron-left"></i> Anterior
-                  </button>
-
-                  <div className="d-flex gap-1">
-                    {Array.from(
-                      { length: Math.min(5, totalPaginas) },
-                      (_, i) => {
-                        let numeroPagina;
-                        if (totalPaginas <= 5) {
-                          numeroPagina = i + 1;
-                        } else if (paginaActual <= 3) {
-                          numeroPagina = i + 1;
-                        } else if (paginaActual >= totalPaginas - 2) {
-                          numeroPagina = totalPaginas - 4 + i;
-                        } else {
-                          numeroPagina = paginaActual - 2 + i;
-                        }
-
-                        return (
-                          <button
-                            key={numeroPagina}
-                            className={`btn btn-sm ${paginaActual === numeroPagina ? "btn-primary" : "btn-outline-primary"}`}
-                            onClick={() => handleIrAPagina(numeroPagina)}
-                          >
-                            {numeroPagina}
-                          </button>
-                        );
-                      },
-                    )}
-                  </div>
-
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={handlePaginaSiguiente}
-                    disabled={paginaActual === totalPaginas}
-                  >
-                    Siguiente <i className="fas fa-chevron-right"></i>
-                  </button>
-
-                  <small className="text-muted ms-2">
-                    Página {paginaActual} de {totalPaginas}
-                  </small>
                 </div>
               </div>
             )}

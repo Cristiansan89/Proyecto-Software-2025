@@ -786,11 +786,11 @@ const ListaAsistencia = () => {
           <div className="d-flex gap-2 mt-3">
             <button
               type="button"
-              className="btn btn-outline-secondary"
+              className={ContenidoStyle.btnOutlineSecondary}
               onClick={limpiarFiltros}
             >
               <i className="fas fa-broom me-2"></i>
-              Limpiar Filtros
+              Limpiar
             </button>
           </div>
         </div>

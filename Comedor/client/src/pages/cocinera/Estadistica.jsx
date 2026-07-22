@@ -1001,7 +1001,7 @@ const Estadistica = () => {
               className={` ${ContenidoStyle.headerActions} col-12 d-flex gap-2`}
             >
               <button
-                className={`${ContenidoStyle.btn} btn-primary`}
+                className={`${ContenidoStyle.btn} ${ContenidoStyle.btnPrimary}`}
                 onClick={cargarDatos}
                 disabled={loading}
               >
@@ -1009,7 +1009,7 @@ const Estadistica = () => {
                 Actualizar
               </button>
               <button
-                className="btn btn-outline-secondary"
+                className={ContenidoStyle.btnOutlineSecondary}
                 onClick={limpiarFiltros}
               >
                 <i className="fas fa-times me-1"></i>

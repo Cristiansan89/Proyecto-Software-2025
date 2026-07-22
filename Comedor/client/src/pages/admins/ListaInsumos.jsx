@@ -326,7 +326,7 @@ const ListaInsumos = () => {
               <div className="mt-2">
                 {(searchTerm || statusFilter) && (
                   <button
-                    className="btn btn-outline-secondary btn-sm me-2"
+                    className={`${ContenidoStyle.btnOutlineSecondary} me-2`}
                     onClick={clearFilters}
                     title="Limpiar filtros"
                   >

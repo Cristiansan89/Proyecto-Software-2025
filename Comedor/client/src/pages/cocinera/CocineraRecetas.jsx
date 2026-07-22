@@ -332,7 +332,7 @@ const CocineraRecetas = () => {
 
             {(searchQuery || filterEstado) && (
               <button
-                className="btn btn-outline-secondary btn-sm"
+                className={ContenidoStyle.btnOutlineSecondary}
                 onClick={clearFilters}
                 title="Limpiar filtros"
               >

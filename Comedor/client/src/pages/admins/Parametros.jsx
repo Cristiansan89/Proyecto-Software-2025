@@ -378,7 +378,7 @@ const Parametros = () => {
             </select>
             {(filtros.busqueda || filtros.estado) && (
               <button
-                className="btn btn-outline-secondary btn-sm"
+                className={ContenidoStyle.btnOutlineSecondary}
                 onClick={clearFilters}
               >
                 <i className="fas fa-times"></i> Limpiar

@@ -113,10 +113,15 @@ const Estadistica = lazy(() => import("../pages/cocinera/Estadistica"));
 const Reportes = lazy(() => import("../pages/cocinera/Reportes"));
 
 // ===== PÁGINAS PROVEEDOR (LAZY LOADING) =====
-const ProveedorPedidos = lazy(
+const ProveedorDashboard = lazy(
+  () => import("../pages/proveedor/ProveedorDashboard"),
+);
+const ProveedorProductos = lazy(
   () => import("../pages/proveedor/GestionProductos"),
 );
-
+const ProveedorPedidos = lazy(
+  () => import("../pages/proveedor/GestionPedidos"),
+);
 // Componente para redireccionar según el rol del usuario
 const DashboardRedirect = () => {
   const { user } = useAuth();
@@ -247,9 +252,14 @@ export const AppRouter = () => {
             <ProtectedRoute requireAuth={true} allowedRoles={["Proveedor"]}>
               <ProveedorLayout>
                 <Routes>
-                  <Route index element={<ProveedorPedidos />} />
+                  <Route index element={<ProveedorDashboard />} />
+                  <Route path="/dashboard" element={<ProveedorDashboard />} />
                   <Route
                     path="/gestionproductos"
+                    element={<ProveedorProductos />}
+                  />
+                  <Route
+                    path="/gestionpedidos"
                     element={<ProveedorPedidos />}
                   />
                 </Routes>

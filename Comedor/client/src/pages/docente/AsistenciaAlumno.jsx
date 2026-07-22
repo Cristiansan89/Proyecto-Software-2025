@@ -456,11 +456,11 @@ const AsistenciaAlumno = () => {
                   <label className={ComponenteStyle.formLabel}>&nbsp;</label>
                   {(fechaInicio || fechaFin || servicioSeleccionado) && (
                     <button
-                      className="btn btn-outline-secondary btn-sm"
+                      className={ContenidoStyle.btnOutlineSecondary}
                       onClick={clearFilters}
                     >
                       <i className="fas fa-redo"></i>
-                      Limpiar Filtros
+                      Limpiar
                     </button>
                   )}
                 </div>

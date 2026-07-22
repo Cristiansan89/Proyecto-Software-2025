@@ -12,6 +12,7 @@ import {
   showConfirm,
 } from "../../utils/alertService";
 import formatCantidad from "../../utils/formatCantidad";
+import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   // Función para normalizar unidades (convertir minúsculas a mayúsculas correctas)
@@ -395,13 +396,13 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       <div className="row">
         {/* Columna izquierda - Información de la receta */}
         <div className="col-lg-6">
-          <div className="form-section">
-            <h4 className="section-title">
+          <div className={ComponenteStyle.formReceta}>
+            <h4 className={ComponenteStyle.sectionTitleReceta}>
               <i className="fas fa-utensils me-2"></i>
               Información de la Receta
             </h4>
 
-            <div className="form-group">
+            <div className={ComponenteStyle.formGroup}>
               <label htmlFor="nombreReceta" className="form-label required">
                 Nombre de la receta
               </label>
@@ -409,8 +410,8 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                 type="text"
                 id="nombreReceta"
                 name="nombreReceta"
-                className={`form-control ${
-                  errors.nombreReceta ? "is-invalid" : ""
+                className={`${ComponenteStyle.formControl} ${
+                  errors.nombreReceta ? ComponenteStyle.isInvalid : ""
                 }`}
                 value={formData.nombreReceta}
                 onChange={handleInputChange}
@@ -418,21 +419,26 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                 placeholder="Ej: Arroz con pollo"
               />
               {errors.nombreReceta && (
-                <div className="invalid-feedback">{errors.nombreReceta}</div>
+                <div className={ComponenteStyle.invalidFeedback}>
+                  {errors.nombreReceta}
+                </div>
               )}
             </div>
 
             <div className="row">
               <div className="col-md-6">
-                <div className="form-group">
-                  <label htmlFor="unidadSalida" className="form-label required">
+                <div className={ComponenteStyle.formGroup}>
+                  <label
+                    htmlFor="unidadSalida"
+                    className={`${ComponenteStyle.formLabel} required`}
+                  >
                     Unidad de Salida
                   </label>
                   <select
                     id="unidadSalida"
                     name="unidadSalida"
-                    className={`form-control ${
-                      errors.unidadSalida ? "is-invalid" : ""
+                    className={`${ComponenteStyle.formControl} ${
+                      errors.unidadSalida ? ComponenteStyle.isInvalid : ""
                     }`}
                     value={formData.unidadSalida}
                     onChange={handleInputChange}
@@ -444,21 +450,23 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                     <option value="Unidad">Unidad</option>
                   </select>
                   {errors.unidadSalida && (
-                    <div className="invalid-feedback">
+                    <div className={ComponenteStyle.invalidFeedback}>
                       {errors.unidadSalida}
                     </div>
                   )}
                 </div>
               </div>
               <div className="col-md-6">
-                <div className="form-group">
-                  <label htmlFor="estado" className="form-label">
+                <div className={ComponenteStyle.formGroup}>
+                  <label htmlFor="estado" className={ComponenteStyle.formLabel}>
                     Estado
                   </label>
                   <select
                     id="estado"
                     name="estado"
-                    className="form-control"
+                    className={`${ComponenteStyle.formControl} ${
+                      errors.estado ? ComponenteStyle.isInvalid : ""
+                    }`}
                     value={formData.estado}
                     onChange={handleInputChange}
                     disabled={isViewMode}
@@ -469,8 +477,8 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                 </div>
               </div>
               <div className="col-12">
-                <div className="form-group">
-                  <label className="form-label">
+                <div className={ComponenteStyle.formGroup}>
+                  <label className={ComponenteStyle.formLabel}>
                     <strong>Servicios Disponibles</strong>
                   </label>
                   <div className="d-flex gap-3">
@@ -504,7 +512,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                           disabled={isViewMode}
                         />
                         <label
-                          className="form-check-label"
+                          className={ComponenteStyle.formCheckLabel}
                           htmlFor={`servicio-${servicio.id_servicio}`}
                         >
                           {servicio.nombre}
@@ -521,15 +529,18 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="instrucciones" className="form-label required">
+            <div className={ComponenteStyle.formGroup}>
+              <label
+                htmlFor="instrucciones"
+                className={`${ComponenteStyle.formLabel} required`}
+              >
                 Instrucciones de preparación
               </label>
               <textarea
                 id="instrucciones"
                 name="instrucciones"
                 className={`form-control ${
-                  errors.instrucciones ? "is-invalid" : ""
+                  errors.instrucciones ? ComponenteStyle.isInvalid : ""
                 }`}
                 rows="8"
                 value={formData.instrucciones}
@@ -538,7 +549,9 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                 placeholder="Describe paso a paso cómo preparar esta receta..."
               />
               {errors.instrucciones && (
-                <div className="invalid-feedback">{errors.instrucciones}</div>
+                <div className={ComponenteStyle.invalidFeedback}>
+                  {errors.instrucciones}
+                </div>
               )}
             </div>
           </div>
@@ -546,8 +559,8 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
         {/* Columna derecha - Gestión de ingredientes */}
         <div className="col-lg-6">
-          <div className="form-section">
-            <h4 className="section-title">
+          <div className={ComponenteStyle.formReceta}>
+            <h4 className={ComponenteStyle.sectionTitleReceta}>
               <i className="fas fa-list me-2"></i>
               Ingredientes de la Receta
               {errors.ingredientes && (
@@ -560,8 +573,11 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
             {!isViewMode && (
               <>
                 {/* Formulario para agregar ingredientes */}
-                <div className="form-group">
-                  <label htmlFor="ingrediente_insumo" className="form-label">
+                <div className={ComponenteStyle.formGroup}>
+                  <label
+                    htmlFor="ingrediente_insumo"
+                    className={ComponenteStyle.formLabel}
+                  >
                     Seleccionar insumo
                   </label>
                   <Select
@@ -618,17 +634,21 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
 
                 <div className="row">
                   <div className="col-md-6">
-                    <div className="form-group">
+                    <div className={ComponenteStyle.formGroup}>
                       <label
                         htmlFor="ingrediente_cantidad"
-                        className="form-label mt-3"
+                        className={`${ComponenteStyle.formLabel} mt-3`}
                       >
                         Cantidad
                       </label>
                       <input
                         type="number"
                         id="ingrediente_cantidad"
-                        className="form-control"
+                        className={`${ComponenteStyle.formControl} ${
+                          errors.ingrediente_cantidad
+                            ? ComponenteStyle.isInvalid
+                            : ""
+                        }`}
                         step="0.001"
                         min="0.001"
                         value={nuevoIngrediente.cantidadPorPorcion}
@@ -643,16 +663,20 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                     </div>
                   </div>
                   <div className="col-md-6">
-                    <div className="form-group">
+                    <div className={ComponenteStyle.formGroup}>
                       <label
                         htmlFor="ingrediente_unidad"
-                        className="form-label mt-3"
+                        className={`${ComponenteStyle.formLabel} mt-3`}
                       >
                         Unidad
                       </label>
                       <select
                         id="ingrediente_unidad"
-                        className="form-control"
+                        className={`${ComponenteStyle.formControl} ${
+                          errors.ingrediente_unidad
+                            ? ComponenteStyle.isInvalid
+                            : ""
+                        }`}
                         value={nuevoIngrediente.unidadPorPorcion}
                         onChange={(e) =>
                           setNuevoIngrediente({
@@ -672,7 +696,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                   </div>
                 </div>
 
-                <div className="form-group mt-3">
+                <div className={`${ComponenteStyle.formGroup} mt-3`}>
                   <button
                     type="button"
                     className="btn btn-success w-100"
@@ -758,7 +782,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
       </div>
 
       {/* Botones */}
-      <div className="form-actions mt-4">
+      <div className={`${ComponenteStyle.formActions} mt-4`}>
         <button
           type="button"
           className="btn btn-secondary me-2"

@@ -535,7 +535,7 @@ const Consumos = () => {
             </div>
             {hayFiltrosActivos() && (
               <button
-                className="btn btn-outline-secondary btn-sm"
+                className={ContenidoStyle.btnOutlineSecondary}
                 onClick={limpiarFiltros}
                 title="Limpiar filtros"
                 style={{ marginTop: "2.5rem" }}

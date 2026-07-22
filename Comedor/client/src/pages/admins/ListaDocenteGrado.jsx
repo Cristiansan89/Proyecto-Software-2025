@@ -330,7 +330,7 @@ const ListaDocentesGrados = () => {
               gradoFilter ||
               cicloFilter !== new Date().getFullYear().toString()) && (
               <button
-                className="btn btn-outline-secondary btn-sm"
+                className={ContenidoStyle.btnOutlineSecondary}
                 onClick={() => {
                   setSearchTerm("");
                   setGradoFilter("");

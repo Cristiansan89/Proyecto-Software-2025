@@ -604,7 +604,7 @@ const PedidoInsumo = ({ onModoEdicion }) => {
         <div className={ContenidoStyle.headerActions}>
           <div className="d-flex gap-2">
             <button
-              className={`${ContenidoStyle.btn} btn-success`}
+              className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
               onClick={() => {
                 setPedidoEditando(null);
                 setVistaActual("crear");
@@ -772,7 +772,7 @@ const PedidoInsumo = ({ onModoEdicion }) => {
               {hayFiltrosAplicados() && (
                 <div className="mt-2">
                   <button
-                    className="btn btn-outline-secondary"
+                    className={ContenidoStyle.btnOutlineSecondary}
                     onClick={() =>
                       setFiltros({
                         estado: "",

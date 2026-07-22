@@ -664,7 +664,7 @@ Presiona el botón para descargar las instrucciones e ingredientes requeridos.`,
               {hayFiltrosActivos() && (
                 <button
                   title="Limpiar filtros"
-                  className="btn btn-outline-secondary btn-sm"
+                  className={ContenidoStyle.btnOutlineSecondary}
                   onClick={limpiarFiltros}
                 >
                   <i className="fas fa-broom me-2"></i>

@@ -128,14 +128,14 @@ const ControlInventario = () => {
         <div className={ContenidoStyle.headerActions}>
           <div className="d-flex gap-2">
             <button
-              className={`${ContenidoStyle.btn} btn-success`}
+              className={`${ContenidoStyle.btn} ${ContenidoStyle.btnSuccess}`}
               onClick={() => setModalMovimiento(true)}
             >
               <i className="fas fa-plus me-2"></i>
               Registrar Movimiento
             </button>
             <button
-              className={`${ContenidoStyle.btn} btn-primary`}
+              className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
               onClick={() => setModalRecepcion(true)}
             >
               <i className="fas fa-truck-loading me-2"></i>

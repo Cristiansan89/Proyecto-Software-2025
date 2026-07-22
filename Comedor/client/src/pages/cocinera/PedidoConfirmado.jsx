@@ -241,7 +241,7 @@ const PedidoConfirmado = () => {
           </div>
           {hayFiltrosAplicados() && (
             <button
-              className="btn btn-outline-secondary"
+              className={ContenidoStyle.btnOutlineSecondary}
               onClick={clearFilters}
               title="Limpiar filtros"
             >

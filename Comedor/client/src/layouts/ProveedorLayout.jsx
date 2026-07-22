@@ -15,7 +15,9 @@ const ProveedorLayout = ({ children }) => {
   // Determinar la página actual basada en la URL
   const getCurrentPage = () => {
     const path = location.pathname;
+    if (path.includes("/Dashboard")) return "Dashboard";
     if (path.includes("/GestionProductos")) return "GestionProductos";
+    if (path.includes("/GestionPedidos")) return "GestionPedidos";
     return "GestionProductos";
   };
 

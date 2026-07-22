@@ -304,7 +304,7 @@ const ListaAlumnosGrados = () => {
               gradoFilter ||
               cicloFilter !== new Date().getFullYear().toString()) && (
               <button
-                className="btn btn-outline-secondary btn-sm"
+                className={ContenidoStyle.btnOutlineSecondary}
                 onClick={clearFilters}
                 title="Limpiar filtros"
               >
