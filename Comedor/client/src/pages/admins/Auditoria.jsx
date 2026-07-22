@@ -316,7 +316,7 @@ const Auditoria = () => {
     const colores = {
       Éxito: "success",
       Error: "danger",
-      Intento Fallido: "warning",
+      "Intento Fallido": "warning",
     };
     return colores[resultado] || "secondary";
   };
