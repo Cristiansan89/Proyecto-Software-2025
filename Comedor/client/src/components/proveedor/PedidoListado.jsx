@@ -7,6 +7,11 @@ const PedidoListado = ({ pedido, onClose }) => {
     return Math.round(cantidadNum * 100) / 100;
   };
 
+  const transformarEstado = (estado) => {
+    if (estado === "Recibido") return "Entregado";
+    return estado;
+  };
+
   if (!pedido) {
     return null;
   }
@@ -41,7 +46,9 @@ const PedidoListado = ({ pedido, onClose }) => {
           </div>
           <div className={PedidoStyle.infoFila}>
             <span className={PedidoStyle.infoLabel}>Estado:</span>
-            <span className={PedidoStyle.infoValor}>{pedido.estado}</span>
+            <span className={PedidoStyle.infoValor}>
+              {transformarEstado(pedido.estado)}
+            </span>
           </div>
         </div>
       </div>
@@ -53,15 +60,17 @@ const PedidoListado = ({ pedido, onClose }) => {
           <table className={PedidoStyle.tablaDetalles}>
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Cantidad</th>
-                <th>Unidad de Medida</th>
-                <th>Estado</th>
+                <th className="fw-bold">#</th>
+                <th className="fw-bold">Nombre</th>
+                <th className="fw-bold">Cantidad</th>
+                <th className="fw-bold">Unidad de Medida</th>
+                <th className="fw-bold">Estado</th>
               </tr>
             </thead>
             <tbody>
               {pedido.detalles.map((detalle, index) => (
                 <tr key={`${detalle.nombreInsumo}-${index}`}>
+                  <td className="fw-bold">{index + 1}</td>
                   <td className={PedidoStyle.nameInsumo}>
                     {detalle.nombreInsumo}
                   </td>
@@ -73,7 +82,7 @@ const PedidoListado = ({ pedido, onClose }) => {
                     <span
                       className={`${PedidoStyle.estadoInsumo} ${getEstadoBadgeClass(detalle.estado || pedido.estado)}`}
                     >
-                      {detalle.estado || pedido.estado}
+                      {transformarEstado(detalle.estado || pedido.estado)}
                     </span>
                   </td>
                 </tr>

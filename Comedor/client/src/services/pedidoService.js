@@ -15,7 +15,7 @@ const pedidoService = {
       // Si no se reconoce el formato, devolver un array vacío y loggear
       console.log(
         "pedidoService.getAll: formato de respuesta inesperado",
-        data
+        data,
       );
       return [];
     } catch (error) {
@@ -75,11 +75,21 @@ const pedidoService = {
     }
   },
 
+  // Obtener pedidos por usuario autenticado
+  getByUsuario: async (idUsuario) => {
+    try {
+      const response = await axiosInstance.get(`/pedidos/usuario/${idUsuario}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Obtener pedidos por proveedor
   getByProveedor: async (idProveedor) => {
     try {
       const response = await axiosInstance.get(
-        `/pedidos/proveedor/${idProveedor}`
+        `/pedidos/proveedor/${idProveedor}`,
       );
       return response.data;
     } catch (error) {
@@ -156,7 +166,7 @@ const pedidoService = {
   getResumenPorPeriodo: async (fechaInicio, fechaFin) => {
     try {
       const response = await axiosInstance.get(
-        `/pedidos/resumen?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`
+        `/pedidos/resumen?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`,
       );
       return response.data;
     } catch (error) {
@@ -197,7 +207,7 @@ const pedidoService = {
   generarAutomatico: async (fechaInicio, fechaFin) => {
     try {
       console.log(
-        `🤖 Iniciando generación automática: ${fechaInicio} - ${fechaFin}`
+        `🤖 Iniciando generación automática: ${fechaInicio} - ${fechaFin}`,
       );
 
       const response = await axiosInstance.post("/pedidos/automatico", {

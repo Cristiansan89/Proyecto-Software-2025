@@ -9,7 +9,10 @@ import {
   enviarPDFConfirmacionMail,
 } from "../services/pdfService.js";
 import { connection } from "../models/db.js";
-import { construirMensajePedidoTelegram, construirBotonesPedidoTelegram } from "../utils/mensajesTelegram.js";
+import {
+  construirMensajePedidoTelegram,
+  construirBotonesPedidoTelegram,
+} from "../utils/mensajesTelegram.js";
 import { formatearFechaLocal } from "../utils/formatoFechas.js";
 
 // Controlador para manejar las operaciones relacionadas con los ParametrosSistemas
@@ -253,10 +256,10 @@ export class PedidoController {
       }
 
       const { id } = req.params;
-      
+
       // Obtener la información del pedido antes de actualizar
       const pedidoAnterior = await this.pedidoModel.getById({ id });
-      
+
       const updatedPedido = await this.pedidoModel.update({
         id,
         input: result.data,
@@ -267,16 +270,23 @@ export class PedidoController {
       }
 
       // Si se actualizaron los insumos (hay detalles), enviar notificación al proveedor
-      if (result.data.insumos && Array.isArray(result.data.insumos) && result.data.insumos.length > 0) {
+      if (
+        result.data.insumos &&
+        Array.isArray(result.data.insumos) &&
+        result.data.insumos.length > 0
+      ) {
         try {
-          const id_proveedor = result.data.insumos[0]?.id_proveedor || pedidoAnterior?.id_proveedor;
-          
+          const id_proveedor =
+            result.data.insumos[0]?.id_proveedor ||
+            pedidoAnterior?.id_proveedor;
+
           if (id_proveedor) {
             // Generar nuevo token de confirmación
-            const tokenPedido = await this.pedidoModel.generateTokenForProveedor({
-              idPedido: id,
-              idProveedor: id_proveedor,
-            });
+            const tokenPedido =
+              await this.pedidoModel.generateTokenForProveedor({
+                idPedido: id,
+                idProveedor: id_proveedor,
+              });
 
             const enlaceConfirmacion = `${process.env.FRONTEND_URL}/proveedor/confirmacion/${tokenPedido}`;
 
@@ -289,7 +299,10 @@ export class PedidoController {
             });
           }
         } catch (telegramError) {
-          console.warn("⚠️ Error al enviar notificación por Telegram al actualizar pedido:", telegramError.message);
+          console.warn(
+            "⚠️ Error al enviar notificación por Telegram al actualizar pedido:",
+            telegramError.message,
+          );
           // No bloquear la respuesta por error en Telegram
         }
       }
@@ -309,6 +322,18 @@ export class PedidoController {
       res.json(pedidos);
     } catch (error) {
       console.error("Error al obtener pedidos por estado:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  };
+
+  // Obtener pedidos por usuario autenticado
+  getByUsuario = async (req, res) => {
+    try {
+      const { id_usuario } = req.params;
+      const pedidos = await this.pedidoModel.getByUsuario({ id_usuario });
+      res.json(pedidos);
+    } catch (error) {
+      console.error("Error al obtener pedidos por usuario:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   };
@@ -383,14 +408,17 @@ export class PedidoController {
           const idProveedor = pedido.id_proveedor;
 
           // Generar token de confirmación
-          const token = await this.pedidoModel.generateTokenForProveedor({ idPedido, idProveedor });
+          const token = await this.pedidoModel.generateTokenForProveedor({
+            idPedido,
+            idProveedor,
+          });
           const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
           const enlace = `${baseUrl}/proveedor/confirmacion/${token}`;
 
           // Obtener insumos del pedido para contar
           const [insumosPedido] = await connection.query(
             `SELECT COUNT(*) as cantidad FROM DetallePedido WHERE id_pedido = UUID_TO_BIN(?)`,
-            [idPedido]
+            [idPedido],
           );
           const cantidadInsumos = insumosPedido[0]?.cantidad || 0;
 
@@ -400,26 +428,39 @@ export class PedidoController {
           // Obtener Telegram chat ID del proveedor
           const [configTelegram] = await connection.query(
             `SELECT telegramChatId FROM ProveedorConfiguracionTelegram WHERE id_proveedor = UUID_TO_BIN(?) AND notificacionesTelegram = 'Activo' LIMIT 1`,
-            [idProveedor]
+            [idProveedor],
           );
           const chatIdProveedor = configTelegram?.[0]?.telegramChatId;
 
           if (chatIdProveedor) {
-            const { default: telegramSvc } = await import("../services/telegramService.js");
+            const { default: telegramSvc } =
+              await import("../services/telegramService.js");
             const mensaje = construirMensajePedidoTelegram({
               idPedido,
               fecha,
               cantidadInsumos,
-              enlace
+              enlace,
             });
             const botones = construirBotonesPedidoTelegram(enlace);
-            await telegramSvc.sendMessageWithButtons(chatIdProveedor, mensaje, botones, "proveedor");
-            console.log(`✅ Enlace de confirmación enviado por Telegram al proveedor del pedido ${idPedido}`);
+            await telegramSvc.sendMessageWithButtons(
+              chatIdProveedor,
+              mensaje,
+              botones,
+              "proveedor",
+            );
+            console.log(
+              `✅ Enlace de confirmación enviado por Telegram al proveedor del pedido ${idPedido}`,
+            );
           } else {
-            console.warn(`⚠️ El proveedor del pedido ${idPedido} no tiene Telegram configurado. No se pudo enviar notificación.`);
+            console.warn(
+              `⚠️ El proveedor del pedido ${idPedido} no tiene Telegram configurado. No se pudo enviar notificación.`,
+            );
           }
         } catch (commErr) {
-          console.warn(`⚠️ Error en comunicaciones del pedido ${pedido.id_pedido}:`, commErr.message);
+          console.warn(
+            `⚠️ Error en comunicaciones del pedido ${pedido.id_pedido}:`,
+            commErr.message,
+          );
         }
       }
 
@@ -607,9 +648,7 @@ export class PedidoController {
       // 3. Calcular fecha de aprobación
       const fechaAprobacion = new Date();
 
-      console.log(
-        `📅 Fecha de aprobación: ${fechaAprobacion.toISOString()}`,
-      );
+      console.log(`📅 Fecha de aprobación: ${fechaAprobacion.toISOString()}`);
 
       // 4. Cambiar estado a "Aprobado" (ID: 2)
       console.log("🔄 Actualizando estado del pedido a Aprobado...");
@@ -793,13 +832,15 @@ export class PedidoController {
       // Si se creó un nuevo pedido por redistribución, enviar notificación por Telegram
       if (resultado.nuevoPedidoCreado && resultado.nuevoPedidoData) {
         try {
-          const { id_pedido, id_proveedor, proveedorRazonSocial } = resultado.nuevoPedidoData;
-          
+          const { id_pedido, id_proveedor, proveedorRazonSocial } =
+            resultado.nuevoPedidoData;
+
           // Generar token de confirmación para el nuevo pedido
-          const tokenNuevoPedido = await this.pedidoModel.generateTokenForProveedor({
-            idPedido: id_pedido,
-            idProveedor: id_proveedor,
-          });
+          const tokenNuevoPedido =
+            await this.pedidoModel.generateTokenForProveedor({
+              idPedido: id_pedido,
+              idProveedor: id_proveedor,
+            });
 
           const enlaceConfirmacion = `${process.env.FRONTEND_URL}/proveedor/confirmacion/${tokenNuevoPedido}`;
 
@@ -950,7 +991,7 @@ export class PedidoController {
             pedido.razonSocial,
             pdfBuffer,
             idPedido.substring(0, 8).toUpperCase(),
-            insumosRechazados.length > 0,  // Indicar que hay rechazados
+            insumosRechazados.length > 0, // Indicar que hay rechazados
           );
 
           console.log(

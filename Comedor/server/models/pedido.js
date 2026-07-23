@@ -1,7 +1,10 @@
 import { connection } from "./db.js";
 import telegramService from "../services/telegramService.js";
 import { randomUUID } from "crypto";
-import { construirMensajePedidoTelegram, construirBotonesPedidoTelegram } from "../utils/mensajesTelegram.js";
+import {
+  construirMensajePedidoTelegram,
+  construirBotonesPedidoTelegram,
+} from "../utils/mensajesTelegram.js";
 import { formatearFechaLocal } from "../utils/formatoFechas.js";
 
 export class PedidoModel {
@@ -145,7 +148,16 @@ export class PedidoModel {
   }
 
   static async update({ id, input }) {
-    const { id_estadoPedido, fechaAprobacion, motivoCancelacion, insumos, fechaEntregaEsperada, observaciones, id_usuario, id_proveedor } = input;
+    const {
+      id_estadoPedido,
+      fechaAprobacion,
+      motivoCancelacion,
+      insumos,
+      fechaEntregaEsperada,
+      observaciones,
+      id_usuario,
+      id_proveedor,
+    } = input;
 
     const conn = await connection.getConnection();
     try {
@@ -156,7 +168,7 @@ export class PedidoModel {
         // Eliminar detalles anteriores
         await conn.query(
           `DELETE FROM DetallePedido WHERE id_pedido = UUID_TO_BIN(?);`,
-          [id]
+          [id],
         );
 
         // Insertar nuevos detalles
@@ -164,7 +176,7 @@ export class PedidoModel {
           await conn.query(
             `INSERT INTO DetallePedido (id_pedido, id_proveedor, id_insumo, cantidadSolicitada)
              VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?);`,
-            [id, insumo.id_proveedor, insumo.id_insumo, insumo.cantidad]
+            [id, insumo.id_proveedor, insumo.id_insumo, insumo.cantidad],
           );
         }
 
@@ -182,7 +194,7 @@ export class PedidoModel {
           `UPDATE Pedidos
            SET ${updates.join(", ")}
            WHERE id_pedido = UUID_TO_BIN(?);`,
-          values
+          values,
         );
       } else {
         // Actualización simple de campos
@@ -216,7 +228,7 @@ export class PedidoModel {
           `UPDATE Pedidos
            SET ${updates.join(", ")}
            WHERE id_pedido = UUID_TO_BIN(?);`,
-          values
+          values,
         );
       }
 
@@ -232,6 +244,44 @@ export class PedidoModel {
     }
   }
 
+  // Método para obtener pedidos por usuario autenticado
+  static async getByUsuario({ id_usuario }) {
+    try {
+      const [pedidos] = await connection.query(
+        `SELECT 
+                    BIN_TO_UUID(p.id_pedido) as id_pedido,
+                    BIN_TO_UUID(p.id_usuario) as id_usuario,
+                    p.id_estadoPedido,
+                    ep.nombreEstado as estadoPedido,
+                    BIN_TO_UUID(p.id_proveedor) as id_proveedor,
+                    pr.razonSocial as nombreProveedor,
+                    pr.mail as emailProveedor,
+                    pr.telefono as telefonoProveedor,
+                    pr.direccion as direccionProveedor,
+                    pr.CUIT as cuitProveedor,
+                    COALESCE(CONCAT(pe.nombre, ' ', pe.apellido), 'Sistema Automatico') as nombreUsuario,
+                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d %H:%i') as fechaEmision,
+                    p.origen,
+                    DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d %H:%i') as fechaAprobacion,
+                    p.motivoCancelacion
+                 FROM Pedidos p
+                 JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
+                 JOIN EstadoPedido ep ON p.id_estadoPedido = ep.id_estadoPedido
+                 LEFT JOIN Usuarios u ON p.id_usuario = u.id_usuario
+                 LEFT JOIN Personas pe ON u.id_persona = pe.id_persona
+                 WHERE p.id_proveedor = (
+                    SELECT id_proveedor FROM Usuarios WHERE id_usuario = UUID_TO_BIN(?)
+                 )
+                 ORDER BY p.fechaEmision DESC;`,
+        [id_usuario],
+      );
+      return pedidos;
+    } catch (error) {
+      console.error("Error al obtener pedidos por usuario:", error);
+      throw new Error("Error al obtener pedidos por usuario");
+    }
+  }
+
   // Método para obtener pedidos por proveedor
   static async getByProveedor({ id_proveedor }) {
     try {
@@ -240,25 +290,21 @@ export class PedidoModel {
                     BIN_TO_UUID(p.id_pedido) as id_pedido,
                     BIN_TO_UUID(p.id_usuario) as id_usuario,
                     p.id_estadoPedido,
+                    ep.nombreEstado as estadoPedido,
                     BIN_TO_UUID(p.id_proveedor) as id_proveedor,
                     pr.razonSocial as nombreProveedor,
-                    CONCAT(COALESCE(pe.nombre, ''), ' ', COALESCE(pe.apellido, '')) as nombreUsuario,
-                    DATE_FORMAT(p.fechaEmision, '%Y-%m-%d %H:%i') as fechaPedido,
+                    pr.mail as emailProveedor,
+                    pr.telefono as telefonoProveedor,
+                    pr.direccion as direccionProveedor,
+                    pr.CUIT as cuitProveedor,
+                    COALESCE(CONCAT(pe.nombre, ' ', pe.apellido), 'Sistema Automatico') as nombreUsuario,
                     DATE_FORMAT(p.fechaEmision, '%Y-%m-%d %H:%i') as fechaEmision,
                     p.origen,
                     DATE_FORMAT(p.fechaAprobacion, '%Y-%m-%d %H:%i') as fechaAprobacion,
-                    DATE_FORMAT(p.fechaEntregaEsperada, '%Y-%m-%d') as fechaEntregaEsperada,
-                    p.motivoCancelacion,
-                    (SELECT COUNT(*) FROM DetallePedido dp WHERE dp.id_pedido = p.id_pedido) as cantidadInsumos,
-                    CASE 
-                        WHEN p.id_estadoPedido = 1 THEN 'Pendiente'
-                        WHEN p.id_estadoPedido = 2 THEN 'Aprobado'
-                        WHEN p.id_estadoPedido = 3 THEN 'Entregado'
-                        WHEN p.id_estadoPedido = 4 THEN 'Cancelado'
-                        ELSE 'Desconocido'
-                    END as estadoPedido
+                    p.motivoCancelacion
                  FROM Pedidos p
-                 LEFT JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
+                 JOIN Proveedores pr ON p.id_proveedor = pr.id_proveedor
+                 JOIN EstadoPedido ep ON p.id_estadoPedido = ep.id_estadoPedido
                  LEFT JOIN Usuarios u ON p.id_usuario = u.id_usuario
                  LEFT JOIN Personas pe ON u.id_persona = pe.id_persona
                  WHERE p.id_proveedor = UUID_TO_BIN(?)
@@ -437,7 +483,14 @@ export class PedidoModel {
                         fechaAprobacion,
                         motivoCancelacion
                     ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), 2, UUID_TO_BIN(?), ?, 'Manual', ?, ?);`,
-          [idPedido, id_usuario, idProveedor, fechaEmision, fechaAprobacionManual, observaciones],
+          [
+            idPedido,
+            id_usuario,
+            idProveedor,
+            fechaEmision,
+            fechaAprobacionManual,
+            observaciones,
+          ],
         );
 
         // Agregar las líneas de pedido (detalles)
@@ -932,7 +985,9 @@ export class PedidoModel {
       };
 
       // Usamos base64url (URL-safe) para evitar que '/', '+', '=' rompan los segmentos de URL
-      const token = Buffer.from(JSON.stringify(tokenData)).toString("base64url");
+      const token = Buffer.from(JSON.stringify(tokenData)).toString(
+        "base64url",
+      );
       return token;
     } catch (error) {
       console.error("Error al generar token para proveedor:", error);
@@ -1025,25 +1080,34 @@ export class PedidoModel {
       // Función para normalizar cantidades (fix para pedidos antiguos que se guardaron incorrectamente)
       const normalizarCantidad = (cantidad, unidad) => {
         if (!unidad) return cantidad;
-        
+
         const unidadNorm = unidad.toLowerCase().trim();
-        
+
         // Si la cantidad es pequeña (<100) pero la unidad es MASA/VOLUMEN,
         // probablemente fue dividida por error entre 1000 cuando debería estar multiplicada
         // Esta es una heurística para detectar el bug de conversión
-        if ((unidadNorm === 'gramo' || unidadNorm === 'mililitro') && cantidad > 0 && cantidad < 100) {
+        if (
+          (unidadNorm === "gramo" || unidadNorm === "mililitro") &&
+          cantidad > 0 &&
+          cantidad < 100
+        ) {
           // Asumimos que fue dividida por 1000 erróneamente
-          console.log(`⚠️ Detectada cantidad posiblemente incorrecta: ${cantidad} ${unidad} -> convertiendo a ${cantidad * 1000}`);
+          console.log(
+            `⚠️ Detectada cantidad posiblemente incorrecta: ${cantidad} ${unidad} -> convertiendo a ${cantidad * 1000}`,
+          );
           return cantidad * 1000;
         }
-        
+
         return cantidad;
       };
 
       // Aplicar normalización a los datos
-      const insumos = insumosRaw.map(insumo => ({
+      const insumos = insumosRaw.map((insumo) => ({
         ...insumo,
-        cantidadSolicitada: normalizarCantidad(insumo.cantidadSolicitada, insumo.unidadMedida)
+        cantidadSolicitada: normalizarCantidad(
+          insumo.cantidadSolicitada,
+          insumo.unidadMedida,
+        ),
       }));
 
       // VALIDACIÓN CRÍTICA DE SEGURIDAD:
@@ -1273,9 +1337,7 @@ export class PedidoModel {
         id_usuario: pedidoOriginalData[0].id_usuario,
       });
 
-      console.log(
-        `✅ Nuevo pedido creado: ${nuevosPedidos[0]?.id_pedido}`,
-      );
+      console.log(`✅ Nuevo pedido creado: ${nuevosPedidos[0]?.id_pedido}`);
 
       // Retornar información completa del nuevo pedido para notificaciones
       return {
@@ -1581,7 +1643,7 @@ export class PedidoModel {
         idPedido: pedido.id_pedido,
         fecha,
         cantidadInsumos: pedido.totalInsumos,
-        enlace: enlaceConfirmacion
+        enlace: enlaceConfirmacion,
       });
 
       // Crear botones inline para acceso directo

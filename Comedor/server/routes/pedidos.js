@@ -7,7 +7,10 @@ export const createPedidoPublicoRouter = ({ pedidoModel }) => {
   const pedidoController = new PedidoController({ pedidoModel });
 
   router.get("/confirmacion/:token", pedidoController.getByTokenProveedor);
-  router.post("/confirmacion/:token", pedidoController.confirmarInsumosProveedor);
+  router.post(
+    "/confirmacion/:token",
+    pedidoController.confirmarInsumosProveedor,
+  );
 
   return router;
 };
@@ -54,8 +57,9 @@ export const createPedidoRouter = ({ pedidoModel }) => {
     pedidoController.enviarNotificacionTelegramProveedor,
   );
 
-  // Rutas por estado y proveedor
+  // Rutas por estado, usuario y proveedor
   pedidosRouter.get("/estado/:estado", pedidoController.getByEstado);
+  pedidosRouter.get("/usuario/:id_usuario", pedidoController.getByUsuario);
   pedidosRouter.get(
     "/proveedor/:id_proveedor",
     pedidoController.getByProveedor,

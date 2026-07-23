@@ -931,7 +931,7 @@ const Estadistica = () => {
         </div>
         <div className={ContenidoStyle.headerActions}>
           <button
-            className={`${ContenidoStyle.btn} btn-danger`}
+            className={`${ContenidoStyle.btn} ${ContenidoStyle.btnDanger}`}
             onClick={exportarPDF}
             disabled={loading}
           >
@@ -1001,7 +1001,7 @@ const Estadistica = () => {
               className={` ${ContenidoStyle.headerActions} col-12 d-flex gap-2`}
             >
               <button
-                className={`${ContenidoStyle.btn} ${ContenidoStyle.btnPrimary}`}
+                className={`${ContenidoStyle.btn} ${ContenidoStyle.btnNuevo}`}
                 onClick={cargarDatos}
                 disabled={loading}
               >

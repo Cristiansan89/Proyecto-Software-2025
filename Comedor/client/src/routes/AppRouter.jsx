@@ -138,7 +138,7 @@ const DashboardRedirect = () => {
   } else if (userRole === "Cocinera") {
     return <Navigate to="/cocinera/dashboard" replace />;
   } else if (userRole === "Proveedor") {
-    return <Navigate to="/proveedor/pedidos" replace />;
+    return <Navigate to="/proveedor/dashboard" replace />;
   } else {
     return <Navigate to="/login" replace />;
   }

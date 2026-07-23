@@ -15,16 +15,57 @@ import formatCantidad from "../../utils/formatCantidad";
 import ComponenteStyle from "../../styles/Componentes.module.css";
 
 const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
+  const unidadesPorCategoria = {
+    peso: ["Gramos", "Kilogramos"],
+    volumen: ["Mililitros", "Litros"],
+    unidad: ["Unidad", "Unidades"],
+  };
+
   // Función para normalizar unidades (convertir minúsculas a mayúsculas correctas)
   const normalizarUnidad = (unidad) => {
     const unidadesMap = {
       gramos: "Gramos",
+      gramo: "Gramos",
       kilogramos: "Kilogramos",
+      kilogramo: "Kilogramos",
       mililitros: "Mililitros",
+      mililitro: "Mililitros",
       litros: "Litros",
+      litro: "Litros",
       unidades: "Unidades",
+      unidad: "Unidad",
     };
     return unidadesMap[unidad?.toLowerCase()] || unidad;
+  };
+
+  const obtenerCategoriaInsumo = (insumo) => {
+    const unidadBase = String(insumo?.unidadMedida || "")
+      .trim()
+      .toLowerCase();
+
+    if (["kilogramos", "kilogramo", "gramos", "gramo"].includes(unidadBase)) {
+      return "peso";
+    }
+
+    if (["litros", "litro", "mililitros", "mililitro"].includes(unidadBase)) {
+      return "volumen";
+    }
+
+    if (["unidad", "unidades"].includes(unidadBase)) {
+      return "unidad";
+    }
+
+    return null;
+  };
+
+  const obtenerUnidadesPermitidas = (insumo) => {
+    const categoria = obtenerCategoriaInsumo(insumo);
+
+    if (categoria === "peso") return unidadesPorCategoria.peso;
+    if (categoria === "volumen") return unidadesPorCategoria.volumen;
+    if (categoria === "unidad") return unidadesPorCategoria.unidad;
+
+    return Object.values(unidadesPorCategoria).flat();
   };
   const [formData, setFormData] = useState({
     nombreReceta: receta?.nombreReceta || "",
@@ -50,6 +91,10 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [loadingInsumos, setLoadingInsumos] = useState(false);
+
+  const unidadesPermitidas = obtenerUnidadesPermitidas(
+    insumos?.find((insumo) => insumo.idInsumo === nuevoIngrediente.id_insumo),
+  );
 
   // Cargar ingredientes existentes si estamos editando
   useEffect(() => {
@@ -605,12 +650,26 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                           }
                         : null
                     }
-                    onChange={(option) =>
-                      setNuevoIngrediente({
-                        ...nuevoIngrediente,
-                        id_insumo: option ? option.value : "",
-                      })
-                    }
+                    onChange={(option) => {
+                      const idInsumo = option ? option.value : "";
+                      const insumoSeleccionado = insumos?.find(
+                        (insumo) => insumo.idInsumo === idInsumo,
+                      );
+                      const unidadesPermitidasSeleccionadas =
+                        obtenerUnidadesPermitidas(insumoSeleccionado);
+
+                      setNuevoIngrediente((prev) => ({
+                        ...prev,
+                        id_insumo: idInsumo,
+                        unidadPorPorcion:
+                          prev.unidadPorPorcion &&
+                          unidadesPermitidasSeleccionadas.includes(
+                            prev.unidadPorPorcion,
+                          )
+                            ? prev.unidadPorPorcion
+                            : "",
+                      }));
+                    }}
                     placeholder="Buscar insumo..."
                     isSearchable
                     isClearable
@@ -684,13 +743,14 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                             unidadPorPorcion: e.target.value,
                           })
                         }
+                        disabled={!nuevoIngrediente.id_insumo}
                       >
                         <option value="">Seleccione unidad</option>
-                        <option value="Gramos">Gramos</option>
-                        <option value="Kilogramos">Kilogramos</option>
-                        <option value="Mililitros">Mililitros</option>
-                        <option value="Litros">Litros</option>
-                        <option value="Unidades">Unidades</option>
+                        {unidadesPermitidas.map((unidad) => (
+                          <option key={unidad} value={unidad}>
+                            {unidad}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

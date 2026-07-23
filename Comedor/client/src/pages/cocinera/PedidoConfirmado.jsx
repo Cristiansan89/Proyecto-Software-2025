@@ -257,7 +257,7 @@ const PedidoConfirmado = () => {
         >
           <h5>
             <i className="fas fa-list me-1"></i>
-            Registros de Consumos
+            Registros de Pedidos Confirmados
           </h5>
           <div className={ContenidoStyle.headerRight}>
             <label className="mx-2">
@@ -297,10 +297,10 @@ const PedidoConfirmado = () => {
                     <col style={{ width: "12%" }} />
                     <col style={{ width: "12%" }} />
                     <col style={{ width: "14%" }} />
-                    <col style={{ width: "11%" }} />
-                    <col style={{ width: "11%" }} />
-                    <col style={{ width: "11%" }} />
-                    <col style={{ width: "12%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "10%" }} />
+                    <col style={{ width: "15%" }} />
                     <col style={{ width: "12%" }} />
                   </colgroup>
                   <thead className={TablaStyle.tableHeaderFixed}>
@@ -377,10 +377,10 @@ const PedidoConfirmado = () => {
                           )}
                         </td>
                         <td>
-                          <div className="acciones-columna">
+                          <div className={TablaStyle.actionButtons}>
                             <button
                               onClick={() => verDetalles(pedido)}
-                              className="btn-action btn-view"
+                              className={`${TablaStyle.btnAction} ${TablaStyle.btnView}`}
                               title="Ver detalles"
                             >
                               <i className="fas fa-eye"></i>

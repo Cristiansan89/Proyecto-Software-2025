@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../services/api.js";
+import pedidoService from "../../services/pedidoService.js";
+import { proveedorInsumoService } from "../../services/proveedorInsumoService.js";
 import ContenidoStyle from "../../styles/ContenidoPage.module.css";
 import DashboardStyle from "../../styles/Dashboard.module.css";
 
@@ -22,165 +24,69 @@ const ProveedorDashboard = () => {
     try {
       setLoading(true);
 
-      // TODO: conectar con el endpoint real del proveedor
-      // const response = await API.get(`/proveedor/dashboard?proveedorId=${...}`);
-      // const data = response.data;
+      if (!user?.idProveedor) {
+        console.error("Usuario sin proveedorId");
+        setStats({
+          pedidosPendientes: 0,
+          proximasEntregas: 0,
+          insumosCatalogo: 0,
+        });
+        return;
+      }
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Obtener pedidos del proveedor
+      const pedidos = await pedidoService.getByProveedor(user.idProveedor);
+      const pedidosArray = Array.isArray(pedidos) ? pedidos : [];
 
-      const mockPedidos = [
-        {
-          id: 1,
-          numeroPedido: "PED-0001",
-          estado: "Pendiente",
-          fechaSolicitud: "2026-07-21",
-          fechaEntregaSolicitada: "2026-07-22",
-          proveedorId: user?.idPersona || user?.id_persona || 1,
-          detalles: [
-            {
-              nombreInsumo: "Arroz",
-              cantidadSolicitada: 20,
-              unidadMedida: "kg",
-            },
-            {
-              nombreInsumo: "Aceite",
-              cantidadSolicitada: 4,
-              unidadMedida: "L",
-            },
-          ],
-        },
-        {
-          id: 2,
-          numeroPedido: "PED-0002",
-          estado: "Confirmado",
-          fechaSolicitud: "2026-07-20",
-          fechaEntregaSolicitada: "2026-07-22",
-          proveedorId: user?.idPersona || user?.id_persona || 1,
-          detalles: [
-            {
-              nombreInsumo: "Fideos",
-              cantidadSolicitada: 15,
-              unidadMedida: "kg",
-            },
-          ],
-        },
-        {
-          id: 3,
-          numeroPedido: "PED-0003",
-          estado: "Rechazado",
-          fechaSolicitud: "2026-07-19",
-          fechaEntregaSolicitada: "2026-07-21",
-          proveedorId: user?.idPersona || user?.id_persona || 1,
-          detalles: [
-            {
-              nombreInsumo: "Leche",
-              cantidadSolicitada: 10,
-              unidadMedida: "L",
-            },
-          ],
-        },
-        {
-          id: 4,
-          numeroPedido: "PED-0004",
-          estado: "Pendiente",
-          fechaSolicitud: "2026-07-22",
-          fechaEntregaSolicitada: "2026-07-23",
-          proveedorId: user?.idPersona || user?.id_persona || 1,
-          detalles: [
-            {
-              nombreInsumo: "Harina",
-              cantidadSolicitada: 12,
-              unidadMedida: "kg",
-            },
-          ],
-        },
-      ];
+      // Obtener insumos del catálogo del proveedor
+      const insumos = await proveedorInsumoService.getInsumosByProveedor(
+        user.idProveedor,
+      );
+      const insumosArray = Array.isArray(insumos) ? insumos : [];
 
-      const mockCatalogo = [
-        { id: 1, nombre: "Arroz", estado: "Activo" },
-        { id: 2, nombre: "Aceite", estado: "Activo" },
-        { id: 3, nombre: "Fideos", estado: "Activo" },
-        { id: 4, nombre: "Harina", estado: "Activo" },
-        { id: 5, nombre: "Leche", estado: "Activo" },
-        { id: 6, nombre: "Azúcar", estado: "Inactivo" },
-      ];
-
-      const pedidosPendientes = mockPedidos.filter(
-        (pedido) => pedido.estado === "Pendiente",
+      // Calcular pedidos pendientes
+      const pedidosPendientes = pedidosArray.filter(
+        (pedido) => pedido.estadoPedido?.toLowerCase() === "pendiente",
       ).length;
 
+      // Calcular próximas entregas (confirmados para hoy o mañana)
       const hoy = new Date();
       const mañana = new Date(hoy);
       mañana.setDate(hoy.getDate() + 1);
 
-      const proximasEntregas = mockPedidos.filter((pedido) => {
-        if (pedido.estado !== "Confirmado") return false;
+      const proximasEntregas = pedidosArray.filter((pedido) => {
+        if (pedido.estadoPedido?.toLowerCase() !== "confirmado") return false;
 
-        const fechaEntrega = new Date(pedido.fechaEntregaSolicitada);
+        const fechaEmision = pedido.fechaEmision
+          ? new Date(pedido.fechaEmision)
+          : null;
+        if (!fechaEmision) return false;
+
         const esHoyOManana =
-          fechaEntrega.toDateString() === hoy.toDateString() ||
-          fechaEntrega.toDateString() === mañana.toDateString();
+          fechaEmision.toDateString() === hoy.toDateString() ||
+          fechaEmision.toDateString() === mañana.toDateString();
 
         return esHoyOManana;
       }).length;
 
+      // Contar insumos activos en el catálogo
+      const insumosCatalogo = insumosArray.length;
+
       setStats({
         pedidosPendientes,
         proximasEntregas,
-        insumosCatalogo: mockCatalogo.filter((item) => item.estado === "Activo")
-          .length,
+        insumosCatalogo,
       });
     } catch (error) {
       console.error("Error al cargar dashboard del proveedor", error);
+      setStats({
+        pedidosPendientes: 0,
+        proximasEntregas: 0,
+        insumosCatalogo: 0,
+      });
     } finally {
       setLoading(false);
     }
-  };
-
-  const tabs = useMemo(
-    () => [
-      { label: "Dashboard", path: "/proveedor/dashboard", active: true },
-      { label: "Gestión de Productos", path: "/proveedor/gestionproductos" },
-      { label: "Gestión de Pedidos", path: "/proveedor/gestionpedidos" },
-    ],
-    [],
-  );
-
-  const resumenCards = [
-    {
-      icon: "fas fa-clock",
-      title: "Pedidos Pendientes",
-      value: stats.pedidosPendientes,
-      tone: "warning",
-      subtitle: "Esperando respuesta vía Telegram",
-    },
-    {
-      icon: "fas fa-truck",
-      title: "Próximas Entregas",
-      value: stats.proximasEntregas,
-      tone: "info",
-      subtitle: "Pedidos confirmados para hoy o mañana",
-    },
-    {
-      icon: "fas fa-boxes",
-      title: "Insumos en Catálogo",
-      value: stats.insumosCatalogo,
-      tone: "success",
-      subtitle: "Productos activos ofrecidos a la institución",
-    },
-  ];
-
-  const getCardStyle = (tone) => {
-    const map = {
-      warning: "#ffb703",
-      info: "#3b82f6",
-      success: "#10b981",
-    };
-
-    return {
-      background: `linear-gradient(135deg, ${map[tone] || "#667eea"}, #ffffff)`,
-      color: "#0f172a",
-    };
   };
 
   if (loading) {
@@ -201,71 +107,47 @@ const ProveedorDashboard = () => {
       <div className={ContenidoStyle.pageHeader}>
         <div>
           <h1 className={ContenidoStyle.pageTitle}>
-            <i className="fas fa-home me-2"></i>
-            Dashboard del Proveedor
+            <i className="fas fa-home"></i>
+            Dashboard
           </h1>
           <p className={ContenidoStyle.pageSubtitle}>
-            Bienvenido, {user?.nombres || user?.nombre || "Proveedor"}. Aquí
-            podrás seguir el estado operativo de tus pedidos y entregas.
+            Aquí podrás seguir el estado operativo de tus pedidos y entregas.
           </p>
         </div>
       </div>
 
-      <div className={ContenidoStyle.navigationTabs}>
-        <div className={ContenidoStyle.tabsHeader}>
-          {tabs.map((tab) => (
-            <Link
-              key={tab.label}
-              to={tab.path}
-              className={`${ContenidoStyle.tabsButton} ${tab.active ? ContenidoStyle.active : ""}`}
-            >
-              <i
-                className={
-                  tab.path === "/proveedor/dashboard"
-                    ? "fas fa-chart-line"
-                    : tab.path === "/proveedor/gestionproductos"
-                      ? "fas fa-boxes"
-                      : "fas fa-shopping-cart"
-                }
-              ></i>
-              {tab.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
       <div className={DashboardStyle.dashboardStats}>
-        {resumenCards.map((card) => (
-          <div
-            key={card.title}
-            className={DashboardStyle.statCard}
-            style={getCardStyle(card.tone)}
-          >
-            <div className="me-3">
-              <i className={card.icon}></i>
-            </div>
-            <div>
-              <h3>{card.value}</h3>
-              <p>{card.title}</p>
-              <small>{card.subtitle}</small>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className={DashboardStyle.cardDashboard}>
         <div
-          className={`${DashboardStyle.headerCard} ${DashboardStyle.cardDashboard}`}
+          className={
+            DashboardStyle.statCard +
+            " bg-primary text-center justify-content-center"
+          }
         >
-          <h5>
-            <i className="fas fa-telegram me-2"></i>
-            Confirmaciones y rechazos
-          </h5>
+          <div className={DashboardStyle.statInfo}>
+            <h3>{stats.pedidosPendientes}</h3>
+            <p>Pedidos Pendientes</p>
+          </div>
         </div>
-        <div className={DashboardStyle.bodyCard}>
-          <div className="alert alert-info mb-0" role="alert">
-            Las confirmaciones y rechazos de pedidos se realizan únicamente a
-            través de nuestro bot oficial de Telegram.
+        <div
+          className={
+            DashboardStyle.statCard +
+            " bg-success text-center justify-content-center"
+          }
+        >
+          <div className={DashboardStyle.statInfo}>
+            <h3>{stats.proximasEntregas}</h3>
+            <p>Próximas Entregas</p>
+          </div>
+        </div>
+        <div
+          className={
+            DashboardStyle.statCard +
+            " bg-warning text-center justify-content-center"
+          }
+        >
+          <div className={DashboardStyle.statInfo}>
+            <h3>{stats.insumosCatalogo}</h3>
+            <p>Insumos en Catálogo</p>
           </div>
         </div>
       </div>
