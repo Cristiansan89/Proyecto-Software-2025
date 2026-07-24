@@ -1,11 +1,18 @@
 import mysql from 'mysql2/promise'
 import 'dotenv/config'
 
+const {
+    DB_HOST = 'localhost',
+    DB_USER = 'root',
+    DB_NAME = 'Comedor',
+    DB_PASSWORD = ''
+} = process.env
+
 const config = {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'xenopus',
-    database: process.env.DB_NAME || 'Comedor',
+    host: DB_HOST,
+    user: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
