@@ -83,4 +83,30 @@ describe("RecetaForm", () => {
 
     expect(opciones).toEqual(["", "Gramos", "Kilogramos"]);
   });
+
+  it("no muestra insumos de categorías de limpieza o descartables en el selector", () => {
+    const insumos = [
+      { idInsumo: 1, nombreInsumo: "Harina", categoria: "Almacén" },
+      { idInsumo: 2, nombreInsumo: "Detergente", categoria: "Limpieza" },
+      { idInsumo: 3, nombreInsumo: "Servilletas", categoria: "Descartables" },
+      { idInsumo: 4, nombreInsumo: "Tomate", categoria: "Verduras" },
+    ];
+
+    render(
+      <RecetaForm
+        receta={null}
+        mode="create"
+        insumos={insumos}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const select = screen.getByTestId("insumo-select");
+    const options = Array.from(select.options).map(
+      (option) => option.textContent,
+    );
+
+    expect(options).toEqual(["Buscar insumo...", "Harina", "Tomate"]);
+  });
 });

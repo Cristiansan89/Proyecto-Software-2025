@@ -14,6 +14,90 @@ import {
 import formatCantidad from "../../utils/formatCantidad";
 import ComponenteStyle from "../../styles/Componentes.module.css";
 
+const EXCLUDED_CATEGORY_IDS = [];
+const EXCLUDED_CATEGORY_NAMES = [
+  "limpieza",
+  "articulos de limpieza",
+  "artículos de limpieza",
+  "descartables",
+  "bazar",
+  "utensilios",
+];
+const EXCLUDED_KEYWORDS = [
+  "limpieza",
+  "articulos de limpieza",
+  "artículos de limpieza",
+  "detergente",
+  "lavandina",
+  "trapo",
+  "trapos",
+  "descartables",
+  "bazar",
+  "utensilios",
+  "servilleta",
+  "servilletas",
+  "guante",
+  "guantes",
+  "cofia",
+  "cofias",
+  "film",
+  "plasticos",
+  "plásticos",
+];
+
+const normalizarTexto = (valor) =>
+  String(valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+const filterIngredientInsumos = (insumosList = []) => {
+  if (!Array.isArray(insumosList)) return [];
+
+  return insumosList.filter((insumo) => {
+    const categoryId =
+      insumo?.idCategoria ??
+      insumo?.categoriaId ??
+      insumo?.id_categoria ??
+      insumo?.categoria_id;
+
+    if (
+      EXCLUDED_CATEGORY_IDS.some(
+        (excludedId) => String(excludedId) === String(categoryId),
+      )
+    ) {
+      return false;
+    }
+
+    const searchableText = normalizarTexto(
+      [
+        insumo?.categoria,
+        insumo?.nombreCategoria,
+        insumo?.categoriaInsumo,
+        insumo?.nombre_categoria,
+        insumo?.categoria_nombre,
+        insumo?.nombreInsumo,
+        insumo?.nombre,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    );
+
+    if (
+      EXCLUDED_CATEGORY_NAMES.some((excludedName) =>
+        searchableText.includes(normalizarTexto(excludedName)),
+      )
+    ) {
+      return false;
+    }
+
+    return !EXCLUDED_KEYWORDS.some((excludedKeyword) =>
+      searchableText.includes(normalizarTexto(excludedKeyword)),
+    );
+  });
+};
+
 const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   const unidadesPorCategoria = {
     peso: ["Gramos", "Kilogramos"],
@@ -92,8 +176,12 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [loadingInsumos, setLoadingInsumos] = useState(false);
 
+  const insumosParaCocina = filterIngredientInsumos(insumos || []);
+
   const unidadesPermitidas = obtenerUnidadesPermitidas(
-    insumos?.find((insumo) => insumo.idInsumo === nuevoIngrediente.id_insumo),
+    insumosParaCocina.find(
+      (insumo) => insumo.idInsumo === nuevoIngrediente.id_insumo,
+    ),
   );
 
   // Cargar ingredientes existentes si estamos editando
@@ -216,7 +304,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
         return;
       }
 
-      const insumoSeleccionado = insumos.find(
+      const insumoSeleccionado = insumosParaCocina.find(
         (ins) => ins.idInsumo === nuevoIngrediente.id_insumo,
       );
 
@@ -627,23 +715,21 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                   </label>
                   <Select
                     inputId="ingrediente_insumo"
-                    options={
-                      insumos?.map((insumo) => ({
-                        value: insumo.idInsumo,
-                        label: insumo.nombreInsumo,
-                        data: insumo,
-                      })) || []
-                    }
+                    options={insumosParaCocina.map((insumo) => ({
+                      value: insumo.idInsumo,
+                      label: insumo.nombreInsumo,
+                      data: insumo,
+                    }))}
                     value={
                       nuevoIngrediente.id_insumo
                         ? {
                             value: nuevoIngrediente.id_insumo,
                             label:
-                              insumos?.find(
+                              insumosParaCocina.find(
                                 (ins) =>
                                   ins.idInsumo === nuevoIngrediente.id_insumo,
                               )?.nombreInsumo || "Seleccionar...",
-                            data: insumos?.find(
+                            data: insumosParaCocina.find(
                               (ins) =>
                                 ins.idInsumo === nuevoIngrediente.id_insumo,
                             ),
@@ -652,7 +738,7 @@ const RecetaForm = ({ receta, mode, insumos, onSave, onCancel }) => {
                     }
                     onChange={(option) => {
                       const idInsumo = option ? option.value : "";
-                      const insumoSeleccionado = insumos?.find(
+                      const insumoSeleccionado = insumosParaCocina.find(
                         (insumo) => insumo.idInsumo === idInsumo,
                       );
                       const unidadesPermitidasSeleccionadas =
