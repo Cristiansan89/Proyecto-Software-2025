@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import planificacionMenuService from "../../services/planificacionMenuService";
 import recetaService from "../../services/recetaService";
+import AsignarMenuForm from "../../components/cocinera/AsignarMenuForm";
 import {
   showSuccess,
   showError,
@@ -14,6 +15,7 @@ import {
 import ContenidoStyle from "../../styles/ContenidoPage.module.css";
 import ComponenteStyle from "../../styles/Componentes.module.css";
 import CalendarioStyle from "../../styles/Calendario.module.css";
+import FormularioStyle from "../../styles/Formulario.module.css";
 
 const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
   const { user } = useAuth();
@@ -37,8 +39,10 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     { id_servicio: 3, nombre: "Merienda", descripcion: "Comida vespertina" },
   ]);
   const [loading, setLoading] = useState(false);
+  const [guardandoAsignacion, setGuardandoAsignacion] = useState(false);
   const [recetasDisponibles, setRecetasDisponibles] = useState([]);
   const [modalAsignacionVisible, setModalAsignacionVisible] = useState(false);
+  const [modalMode, setModalMode] = useState("create");
   const [asignacionSeleccionada, setAsignacionSeleccionada] = useState({
     fecha: null,
     servicio: null,
@@ -524,6 +528,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
 
     setAsignacionSeleccionada({ fecha, servicio, dia });
     setRecetaSeleccionada(menuExistente?.id_receta || "");
+    setModalMode(menuExistente ? "edit" : "create");
     setModalAsignacionVisible(true);
   };
 
@@ -531,6 +536,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
     setModalAsignacionVisible(false);
     setAsignacionSeleccionada({ fecha: null, servicio: null, dia: "" });
     setRecetaSeleccionada("");
+    setModalMode("create");
   };
 
   const asignarMenu = async () => {
@@ -569,7 +575,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       return;
     }
 
-    setLoading(true);
+    setGuardandoAsignacion(true);
     try {
       const datosAsignacion = {
         fecha: asignacionSeleccionada.fecha.toISOString().split("T")[0],
@@ -606,7 +612,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
 
       showError("Error", "Error al asignar el menú: " + mensajeError);
     } finally {
-      setLoading(false);
+      setGuardandoAsignacion(false);
     }
   };
 
@@ -669,6 +675,10 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       </div>
     );
   }
+
+  const recetasParaAsignacion = obtenerRecetasPorServicio(
+    asignacionSeleccionada.servicio?.id_servicio,
+  );
 
   return (
     <div>
@@ -1044,15 +1054,7 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
       {/* Modal para asignar receta - Renderizado en Portal para cubrir toda la pantalla */}
       {modalAsignacionVisible &&
         createPortal(
-          <div
-            className={FormularioStyle.modal}
-            onClick={(e) => {
-              // Cerrar el modal solo si se hace clic en el overlay, no en el contenido
-              if (e.target === e.currentTarget) {
-                cerrarModalAsignacion();
-              }
-            }}
-          >
+          <div className={FormularioStyle.modal}>
             <div className={FormularioStyle.modalDialog}>
               <div className={FormularioStyle.modalContent}>
                 <div className={FormularioStyle.modalHeader}>
@@ -1069,140 +1071,26 @@ const PlanificacionCalendario = ({ planificacionSeleccionada }) => {
                       ? "Cambiar Menú"
                       : "Asignar Menú"}
                   </h5>
-                </div>
-                <button
-                  type="button"
-                  className={FormularioStyle.modalClose}
-                  onClick={cerrarModalAsignacion}
-                ></button>
-              </div>
-              <div className={FormularioStyle.modalBody}>
-                <div className="mb-2">
-                  <label className={ComponenteStyle.formLabel}>
-                    <strong>
-                      {asignacionSeleccionada.dia} -{" "}
-                      {asignacionSeleccionada.servicio?.nombre}
-                    </strong>
-                  </label>
-                </div>
-                <div className="mb-3">
-                  <label className={ComponenteStyle.formLabel}>
-                    <strong>Fecha:</strong>{" "}
-                    {asignacionSeleccionada.fecha?.toLocaleDateString("es-ES")}
-                  </label>
-                </div>
-                <div className="mb-3">
-                  <label className={ComponenteStyle.formLabel}>
-                    <strong>Servicio:</strong>{" "}
-                    {asignacionSeleccionada.servicio?.descripcion}
-                  </label>
-                </div>
-                "
-                <div className="mb-4">
-                  <label
-                    htmlFor="recetaSelect"
-                    className={ComponenteStyle.formLabel}
-                  >
-                    <i className="fas fa-book me-2"></i>
-                    Seleccionar Receta * (
-                    {asignacionSeleccionada.servicio?.nombre})
-                  </label>
-                  {(() => {
-                    const recetasFiltradas = obtenerRecetasPorServicio(
-                      asignacionSeleccionada.servicio?.id_servicio,
-                    );
-                    return (
-                      <>
-                        <select
-                          id="recetaSelect"
-                          className={ComponenteStyle.formSelect}
-                          value={recetaSeleccionada}
-                          onChange={(e) =>
-                            setRecetaSeleccionada(e.target.value)
-                          }
-                        >
-                          <option value="">-- Seleccione una receta --</option>
-                          {recetasFiltradas.map((receta) => (
-                            <option
-                              key={receta.id_receta}
-                              value={receta.id_receta}
-                            >
-                              {receta.nombreReceta}
-                            </option>
-                          ))}
-                        </select>
-                        {recetasFiltradas.length === 0 && (
-                          <div
-                            className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning} mt-2 mb-0`}
-                          >
-                            <i className="fas fa-exclamation-triangle me-2"></i>
-                            No hay recetas disponibles para{" "}
-                            {asignacionSeleccionada.servicio?.nombre}. Cree
-                            recetas y asócielas a este servicio.
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-                {recetasDisponibles.length === 0 && (
-                  <div
-                    className={`${ComponenteStyle.alert} ${ComponenteStyle.alertWarning}`}
-                  >
-                    <i className="fas fa-exclamation-triangle me-2"></i>
-                    No hay recetas disponibles. Por favor, cree algunas recetas
-                    primero.
-                  </div>
-                )}
-                <div className={`${ComponenteStyle.formActions} mt-3`}>
+
                   <button
-                    type="button"
-                    className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCancel} me-2`}
+                    className={FormularioStyle.modalClose}
                     onClick={cerrarModalAsignacion}
                   >
-                    <i className="fas fa-times me-2"></i>
-                    Cancelar
+                    <i className="fas fa-times"></i>
                   </button>
-                  <button
-                    type="button"
-                    className={`${ComponenteStyle.btn} ${ComponenteStyle.btnCreate}`}
-                    onClick={asignarMenu}
-                    disabled={!recetaSeleccionada || loading}
-                  >
-                    {loading ? (
-                      <>
-                        <span
-                          className="spinner-border spinner-border-sm me-2"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
-                        {asignacionSeleccionada &&
-                        menusAsignados[
-                          `${
-                            asignacionSeleccionada.fecha
-                              ?.toISOString()
-                              .split("T")[0]
-                          }_${asignacionSeleccionada.servicio?.id_servicio}`
-                        ]
-                          ? "Cambiando..."
-                          : "Asignando..."}
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-check me-2"></i>
-                        {asignacionSeleccionada &&
-                        menusAsignados[
-                          `${
-                            asignacionSeleccionada.fecha
-                              ?.toISOString()
-                              .split("T")[0]
-                          }_${asignacionSeleccionada.servicio?.id_servicio}`
-                        ]
-                          ? "Cambiar Menú"
-                          : "Asignar Menú"}
-                      </>
-                    )}
-                  </button>
+                </div>
+
+                <div className={FormularioStyle.modalBody}>
+                  <AsignarMenuForm
+                    asignacion={asignacionSeleccionada}
+                    recetasDisponibles={recetasParaAsignacion}
+                    recetaSeleccionada={recetaSeleccionada}
+                    onRecetaChange={setRecetaSeleccionada}
+                    mode={modalMode}
+                    onSubmit={asignarMenu}
+                    onCancel={cerrarModalAsignacion}
+                    loading={guardandoAsignacion}
+                  />
                 </div>
               </div>
             </div>
