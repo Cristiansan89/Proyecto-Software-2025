@@ -274,7 +274,7 @@ const RegistroAsistenciasMovil = () => {
                   <h3>
                     {alumno.apellido}, {alumno.nombre}
                   </h3>
-                  <p className={AsistenciStyle.dniAlumno}>DNI: {alumno.dni}</p>
+                  <p className={MovilStyle.dniAlumno}>DNI: {alumno.dni}</p>
                 </div>
 
                 <div className={MovilStyle.opcionesAsistencia}>

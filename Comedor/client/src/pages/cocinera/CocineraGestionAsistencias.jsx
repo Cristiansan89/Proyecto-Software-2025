@@ -1561,7 +1561,7 @@ Un saludo cordial,
                             </div>
                           )}
                         </td>
-                        <td>
+                        <td style={{ maxWidth: "220px" }}>
                           <div className="enlace-container">
                             <code className="enlace-preview d-block bg-light p-2 rounded small text-truncate">
                               {enlace.enlace}
