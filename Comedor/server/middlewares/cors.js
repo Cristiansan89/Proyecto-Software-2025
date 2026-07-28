@@ -59,5 +59,11 @@ export const corsMiddleware = () =>
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-access-token",
+      "Cache-Control",
+      "Pragma",
+    ],
   });

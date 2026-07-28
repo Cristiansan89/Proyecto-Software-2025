@@ -3,7 +3,10 @@ import { corsMiddleware } from "./middlewares/cors.js";
 import { cookieMiddleware } from "./middlewares/cookies.js";
 import { auditoriaMiddleware } from "./middlewares/auditoria.js";
 import { authRequired } from "./middlewares/auth.js";
-import { verificarPermiso, verificarAlgunoPermiso } from "./middlewares/verificarPermiso.js";
+import {
+  verificarPermiso,
+  verificarAlgunoPermiso,
+} from "./middlewares/verificarPermiso.js";
 import { createAuthRouter } from "./routes/auth.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -83,6 +86,7 @@ export const createApp = ({
   // Middlewares básicos
   app.use(express.json());
   app.use(corsMiddleware());
+  app.options("*", corsMiddleware());
   app.use(cookieMiddleware());
   app.disable("x-powered-by");
 
@@ -120,39 +124,39 @@ export const createApp = ({
   app.use("/api/lineaspedidos", createLineaPedidoRouter({ lineaPedidoModel }));
   app.use(
     "/api/movimientos-inventarios",
-    createMovimientoInventarioRouter({ movimientoInventarioModel })
+    createMovimientoInventarioRouter({ movimientoInventarioModel }),
   );
   app.use(
     "/api/parametros-sistemas",
-    createParametroSistemaRouter({ parametroSistemaModel })
+    createParametroSistemaRouter({ parametroSistemaModel }),
   );
   app.use("/api/pedidos", createPedidoRouter({ pedidoModel }));
   app.use("/api/permisos", createPermisoRouter({ permisoModel }));
   app.use("/api/personas", createPersonaRouter({ personaModel }));
   app.use(
     "/api/planificacion-menus",
-    createPlanificacionMenuRouter({ planificacionMenuModel })
+    createPlanificacionMenuRouter({ planificacionMenuModel }),
   );
   app.use(
     "/api/proveedores",
-    createProveedorRouter({ proveedorModel, usuarioModel, personaModel })
+    createProveedorRouter({ proveedorModel, usuarioModel, personaModel }),
   );
   app.use("/api/recetas", createRecetaRouter({ recetaModel }));
   app.use(
     "/api/registros-asistencias",
-    createRegistroAsistenciaRouter({ registroAsistenciaModel })
+    createRegistroAsistenciaRouter({ registroAsistenciaModel }),
   );
   app.use("/api/rol-permisos", createRolPermisoRouter({ rolPermisoModel }));
   app.use("/api/servicios", createServicioRouter({ servicioModel }));
   app.use(
     "/api/servicio-turnos",
-    createServicioTurnoRouter({ servicioTurnoModel })
+    createServicioTurnoRouter({ servicioTurnoModel }),
   );
   app.use("/api/recetas-servicios", serviciosRecetasRouter);
   app.use("/api/turnos", createTurnoRouter({ turnoModel }));
   app.use(
     "/api/proveedor-insumos",
-    createProveedorInsumoRouter({ proveedorInsumoModel })
+    createProveedorInsumoRouter({ proveedorInsumoModel }),
   );
   app.use("/api/telegram", telegramRouter);
   app.use("/api/alumno-grados", alumnoGradoRouter);
@@ -164,7 +168,7 @@ export const createApp = ({
   app.use("/api/escuela", escuelaRouter);
   app.use(
     "/api/configuracion-servicios-automaticos",
-    configuracionServicioAutomaticoRouter
+    configuracionServicioAutomaticoRouter,
   );
   app.use("/api/auditoria", auditoriaRouter);
 

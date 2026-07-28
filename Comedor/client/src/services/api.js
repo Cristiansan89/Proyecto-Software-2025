@@ -18,17 +18,18 @@ const getApiBaseUrl = () => {
     return apiUrl;
   }
 
-  // 3. Si estamos en localhost HTTP, usar localhost:3000
+  // 3. Si estamos en localhost HTTP
   if (currentUrl.includes("localhost") || currentUrl.includes("127.0.0.1")) {
     const apiUrl = "http://localhost:3000/api";
     console.log("🏠 Using Localhost API URL:", apiUrl);
     return apiUrl;
   }
 
-  // 4. En desarrollo (192.168.x.x), usar localhost:3000
+  // 4. En desarrollo red local (192.168.x.x) -> Conectarse a la IP del servidor local, no a localhost
   if (currentUrl.includes("192.168")) {
-    const apiUrl = "http://localhost:3000/api";
-    console.log("🖥️ Using Localhost API URL (from IP access):", apiUrl);
+    const hostname = window.location.hostname;
+    const apiUrl = `http://${hostname}:3000/api`;
+    console.log("🖥️ Using Network IP API URL:", apiUrl);
     return apiUrl;
   }
 
@@ -47,7 +48,7 @@ const api = axios.create({
   },
 });
 
-// Interceptor para agregar el token JWT si existe (opcional)
+// Interceptor para agregar el token JWT si existe
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -56,7 +57,7 @@ api.interceptors.request.use((config) => {
   } else {
     console.log("⚠️ No hay token en localStorage, enviando sin autenticación");
   }
-  console.log("📤 Headers de solicitud:", config.headers);
+
   return config;
 });
 
@@ -66,13 +67,18 @@ api.interceptors.response.use(
   (error) => {
     // Manejar error 401 (Unauthorized - Token expirado)
     if (error.response?.status === 401) {
-      // Limpiar localStorage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("userRole");
+      // Solo redirigir a /login si NO estamos en una ruta pública con token en la URL (como confirmaciones o asistencias)
+      const isPublicTokenRoute =
+        window.location.pathname.includes("/confirmacion") ||
+        window.location.pathname.includes("/asistencia") ||
+        window.location.pathname.includes("/registro");
 
-      // Redirigir a login
-      window.location.href = "/login";
+      if (!isPublicTokenRoute) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userRole");
+        window.location.href = "/login";
+      }
       return Promise.reject(error);
     }
 
@@ -82,22 +88,20 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Manejar diferentes tipos de errores de conexión
+    // Manejar errores de timeout y red
     if (error.code === "ECONNABORTED" && error.message.includes("timeout")) {
-      console.error("⏱️ Timeout de conexión");
+      console.error("⏱️ Timeout de conexión (superó los 30s)");
     } else if (
-      error.code === "NETWORK_ERROR" ||
+      error.code === "ERR_NETWORK" ||
       error.message === "Network Error"
     ) {
-      console.error("🌐 Error de red");
+      console.error("🌐 Error de red o bloqueo de CORS");
     } else if (error.response) {
-      // El servidor respondió con un código de estado fuera del rango 2xx
       console.error(
         `📡 Error del servidor (${error.response.status}):`,
         error.response?.data?.message,
       );
     } else if (error.request) {
-      // La petición fue hecha pero no se recibió respuesta
       console.error("📭 Sin respuesta del servidor");
     } else {
       console.error("❌ Error:", error.message);
