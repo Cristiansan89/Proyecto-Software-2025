@@ -1162,49 +1162,64 @@ export class PedidoModel {
         throw new Error("Este pedido ya fue procesado anteriormente");
       }
 
-      let confirmadas = 0;
-      let rechazadas = 0;
-      const insumosNoDisponibles = [];
+      const confirmacionesValidas = confirmaciones.map((conf) => {
+        const estado = ["Disponible", "No Disponible"].includes(conf.estado)
+          ? conf.estado
+          : null;
 
-      // Procesar cada confirmación
-      for (const conf of confirmaciones) {
-        const { idDetallePedido, estado } = conf;
-
-        // Actualizar el detalle del pedido (solo estado de disponibilidad)
-        await connection_ref.query(
-          `UPDATE DetallePedido 
-           SET estadoConfirmacion = ?,
-               fechaConfirmacion = NOW()
-           WHERE id_detallePedido = ?`,
-          [estado, idDetallePedido],
-        );
-
-        // Contar confirmaciones
-        if (estado === "Disponible") {
-          confirmadas++;
-        } else if (estado === "No Disponible") {
-          rechazadas++;
-          // Agregar a lista de no disponibles para redistribuir
-          const [insumoInfo] = await connection_ref.query(
-            `SELECT dp.id_insumo, dp.cantidadSolicitada, i.nombreInsumo
-             FROM DetallePedido dp
-             JOIN Insumos i ON dp.id_insumo = i.id_insumo
-             WHERE dp.id_detallePedido = ?`,
-            [idDetallePedido],
+        if (!estado) {
+          throw new Error(
+            `Estado inválido para idDetallePedido ${conf.idDetallePedido}: ${conf.estado}`,
           );
-
-          if (insumoInfo.length > 0) {
-            insumosNoDisponibles.push({
-              id_insumo: insumoInfo[0].id_insumo,
-              nombreInsumo: insumoInfo[0].nombreInsumo,
-              cantidad: insumoInfo[0].cantidadSolicitada,
-            });
-          }
         }
-      }
+
+        return {
+          idDetallePedido: conf.idDetallePedido,
+          estado,
+        };
+      });
+
+      const idsDetalle = confirmacionesValidas.map(
+        (conf) => conf.idDetallePedido,
+      );
+
+      // Actualizar todos los detalles con Promise.all en paralelo
+      await Promise.all(
+        confirmacionesValidas.map((conf) =>
+          connection_ref.query(
+            `UPDATE DetallePedido
+             SET estadoConfirmacion = ?,
+                 fechaConfirmacion = NOW()
+             WHERE id_detallePedido = ?`,
+            [conf.estado, conf.idDetallePedido],
+          ),
+        ),
+      );
+
+      // Contar resultados y obtener insumos no disponibles en una sola consulta
+      const [detalleRows] = await connection_ref.query(
+        `SELECT dp.id_insumo, dp.cantidadSolicitada, i.nombreInsumo, dp.estadoConfirmacion
+         FROM DetallePedido dp
+         JOIN Insumos i ON dp.id_insumo = i.id_insumo
+         WHERE dp.id_detallePedido IN (?);`,
+        [idsDetalle],
+      );
+
+      const confirmadas = detalleRows.filter(
+        (row) => row.estadoConfirmacion === "Disponible",
+      ).length;
+      const rechazadas = detalleRows.filter(
+        (row) => row.estadoConfirmacion === "No Disponible",
+      ).length;
+      const insumosNoDisponibles = detalleRows
+        .filter((row) => row.estadoConfirmacion === "No Disponible")
+        .map((row) => ({
+          id_insumo: row.id_insumo,
+          nombreInsumo: row.nombreInsumo,
+          cantidad: row.cantidadSolicitada,
+        }));
 
       // Marcar el pedido como confirmado por este proveedor
-      // Obtener el ID del estado 'Confirmado'
       const [estadoConfirmado] = await connection_ref.query(
         `SELECT id_estadoPedido FROM EstadoPedido WHERE nombreEstado = 'Confirmado' LIMIT 1`,
       );
@@ -1225,7 +1240,6 @@ export class PedidoModel {
 
       await connection_ref.commit();
 
-      // Si hay insumos no disponibles, crear nuevo pedido automáticamente
       let nuevoPedidoData = null;
       if (insumosNoDisponibles.length > 0) {
         try {

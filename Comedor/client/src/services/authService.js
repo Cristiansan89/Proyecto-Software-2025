@@ -43,7 +43,7 @@ const API_URL = getApiBaseUrl();
 // Crear instancia de axios con configuración dinámica
 const axiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 15000,
+  timeout: 30000,
   withCredentials: true, // Permitir envío de cookies
 });
 
@@ -58,7 +58,7 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Interceptor para manejar errores de autenticación
@@ -77,7 +77,7 @@ axiosInstance.interceptors.response.use(
     } else if (error.response?.status >= 500) {
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 class AuthService {
@@ -90,9 +90,8 @@ class AuthService {
       localStorage.setItem("user", JSON.stringify(user));
 
       // Configurar el token para futuras peticiones
-      axiosInstance.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${token}`;
+      axiosInstance.defaults.headers.common["Authorization"] =
+        `Bearer ${token}`;
 
       return { success: true, data: response.data };
     } catch (error) {

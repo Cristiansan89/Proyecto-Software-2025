@@ -62,7 +62,7 @@ export class AsistenciaModel {
              JOIN AlumnoGrado ag ON a.id_alumnoGrado = ag.id_alumnoGrado
              JOIN Personas p ON ag.id_persona = p.id_persona
              WHERE a.id_asistencia = ?;`,
-      [id]
+      [id],
     );
     if (asistencias.length === 0) return null;
     return asistencias[0];
@@ -103,7 +103,7 @@ export class AsistenciaModel {
                 AND dg.nombreGrado = ag.nombreGrado
              )
              ORDER BY p.apellido, p.nombre;`,
-      [nombreGrado, fecha, idServicio, idPersonaDocente]
+      [nombreGrado, fecha, idServicio, idPersonaDocente],
     );
     return asistencias;
   }
@@ -141,14 +141,14 @@ export class AsistenciaModel {
              )
              AND p.estado = 'Activo'
              ORDER BY p.apellido, p.nombre;`,
-      [fecha, idServicio, nombreGrado, idPersonaDocente]
+      [fecha, idServicio, nombreGrado, idPersonaDocente],
     );
 
     console.log(
-      `🔍 Debug getAlumnosByDocenteGrado - Fecha: ${fecha}, Servicio: ${idServicio}, Grado: ${nombreGrado}`
+      `🔍 Debug getAlumnosByDocenteGrado - Fecha: ${fecha}, Servicio: ${idServicio}, Grado: ${nombreGrado}`,
     );
     console.log(
-      `🔍 Debug getAlumnosByDocenteGrado - Alumnos encontrados: ${alumnos.length}`
+      `🔍 Debug getAlumnosByDocenteGrado - Alumnos encontrados: ${alumnos.length}`,
     );
     console.log(
       `🔍 Debug getAlumnosByDocenteGrado - Primeros 3 alumnos:`,
@@ -157,7 +157,7 @@ export class AsistenciaModel {
         nombre: `${a.apellido}, ${a.nombre}`,
         tipoAsistencia: a.tipoAsistencia,
         id_asistencia: a.id_asistencia,
-      }))
+      })),
     );
 
     return alumnos;
@@ -174,7 +174,7 @@ export class AsistenciaModel {
                     fecha, 
                     estado
                 ) VALUES (?, ?, ?, ?);`,
-        [idServicio, idAlumnoGrado, fecha, estado]
+        [idServicio, idAlumnoGrado, fecha, estado],
       );
 
       return this.getById({ id: result.insertId });
@@ -191,7 +191,7 @@ export class AsistenciaModel {
         `UPDATE Asistencias 
                  SET estado = ?
                  WHERE id_asistencia = ?;`,
-        [estado, id]
+        [estado, id],
       );
 
       return this.getById({ id });
@@ -212,7 +212,7 @@ export class AsistenciaModel {
       const [existing] = await connection.query(
         `SELECT id_asistencia FROM Asistencias 
                  WHERE id_servicio = ? AND id_alumnoGrado = ? AND fecha = ?;`,
-        [idServicio, idAlumnoGrado, fecha]
+        [idServicio, idAlumnoGrado, fecha],
       );
 
       if (existing.length > 0) {
@@ -221,7 +221,7 @@ export class AsistenciaModel {
           `UPDATE Asistencias 
                      SET tipoAsistencia = ?, estado = ?
                      WHERE id_asistencia = ?;`,
-          [tipoAsistencia || "No", estado, existing[0].id_asistencia]
+          [tipoAsistencia || "No", estado, existing[0].id_asistencia],
         );
         return this.getById({ id: existing[0].id_asistencia });
       } else {
@@ -234,7 +234,7 @@ export class AsistenciaModel {
                         tipoAsistencia,
                         estado
                     ) VALUES (?, ?, ?, ?, ?);`,
-          [idServicio, idAlumnoGrado, fecha, "No", estado]
+          [idServicio, idAlumnoGrado, fecha, "No", estado],
         );
         return this.getById({ id: result.insertId });
       }
@@ -242,9 +242,107 @@ export class AsistenciaModel {
       console.error(
         "Error específico en upsertAsistencia:",
         error.message,
-        error.code
+        error.code,
       );
       throw new Error("Error al registrar la asistencia");
+    }
+  }
+
+  static async batchUpsertAsistencias({
+    idServicio,
+    fecha,
+    asistencias,
+    conn = connection,
+  }) {
+    const db = conn || connection;
+
+    try {
+      const asistenciasNormalizadas = asistencias.map((asistencia) => ({
+        idAlumnoGrado: parseInt(asistencia.idAlumnoGrado, 10),
+        tipoAsistencia: asistencia.tipoAsistencia,
+        estado: asistencia.estado || "Completado",
+      }));
+
+      const idsAlumnoGrado = Array.from(
+        new Set(asistenciasNormalizadas.map((a) => a.idAlumnoGrado)),
+      );
+
+      if (idsAlumnoGrado.length === 0) {
+        return { inserted: 0, updated: 0 };
+      }
+
+      const [existing] = await db.query(
+        `SELECT id_asistencia, id_alumnoGrado FROM Asistencias
+                 WHERE id_servicio = ?
+                   AND fecha = ?
+                   AND id_alumnoGrado IN (?);`,
+        [idServicio, fecha, idsAlumnoGrado],
+      );
+
+      const existingByAlumno = new Map(
+        existing.map((row) => [row.id_alumnoGrado, row.id_asistencia]),
+      );
+
+      const inserts = [];
+      const updates = [];
+
+      for (const asistencia of asistenciasNormalizadas) {
+        const tipo = ["Si", "No", "Ausente"].includes(asistencia.tipoAsistencia)
+          ? asistencia.tipoAsistencia
+          : "No";
+
+        if (existingByAlumno.has(asistencia.idAlumnoGrado)) {
+          updates.push([
+            tipo,
+            asistencia.estado,
+            existingByAlumno.get(asistencia.idAlumnoGrado),
+          ]);
+        } else {
+          inserts.push([
+            idServicio,
+            asistencia.idAlumnoGrado,
+            fecha,
+            tipo,
+            asistencia.estado,
+          ]);
+        }
+      }
+
+      let updated = 0;
+      let inserted = 0;
+
+      if (updates.length > 0) {
+        await Promise.all(
+          updates.map((params) =>
+            db.query(
+              `UPDATE Asistencias
+                       SET tipoAsistencia = ?, estado = ?
+                       WHERE id_asistencia = ?;`,
+              params,
+            ),
+          ),
+        );
+        updated = updates.length;
+      }
+
+      if (inserts.length > 0) {
+        await db.query(
+          `INSERT INTO Asistencias (
+                    id_servicio,
+                    id_alumnoGrado,
+                    fecha,
+                    tipoAsistencia,
+                    estado
+                  ) VALUES ?;`,
+          [inserts],
+        );
+        inserted = inserts.length;
+      }
+
+      return { inserted, updated };
+    } catch (error) {
+      console.error("Error en batchUpsertAsistencias:", error.message);
+      throw new Error("Error al registrar asistencia masiva");
     }
   }
 
@@ -253,7 +351,7 @@ export class AsistenciaModel {
       await connection.query(
         `DELETE FROM Asistencias 
                  WHERE id_asistencia = ?;`,
-        [id]
+        [id],
       );
       return true;
     } catch (error) {
@@ -273,7 +371,7 @@ export class AsistenciaModel {
         `SELECT p.id_persona, p.nombre, p.apellido
          FROM Personas p
          WHERE p.id_persona = ?`,
-        [idPersonaDocente]
+        [idPersonaDocente],
       );
 
       const docente = docenteInfo?.[0] || {};
@@ -281,9 +379,9 @@ export class AsistenciaModel {
       // Generar token único para el docente con información adicional
       const tokenData = {
         idPersonaDocente,
-        nombreDocente: `${docente.nombre || ""} ${
-          docente.apellido || ""
-        }`.trim() || "Docente",
+        nombreDocente:
+          `${docente.nombre || ""} ${docente.apellido || ""}`.trim() ||
+          "Docente",
         nombreGrado,
         fecha,
         idServicio,

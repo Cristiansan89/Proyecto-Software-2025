@@ -131,16 +131,17 @@ export class AsistenciaController {
          WHERE id_servicio = ? AND id_alumnoGrado IN (
            SELECT id_alumnoGrado FROM AlumnoGrado WHERE nombreGrado = ?
          ) AND fecha = ?`,
-        [tokenData.idServicio, tokenData.nombreGrado, tokenData.fecha]
+        [tokenData.idServicio, tokenData.nombreGrado, tokenData.fecha],
       );
 
-      const allCompleted = alumnos.length > 0 && 
-                          completadasResult[0]?.completados === alumnos.length;
+      const allCompleted =
+        alumnos.length > 0 &&
+        completadasResult[0]?.completados === alumnos.length;
 
       // Agregar estado de completitud al tokenData
       const tokenDataConEstado = {
         ...tokenData,
-        estado: allCompleted ? "Completado" : "Pendiente"
+        estado: allCompleted ? "Completado" : "Pendiente",
       };
 
       console.log("✅ Acceso permitido. Datos cargados:", {
@@ -232,68 +233,81 @@ export class AsistenciaController {
         });
       }
 
-      const resultados = [];
-
-      // Procesar cada asistencia
-      for (const asistencia of asistencias) {
+      const asistenciasNormalizadas = asistencias.map((asistencia) => {
         const { idAlumnoGrado, tipoAsistencia } = asistencia;
 
-        console.log(
-          `Procesando alumno ${idAlumnoGrado} con tipo ${tipoAsistencia}`,
-        );
-
         if (!["Si", "No", "Ausente"].includes(tipoAsistencia)) {
-          return res.status(400).json({
-            success: false,
-            message: `Tipo de asistencia inválido: ${tipoAsistencia}. Debe ser 'Si', 'No' o 'Ausente'`,
-          });
-        }
-
-        // VALIDACIÓN: Verificar que el alumno pertenece al grado del token
-        const [alumnoVerif] = await connection.query(
-          `SELECT ag.id_alumnoGrado, ag.nombreGrado 
-           FROM AlumnoGrado ag 
-           WHERE ag.id_alumnoGrado = ? AND ag.nombreGrado = ?`,
-          [idAlumnoGrado, tokenData.nombreGrado],
-        );
-
-        if (!alumnoVerif || alumnoVerif.length === 0) {
-          console.error(
-            `❌ ALUMNO NO AUTORIZADO: ${idAlumnoGrado} no pertenece a ${tokenData.nombreGrado}`,
+          throw new Error(
+            `Tipo de asistencia inválido: ${tipoAsistencia}. Debe ser 'Si', 'No' o 'Ausente'`,
           );
-          return res.status(403).json({
-            success: false,
-            message: `❌ El alumno ${idAlumnoGrado} no pertenece al grado ${tokenData.nombreGrado}.`,
-            error: "UNAUTHORIZED_STUDENT",
-          });
         }
 
-        const resultado = await this.asistenciaModel.upsertAsistencia({
-          idServicio: parseInt(tokenData.idServicio),
-          idAlumnoGrado: parseInt(idAlumnoGrado),
-          fecha: tokenData.fecha,
+        return {
+          idAlumnoGrado: parseInt(idAlumnoGrado, 10),
           tipoAsistencia,
           estado: "Completado",
-        });
+        };
+      });
 
-        console.log(
-          `✅ Asistencia registrada para alumno ${idAlumnoGrado}:`,
-          resultado,
-        );
-        resultados.push(resultado);
-      }
-
-      console.log(
-        "🎉 Todas las asistencias procesadas exitosamente:",
-        resultados.length,
+      const idsAlumnoGrado = asistenciasNormalizadas.map(
+        (asistencia) => asistencia.idAlumnoGrado,
       );
 
-      res.json({
-        success: true,
-        message: "Asistencias registradas correctamente",
-        registradas: resultados.length,
-        asistencias: resultados,
-      });
+      const [alumnosVerificados] = await connection.query(
+        `SELECT id_alumnoGrado FROM AlumnoGrado 
+         WHERE id_alumnoGrado IN (?) AND nombreGrado = ?;`,
+        [idsAlumnoGrado, tokenData.nombreGrado],
+      );
+
+      const idAlumnosAutorizados = new Set(
+        alumnosVerificados.map((row) => row.id_alumnoGrado),
+      );
+
+      const noAutorizados = asistenciasNormalizadas.filter(
+        (asistencia) => !idAlumnosAutorizados.has(asistencia.idAlumnoGrado),
+      );
+
+      if (noAutorizados.length > 0) {
+        return res.status(403).json({
+          success: false,
+          message: `❌ Los siguientes alumnos no pertenecen al grado ${tokenData.nombreGrado}: ${noAutorizados
+            .map((a) => a.idAlumnoGrado)
+            .join(", ")}`,
+          error: "UNAUTHORIZED_STUDENT",
+        });
+      }
+
+      const connection_ref = await connection.getConnection();
+      await connection_ref.beginTransaction();
+
+      try {
+        const resultadoBatch =
+          await this.asistenciaModel.batchUpsertAsistencias({
+            idServicio: parseInt(tokenData.idServicio, 10),
+            fecha: tokenData.fecha,
+            asistencias: asistenciasNormalizadas,
+            conn: connection_ref,
+          });
+
+        await connection_ref.commit();
+
+        console.log(
+          "🎉 Todas las asistencias procesadas exitosamente:",
+          resultadoBatch.inserted + resultadoBatch.updated,
+        );
+
+        res.json({
+          success: true,
+          message: "Asistencias registradas correctamente",
+          registradas: resultadoBatch.inserted + resultadoBatch.updated,
+          resultadoBatch,
+        });
+      } catch (batchError) {
+        await connection_ref.rollback();
+        throw batchError;
+      } finally {
+        connection_ref.release();
+      }
     } catch (error) {
       console.error("❌ ERROR EN REGISTRAR ASISTENCIAS:");
       console.error("Mensaje:", error.message);

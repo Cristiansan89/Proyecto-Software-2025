@@ -1,6 +1,6 @@
-import axios from "axios";
+import axiosInstance from "./axiosConfig.js";
 
-const API_URL = "/api/recetas-servicios";
+const API_URL = "/recetas-servicios";
 
 /**
  * Servicio para gestionar la relación entre Recetas y Servicios
@@ -14,7 +14,9 @@ const planificacionServicioRecetaService = {
    */
   async getServiciosPorReceta(id_receta) {
     try {
-      const response = await axios.get(`${API_URL}/receta/${id_receta}`);
+      const response = await axiosInstance.get(
+        `${API_URL}/receta/${id_receta}`,
+      );
       return response.data;
     } catch (error) {
       console.error("Error al obtener servicios:", error);
@@ -29,7 +31,9 @@ const planificacionServicioRecetaService = {
    */
   async getRecetasPorServicio(id_servicio) {
     try {
-      const response = await axios.get(`${API_URL}/servicio/${id_servicio}`);
+      const response = await axiosInstance.get(
+        `${API_URL}/servicio/${id_servicio}`,
+      );
       return response.data;
     } catch (error) {
       console.error("Error al obtener recetas por servicio:", error);
@@ -45,9 +49,12 @@ const planificacionServicioRecetaService = {
    */
   async actualizarServiciosReceta(id_receta, servicios) {
     try {
-      const response = await axios.patch(`${API_URL}/receta/${id_receta}`, {
-        servicios,
-      });
+      const response = await axiosInstance.patch(
+        `${API_URL}/receta/${id_receta}`,
+        {
+          servicios,
+        },
+      );
       return response.data;
     } catch (error) {
       console.error("Error al actualizar servicios:", error);
@@ -63,7 +70,7 @@ const planificacionServicioRecetaService = {
    */
   async crearServicioReceta(id_receta, id_servicio) {
     try {
-      const response = await axios.post(API_URL, {
+      const response = await axiosInstance.post(API_URL, {
         id_receta,
         id_servicio,
       });
@@ -82,8 +89,8 @@ const planificacionServicioRecetaService = {
    */
   async eliminarServicioReceta(id_receta, id_servicio) {
     try {
-      const response = await axios.delete(
-        `${API_URL}/${id_receta}/${id_servicio}`
+      const response = await axiosInstance.delete(
+        `${API_URL}/${id_receta}/${id_servicio}`,
       );
       return response.data;
     } catch (error) {
@@ -98,7 +105,7 @@ const planificacionServicioRecetaService = {
    */
   async getAll() {
     try {
-      const response = await axios.get(API_URL);
+      const response = await axiosInstance.get(API_URL);
       return response.data;
     } catch (error) {
       console.error("Error al obtener todas las asociaciones:", error);
