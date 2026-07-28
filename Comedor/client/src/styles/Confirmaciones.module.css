@@ -327,31 +327,31 @@
   transition: all 0.3s ease;
   background: #f7fafc;
   color: #4a5568;
-  max-width: 80px;
+  max-width: 110px;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
-}
 
-.opcionDisponible {
-  border-color: #c6f6d5;
+  .opcionDisponible {
+    border-color: #c6f6d5;
 
-  &.active {
-    background: #48bb78;
-    color: white;
-    border-color: #48bb78;
+    &.active {
+      background: #48bb78;
+      color: white;
+      border-color: #48bb78;
+    }
   }
-}
 
-.opcionNoDisponible {
-  border-color: #fed7cc;
+  .opcionNoDisponible {
+    border-color: #fed7cc;
 
-  &.active {
-    background: #ed8936;
-    color: white;
-    border-color: #ed8936;
+    &.active {
+      background: #ed8936;
+      color: white;
+      border-color: #ed8936;
+    }
   }
 }
 
