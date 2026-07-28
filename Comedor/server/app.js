@@ -224,5 +224,16 @@ export const createApp = ({
     next();
   });
 
+  // ==========================================
+  // 7. MANEJADOR GLOBAL DE ERRORES (MANDATORIO)
+  // ==========================================
+  app.use((err, req, res, next) => {
+    console.error("❌ Error en el servidor:", err.stack || err);
+    res.status(500).json({
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  });
+
   return app;
 };

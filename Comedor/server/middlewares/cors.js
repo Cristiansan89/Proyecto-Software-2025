@@ -3,6 +3,9 @@ import cors from "cors";
 export const corsMiddleware = () =>
   cors({
     origin: (origin, callback) => {
+      // Normalizar la variable de entorno en tiempo de ejecución
+      const frontendUrl = process.env.FRONTEND_URL?.trim().replace(/\/$/, "");
+
       const ACCEPTED_ORIGINS = [
         "http://localhost:3000",
         "http://localhost:5173",
@@ -14,48 +17,30 @@ export const corsMiddleware = () =>
         "http://localhost:5179",
         "http://192.168.100.10:3000",
         "http://192.168.100.10:5173",
-        "http://192.168.100.10:5174",
-        "http://192.168.100.10:5175",
-        "http://192.168.100.10:5176",
-        "http://192.168.100.10:5177",
-        "http://192.168.100.10:5178",
-        "http://192.168.100.10:5179",
-        "https://frontend-production-72dd.up.railway.app",
-        // Lee la variable de Railway en producción; limpia barra final
-        process.env.FRONTEND_URL?.replace(/\/$/, ""),
+        "https://frontend-production-72dd.up.railway.app", // 👈 Tu frontend en Railway
+        frontendUrl,
       ].filter(Boolean);
 
-      // Permitir requests sin origin (como desde Postman o curl)
+      // 1. Peticiones servidor-a-servidor, cURL, Postman o Cron Jobs
       if (!origin) return callback(null, true);
 
-      // Permitir dominios específicos (incluyendo tu URL de Railway)
+      // 2. Lista blanca exacta
       if (ACCEPTED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
 
-      // Permitir cualquier localhost en desarrollo
+      // 3. Entornos de desarrollo locales / Túneles
       if (
         origin.startsWith("http://localhost:") ||
-        origin.startsWith("http://127.0.0.1:")
+        origin.startsWith("http://127.0.0.1:") ||
+        origin.match(/^http:\/\/192\.168\.\d+\.\d+:\d+$/) ||
+        origin.endsWith(".loca.lt") ||
+        origin.includes(".ngrok-free.dev")
       ) {
         return callback(null, true);
       }
 
-      // Permitir cualquier IP local en desarrollo
-      if (origin.match(/^http:\/\/192\.168\.\d+\.\d+:\d+$/)) {
-        return callback(null, true);
-      }
-
-      // Permitir túneles localtunnel (.loca.lt)
-      if (origin.endsWith(".loca.lt")) {
-        return callback(null, true);
-      }
-
-      // Permitir túneles ngrok (.ngrok-free.dev)
-      if (origin.includes(".ngrok-free.dev")) {
-        return callback(null, true);
-      }
-
+      // Si no coincide con nada, rechazar limpiamente
       return callback(null, false);
     },
     credentials: true,
@@ -71,6 +56,5 @@ export const corsMiddleware = () =>
       "Cache-Control",
       "Pragma",
     ],
-    preflightContinue: false,
-    optionsSuccessStatus: 200,
+    optionsSuccessStatus: 204, // 204 No Content es el estándar moderno para OPTIONS
   });
