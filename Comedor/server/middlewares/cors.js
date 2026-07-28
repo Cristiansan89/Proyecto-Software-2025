@@ -20,8 +20,9 @@ export const corsMiddleware = () =>
         "http://192.168.100.10:5177",
         "http://192.168.100.10:5178",
         "http://192.168.100.10:5179",
-        // Lee la variable de Railway en producción; limpia valores nulos o vacíos
-        process.env.FRONTEND_URL,
+        "https://frontend-production-72dd.up.railway.app",
+        // Lee la variable de Railway en producción; limpia barra final
+        process.env.FRONTEND_URL?.replace(/\/$/, ""),
       ].filter(Boolean);
 
       // Permitir requests sin origin (como desde Postman o curl)
@@ -55,7 +56,7 @@ export const corsMiddleware = () =>
         return callback(null, true);
       }
 
-      callback(new Error("No permitido por CORS"));
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -66,4 +67,5 @@ export const corsMiddleware = () =>
       "Cache-Control",
       "Pragma",
     ],
+    optionsSuccessStatus: 200,
   });
