@@ -61,11 +61,16 @@ export const corsMiddleware = () =>
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
+      "Origin",
+      "X-Requested-With",
+      "Accept",
+      "Accept-Language",
       "Content-Type",
       "Authorization",
       "x-access-token",
       "Cache-Control",
       "Pragma",
     ],
+    preflightContinue: false,
     optionsSuccessStatus: 200,
   });

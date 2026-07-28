@@ -1,17 +1,13 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import { corsMiddleware } from "./middlewares/cors.js";
 import { cookieMiddleware } from "./middlewares/cookies.js";
 import { auditoriaMiddleware } from "./middlewares/auditoria.js";
 import { authRequired } from "./middlewares/auth.js";
-import {
-  verificarPermiso,
-  verificarAlgunoPermiso,
-} from "./middlewares/verificarPermiso.js";
-import { createAuthRouter } from "./routes/auth.js";
-import path from "path";
-import { fileURLToPath } from "url";
 
 // Importar todas las rutas
+import { createAuthRouter } from "./routes/auth.js";
 import { createAsistenciaRouter } from "./routes/asistencias.js";
 import { createRolRouter } from "./routes/roles.js";
 import { createGradoRouter } from "./routes/grados.js";
@@ -21,8 +17,10 @@ import { createItemRecetaRouter } from "./routes/itemsrecetas.js";
 import { createLineaPedidoRouter } from "./routes/lineaspedidos.js";
 import { createMovimientoInventarioRouter } from "./routes/movimientosinventarios.js";
 import { createParametroSistemaRouter } from "./routes/parametrossistemas.js";
-import { createPedidoRouter } from "./routes/pedidos.js";
-import { createPedidoPublicoRouter } from "./routes/pedidos.js";
+import {
+  createPedidoRouter,
+  createPedidoPublicoRouter,
+} from "./routes/pedidos.js";
 import { createPermisoRouter } from "./routes/permisos.js";
 import { createPersonaRouter } from "./routes/personas.js";
 import { createPlanificacionMenuRouter } from "./routes/planificacionmenus.js";
@@ -78,42 +76,68 @@ export const createApp = ({
 }) => {
   const app = express();
 
-  // Configurar rutas para servir frontend compilado
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const distPath = path.resolve(__dirname, "../client/dist");
 
-  // Middlewares básicos
-  app.use(express.json());
+  // ==========================================
+  // 1. PRIMER PASO ABSOLUTO: CORS Y PREFLIGHT
+  // ==========================================
   app.use(corsMiddleware());
-  app.options("*", corsMiddleware());
+  app.options("*", corsMiddleware()); // Responde preflight OPTIONS globalmente inmediatamente
+
+  // ==========================================
+  // 2. MIDDLEWARES BÁSICOS
+  // ==========================================
+  app.use(express.json());
   app.use(cookieMiddleware());
   app.disable("x-powered-by");
 
-  // Servir archivos estáticos (CSS, JS, imágenes) del frontend compilado
-  app.use(express.static(distPath));
-
-  // Rutas públicas (no requieren autenticación ni auditoría)
+  // ==========================================
+  // 3. RUTAS PÚBLICAS DE LA API
+  // ==========================================
   app.use("/api/auth", createAuthRouter({ usuarioModel }));
   app.use("/api/asistencias", createAsistenciaRouter({ asistenciaModel }));
   app.use("/api/alertas-inventario", alertasInventarioRouter);
   app.use("/api/pedidos", createPedidoPublicoRouter({ pedidoModel }));
 
-  // Middleware de autenticación - SOLO PARA RUTAS /api
-  app.use((req, res, next) => {
-    // Solo aplicar autenticación a rutas que comiencen con /api
-    if (req.path.startsWith("/api")) {
-      authRequired(req, res, next);
-    } else {
-      next();
+  // Endpoint específico para obtener alumnos de un grado
+  app.get("/api/alumnos-grado", async (req, res) => {
+    try {
+      const { nombreGrado } = req.query;
+
+      if (!nombreGrado) {
+        return res.status(400).json({
+          message: "El parámetro nombreGrado es requerido",
+        });
+      }
+
+      const { AlumnoGradoModel } = await import("./models/alumnogrado.js");
+      const alumnos = await AlumnoGradoModel.getByGrado({ nombreGrado });
+      res.json(alumnos);
+    } catch (error) {
+      res.status(500).json({
+        message: "Error interno del servidor",
+        error: error.message,
+      });
     }
   });
 
-  // Middleware de auditoría para todas las rutas siguientes
-  // SIN parámetros para que detecte automáticamente el módulo por ruta
+  // ==========================================
+  // 4. AUTENTICACIÓN Y AUDITORÍA DE LA API
+  // ==========================================
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return authRequired(req, res, next);
+    }
+    next();
+  });
+
   app.use(auditoriaMiddleware());
 
-  // Todas las rutas ahora son públicas
+  // ==========================================
+  // 5. RUTAS PROTEGIDAS DE LA API
+  // ==========================================
   app.use("/api/roles", createRolRouter({ rolModel }));
   app.use("/api/usuarios", createUsuarioRouter({ usuarioModel }));
   app.use("/api/consumos", createConsumoRouter({ consumoModel }));
@@ -172,52 +196,32 @@ export const createApp = ({
   );
   app.use("/api/auditoria", auditoriaRouter);
 
-  // Inicializar servicio de alertas
+  // Inicialización de servicios en segundo plano
   alertasService.inicializar();
-  /*.catch((err) =>
-      console.error("Error al inicializar servicio de alertas:", err)
-    );*/
-
-  // Inicializar scheduler de generación automática
   schedulerService.inicializar();
-  /*.catch((err) => console.error("Error al inicializar scheduler:", err));*/
 
-  // Endpoint específico para obtener alumnos de un grado
-  app.get("/api/alumnos-grado", async (req, res) => {
-    try {
-      const { nombreGrado } = req.query;
-
-      if (!nombreGrado) {
-        return res.status(400).json({
-          message: "El parámetro nombreGrado es requerido",
-        });
-      }
-
-      const { AlumnoGradoModel } = await import("./models/alumnogrado.js");
-      const alumnos = await AlumnoGradoModel.getByGrado({ nombreGrado });
-      res.json(alumnos);
-    } catch (error) {
-      //console.error("Error al obtener alumnos por grado:", error);
-      res.status(500).json({
-        message: "Error interno del servidor",
-        error: error.message,
-      });
+  // ==========================================
+  // 6. ARCHIVOS ESTÁTICOS Y FALLBACK (FRONTEND)
+  // ==========================================
+  // Servir archivos estáticos únicamente si la solicitud NO es para la API
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return next();
     }
+    express.static(distPath)(req, res, next);
   });
 
-  // SPA Fallback: servir index.html para rutas que no son API
+  // SPA Fallback: servir index.html para rutas de navegación Web
   app.use((req, res, next) => {
-    // Si no es una ruta de API y no es un archivo (no tiene extensión), servir index.html
     if (!req.path.startsWith("/api") && !req.path.includes(".")) {
       const indexPath = path.join(distPath, "index.html");
-      res.sendFile(indexPath, (err) => {
+      return res.sendFile(indexPath, (err) => {
         if (err) {
           res.status(404).json({ message: "Página no encontrada" });
         }
       });
-    } else {
-      next();
     }
+    next();
   });
 
   return app;
