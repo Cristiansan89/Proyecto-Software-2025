@@ -136,7 +136,7 @@
   }
 }
 
-.opcionSi {
+&.opcionSi {
   border-color: #c6f6d5;
 
   &.active {
@@ -146,7 +146,7 @@
   }
 }
 
-.opcionNo {
+&.opcionNo {
   border-color: #fed7cc;
 
   &.active {
@@ -156,7 +156,7 @@
   }
 }
 
-.opcionAusente {
+&.opcionAusente {
   border-color: #fed7d7;
 
   &.active {

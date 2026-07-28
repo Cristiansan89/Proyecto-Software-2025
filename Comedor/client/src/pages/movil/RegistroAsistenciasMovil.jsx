@@ -281,7 +281,7 @@ const RegistroAsistenciasMovil = () => {
                   <button
                     className={`${MovilStyle.btnOpcion} ${MovilStyle.opcionSi} ${
                       asistencias[alumno.id_alumnoGrado] === "Si"
-                        ? "active"
+                        ? MovilStyle.active
                         : ""
                     }`}
                     onClick={() =>
@@ -293,7 +293,7 @@ const RegistroAsistenciasMovil = () => {
                   <button
                     className={`${MovilStyle.btnOpcion} ${MovilStyle.opcionNo} ${
                       asistencias[alumno.id_alumnoGrado] === "No"
-                        ? "active"
+                        ? MovilStyle.active
                         : ""
                     }`}
                     onClick={() =>
@@ -305,7 +305,7 @@ const RegistroAsistenciasMovil = () => {
                   <button
                     className={`${MovilStyle.btnOpcion} ${MovilStyle.opcionAusente} ${
                       asistencias[alumno.id_alumnoGrado] === "Ausente"
-                        ? "active"
+                        ? MovilStyle.active
                         : ""
                     }`}
                     onClick={() =>
