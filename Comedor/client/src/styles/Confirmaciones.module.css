@@ -334,7 +334,8 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
-  .opcionDisponible {
+  /* Con '&' le decimos que están en el mismo botón */
+  &.opcionDisponible {
     border-color: #c6f6d5;
 
     &.active {
@@ -344,7 +345,7 @@
     }
   }
 
-  .opcionNoDisponible {
+  &.opcionNoDisponible {
     border-color: #fed7cc;
 
     &.active {
@@ -369,7 +370,7 @@
     background: white;
     transition: border-color 0.3s ease;
 
-    & :focus {
+    &:focus {
       outline: none;
       border-color: #f39c12;
       box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.1);

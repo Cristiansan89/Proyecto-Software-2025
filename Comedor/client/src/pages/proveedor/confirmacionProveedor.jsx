@@ -331,7 +331,7 @@ const ConfirmacionProveedor = () => {
                 className={`${ConfirmacionesStyle.btnOpcion} ${ConfirmacionesStyle.opcionDisponible} ${
                   confirmaciones[insumo.id_detallePedido]?.estado ===
                   "Disponible"
-                    ? "active"
+                    ? ConfirmacionesStyle.active
                     : ""
                 }`}
                 onClick={() =>
@@ -344,12 +344,13 @@ const ConfirmacionProveedor = () => {
               >
                 ✅ Disponible
               </button>
+
               <button
                 type="button"
                 className={`${ConfirmacionesStyle.btnOpcion} ${ConfirmacionesStyle.opcionNoDisponible} ${
                   confirmaciones[insumo.id_detallePedido]?.estado ===
                   "No Disponible"
-                    ? "active"
+                    ? ConfirmacionesStyle.active
                     : ""
                 }`}
                 onClick={() =>
