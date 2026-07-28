@@ -84,7 +84,6 @@ export const createApp = ({
   // 1. PRIMER PASO ABSOLUTO: CORS Y PREFLIGHT
   // ==========================================
   app.use(corsMiddleware());
-  app.options("*", corsMiddleware()); // Responde preflight OPTIONS globalmente inmediatamente
 
   // ==========================================
   // 2. MIDDLEWARES BÁSICOS
