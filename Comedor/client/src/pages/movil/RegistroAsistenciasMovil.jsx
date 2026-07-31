@@ -170,6 +170,16 @@ const RegistroAsistenciasMovil = () => {
     }
   };
 
+  const opciones = [
+    { valor: "Si", label: "✅ Sí", className: MovilStyle.opcionSi },
+    { valor: "No", label: "❌ No", className: MovilStyle.opcionNo },
+    {
+      valor: "Ausente",
+      label: "🚫 Ausente",
+      className: MovilStyle.opcionAusente,
+    },
+  ];
+
   const contarAsistencias = () => {
     const conteos = { Si: 0, No: 0, Ausente: 0 };
     Object.values(asistencias).forEach((estado) => {
@@ -278,42 +288,26 @@ const RegistroAsistenciasMovil = () => {
                 </div>
 
                 <div className={MovilStyle.opcionesAsistencia}>
-                  <button
-                    className={`${MovilStyle.btnOpcion} ${MovilStyle.opcionSi} ${
-                      asistencias[alumno.id_alumnoGrado] === "Si"
-                        ? MovilStyle.active
-                        : ""
-                    }`}
-                    onClick={() =>
-                      handleAsistenciaChange(alumno.id_alumnoGrado, "Si")
-                    }
-                  >
-                    ✅ Sí
-                  </button>
-                  <button
-                    className={`${MovilStyle.btnOpcion} ${MovilStyle.opcionNo} ${
-                      asistencias[alumno.id_alumnoGrado] === "No"
-                        ? MovilStyle.active
-                        : ""
-                    }`}
-                    onClick={() =>
-                      handleAsistenciaChange(alumno.id_alumnoGrado, "No")
-                    }
-                  >
-                    ❌ No
-                  </button>
-                  <button
-                    className={`${MovilStyle.btnOpcion} ${MovilStyle.opcionAusente} ${
-                      asistencias[alumno.id_alumnoGrado] === "Ausente"
-                        ? MovilStyle.active
-                        : ""
-                    }`}
-                    onClick={() =>
-                      handleAsistenciaChange(alumno.id_alumnoGrado, "Ausente")
-                    }
-                  >
-                    🚫 Ausente
-                  </button>
+                  {opciones.map((opcion) => {
+                    const isSelected =
+                      asistencias[alumno.id_alumnoGrado] === opcion.valor;
+                    return (
+                      <button
+                        key={opcion.valor}
+                        className={`${MovilStyle.btnOpcion} ${opcion.className} ${
+                          isSelected ? MovilStyle.active : ""
+                        }`}
+                        onClick={() =>
+                          handleAsistenciaChange(
+                            alumno.id_alumnoGrado,
+                            opcion.valor,
+                          )
+                        }
+                      >
+                        {opcion.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
